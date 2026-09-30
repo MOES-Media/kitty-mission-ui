@@ -1,0 +1,18 @@
+project:
+  uuid: 46e13dbb-9386-4299-baa9-64fcba192976
+  slug: spec-kitty-mission-ui
+  node_id: 8a3342a39695
+  build_id: 04eccecc-da40-534b-80e9-769dcc07ccd8
+mission_type_activations:
+- software-dev
+- documentation
+- research
+- plan
+vcs:
+  type: git
+agents:
+  available:
+  - claude
+  auto_commit: true
+  lint_on_edit: false
+charter: .kittify/charter/charter.yaml
