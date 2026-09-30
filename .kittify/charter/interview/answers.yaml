@@ -1,0 +1,68 @@
+schema_version: 1.0.0
+mission: software-dev
+profile: comprehensive
+answers:
+  project_intent: >-
+    One set of Spec Kitty mission screens, shipped as @spec-kitty/mission-ui (Lit
+    web components), rendered identically by the spec-kitty dashboard (browser) and
+    Kitty Desktop (Tauri). Screens are presentational: data in as properties typed
+    from the spec-kitty OpenAPI read contract, user intents out as sk-* events, no
+    I/O. Storybook is the visual source of truth, and the screens implement the
+    approved Kitty Desktop V2 interactive prototype.
+  languages_frameworks: >-
+    TypeScript, Lit 3, Storybook, Vite, pnpm workspaces. Design primitives come from
+    @spec-kitty/tokens, @spec-kitty/styles and @spec-kitty/elements, installed from
+    GitHub Packages (private, currently 1.1.0-rc.x). Packages in this repo:
+    @spec-kitty/mission-ui (screen and pattern elements) and, later,
+    @spec-kitty/dashboard-web (browser container built to a static dist).
+  testing_requirements: >-
+    Every screen has a Storybook story per view state (ready, empty, loading,
+    error) driven by synthetic fixtures. Visual regression runs against the approved
+    prototype in a headless browser. Pure display-mapping functions have unit
+    tests. Interaction tests assert every emitted sk-* event and its detail payload.
+  quality_gates: >-
+    Before merge: typecheck, ESLint, Stylelint, Storybook build, unit and
+    interaction tests, visual regression, and a custom-elements manifest that is
+    current and declares every public property and event. An architectural gate
+    fails if a screen or pattern package performs I/O (fetch, XMLHttpRequest,
+    WebSocket, Tauri APIs, localStorage/sessionStorage/IndexedDB).
+  review_policy: >-
+    Pull requests into main. Every work package is reviewed by a separate reviewer
+    agent before approval. An adversarial review squad runs after the plan phase
+    only (not after specify). The operator merges; agents never merge.
+  performance_targets: >-
+    Long lists are virtualised; a project with about 450 missions must render and
+    scroll smoothly. Exact budgets are set per mission.
+  deployment_constraints: >-
+    Private repository in the spec-kitty GitHub org; the source stays private.
+    @spec-kitty/mission-ui and @spec-kitty/dashboard-web publish to GitHub
+    Packages; the dashboard-web dist is also attached to a GitHub Release. The
+    built bundle becomes public once vendored into spec-kitty. Installing
+    @spec-kitty/* needs a read:packages token, locally and in CI. Must build on
+    macOS and Linux developer machines.
+  documentation_policy: >-
+    Each screen and pattern element has a Storybook docs page covering its
+    properties, events and view states. README and CHANGELOG are updated with every
+    user-visible change.
+  risk_boundaries: >-
+    Screens never perform I/O. Fixtures contain no real user data, no absolute
+    filesystem paths and no OS usernames. No secrets or tokens are committed. Do not
+    relax quality or security standards without explicit operator approval.
+  amendment_process: >-
+    Charter changes are proposed via PR and require operator approval.
+  exception_policy: >-
+    Exceptions are documented in the PR with scope, rationale and sunset criteria,
+    and require operator approval.
+selected_paradigms:
+- atomic-design
+- deep-module-design
+selected_directives: []
+selected_tactics: []
+available_tools:
+- git
+- gh
+- spec-kitty
+- node
+- pnpm
+agent_profile:
+agent_role:
