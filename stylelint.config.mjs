@@ -105,9 +105,70 @@ const LAYOUT_PROPERTIES = [
   'order',
 ];
 
+// Operator-approved exception (2026-10-01): shell chrome paint, token values only; sunset when @spec-kitty/elements
+// ships top bar / flat nav row / rail-without-720-flip equivalents (design-library issues).
+// Scope: ONLY the shell element files. Every other element keeps the layout-only rule above.
+const SHELL_PAINT_PROPERTIES = [
+  'background',
+  'background-color',
+  'border',
+  'color',
+  'font-size',
+  'line-height',
+  'border-block',
+  'border-block-start',
+  'border-block-end',
+  'border-block-width',
+  'border-block-style',
+  'border-block-color',
+  'border-inline',
+  'border-inline-start',
+  'border-inline-end',
+  'border-inline-width',
+  'border-inline-style',
+  'border-inline-color',
+  'border-width',
+  'border-style',
+  'border-color',
+  'border-radius',
+  'font-family',
+  'font-weight',
+  'letter-spacing',
+  'text-transform',
+  'min-block-size',
+];
+
+// Keyword-only typography behaviour needed to truncate one line of chrome text (no colour, length or font value).
+const SHELL_KEYWORD_PROPERTIES = ['text-overflow', 'white-space'];
+
+const SHELL_FILES = [
+  '**/src/elements/sk-mission-shell/**',
+  '**/src/elements/sk-shell-nav-item/**',
+  '**/src/elements/sk-shell-tree/**',
+];
+
 export default {
   plugins: ['stylelint-declaration-strict-value'],
-  overrides: [{ files: ['**/*.{ts,mts,cts,tsx,js,mjs,cjs,jsx}'], customSyntax: 'postcss-lit' }],
+  overrides: [
+    { files: ['**/*.{ts,mts,cts,tsx,js,mjs,cjs,jsx}'], customSyntax: 'postcss-lit' },
+    {
+      // Operator-approved exception (2026-10-01): shell chrome paint, token values only; sunset when
+      // @spec-kitty/elements ships top bar / flat nav row / rail-without-720-flip equivalents (design-library issues).
+      files: SHELL_FILES,
+      rules: {
+        'scale-unlimited/declaration-strict-value': [
+          [...STRICT_PROPERTIES, ...SHELL_PAINT_PROPERTIES.filter((property) => property !== 'text-transform' && property !== 'min-block-size')],
+          {
+            // `solid` and `none` are the only non-token words: border style and border/background removal.
+            ignoreValues: [...TOKEN_ONLY, 'none', 'solid'],
+            ignoreFunctions: false,
+            message: 'Shell paint: use var(--sk-*), 0, none, solid, transparent, currentColor or inherit (${value} is a literal).',
+          },
+        ],
+        'property-allowed-list': [...LAYOUT_PROPERTIES, ...SHELL_PAINT_PROPERTIES, ...SHELL_KEYWORD_PROPERTIES],
+      },
+    },
+  ],
   rules: {
     'scale-unlimited/declaration-strict-value': [
       STRICT_PROPERTIES,
