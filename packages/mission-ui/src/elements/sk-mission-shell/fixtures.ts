@@ -39,7 +39,7 @@ export const mission: ShellMission = {
 };
 
 export const workPackageTree: TreeNode[] = [
-  { id: 'wp-01', label: 'Design tokens', href: '#/wp/01', kind: 'leaf', prefix: 'WP01' },
+  { id: 'wp-01', label: 'Foundation and tokens', href: '#/wp/01', kind: 'leaf', prefix: 'WP01' },
   { id: 'wp-02', label: 'Library elements', href: '#/wp/02', kind: 'leaf', prefix: 'WP02' },
   { id: 'wp-03', label: 'Shell tree', href: '#/wp/03', kind: 'leaf', prefix: 'WP03' },
   { id: 'wp-04', label: 'Responsive shell', href: '#/wp/04', kind: 'leaf', prefix: 'WP04' },
@@ -95,6 +95,7 @@ export const longTree: TreeNode[] = [
     kind: 'folder',
     expanded: true,
     children: [
+      { id: 'leaf-wp', label: 'WP12 Responsive shell tier breakpoints review', href: '#/artifacts/wp12', kind: 'leaf', icon: 'file' },
       { id: 'leaf-long', label: 'Another-very-long-unbroken-artifact-name-with-no-spaces-at-all-to-wrap-on.md', href: '#/artifacts/long', kind: 'leaf', icon: 'file' },
     ],
   },

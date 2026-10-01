@@ -14,7 +14,7 @@ import {
   statusArgs,
   workPackageTree,
 } from '../src/elements/sk-mission-shell/fixtures.js';
-import type { ShellNavigateDetail, ShellTier, TreeToggleDetail } from '../src/shell-types.js';
+import type { ShellNavigateDetail, ShellTier, TreeNode, TreeToggleDetail } from '../src/shell-types.js';
 import type { ViewState } from '../src/view-state.js';
 
 afterEach(async () => {
@@ -508,6 +508,30 @@ describe('long content (NFR-005)', () => {
     await mission.updateComplete;
     const missionSide = one<HTMLElement>(root(mission), 'sk-context-sidebar');
     expect(missionSide.getBoundingClientRect().width).toBeLessThanOrEqual(parseFloat(getComputedStyle(document.documentElement).fontSize) * 15 + 1);
+  });
+});
+
+describe('long tree titles truncate', () => {
+  it('a long row title is one ellipsised line and keeps its full name; the metadata stays visible', async () => {
+    const el = await mount(1280, { ...missionArgs, mission: longMission });
+    const items: TreeNode[] = [
+      { id: 'w1', label: 'WP12 Responsive shell tier breakpoints review', href: '#/w1', kind: 'leaf', meta: 'unavailable' },
+    ];
+    const tree = mountTree(el, items);
+    await el.updateComplete;
+    await tree.updateComplete;
+    const row = one<HTMLElement>(tree.shadowRoot as ShadowRoot, 'sk-action-row');
+    const title = one<HTMLElement>(row.shadowRoot as ShadowRoot, '[part="title"]');
+    const meta = one<HTMLElement>(row.shadowRoot as ShadowRoot, '[part="metadata"]');
+    const css = getComputedStyle(title);
+    expect(css.whiteSpace).toBe('nowrap');
+    expect(css.textOverflow).toBe('ellipsis');
+    expect(title.scrollWidth).toBeGreaterThan(title.clientWidth);
+    expect(meta.scrollWidth).toBeLessThanOrEqual(meta.clientWidth);
+    expect(meta.getBoundingClientRect().right).toBeLessThanOrEqual(row.getBoundingClientRect().right);
+    expect(row.querySelector('[slot="title"]')?.textContent).toContain('WP12 Responsive shell tier breakpoints review');
+    const link = row.shadowRoot?.querySelector('a');
+    expect(link?.getAttribute('aria-labelledby')).toBe(title.id);
   });
 });
 

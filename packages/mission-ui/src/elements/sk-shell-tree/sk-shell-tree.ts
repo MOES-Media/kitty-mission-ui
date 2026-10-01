@@ -1,3 +1,4 @@
+// Row titles are one line with an ellipsis (the prototype's .truncate); the full label stays the link's accessible name.
 // Gap G-05 (sunset: library `sk-tree`): the library has no tree with `aria-expanded`, so each folder is a native
 // `<details>`/`<summary>` (browsers expose the disclosure and its expanded state). The default marker is hidden with
 // `::-webkit-details-marker` (Safari; `display: block` on the summary removes the marker in other engines) and the default summary focus ring is kept.
@@ -103,6 +104,11 @@ export class SkShellTree extends LitElement {
     sk-action-row[selected]::part(title) {
       color: var(--sk-fg-default);
     }
+    sk-action-row::part(title) {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
     sk-action-row::part(tags),
     sk-action-row::part(supporting),
     sk-action-row::part(controls) {
@@ -112,13 +118,13 @@ export class SkShellTree extends LitElement {
       display: none;
     }
     sk-action-row::part(trigger) {
-      grid-template-columns: auto minmax(0, 1fr) fit-content(40%);
+      grid-template-columns: auto minmax(0, 1fr) fit-content(50%);
     }
     sk-action-row::part(metadata) {
       margin-block: 0;
       margin-inline: var(--sk-space-2) 0;
-      white-space: normal;
-      overflow-wrap: anywhere;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     [slot='marker'] {
       display: block;

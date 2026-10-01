@@ -79,6 +79,11 @@ export class SkShellNavItem extends LitElement {
     sk-action-row[selected]::part(title) {
       color: var(--sk-fg-default);
     }
+    sk-action-row::part(title) {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
     sk-action-row::part(tags),
     sk-action-row::part(supporting),
     sk-action-row::part(controls) {
