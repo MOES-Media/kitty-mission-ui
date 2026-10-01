@@ -7,7 +7,7 @@ import type { TemplateResult } from 'lit';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import '@spec-kitty/elements';
 import '../sk-shell-nav-item/sk-shell-nav-item.js';
-import { renderIcon } from '../../shell-icons.js';
+import { renderBrandMark, renderIcon } from '../../shell-icons.js';
 import type {
   CurrentMark,
   ShellLayout,
@@ -62,15 +62,12 @@ export interface TopBarContext {
   onHamburger: () => void;
 }
 
-// The prototype's brand mark (two arrowheads), drawn here because the library ships no brand mark.
-const BRAND_MARK = html`<svg data-brand-mark viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M3 12 9 7v10Zm18 0-6-5v10ZM9 9h6v6H9z"/></svg>`;
-
 export function renderTopBar(ctx: TopBarContext): TemplateResult {
   return html`<header data-top-bar>
     ${ctx.tier === 'mobile'
       ? html`<sk-button size="icon" variant="ghost" label="Open navigation" @click=${ctx.onHamburger}>${renderIcon('menu')}</sk-button>`
       : nothing}
-    <div data-brand><slot name="brand">${BRAND_MARK}<span>kitty desktop</span></slot></div>
+    <div data-brand><slot name="brand">${renderBrandMark()}<span>kitty desktop</span></slot></div>
     ${ctx.tier === 'mobile' && ctx.context !== '' ? html`<span data-top-bar-context>${ctx.context}</span>` : nothing}
     <div data-top-bar-actions><slot name="top-bar-actions"></slot></div>
   </header>`;
