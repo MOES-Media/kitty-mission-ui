@@ -250,14 +250,30 @@ inline SVG from the prototype's own drawings, gap G-08, flagged for design revie
 
 ### D-08 Library gaps (each: proposed API, acceptance, sunset, operator approval)
 
-Operator approval for every row is **pending** (charter: a temporary local stand-in needs an exception recorded in the PR;
-the operator approves the exceptions when reviewing the PR). Each gap is also an issue for the design library.
+Operator approval: **approved 2026-10-01** (Storybook review and formal merge approval; the exceptions are declared
+in the PR). Each gap is an issue in spec-kitty/spec-kitty-design:
+
+| Gap | Issue |
+|---|---|
+| G-01, G-03 | #499 (app-shell layouts and thresholds) |
+| G-02 | #494 (top bar) |
+| G-04 | #450 (narrow-width drawer, pre-existing) and #503 (overlay primitives) |
+| G-05 | #500 (navigation item); the generic tree is out of scope per #470 |
+| G-06 | #501 (button ARIA passthrough) |
+| G-07, G-15 | #492 (rail/sidebar 720 flip) and #497 (context sidebar) |
+| G-08 | #496 (icons) |
+| G-09 | #498 (progress element) |
+| G-10 | #502 (skip link) |
+| G-11, G-12 | #503 (dialog/drawer and tooltip) |
+| G-13, G-16 | #495 (aria-current="true" and current marking) |
+| G-14 | #493 (flush row density; truncation now via the shell exception) |
+| unavailable rows, brand SVG | #504 |
 
 | ID | Gap | Proposed library API | Acceptance | Sunset |
 |---|---|---|---|---|
 | G-01 | `sk-app-shell` grid is fixed to rail, sidebar, content; no project (sidebar-only) layout and no icon-column mode | `layout="project\|mission"` and `sidebar="expanded\|icons"` on `sk-app-shell` | the shell's grid renders project and collapsed layouts from attributes, no empty column | the local grid is deleted when the library ships it |
 | G-02 | no top-bar slot or banner landmark | a `top-bar` slot rendered in a `<header>` | banner landmark present, full-width above rail and sidebar | local top bar removed |
-| G-03 | tier breakpoints are container-based and fixed (860/1100/720) | configurable or window-based thresholds, 1100 and 720 (720 since 2026-10-01, aligned with `sk-personal-rail`'s flip) | tiers switch at 1100/620 without CSS overrides | `matchMedia` tier code removed |
+| G-03 | tier breakpoints are container-based and fixed (860/1100/720) | configurable or window-based thresholds, 1100 and 720 (720 since 2026-10-01, aligned with `sk-personal-rail`'s flip) | tiers switch at 1100/720 without CSS overrides | `matchMedia` tier code removed |
 | G-04 | compact drawer is an in-flow block, not an overlay with backdrop; hides the rail | overlay drawer with backdrop, focus trap, Escape, return focus | content never moves; keyboard parity | local dialog drawer removed |
 | G-05 | no vertical navigation item (icon, current, icon-only) and no tree with `aria-expanded`/`aria-controls`; `sk-action-row` has no expanded state | `sk-nav-item` and `sk-tree` | name kept in icon-only, `aria-current` and `aria-expanded` exposed | `sk-shell-nav-item` and `sk-shell-tree` become thin wrappers or are removed |
 | G-06 | `sk-button` forwards only `label`; no `aria-expanded`, `aria-controls`, `aria-current` | passthrough of those attributes to the inner control | state announced on the real control | state-in-name workaround removed |
