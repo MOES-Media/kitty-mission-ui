@@ -1,0 +1,27 @@
+---
+affected_files: []
+cycle_number: 1
+mission_slug: app-shell-01M3V82X
+reproduction_command:
+reviewed_at: '2026-10-01T10:18:14Z'
+reviewer_agent: user
+wp_id: WP04
+---
+
+# WP04 review feedback, cycle 1: changes requested
+
+All acceptance commands 1 to 8 pass (typecheck, lint, lint:styles, lint:no-io, test:no-io, hygiene, `pnpm test` 138/138 including `sk-mission-shell.test.ts` 73/73, manifest:check, the matchMedia and stories greps print 0/0, storybook build, both planted-violation checks, clean tree). Layout matches the prototype in headless renders at 1280/1024/680/390 for both layouts: top bar 48, rail 56, sidebar 240, icon column 56, and the status in normal flow above `main`, with `main` top at 48 (ready) or 172 (error) in every tier. Two FR-018/FR-004 defects block approval.
+
+**Issue 1 (High, FR-018 "at most one page"): the leaf-selected state goes stale.**
+`readSelectedLeaf()` runs only in the shell's `willUpdate`. The shell does not re-render when a host appends an `sk-shell-tree` that has a selected leaf, or sets a slotted tree's `current` directly. Both are the normal flow: shell `current` stays `nav-work-packages` and the host selects WP03 in the tree. I reproduced this with a throwaway headless test (since removed). The `[aria-current="page"]` count was **2** after appending a tree with `current='wp-02'`, and **2** again after `tree.current='wp-03'` while the tree had no leaf selected. The existing tests hide this because they call `el.requestUpdate()` by hand (`test/sk-mission-shell.test.ts` around lines 495 and 507).
+Remedy: listen for `slotchange` on the `sidebar-section` slot and call `requestUpdate()`. For in-place `current` changes the shell needs a signal from the tree. Either the tree dispatches an internal, non-composed event from `updated()` when `current` changes, which the shell catches on the host and stops (this touches a WP03-owned file, so coordinate the edit), or a documented contract rule with the same effect. Add tests that do **not** call `requestUpdate()` by hand: append the tree, then set it, then clear it, and assert one `"page"` each time.
+
+**Issue 2 (High, FR-004/FR-018): in the collapsed tier with a selected leaf, nothing is marked.**
+`resolveMarking` sets `deepest = 'leaf'` whenever a slotted tree has a selected leaf, whatever the tier. The tree is not rendered in the collapsed column (unassigned slot, outside the accessibility tree). The icon item and the rail item then get `'true'`, which per G-16 shows no visual state and no `aria-current`. Result: at 620 to 1099 px a mission screen with a selected leaf marks **nothing**, visually or for assistive technology (confirmed in the 1024 and 680 screenshots). Mobile has the same problem once the drawer is closed.
+Remedy: count the leaf only while the tree is actually shown. Today that is `tier === 'expanded'`. WP05 extends it to the drawer and flyout being open, so leave a short seam comment. Otherwise the icon or sidebar item is the `"page"`. Add a collapsed-tier test with a selected leaf that asserts exactly one `"page"` on the icon item.
+
+**Low (fix while you are in there):**
+- L1, `fixtures.ts`: the rail differs from the prototype (C-001). Prototype `03-pipeline.html:15-20` has rail Missions, Drift, Ops, then a spacer and pinned Projects, with Missions current on mission screens. The fixture has Projects, Missions, Pipeline and pinned Ops, and marks `rail-pipeline` current. Pipeline is a sidebar destination, not a rail one. Fix it now, because WP06 stories and baselines inherit this file.
+- L2, NFR-005 test: it does not assert that the tier holds at 200% root font size at 1100 and 620, which the spec and the WP prompt ask for. Add `expect(el.tier)` after setting the font size.
+
+**Notes, no change needed:** the generic English strings (status texts, "Open navigation", landmark labels) follow the contract, which declares only the `skip-link` slot. Back to the project from the collapsed tier is the rail "Missions" item, as in the prototype; on mobile it comes through the drawer (WP05). The tier mechanism, the WP05 seams, the landmarks per tier, `aria-busy` placement and the NFR-003 test are all correct.

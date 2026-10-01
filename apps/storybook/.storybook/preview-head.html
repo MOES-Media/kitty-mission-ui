@@ -7,4 +7,8 @@
     background: var(--sk-surface-page);
     font-family: var(--sk-font-sans);
   }
+  sk-mission-shell { display: block; height: 800px; }
+  /* Story canvas (fullscreen layout): the shell fills the viewport; docs pages keep the fixed height. */
+  .sb-main-fullscreen { margin: 0; overflow: hidden; }
+  .sb-main-fullscreen sk-mission-shell { height: 100vh; height: 100dvh; }
 </style>

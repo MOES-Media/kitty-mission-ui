@@ -1,0 +1,34 @@
+{
+  "accept_commit": "3ca7231e3e934efebf47d196114493415fbd4be2",
+  "acceptance_history": [
+    {
+      "accept_commit": "3ca7231e3e934efebf47d196114493415fbd4be2",
+      "acceptance_mode": "pr",
+      "accepted_at": "2026-10-01T14:58:04.254327+00:00",
+      "accepted_by": "claude",
+      "accepted_from_commit": "2983b2b3867780eb011c17e0fc7933dabf60e24f"
+    }
+  ],
+  "acceptance_mode": "pr",
+  "accepted_at": "2026-10-01T14:58:04.254327+00:00",
+  "accepted_by": "claude",
+  "accepted_from_commit": "2983b2b3867780eb011c17e0fc7933dabf60e24f",
+  "baseline_merge_commit": "e285cc756e218ee1d7387bcec29cda974e15ffcb",
+  "coordination_branch": "kitty/mission-app-shell-01M3V82X",
+  "created_at": "2026-10-01T08:07:54.984682+00:00",
+  "flattened": false,
+  "friendly_name": "App shell with all its states",
+  "mission_id": "01M3V82XTXMDYCND2BWY7M5SZF",
+  "mission_number": 1,
+  "mission_slug": "app-shell-01M3V82X",
+  "mission_type": "software-dev",
+  "pr_bound": true,
+  "purpose_context": "Every mission screen in the dashboard and Kitty Desktop sits inside the same frame: top bar, navigation rail and context sidebar. Building that shell first, with all its layouts (picker, project, mission) and its width-driven expanded, collapsed and mobile states, gives later screen missions one consistent, reviewed frame to drop into. Source: issue #2.",
+  "purpose_tldr": "Build the shared application shell for mission screens, with every layout and width state visible in the workbench.",
+  "slug": "app-shell-01M3V82X",
+  "status_phase": "1",
+  "target_branch": "feat/app-shell",
+  "topology": "coord",
+  "vcs": "git",
+  "vcs_locked_at": "2026-10-01T08:48:10.351793+00:00"
+}

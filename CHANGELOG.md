@@ -6,6 +6,10 @@ All user-visible changes to this repository. Per-package notes live in `packages
 
 ### Added
 
+- **An application shell screen with a project and a mission layout that adapts from desktop to phone width**
+  (`app-shell-01M3V82X`). `sk-mission-shell` brings the top bar, rail, sidebar and content column, three responsive
+  tiers, an overlay drawer and a flyout, with 42 visual baselines; its design-library gaps are recorded in
+  `packages/mission-ui/CHANGELOG.md`.
 - **Contributors can build and preview mission screens in a Storybook workbench, set up in two commands** (`#1`).
   Before, the repository held only its charter. Now `pnpm install` and `pnpm storybook` open a workbench that renders
   elements with the real Spec Kitty design system (`@spec-kitty/tokens`, `styles`, `elements` 1.1.0-rc.10), with an

@@ -37,74 +37,6 @@
               },
               "default": "''",
               "attribute": "error-message"
-            },
-            {
-              "kind": "method",
-              "name": "onOpen",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              }
-            },
-            {
-              "kind": "method",
-              "name": "onRetry",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              }
-            },
-            {
-              "kind": "method",
-              "name": "renderReady",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "TemplateResult"
-                }
-              },
-              "parameters": [
-                {
-                  "name": "mission",
-                  "type": {
-                    "text": "MissionSummary"
-                  }
-                }
-              ]
-            },
-            {
-              "kind": "method",
-              "name": "renderEmpty",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "TemplateResult"
-                }
-              }
-            },
-            {
-              "kind": "method",
-              "name": "renderLoading",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "TemplateResult"
-                }
-              }
-            },
-            {
-              "kind": "method",
-              "name": "renderError",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "TemplateResult"
-                }
-              }
             }
           ],
           "events": [
@@ -147,10 +79,6 @@
           },
           "tagName": "sk-mission-sample",
           "customElement": true
-        },
-        {
-          "kind": "variable",
-          "name": "slug"
         }
       ],
       "exports": [
@@ -160,6 +88,548 @@
           "declaration": {
             "name": "SkMissionSample",
             "module": "src/elements/sk-mission-sample/sk-mission-sample.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/elements/sk-mission-shell/shell-overlays.ts",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/elements/sk-mission-shell/shell-parts.ts",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/elements/sk-mission-shell/sk-mission-shell.ts",
+      "declarations": [
+        {
+          "kind": "class",
+          "description": "Application shell screen: top bar, optional rail, sidebar (project or mission) and the content column. The host owns\nrouting, data and persistence; the shell owns layout, the responsive tier and its own status. Render it full-bleed:\nthe tier follows the window width.\n\nNot self-registering: `src/index.ts` defines the tag once.",
+          "name": "SkMissionShell",
+          "slots": [
+            {
+              "description": "the page content, inside the main landmark",
+              "name": ""
+            },
+            {
+              "description": "the product name beside the mark (falls back to \"kitty desktop\")",
+              "name": "brand"
+            },
+            {
+              "description": "host actions on the right of the top bar",
+              "name": "top-bar-actions"
+            },
+            {
+              "description": "per-screen skip link text (falls back to \"Skip to content\")",
+              "name": "skip-link"
+            },
+            {
+              "description": "sk-shell-tree sections shown in the sidebar, drawer and flyout",
+              "name": "sidebar-section"
+            }
+          ],
+          "members": [
+            {
+              "kind": "field",
+              "name": "layout",
+              "type": {
+                "text": "ShellLayout"
+              },
+              "default": "'project'",
+              "description": "Which regions render; unknown values fall back to `project`.",
+              "attribute": "layout",
+              "reflects": true
+            },
+            {
+              "kind": "field",
+              "name": "current",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "description": "Sidebar item id.",
+              "attribute": "current"
+            },
+            {
+              "kind": "field",
+              "name": "railCurrent",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "description": "Rail item id (mission layout).",
+              "attribute": "rail-current"
+            },
+            {
+              "kind": "field",
+              "name": "railItems",
+              "type": {
+                "text": "ShellNavItem[]"
+              },
+              "default": "[]",
+              "description": "Rail items (mission layout only)."
+            },
+            {
+              "kind": "field",
+              "name": "navItems",
+              "type": {
+                "text": "ShellNavItem[]"
+              },
+              "default": "[]",
+              "description": "Sidebar navigation."
+            },
+            {
+              "kind": "field",
+              "name": "footerItem",
+              "type": {
+                "text": "ShellNavItem | null"
+              },
+              "default": "null",
+              "description": "Project sidebar footer."
+            },
+            {
+              "kind": "field",
+              "name": "project",
+              "type": {
+                "text": "ShellProject | null"
+              },
+              "default": "null"
+            },
+            {
+              "kind": "field",
+              "name": "mission",
+              "type": {
+                "text": "ShellMission | null"
+              },
+              "default": "null"
+            },
+            {
+              "kind": "field",
+              "name": "status",
+              "type": {
+                "text": "ViewState"
+              },
+              "default": "'loading'",
+              "description": "The shell's own data state.",
+              "attribute": "status",
+              "reflects": true
+            },
+            {
+              "kind": "field",
+              "name": "errorMessage",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "attribute": "error-message"
+            },
+            {
+              "kind": "field",
+              "name": "drawerOpen",
+              "type": {
+                "text": "boolean"
+              },
+              "default": "false",
+              "description": "Mobile only; forced false elsewhere. Semi-controlled.",
+              "attribute": "drawer-open"
+            },
+            {
+              "kind": "field",
+              "name": "flyoutOpen",
+              "type": {
+                "text": "boolean"
+              },
+              "default": "false",
+              "description": "Collapsed tier only; forced false elsewhere. Semi-controlled.",
+              "attribute": "flyout-open"
+            },
+            {
+              "kind": "field",
+              "name": "tier",
+              "type": {
+                "text": "ShellTier"
+              },
+              "default": "'expanded'",
+              "description": "Read-only: derived from the window width, re-asserted on every update.",
+              "attribute": "tier",
+              "reflects": true
+            }
+          ],
+          "events": [
+            {
+              "name": "sk-navigate",
+              "type": {
+                "text": "CustomEvent<ShellNavigateDetail>"
+              },
+              "description": "a navigation item or tree leaf was activated"
+            },
+            {
+              "name": "sk-tree-toggle",
+              "type": {
+                "text": "CustomEvent<TreeToggleDetail>"
+              },
+              "description": "a tree folder was toggled"
+            },
+            {
+              "name": "sk-toggle-drawer",
+              "type": {
+                "text": "CustomEvent<ToggleDrawerDetail>"
+              },
+              "description": "the mobile drawer asks to open or close (cancelable)"
+            },
+            {
+              "name": "sk-toggle-flyout",
+              "type": {
+                "text": "CustomEvent<ToggleFlyoutDetail>"
+              },
+              "description": "the collapsed-tier flyout asks to open or close (cancelable)"
+            },
+            {
+              "name": "sk-shell-retry",
+              "type": {
+                "text": "CustomEvent<ShellRetryDetail>"
+              },
+              "description": "the error-state retry button was activated"
+            }
+          ],
+          "attributes": [
+            {
+              "name": "layout",
+              "type": {
+                "text": "ShellLayout"
+              },
+              "default": "'project'",
+              "description": "Which regions render; unknown values fall back to `project`.",
+              "fieldName": "layout"
+            },
+            {
+              "name": "current",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "description": "Sidebar item id.",
+              "fieldName": "current"
+            },
+            {
+              "name": "rail-current",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "description": "Rail item id (mission layout).",
+              "fieldName": "railCurrent"
+            },
+            {
+              "name": "status",
+              "type": {
+                "text": "ViewState"
+              },
+              "default": "'loading'",
+              "description": "The shell's own data state.",
+              "fieldName": "status"
+            },
+            {
+              "name": "error-message",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "fieldName": "errorMessage"
+            },
+            {
+              "name": "drawer-open",
+              "type": {
+                "text": "boolean"
+              },
+              "default": "false",
+              "description": "Mobile only; forced false elsewhere. Semi-controlled.",
+              "fieldName": "drawerOpen"
+            },
+            {
+              "name": "flyout-open",
+              "type": {
+                "text": "boolean"
+              },
+              "default": "false",
+              "description": "Collapsed tier only; forced false elsewhere. Semi-controlled.",
+              "fieldName": "flyoutOpen"
+            },
+            {
+              "name": "tier",
+              "type": {
+                "text": "ShellTier"
+              },
+              "default": "'expanded'",
+              "description": "Read-only: derived from the window width, re-asserted on every update.",
+              "fieldName": "tier"
+            }
+          ],
+          "superclass": {
+            "name": "LitElement",
+            "package": "lit"
+          },
+          "tagName": "sk-mission-shell",
+          "customElement": true
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "SkMissionShell",
+          "declaration": {
+            "name": "SkMissionShell",
+            "module": "src/elements/sk-mission-shell/sk-mission-shell.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/elements/sk-shell-nav-item/sk-shell-nav-item.ts",
+      "declarations": [
+        {
+          "kind": "class",
+          "description": "One shell navigation entry: a route row with an icon marker and a label. Pattern element (no screen contract).\n\nNot self-registering: `src/index.ts` defines the tag once.",
+          "name": "SkShellNavItem",
+          "members": [
+            {
+              "kind": "field",
+              "name": "itemId",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "description": "Id echoed in `sk-navigate`.",
+              "attribute": "item-id"
+            },
+            {
+              "kind": "field",
+              "name": "label",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "description": "Visible text and accessible name."
+            },
+            {
+              "kind": "field",
+              "name": "href",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "attribute": "href"
+            },
+            {
+              "kind": "field",
+              "name": "icon",
+              "type": {
+                "text": "ShellIcon"
+              },
+              "default": "'file'",
+              "attribute": "icon"
+            },
+            {
+              "kind": "field",
+              "name": "current",
+              "type": {
+                "text": "CurrentMark"
+              },
+              "default": "''",
+              "description": "`'page'` marks the item selected and sets `aria-current=\"page\"` on its link. `'true'` (an ancestor) carries no library current state yet (G-16).",
+              "attribute": "current"
+            },
+            {
+              "kind": "field",
+              "name": "compact",
+              "type": {
+                "text": "boolean"
+              },
+              "default": "false",
+              "description": "Icon-only: the label stays the accessible name.",
+              "attribute": "compact"
+            }
+          ],
+          "events": [
+            {
+              "name": "sk-navigate",
+              "type": {
+                "text": "CustomEvent<ShellNavigateDetail>"
+              },
+              "description": "an unmodified primary click or Enter on the item"
+            }
+          ],
+          "attributes": [
+            {
+              "name": "item-id",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "description": "Id echoed in `sk-navigate`.",
+              "fieldName": "itemId"
+            },
+            {
+              "name": "href",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "fieldName": "href"
+            },
+            {
+              "name": "icon",
+              "type": {
+                "text": "ShellIcon"
+              },
+              "default": "'file'",
+              "fieldName": "icon"
+            },
+            {
+              "name": "current",
+              "type": {
+                "text": "CurrentMark"
+              },
+              "default": "''",
+              "description": "`'page'` marks the item selected and sets `aria-current=\"page\"` on its link. `'true'` (an ancestor) carries no library current state yet (G-16).",
+              "fieldName": "current"
+            },
+            {
+              "name": "compact",
+              "type": {
+                "text": "boolean"
+              },
+              "default": "false",
+              "description": "Icon-only: the label stays the accessible name.",
+              "fieldName": "compact"
+            }
+          ],
+          "superclass": {
+            "name": "LitElement",
+            "package": "lit"
+          },
+          "tagName": "sk-shell-nav-item",
+          "customElement": true
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "SkShellNavItem",
+          "declaration": {
+            "name": "SkShellNavItem",
+            "module": "src/elements/sk-shell-nav-item/sk-shell-nav-item.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/elements/sk-shell-tree/sk-shell-tree.ts",
+      "declarations": [
+        {
+          "kind": "class",
+          "description": "A sidebar section of leaves and folders, slotted into the shell as `slot=\"sidebar-section\"`. Pattern element\n(no screen contract).\n\nNot self-registering: `src/index.ts` defines the tag once.",
+          "name": "SkShellTree",
+          "members": [
+            {
+              "kind": "field",
+              "name": "heading",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "description": "Section title."
+            },
+            {
+              "kind": "field",
+              "name": "label",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "description": "Accessible name of the group.",
+              "attribute": "label"
+            },
+            {
+              "kind": "field",
+              "name": "items",
+              "type": {
+                "text": "TreeNode[]"
+              },
+              "default": "[]",
+              "description": "Replacing the array resets folder state."
+            },
+            {
+              "kind": "field",
+              "name": "current",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "description": "Selected leaf id; empty marks none.",
+              "attribute": "current",
+              "reflects": true
+            }
+          ],
+          "events": [
+            {
+              "name": "sk-navigate",
+              "type": {
+                "text": "CustomEvent<ShellNavigateDetail>"
+              },
+              "description": "a leaf was activated"
+            },
+            {
+              "name": "sk-tree-toggle",
+              "type": {
+                "text": "CustomEvent<TreeToggleDetail>"
+              },
+              "description": "a folder was toggled; detail carries the requested state"
+            }
+          ],
+          "attributes": [
+            {
+              "name": "label",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "description": "Accessible name of the group.",
+              "fieldName": "label"
+            },
+            {
+              "name": "current",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "description": "Selected leaf id; empty marks none.",
+              "fieldName": "current"
+            }
+          ],
+          "superclass": {
+            "name": "LitElement",
+            "package": "lit"
+          },
+          "tagName": "sk-shell-tree",
+          "customElement": true
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "SkShellTree",
+          "declaration": {
+            "name": "SkShellTree",
+            "module": "src/elements/sk-shell-tree/sk-shell-tree.ts"
           }
         }
       ]

@@ -2,6 +2,48 @@
 
 ## Unreleased
 
+### Added
+
+- `sk-mission-shell` (screen): the application shell. A top bar, an optional global rail, a project or mission sidebar
+  and the content column inside a `main` landmark, with its own `status` view state (loading, error, empty, ready) shown
+  at the top of the content. The host owns routing, data and persistence; the shell owns layout and the responsive tier.
+- Three responsive tiers, read from the window width and reflected on the `tier` attribute: expanded (1100px and up:
+  rail, sidebar and content), collapsed (720 to 1099px: icon column with a flyout for the sidebar sections) and mobile
+  (under 720px: a hamburger and an overlay drawer that also carries a one-row rail strip in the mission layout).
+- `sk-shell-nav-item` and `sk-shell-tree` (pattern elements, no `@screen`): a vertical navigation row with icon,
+  `aria-current` and a compact icon-only mode with a label bubble, and a tree of leaves and folders with
+  `aria-expanded` / `aria-controls`. Both are slotted into the shell as `sidebar-section`.
+- Five typed events, the only events that leave the shell: `sk-navigate`, `sk-tree-toggle`, `sk-toggle-drawer` and
+  `sk-toggle-flyout` (both cancelable) and `sk-shell-retry`. Library events stop at the shell.
+- 42 `Mission/Shell` stories (every tier at 1280, 1024, 800, 680, 390 and 320 wide, every status, focus, flyout and
+  drawer states) with visual baselines. Each story tagged `vw-<n>` is asserted to render the tier its width belongs to
+  before the screenshot is taken.
+
+### Design library gaps
+
+The shell keeps local stand-ins for things the design library does not offer yet. Each is a gap with a proposed library
+API and a sunset (the local code is deleted when the library ships it); the full table with acceptance criteria is
+`research.md` D-08 of mission `app-shell-01M3V82X`. Operator approval of each stand-in is pending and the issues for the
+design library are filed by the orchestrator at pull-request time, not from this change.
+
+| ID | Gap | Proposed library API | Sunset |
+|---|---|---|---|
+| G-01 | `sk-app-shell` has no project (sidebar-only) layout or icon-column mode | `layout` and `sidebar` attributes on `sk-app-shell` | local grid deleted |
+| G-02 | no top-bar slot or banner landmark | `top-bar` slot in a `<header>` | local top bar removed |
+| G-03 | tier breakpoints are container-based and fixed | configurable or window-based thresholds (1100, 720) | `matchMedia` tier code removed |
+| G-04 | compact drawer is in-flow, not an overlay with backdrop | overlay drawer with focus trap, Escape, return focus | local dialog drawer removed |
+| G-05 | no vertical nav item or tree with expanded state | `sk-nav-item`, `sk-tree` | `sk-shell-nav-item` and `sk-shell-tree` become wrappers or go |
+| G-06 | `sk-button` forwards only `label` (no `aria-expanded`, `aria-controls`, `aria-current`) | attribute passthrough | state-in-name workaround removed |
+| G-07 | `sk-personal-rail` flips to a row at 720px and cannot be overridden | `vertical` attribute or container-based flip | local rail removed |
+| G-08 | no icon element or icon set | `sk-icon` | `shell-icons.ts` removed |
+| G-09 | no progress element | `sk-progress` | text-only footer stand-in removed |
+| G-10 | no skip-link element; fragment links do not cross shadow roots | `sk-skip-link target` | local skip link removed |
+| G-11 | no overlay primitive; the native `<dialog>` UA border and colours cannot be reset | `sk-drawer`, `sk-flyout` | local dialog and flyout removed |
+| G-12 | no label bubble meeting WCAG 1.4.13 | `sk-tooltip` | local bubble removed |
+| G-13 | current-item marking cannot reproduce the approved yellow edge | `current` tone attribute on `sk-action-row` | baselines re-approved |
+| G-14 | project CSS cannot set `overflow-wrap` | wrap behaviour in library head elements | only if a head primitive fails the long-name story |
+| G-15 | `sk-context-sidebar` flips at 720px and its padding crowds a 3.5rem column | `compact` or icon-column mode | local icon column removed |
+
 ### Changed
 
 - `sk-mission-sample` no longer self-registers (`src/index.ts` defines the tag once), composes `sk-notice` and

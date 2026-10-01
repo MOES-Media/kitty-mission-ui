@@ -1,0 +1,117 @@
+{
+  "event_count": 72,
+  "last_event_id": "01M3VMF9CHQB7AD368ZPS16DR8",
+  "materialized_at": "2026-10-01T11:44:22.929957+00:00",
+  "mission_number": "",
+  "mission_slug": "app-shell-01M3V82X",
+  "mission_type": "",
+  "summary": {
+    "approved": 0,
+    "blocked": 0,
+    "canceled": 0,
+    "claimed": 0,
+    "done": 6,
+    "for_review": 0,
+    "in_progress": 0,
+    "in_review": 0,
+    "planned": 0
+  },
+  "work_packages": {
+    "WP01": {
+      "actor": "merge",
+      "agent": "claude",
+      "force_count": 4,
+      "lane": "done",
+      "last_event_id": "01M3VMF6D9S5M5ZMYFHXBR4N5P",
+      "last_transition_at": "2026-10-01T11:44:19.881219+00:00",
+      "review_result": {
+        "feedback_path": "~/dev/spec-kitty-mission-ui/kitty-specs/app-shell-01M3V82X/tasks/WP01-foundation-and-frozen-manifest/review-cycle-2.md",
+        "reference": "review-cycle://app-shell-01M3V82X/WP01-foundation-and-frozen-manifest/review-cycle-2.md",
+        "reviewer": "claude",
+        "verdict": "approved"
+      },
+      "shell_pid": 976652,
+      "shell_pid_created_at": "1790845688.38"
+    },
+    "WP02": {
+      "actor": "merge",
+      "agent": "claude",
+      "force_count": 4,
+      "lane": "done",
+      "last_event_id": "01M3VMF70BEB3Z58FFJRQPK1TF",
+      "last_transition_at": "2026-10-01T11:44:20.491234+00:00",
+      "review_result": {
+        "feedback_path": "~/dev/spec-kitty-mission-ui/kitty-specs/app-shell-01M3V82X/tasks/WP02-shell-nav-item-element/review-cycle-2.md",
+        "reference": "review-cycle://app-shell-01M3V82X/WP02-shell-nav-item-element/review-cycle-2.md",
+        "reviewer": "claude",
+        "verdict": "approved"
+      },
+      "shell_pid": 1272176,
+      "shell_pid_created_at": "1790848263.09"
+    },
+    "WP03": {
+      "actor": "merge",
+      "agent": "claude",
+      "force_count": 2,
+      "lane": "done",
+      "last_event_id": "01M3VMF7K3R531S0FE3G6P0XP6",
+      "last_transition_at": "2026-10-01T11:44:21.091585+00:00",
+      "review_result": {
+        "feedback_path": "~/dev/spec-kitty-mission-ui/kitty-specs/app-shell-01M3V82X/tasks/WP03-shell-tree-element/review-cycle-1.md",
+        "reference": "review-cycle://app-shell-01M3V82X/WP03-shell-tree-element/review-cycle-1.md",
+        "reviewer": "claude",
+        "verdict": "approved"
+      },
+      "shell_pid": 1344868,
+      "shell_pid_created_at": "1790848595.01"
+    },
+    "WP04": {
+      "actor": "merge",
+      "agent": "claude",
+      "force_count": 6,
+      "lane": "done",
+      "last_event_id": "01M3VMF864CB939MXNYSZ4QXHR",
+      "last_transition_at": "2026-10-01T11:44:21.700901+00:00",
+      "review_result": {
+        "feedback_path": "~/dev/spec-kitty-mission-ui/kitty-specs/app-shell-01M3V82X/tasks/WP04-shell-frame-tiers-status/review-cycle-3.md",
+        "reference": "review-cycle://app-shell-01M3V82X/WP04-shell-frame-tiers-status/review-cycle-3.md",
+        "reviewer": "claude",
+        "verdict": "approved"
+      },
+      "shell_pid": 1748449,
+      "shell_pid_created_at": "1790850278.16"
+    },
+    "WP05": {
+      "actor": "merge",
+      "agent": "claude",
+      "force_count": 6,
+      "lane": "done",
+      "last_event_id": "01M3VMF8RWG11XJ03PNST2CCK5",
+      "last_transition_at": "2026-10-01T11:44:22.300744+00:00",
+      "review_result": {
+        "feedback_path": "~/dev/spec-kitty-mission-ui/kitty-specs/app-shell-01M3V82X/tasks/WP05-shell-drawer-and-flyout/review-cycle-3.md",
+        "reference": "review-cycle://app-shell-01M3V82X/WP05-shell-drawer-and-flyout/review-cycle-3.md",
+        "reviewer": "claude",
+        "verdict": "approved"
+      },
+      "shell_pid": 2068174,
+      "shell_pid_created_at": "1790852032.95"
+    },
+    "WP06": {
+      "actor": "merge",
+      "agent": "claude",
+      "force_count": 2,
+      "lane": "done",
+      "last_event_id": "01M3VMF9CHQB7AD368ZPS16DR8",
+      "last_transition_at": "2026-10-01T11:44:22.929957+00:00",
+      "review_result": {
+        "feedback_path": "~/dev/spec-kitty-mission-ui/kitty-specs/app-shell-01M3V82X/tasks/WP06-shell-stories-baselines-integration/review-cycle-1.md",
+        "reference": "review-cycle://app-shell-01M3V82X/WP06-shell-stories-baselines-integration/review-cycle-1.md",
+        "reviewer": "claude",
+        "verdict": "approved"
+      },
+      "shell_pid": 2097141,
+      "shell_pid_created_at": "1790852460.27"
+    }
+  }
+}

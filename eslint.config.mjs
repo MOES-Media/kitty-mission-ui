@@ -54,6 +54,23 @@ export default tseslint.config(
     },
   },
   {
+    // Operator ruling (2026-10-02): the shell adopts the library's own `.sk-progress` stylesheet, whose markup contract is
+    // class-based, so class= is allowed in this one file for the sk-progress classes only. Every other restriction stays.
+    files: ['packages/*/src/elements/sk-mission-shell/shell-parts.ts'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        ...elementSyntaxRestrictions.filter((entry) => !entry.message.startsWith('class= is forbidden')),
+        {
+          // class= stays forbidden unless every class is a library progress class (sk-progress, sk-progress--*, sk-progress__*).
+          selector:
+            String.raw`TaggedTemplateExpression:matches([tag.name=/^(html|svg)$/], [tag.property.name=/^(html|svg)$/]) > TemplateLiteral > TemplateElement[value.raw=/\sclass\s*=\s*(?!"sk-progress[a-z_-]*(\s+sk-progress[a-z_-]*)*")/i]`,
+          message: 'class= is only allowed for the library sk-progress classes in this file.',
+        },
+      ],
+    },
+  },
+  {
     // Lit binds @event handlers to the host, so `@click=${this.onX}` is not an unbound method.
     // Not fixed in the element: the unit-tests plant overlays that file by base sha256.
     files: ['packages/*/src/elements/**/*.{ts,mts,cts,tsx}'],

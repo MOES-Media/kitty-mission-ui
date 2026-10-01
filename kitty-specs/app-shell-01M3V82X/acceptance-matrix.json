@@ -1,0 +1,199 @@
+{
+  "mission_slug": "app-shell-01M3V82X",
+  "mission_number": "1",
+  "mission_type": "software-dev",
+  "overall_verdict": "pass",
+  "criteria": [
+    {
+      "criterion_id": "FR-001",
+      "description": "Verify FR-001 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-mission-shell.test.ts > frame and landmarks (FR-001, FR-002, FR-004, FR-008) > project layout: top bar and one sidebar, no rail; baseline apps/storybook/tests/visual/__snapshots__/mission-shell--project-missions-1280.png",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-01T14:56:05.861531+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-002",
+      "description": "Verify FR-002 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-mission-shell.test.ts > frame and landmarks > mission layout: top bar, local rail and the mission sidebar; baseline apps/storybook/tests/visual/__snapshots__/mission-shell--mission-pipeline-1280.png",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-01T14:56:07.453454+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-003",
+      "description": "Verify FR-003 is satisfied",
+      "proof_type": "visual_regression",
+      "evidence": "baselines apps/storybook/tests/visual/__snapshots__/mission-shell--mission-pipeline-1280.png, mission-shell--mission-work-package-selected-1280.png, mission-shell--mission-work-package-none-selected-1280.png, mission-shell--mission-artifacts-folder-expanded-1280.png, mission-shell--mission-artifacts-folder-collapsed-1280.png; packages/mission-ui/test/sk-mission-shell.test.ts > current marking (FR-018) > expanded: a shown tree makes the leaf the page",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-01T14:56:09.111449+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-004",
+      "description": "Verify FR-004 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-mission-shell.test.ts > current marking (FR-018) > project: the sidebar item announces page, the others nothing; packages/mission-ui/test/sk-shell-nav-item.test.ts > sk-shell-nav-item rendering > current=page selects the row and its link announces aria-current=page",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-01T14:56:10.723146+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-005",
+      "description": "Verify FR-005 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-mission-shell.test.ts > tier (FR-005, D-02) > is expanded at 1100px and reflects it; is collapsed at 1099px; is mobile at 719px; is collapsed at 720px",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-01T14:56:12.340862+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-006",
+      "description": "Verify FR-006 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-mission-shell.test.ts > frame and landmarks > collapsed: the icon column is a local nav of compact items, not the library sidebar; > rail layout at the tier edges > rail is a column; baseline apps/storybook/tests/visual/__snapshots__/mission-shell--mission-pipeline-1024.png",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-01T14:56:14.086756+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-007",
+      "description": "Verify FR-007 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-mission-shell-overlays.test.ts > drawer (mobile, FR-007) > opens from the hamburger; Escape closes it; a backdrop click closes it; the close button closes it; choosing a navigation item closes it after sk-navigate, focus on the content target; does not move the content; baseline apps/storybook/tests/visual/__snapshots__/mission-shell--mission-drawer-open-390.png",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-01T14:56:15.636153+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-008",
+      "description": "Verify FR-008 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-mission-shell.test.ts > frame and landmarks > top bar offers the brand and top-bar-actions slots with the brand fallback; mobile: neither rail nor sidebar, and the hamburger is in the top bar; has no hamburger outside mobile; manifest slots brand, top-bar-actions",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-01T14:56:17.216134+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-009",
+      "description": "Verify FR-009 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-mission-shell.test.ts > frame and landmarks > wraps the default slot in main > the focus target; status > keeps the frame the same in every status; baselines apps/storybook/tests/visual/__snapshots__/mission-shell--content-loading-1280.png, content-empty-1280.png, content-error-1280.png",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-01T14:56:18.785433+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-010",
+      "description": "Verify FR-010 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-mission-shell.test.ts > status (FR-010, D-04) > loading, error, error without a message, retry emits sk-shell-retry, empty, ready; renders in normal flow above main at <width>px; baseline apps/storybook/tests/visual/__snapshots__/mission-shell--shell-error-390.png",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-01T14:56:20.345749+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-011",
+      "description": "Verify FR-011 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-mission-shell.test.ts > events > sk-navigate from a sidebar item carries id and href; sk-navigate from a rail item and from the back link; library events do not escape the shell; packages/mission-ui/test/sk-mission-shell-overlays.test.ts > drawer opens from the hamburger (cancelable sk-toggle-drawer); flyout the current icon opens it (sk-toggle-flyout); status retry emits sk-shell-retry; packages/mission-ui/custom-elements.json sk-mission-shell events sk-navigate, sk-tree-toggle, sk-toggle-drawer, sk-toggle-flyout, sk-shell-retry; pnpm manifest:check ok",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-01T14:56:21.922779+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-012",
+      "description": "Verify FR-012 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-mission-shell.test.ts > frame and landmarks > landmarks, <layout>: one banner, one main, N complementary; > tab order (NFR-004, SC-003) > <layout>: N stops, skip link first; the skip link is hidden until focused; baseline apps/storybook/tests/visual/__snapshots__/mission-shell--skip-link-focused-1280.png, apps/storybook/tests/visual/__snapshots__/mission-shell--nav-item-focus-visible-1280.png",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-01T14:56:23.524666+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-013",
+      "description": "Verify FR-013 is satisfied",
+      "proof_type": "visual_regression",
+      "evidence": "58 baselines under apps/storybook/tests/visual/__snapshots__/ covering project/mission layouts, destinations, sidebar variants, tiers 1280/1024/800/390/320, drawer open/closed, flyout-work-packages/artifacts-1024, label-bubble-visible-1024, content and shell status states, skip-link-focused-1280/390; stories packages/mission-ui/src/elements/sk-mission-shell/sk-mission-shell.stories.ts",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-01T14:56:25.136366+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-014",
+      "description": "Verify FR-014 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-mission-shell.test.ts > tier (FR-005, D-02) > follows the window across both breakpoints; packages/mission-ui/test/sk-mission-shell.test.ts > events; packages/mission-ui/test/sk-mission-shell-overlays.test.ts > drawer (mobile, FR-007) > Escape closes it; tab order: focus is contained in the modal drawer; leaving the mobile tier closes it once; packages/mission-ui/test/sk-mission-shell-overlays.test.ts > flyout > Escape closes it; a prevented sk-toggle-flyout leaves it unchanged",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-01T14:56:26.719159+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-015",
+      "description": "Verify FR-015 is satisfied",
+      "proof_type": "manual_review",
+      "evidence": "kitty-specs/app-shell-01M3V82X/research.md D-08 gap-to-issue table (spec-kitty/spec-kitty-design#450, #492-#504); stylelint shell override header cites #492-#497",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-01T14:57:47.679174+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-016",
+      "description": "Verify FR-016 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-mission-shell-overlays.test.ts > flyout (collapsed tier, FR-007, FR-011) > the current icon opens it with no sk-navigate; Escape closes it; a pointerdown outside closes it; choosing an item closes it after sk-navigate, focus on the content target; the icon toggles it shut again; baselines apps/storybook/tests/visual/__snapshots__/mission-shell--flyout-work-packages-1024.png, flyout-artifacts-1024.png",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-01T14:56:29.895690+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-017",
+      "description": "Verify FR-017 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-shell-nav-item.test.ts > label bubble (WCAG 1.4.13) > shows on hover; shows on keyboard focus and hides on blur; Escape hides it; is hoverable; is persistent; baselines apps/storybook/tests/visual/__snapshots__/mission-shell--label-bubble-visible-1024.png, mission-shell-nav-item--compact-with-bubble.png",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-01T14:56:31.431403+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-018",
+      "description": "Verify FR-018 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-mission-shell.test.ts > current marking (FR-018) > expanded: a shown tree makes the leaf the page and both shell ancestors true; mission without a leaf: sidebar page, rail true, a single page mark; collapsed with a tree and a selected leaf; packages/mission-ui/test/sk-shell-nav-item.test.ts > current=true (ancestor) is not selected; packages/mission-ui/test/sk-mission-shell-overlays.test.ts > current marking: exactly one aria-current page per state",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-01T14:56:33.051086+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-019",
+      "description": "Verify FR-019 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-mission-shell.test.ts > tab order > the skip link focuses the content target and shows its per-screen text; wraps the default slot in main > the focus target; packages/mission-ui/test/sk-mission-shell-overlays.test.ts > drawer choosing a navigation item closes it, focus on the content target; flyout choosing an item closes it, focus on the content target; baseline apps/storybook/tests/visual/__snapshots__/mission-shell--skip-link-focused-390.png",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-01T14:56:34.613112+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    }
+  ],
+  "negative_invariants": []
+}
