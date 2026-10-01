@@ -161,10 +161,32 @@ export class SkMissionShell extends LitElement {
       min-height: 0;
     }
     [data-rail]::part(rail) {
+      flex-direction: column;
+      flex-wrap: nowrap;
+      align-items: stretch;
       padding-block: var(--sk-space-3);
       padding-inline: 0;
       overflow: visible;
       background: var(--sk-surface-hero);
+      border-inline-end: var(--sk-border-width-1) solid var(--sk-border-default);
+      border-block-end: 0;
+    }
+    /* The library rail flips to a row at max-width 720px INCLUSIVE; the shell is collapsed from exactly 720px, so the
+       rail is held in its column layout here (the drawer strip keeps the library flip). */
+    [data-rail]::part(primary),
+    [data-rail]::part(bottom) {
+      flex-direction: column;
+      flex-wrap: nowrap;
+      align-items: stretch;
+    }
+    [data-rail]::part(bottom) {
+      margin-block: auto 0;
+      margin-inline: 0;
+    }
+    [data-rail]::part(divider) {
+      align-self: stretch;
+      width: auto;
+      height: var(--sk-border-width-1);
     }
     [data-rail-pinned] {
       display: flex;

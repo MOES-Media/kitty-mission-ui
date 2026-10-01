@@ -176,6 +176,25 @@ describe('tier (FR-005, D-02)', () => {
   });
 });
 
+describe('rail layout at the tier edges', () => {
+  // The library rail flips to a row at max-width 720px inclusive; the shell holds it in a column from 720px up.
+  for (const width of [720, 1100]) {
+    it(`${width}px: the rail is a column and its items are visible`, async () => {
+      const el = await mount(width, missionArgs);
+      const rail = one<HTMLElement>(root(el), 'sk-personal-rail[data-rail]');
+      const part = rail.shadowRoot?.querySelector<HTMLElement>('[part="rail"]');
+      expect(getComputedStyle(part as HTMLElement).flexDirection).toBe('column');
+      const items = Array.from(rail.querySelectorAll<HTMLElement>('sk-shell-nav-item'));
+      expect(items).toHaveLength(missionArgs.railItems.length);
+      for (const item of items) {
+        const box = item.getBoundingClientRect();
+        expect(box.width).toBeGreaterThan(0);
+        expect(box.height).toBeGreaterThan(0);
+      }
+    });
+  }
+});
+
 describe('frame and landmarks (FR-001, FR-002, FR-004, FR-008)', () => {
   it('project layout: top bar and one sidebar, no rail', async () => {
     const el = await mount(1280, projectArgs);

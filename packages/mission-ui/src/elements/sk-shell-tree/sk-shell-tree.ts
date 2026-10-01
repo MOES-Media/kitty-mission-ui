@@ -66,6 +66,9 @@ export class SkShellTree extends LitElement {
       display: block;
       padding-inline: var(--sk-space-5) 0;
     }
+    [data-prefix] {
+      font-family: var(--sk-font-mono);
+    }
     sk-section-header {
       margin-block: 0 var(--sk-space-3);
       padding-inline: var(--sk-space-3);
@@ -165,7 +168,7 @@ export class SkShellTree extends LitElement {
   }
 
   private renderLabel(node: TreeNode): TemplateResult {
-    return html`${node.prefix ? html`<span>${node.prefix}</span> ` : nothing}${node.label}`;
+    return html`${node.prefix ? html`<span data-prefix>${node.prefix}</span> ` : nothing}${node.label}`;
   }
 
   private renderLeaf(node: TreeNode): TemplateResult {

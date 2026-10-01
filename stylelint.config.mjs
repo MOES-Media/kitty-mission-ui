@@ -107,6 +107,8 @@ const LAYOUT_PROPERTIES = [
 
 // Operator-approved exception (2026-10-01): shell chrome paint, token values only; sunset when @spec-kitty/elements
 // ships top bar / flat nav row / rail-without-720-flip equivalents (design-library issues).
+// Design-library issues: spec-kitty/spec-kitty-design#492 (rail flip), #493 (flush row density), #494 (top bar),
+// #495 (aria-current=true), #496 (button icons), #497 (context sidebar, section header, eyebrow).
 // Scope: ONLY the shell element files. Every other element keeps the layout-only rule above.
 const SHELL_PAINT_PROPERTIES = [
   'background',
@@ -153,7 +155,8 @@ export default {
     { files: ['**/*.{ts,mts,cts,tsx,js,mjs,cjs,jsx}'], customSyntax: 'postcss-lit' },
     {
       // Operator-approved exception (2026-10-01): shell chrome paint, token values only; sunset when
-      // @spec-kitty/elements ships top bar / flat nav row / rail-without-720-flip equivalents (design-library issues).
+      // @spec-kitty/elements ships top bar / flat nav row / rail-without-720-flip equivalents (design-library issues:
+      // spec-kitty/spec-kitty-design#492 to #497, listed above).
       files: SHELL_FILES,
       rules: {
         'scale-unlimited/declaration-strict-value': [

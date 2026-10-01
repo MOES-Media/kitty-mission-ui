@@ -39,10 +39,10 @@ export const mission: ShellMission = {
 };
 
 export const workPackageTree: TreeNode[] = [
-  { id: 'wp-01', label: 'Foundation and tokens', href: '#/wp/01', kind: 'leaf', prefix: 'WP01', icon: 'work-packages', meta: 'done' },
-  { id: 'wp-02', label: 'Library elements', href: '#/wp/02', kind: 'leaf', prefix: 'WP02', icon: 'work-packages', meta: 'review' },
-  { id: 'wp-03', label: 'Shell tree', href: '#/wp/03', kind: 'leaf', prefix: 'WP03', icon: 'work-packages', meta: 'doing' },
-  { id: 'wp-04', label: 'Responsive shell', href: '#/wp/04', kind: 'leaf', prefix: 'WP04', icon: 'work-packages', meta: 'planned' },
+  { id: 'wp-01', label: 'Design tokens', href: '#/wp/01', kind: 'leaf', prefix: 'WP01' },
+  { id: 'wp-02', label: 'Library elements', href: '#/wp/02', kind: 'leaf', prefix: 'WP02' },
+  { id: 'wp-03', label: 'Shell tree', href: '#/wp/03', kind: 'leaf', prefix: 'WP03' },
+  { id: 'wp-04', label: 'Responsive shell', href: '#/wp/04', kind: 'leaf', prefix: 'WP04' },
 ];
 
 export const artifactsTree: TreeNode[] = [

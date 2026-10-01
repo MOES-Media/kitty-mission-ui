@@ -131,6 +131,9 @@ const manyLeaves = (): ShellSection[] => [
 // element's own `drawer-open` / `flyout-open` properties; there are no play functions and no timers.
 type StoryArgs = SkMissionShell & ShellStoryArgs;
 
+// The host's top-bar action (the prototype's settings gear), drawn locally: the library ships no icon set.
+const settingsIcon = html`<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="3"/><path d="M21 13.5v-3l-2-.7-.6-1.4.9-1.9-2.1-2.1-1.9.9-1.4-.6-.7-2h-3l-.7 2-1.4.6-1.9-.9-2.1 2.1.9 1.9-.6 1.4-2 .7v3l2 .7.6 1.4-.9 1.9 2.1 2.1 1.9-.9 1.4.6.7 2h3l.7-2 1.4-.6 1.9.9 2.1-2.1-.9-1.9.6-1.4z"/></svg>`;
+
 function content(args: ShellStoryArgs): TemplateResult | undefined {
   if (args.content === 'none') return undefined;
   if (args.content === 'ready') return html`<sk-mission-sample status="ready" .mission=${exampleMission}></sk-mission-sample>`;
@@ -162,6 +165,7 @@ const meta: Meta<StoryArgs> = {
       ?flyout-open=${args.flyoutOpen}
     >
       <span slot="skip-link">${args.skipLinkText}</span>
+      <sk-button slot="top-bar-actions" size="icon" variant="ghost" label="Settings">${settingsIcon}</sk-button>
       ${args.sections.map(
         (section) =>
           html`<sk-shell-tree
@@ -198,7 +202,7 @@ export const ShellError1280: Story = { tags: ['vw-1280'], args: project('nav-mis
 export const ShellEmpty1280: Story = { tags: ['vw-1280'], args: project('nav-missions', shellStatus('empty')) };
 export const MissionShellError1280: Story = { tags: ['vw-1280'], args: mission('nav-pipeline', [], shellStatus('error')) };
 export const SkipLinkFocused1280: Story = { tags: ['vw-1280', 'tab-1'], args: project('nav-missions') };
-export const NavItemFocusVisible1280: Story = { tags: ['vw-1280', 'tab-3'], args: project('nav-missions') };
+export const NavItemFocusVisible1280: Story = { tags: ['vw-1280', 'tab-4'], args: project('nav-missions') };
 export const LongNames1280: Story = { tags: ['vw-1280'], args: longNames() };
 
 // Collapsed tier (1024, 800): icon column, flyout on demand.
@@ -209,7 +213,7 @@ export const MissionWorkPackageNoneSelected1024: Story = { tags: ['vw-1024'], ar
 export const MissionArtifacts1024: Story = { tags: ['vw-1024'], args: mission('nav-artifacts', artifactsExpanded()) };
 export const MissionShellError1024: Story = { tags: ['vw-1024'], args: mission('nav-pipeline', [], shellStatus('error')) };
 export const ProjectShellLoading1024: Story = { tags: ['vw-1024'], args: project('nav-missions', shellStatus('loading')) };
-export const LabelBubbleVisible1024: Story = { tags: ['vw-1024', 'tab-2'], args: project('nav-missions') };
+export const LabelBubbleVisible1024: Story = { tags: ['vw-1024', 'tab-3'], args: project('nav-missions') };
 export const FlyoutWorkPackages1024: Story = { tags: ['vw-1024'], args: mission('nav-work-packages', wpSelected(), { flyoutOpen: true }) };
 export const FlyoutArtifacts1024: Story = { tags: ['vw-1024'], args: mission('nav-artifacts', artifactsExpanded(), { flyoutOpen: true }) };
 export const ProjectMissions800: Story = { tags: ['vw-800'], args: project('nav-missions') };
