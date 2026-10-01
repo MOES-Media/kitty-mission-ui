@@ -30,7 +30,7 @@ import type { SidebarContext } from './shell-parts.js';
 import { ShellOverlays } from './shell-overlays.js';
 
 const EXPANDED_QUERY = '(min-width: 1100px)';
-const COLLAPSED_QUERY = '(min-width: 620px)';
+const COLLAPSED_QUERY = '(min-width: 720px)';
 
 /**
  * Application shell screen: top bar, optional rail, sidebar (project or mission) and the content column. The host owns
@@ -56,12 +56,15 @@ const COLLAPSED_QUERY = '(min-width: 620px)';
  * @slot sidebar-section - sk-shell-tree sections shown in the sidebar, drawer and flyout
  */
 export class SkMissionShell extends LitElement {
-  // Layout only (C-005): grid placement, tokens, `%` and `fr`. Gap G-01..G-03, G-07, G-10, G-15: grid, top bar, rail,
-  // icon column and skip link are local until the library ships them.
+  // Layout, plus shell chrome paint (operator-approved stylelint exception 2026-10-01: token values only). Gap G-01..G-03,
+  // G-07, G-10, G-15: grid, top bar, rail, icon column and skip link are local until the library ships them.
   static override styles = css`
     :host {
       display: block;
       min-width: 0;
+      color: var(--sk-fg-body);
+      background: var(--sk-surface-page);
+      font-family: var(--sk-font-sans);
     }
     [data-frame] {
       display: grid;
@@ -87,18 +90,52 @@ export class SkMissionShell extends LitElement {
       align-items: center;
       gap: var(--sk-space-3);
       box-sizing: border-box;
-      block-size: var(--sk-layout-page-header-compact-height);
-      padding-inline: var(--sk-space-3);
+      block-size: calc(var(--sk-space-9) + var(--sk-space-1));
+      padding-inline: var(--sk-space-4);
       min-width: 0;
+      background: var(--sk-surface-hero);
+      border-block-end: var(--sk-border-width-1) solid var(--sk-border-default);
     }
     [data-brand] {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--sk-space-2);
+      flex: none;
       min-width: 0;
+      color: var(--sk-fg-default);
+      font-family: var(--sk-font-display);
+      font-size: var(--sk-text-lg);
+      font-weight: var(--sk-weight-bold);
+    }
+    [data-brand] slot {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--sk-space-2);
+    }
+    [data-brand-mark] {
+      inline-size: var(--sk-space-5);
+      block-size: var(--sk-space-5);
+      color: var(--sk-color-yellow);
+    }
+    [data-top-bar-context] {
+      flex: 1 1 0;
+      min-width: 0;
+      overflow: hidden;
+      color: var(--sk-fg-muted);
+      font-size: var(--sk-text-sm);
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
     [data-top-bar-actions] {
       display: flex;
       align-items: center;
       gap: var(--sk-space-2);
       margin-inline: auto 0;
+    }
+    sk-button svg {
+      display: block;
+      inline-size: var(--sk-space-5);
+      block-size: var(--sk-space-5);
     }
     [data-body] {
       display: grid;
@@ -119,30 +156,124 @@ export class SkMissionShell extends LitElement {
     [data-body][data-tier='collapsed'][data-layout='mission'] {
       grid-template-columns: var(--sk-layout-personal-rail-width) var(--sk-layout-personal-rail-width) minmax(0, 1fr);
     }
-    [data-rail],
+    [data-rail] {
+      min-width: 0;
+      min-height: 0;
+    }
+    [data-rail]::part(rail) {
+      padding-block: var(--sk-space-3);
+      padding-inline: 0;
+      overflow: visible;
+      background: var(--sk-surface-hero);
+    }
+    [data-rail-pinned] {
+      display: flex;
+      flex: 1 1 auto;
+      flex-direction: column;
+      gap: var(--sk-space-2);
+      min-width: 0;
+    }
     [data-icon-column] {
       display: flex;
       flex-direction: column;
-      gap: var(--sk-space-1);
+      gap: var(--sk-space-2);
       box-sizing: border-box;
-      padding-block: var(--sk-space-2);
+      padding-block: var(--sk-space-3);
       min-width: 0;
       min-height: 0;
       overflow: visible;
+      background: var(--sk-surface-card);
+      border-inline-end: var(--sk-border-width-1) solid var(--sk-border-default);
     }
-    [data-rail-pinned],
     [data-icon-column-pinned] {
       display: flex;
       flex-direction: column;
-      gap: var(--sk-space-1);
+      gap: var(--sk-space-2);
       margin-block: auto 0;
     }
     sk-context-sidebar {
       min-height: 0;
     }
     sk-context-sidebar::part(sidebar) {
-      padding: var(--sk-space-3);
+      gap: 0;
+      padding: 0;
       overflow-y: auto;
+    }
+    [data-head] {
+      box-sizing: border-box;
+      padding-block: var(--sk-space-5);
+      padding-inline: var(--sk-space-4);
+      border-block-end: var(--sk-border-width-1) solid var(--sk-border-default);
+    }
+    [data-head] sk-section-header::part(header) {
+      column-gap: 0;
+    }
+    [data-head] sk-section-header::part(eyebrow) {
+      color: var(--sk-fg-subtle);
+    }
+    [data-head] [slot='title'] {
+      display: block;
+      min-width: 0;
+      color: var(--sk-fg-default);
+      font-size: var(--sk-text-base);
+      font-weight: var(--sk-weight-bold);
+      overflow-wrap: anywhere;
+    }
+    [data-head] [slot='description'] {
+      color: var(--sk-fg-muted);
+      font-family: var(--sk-font-mono);
+      font-size: var(--sk-text-xs);
+      overflow-wrap: anywhere;
+    }
+    [data-back] {
+      margin-block: 0 var(--sk-space-3);
+    }
+    [data-back]::part(button) {
+      padding-block: var(--sk-space-1);
+      padding-inline: 0;
+    }
+    [data-back] svg {
+      inline-size: var(--sk-space-4);
+      block-size: var(--sk-space-4);
+    }
+    [data-mission-meta] {
+      display: flex;
+      flex-direction: column;
+      gap: var(--sk-space-3);
+      min-width: 0;
+    }
+    [data-mission-tags] {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--sk-space-2);
+    }
+    [data-nav] {
+      display: block;
+      box-sizing: border-box;
+      padding-block: var(--sk-space-3);
+      padding-inline: var(--sk-space-3);
+    }
+    slot[name='sidebar-section']::slotted(*) {
+      display: block;
+      box-sizing: border-box;
+      padding-block: var(--sk-space-4);
+      padding-inline: var(--sk-space-3);
+      border-block-start: var(--sk-border-width-1) solid var(--sk-border-default);
+    }
+    [data-footer] {
+      box-sizing: border-box;
+      padding: var(--sk-space-3);
+      border-block-start: var(--sk-border-width-1) solid var(--sk-border-default);
+    }
+    [data-footer-progress] {
+      display: flex;
+      justify-content: space-between;
+      gap: var(--sk-space-3);
+      color: var(--sk-fg-muted);
+      font-size: var(--sk-text-sm);
+    }
+    [data-footer-percent] {
+      font-family: var(--sk-font-mono);
     }
     [data-content] {
       display: flex;
@@ -150,6 +281,7 @@ export class SkMissionShell extends LitElement {
       min-width: 0;
       min-height: 0;
       overflow: auto;
+      background: var(--sk-surface-page);
     }
     [data-status-body] {
       padding-inline: var(--sk-space-4);
@@ -159,6 +291,10 @@ export class SkMissionShell extends LitElement {
       display: block;
       flex-grow: 1;
       min-width: 0;
+      padding: var(--sk-space-6);
+    }
+    [data-body][data-tier='mobile'] main {
+      padding: var(--sk-space-4);
     }
     [data-focus-target] {
       min-width: 0;
@@ -368,6 +504,11 @@ export class SkMissionShell extends LitElement {
     return this.overlays.renderFlyout(context);
   }
 
+  /** What the mobile top bar shows beside the brand: the mission title or the project name. */
+  private contextLabel(layout: ShellLayout): string {
+    return (layout === 'mission' ? this.mission?.title : this.project?.name) ?? '';
+  }
+
   protected override render(): TemplateResult {
     const layout: ShellLayout = this.layout === 'mission' ? 'mission' : 'project';
     const tier = this.tier;
@@ -392,7 +533,7 @@ export class SkMissionShell extends LitElement {
     const showRail = layout === 'mission' && tier !== 'mobile';
     return html`<div data-frame>
       ${renderSkipLink({ onSkipLink: (event) => this.onSkipLink(event) })}
-      ${renderTopBar({ tier, onHamburger: () => this.requestDrawer('hamburger') })}
+      ${renderTopBar({ tier, context: this.contextLabel(layout), onHamburger: () => this.requestDrawer('hamburger') })}
       <div data-body data-layout=${layout} data-tier=${tier}>
         ${showRail ? renderRail({ items: this.railItems, marking }) : nothing}
         ${tier === 'expanded' ? renderSidebar(sidebarContext) : nothing}

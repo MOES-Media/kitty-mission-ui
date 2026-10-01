@@ -57,15 +57,21 @@ export function resolveMarking(
 
 export interface TopBarContext {
   tier: ShellTier;
+  /** The project name or mission title: shown beside the brand on mobile, where no sidebar is on screen. */
+  context: string;
   onHamburger: () => void;
 }
+
+// The prototype's brand mark (two arrowheads), drawn here because the library ships no brand mark.
+const BRAND_MARK = html`<svg data-brand-mark viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M3 12 9 7v10Zm18 0-6-5v10ZM9 9h6v6H9z"/></svg>`;
 
 export function renderTopBar(ctx: TopBarContext): TemplateResult {
   return html`<header data-top-bar>
     ${ctx.tier === 'mobile'
       ? html`<sk-button size="icon" variant="ghost" label="Open navigation" @click=${ctx.onHamburger}>${renderIcon('menu')}</sk-button>`
       : nothing}
-    <div data-brand><slot name="brand">kitty desktop</slot></div>
+    <div data-brand><slot name="brand">${BRAND_MARK}<span>kitty desktop</span></slot></div>
+    ${ctx.tier === 'mobile' && ctx.context !== '' ? html`<span data-top-bar-context>${ctx.context}</span>` : nothing}
     <div data-top-bar-actions><slot name="top-bar-actions"></slot></div>
   </header>`;
 }
@@ -86,15 +92,16 @@ export interface RailContext {
   marking: Marking;
 }
 
+/** The library personal rail: items in its primary slot, pinned items in its account slot (below its divider). */
 export function renderRail(ctx: RailContext): TemplateResult {
   const main = ctx.items.filter((item) => item.pinned !== true);
   const pinned = ctx.items.filter((item) => item.pinned === true);
-  return html`<nav data-rail aria-label="Global navigation">
-    ${main.map((item) => navItem(item, markFor('rail', item.id, ctx.marking), true))}
+  return html`<sk-personal-rail data-rail label="Global navigation">
+    ${main.map((item) => html`<div slot="primary" data-rail-item>${navItem(item, markFor('rail', item.id, ctx.marking), true)}</div>`)}
     ${pinned.length > 0
-      ? html`<div data-rail-pinned>${pinned.map((item) => navItem(item, markFor('rail', item.id, ctx.marking), true))}</div>`
+      ? html`<div slot="account" data-rail-pinned>${pinned.map((item) => navItem(item, markFor('rail', item.id, ctx.marking), true))}</div>`
       : nothing}
-  </nav>`;
+  </sk-personal-rail>`;
 }
 
 export interface SidebarContext {
@@ -121,40 +128,57 @@ function renderMissionHead(mission: ShellMission | null, onBack: SidebarContext[
   if (mission === null) return nothing;
   const back = mission.backItem;
   return html`${back
-      ? html`<sk-button variant="ghost" href=${back.href} @click=${(event: MouseEvent) => onBack(event, back)}
+      ? html`<sk-button data-back variant="ghost" size="sm" href=${back.href} @click=${(event: MouseEvent) => onBack(event, back)}
           >${renderIcon('back')} ${back.label}</sk-button
         >`
       : nothing}
     <sk-section-header>
       <span slot="title">${mission.title}</span>
-      ${mission.tags.length > 0
-        ? html`<span slot="metadata"
-            >${mission.tags.map((tag) => html`<sk-pill-tag status=${tag.tone}>${tag.label}</sk-pill-tag>`)}</span
-          >`
-        : nothing}
+      <div slot="description" data-mission-meta>
+        <span data-mission-id>${mission.id}</span>
+        ${mission.tags.length > 0
+          ? html`<div data-mission-tags>${mission.tags.map((tag) => html`<sk-pill-tag status=${tag.tone}>${tag.label}</sk-pill-tag>`)}</div>`
+          : nothing}
+      </div>
     </sk-section-header>`;
 }
 
-function renderFooter(ctx: SidebarContext): TemplateResult | typeof nothing {
+/** The sidebar head (expanded sidebar, drawer and flyout share it): project or mission, with its divider below. */
+export function renderHead(ctx: SidebarContext): TemplateResult {
+  return html`<div data-head>${ctx.layout === 'mission' ? renderMissionHead(ctx.mission, ctx.onBack) : renderProjectHead(ctx.project)}</div>`;
+}
+
+/**
+ * The sidebar footer, or `nothing` when there is none. The mission footer is the prototype's progress text; the library
+ * has no progress element yet, so no bar is drawn.
+ */
+export function renderFooter(ctx: SidebarContext): TemplateResult | typeof nothing {
   if (ctx.layout === 'mission') {
-    const mission = ctx.mission;
-    if (mission === null) return nothing;
-    const progress = mission.progress;
-    return html`<span>${mission.id}</span>${progress ? html` <span>${progress.done}/${progress.total}</span>` : nothing}`;
+    const progress = ctx.mission?.progress;
+    if (!progress) return nothing;
+    const percent = progress.total > 0 ? Math.round((progress.done / progress.total) * 100) : 0;
+    return html`<div slot="footer" data-footer data-footer-progress>
+      <span>${progress.total} Work Packages</span><span data-footer-percent>${percent}%</span>
+    </div>`;
   }
   const item = ctx.footerItem;
-  return item ? navItem(item, markFor('sidebar', item.id, ctx.marking), false) : nothing;
+  return item ? html`<div slot="footer" data-footer>${navItem(item, markFor('sidebar', item.id, ctx.marking), false)}</div>` : nothing;
+}
+
+/** The section navigation, shared by the expanded sidebar and the drawer. */
+export function renderSectionNav(ctx: SidebarContext): TemplateResult {
+  return html`<nav data-nav aria-label="Section navigation">
+    ${ctx.items.map((item) => navItem(item, markFor('sidebar', item.id, ctx.marking), false))}
+  </nav>`;
 }
 
 /** Expanded tier: the library sidebar (complementary landmark) with head, one navigation and the slotted sections. */
 export function renderSidebar(ctx: SidebarContext): TemplateResult {
   return html`<sk-context-sidebar label=${ctx.layout === 'mission' ? 'Mission sidebar' : 'Project sidebar'}>
-    <div slot="header">${ctx.layout === 'mission' ? renderMissionHead(ctx.mission, ctx.onBack) : renderProjectHead(ctx.project)}</div>
-    <nav aria-label="Section navigation">
-      ${ctx.items.map((item) => navItem(item, markFor('sidebar', item.id, ctx.marking), false))}
-    </nav>
+    <div slot="header">${renderHead(ctx)}</div>
+    ${renderSectionNav(ctx)}
     <slot name="sidebar-section" @slotchange=${ctx.onSectionSlotChange}></slot>
-    <div slot="footer">${renderFooter(ctx)}</div>
+    ${renderFooter(ctx)}
   </sk-context-sidebar>`;
 }
 

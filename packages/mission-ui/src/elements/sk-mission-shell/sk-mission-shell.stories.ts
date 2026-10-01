@@ -201,7 +201,7 @@ export const SkipLinkFocused1280: Story = { tags: ['vw-1280', 'tab-1'], args: pr
 export const NavItemFocusVisible1280: Story = { tags: ['vw-1280', 'tab-3'], args: project('nav-missions') };
 export const LongNames1280: Story = { tags: ['vw-1280'], args: longNames() };
 
-// Collapsed tier (1024, 800, 680): icon column, flyout on demand.
+// Collapsed tier (1024, 800): icon column, flyout on demand.
 export const ProjectMissions1024: Story = { tags: ['vw-1024'], args: project('nav-missions') };
 export const ProjectDrift1024: Story = { tags: ['vw-1024'], args: project('nav-drift') };
 export const MissionPipeline1024: Story = { tags: ['vw-1024'], args: mission('nav-pipeline') };
@@ -215,9 +215,10 @@ export const FlyoutArtifacts1024: Story = { tags: ['vw-1024'], args: mission('na
 export const ProjectMissions800: Story = { tags: ['vw-800'], args: project('nav-missions') };
 export const ProjectOps800: Story = { tags: ['vw-800'], args: project('nav-ops') };
 export const MissionArtifacts800: Story = { tags: ['vw-800'], args: mission('nav-artifacts', artifactsExpanded()) };
-export const ProjectMissions680: Story = { tags: ['vw-680'], args: project('nav-missions') };
 
-// Mobile tier (390, 320): the sidebar lives in an overlay drawer opened from the top bar.
+// Mobile tier (680, 390, 320): the sidebar lives in an overlay drawer opened from the top bar. 680 is mobile since the
+// collapsed tier now starts at 720.
+export const ProjectClosed680: Story = { tags: ['vw-680'], args: project('nav-missions') };
 export const ProjectClosed390: Story = { tags: ['vw-390'], args: project('nav-missions') };
 export const MissionClosed390: Story = { tags: ['vw-390'], args: mission('nav-pipeline') };
 export const ProjectDrawerOpen390: Story = { tags: ['vw-390'], args: project('nav-missions', { drawerOpen: true }) };

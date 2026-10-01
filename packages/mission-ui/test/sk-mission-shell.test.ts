@@ -106,8 +106,9 @@ function navItems(el: SkMissionShell, scope: string): Array<{ id: string; curren
   }));
 }
 
+// The landmark names, in document order: the library rail's label stands for the navigation inside its own shadow root.
 function navLabels(el: SkMissionShell): string[] {
-  return Array.from(root(el).querySelectorAll('nav')).map((nav) => nav.getAttribute('aria-label') ?? '');
+  return Array.from(root(el).querySelectorAll('nav, sk-personal-rail')).map((nav) => nav.getAttribute('aria-label') ?? nav.getAttribute('label') ?? '');
 }
 
 function complementaryCount(el: SkMissionShell): number {
@@ -127,9 +128,9 @@ function mountTree(el: SkMissionShell, items = workPackageTree, current = ''): S
 
 describe('tier (FR-005, D-02)', () => {
   const cases: Array<[number, ShellTier]> = [
-    [619, 'mobile'],
-    [620, 'collapsed'],
-    [680, 'collapsed'],
+    [719, 'mobile'],
+    [720, 'collapsed'],
+    [800, 'collapsed'],
     [1099, 'collapsed'],
     [1100, 'expanded'],
   ];
@@ -369,7 +370,7 @@ describe('status (FR-010, D-04)', () => {
 describe('no layout shift across a breakpoint (NFR-003)', () => {
   const crossings: Array<[number, number]> = [
     [1100, 1099],
-    [620, 619],
+    [720, 719],
   ];
   for (const status of ['loading', 'error', 'empty', 'ready'] as const) {
     for (const [from, to] of crossings) {
@@ -462,7 +463,7 @@ describe('tab order (NFR-004, SC-003)', () => {
 describe('long content (NFR-005)', () => {
   // At 200% root font size the content area must not overflow horizontally. (The tier is a window-width query in
   // CSS pixels, so it does not move with the font size: nothing to assert there.)
-  for (const width of [1100, 620]) {
+  for (const width of [1100, 720]) {
     it(`no horizontal overflow at 200% root font size, ${width}px`, async () => {
       const el = await mount(width, { ...missionArgs, ...statusArgs('error', 'A fairly long error message that has to wrap inside the column') });
       document.documentElement.style.fontSize = '200%';

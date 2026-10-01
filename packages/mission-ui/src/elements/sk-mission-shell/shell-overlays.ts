@@ -1,15 +1,15 @@
 // The shell's two overlays: the mobile drawer (a native modal <dialog>) and the collapsed-tier flyout. Both are
 // semi-controlled: a request dispatches a cancelable event first and applies only when nobody prevented it.
-// Gap G-11 (sunset: library `sk-drawer` / `sk-flyout`): the native <dialog> UA border shows and cannot be reset under
-// the layout-only CSS rule; the library sidebar inside it fills the dialog so the UA Canvas background never shows.
+// Gap G-11 (sunset: library `sk-drawer` / `sk-flyout`): the native <dialog> UA border and Canvas background are reset
+// under the shell paint exception; the library sidebar inside it fills the dialog.
 // Gap G-04: overlay chrome is local until the library ships it.
 import { css, html, nothing } from 'lit';
 import type { CSSResult, ReactiveController, ReactiveControllerHost, TemplateResult } from 'lit';
 import '@spec-kitty/elements';
 import '../sk-shell-nav-item/sk-shell-nav-item.js';
 import { renderIcon } from '../../shell-icons.js';
-import type { DrawerReason, FlyoutReason, ShellMission, ShellNavItem, ShellProject, ShellTier } from '../../shell-types.js';
-import { markFor } from './shell-parts.js';
+import type { DrawerReason, FlyoutReason, ShellNavItem, ShellTier } from '../../shell-types.js';
+import { markFor, renderFooter, renderHead, renderSectionNav } from './shell-parts.js';
 import type { Marking, SidebarContext } from './shell-parts.js';
 
 /** What the overlays read from, and write to, the shell. Public members only. */
@@ -38,17 +38,21 @@ type FlyoutFocus = 'icon' | 'content' | 'none';
 
 const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), summary, [tabindex]:not([tabindex="-1"])';
 
-// Layout only (C-005). The shell adopts this sheet next to its own: the overlays own their placement.
+// Layout, plus overlay chrome paint (operator-approved stylelint exception 2026-10-01: token values only). The shell
+// adopts this sheet next to its own: the overlays own their placement.
 export const overlayStyles: CSSResult = css`
   dialog[data-drawer] {
     inset: 0;
     margin: 0;
     padding: 0;
+    border: 0;
     box-sizing: border-box;
     width: var(--sk-layout-context-sidebar-width);
     height: 100%;
     max-height: 100%;
     overflow: hidden;
+    color: var(--sk-fg-body);
+    background: var(--sk-surface-card);
   }
   [data-drawer-body] {
     box-sizing: border-box;
@@ -62,17 +66,22 @@ export const overlayStyles: CSSResult = css`
     height: 100%;
     max-height: 100%;
   }
-  [data-drawer-strip] {
+  [data-drawer-top] {
     display: flex;
-    flex-direction: row;
-    flex-wrap: nowrap;
-    gap: var(--sk-space-1);
-    min-width: 0;
-    overflow: visible;
+    justify-content: flex-end;
+    box-sizing: border-box;
+    padding: var(--sk-space-2);
   }
-  [data-drawer-strip] sk-shell-nav-item {
-    flex: 1 1 0;
+  [data-drawer-strip] {
     min-width: 0;
+    height: auto;
+  }
+  [data-drawer-strip] [slot] {
+    inline-size: var(--sk-space-8);
+  }
+  [data-drawer-strip]::part(rail) {
+    background: var(--sk-surface-hero);
+    overflow: visible;
   }
   [data-body][data-tier='collapsed'] [data-content] {
     grid-row: 1;
@@ -110,49 +119,6 @@ function navItem(item: ShellNavItem, marking: Marking, scope: 'sidebar' | 'rail'
     .current=${markFor(scope, item.id, marking)}
     ?compact=${compact}
   ></sk-shell-nav-item>`;
-}
-
-// The same head as the expanded sidebar (shell-parts keeps its head renderers private).
-function renderHead(ctx: SidebarContext): TemplateResult | typeof nothing {
-  if (ctx.layout === 'mission') return renderMissionHead(ctx.mission, ctx.onBack);
-  return renderProjectHead(ctx.project);
-}
-
-function renderProjectHead(project: ShellProject | null): TemplateResult | typeof nothing {
-  if (project === null) return nothing;
-  return html`<sk-section-header>
-    <span slot="eyebrow">${project.eyebrow}</span>
-    <span slot="title">${project.name}</span>
-    ${project.detail ? html`<span slot="description">${project.detail}</span>` : nothing}
-  </sk-section-header>`;
-}
-
-function renderMissionHead(mission: ShellMission | null, onBack: SidebarContext['onBack']): TemplateResult | typeof nothing {
-  if (mission === null) return nothing;
-  const back = mission.backItem;
-  return html`${back
-      ? html`<sk-button variant="ghost" href=${back.href} @click=${(event: MouseEvent) => onBack(event, back)}
-          >${renderIcon('back')} ${back.label}</sk-button
-        >`
-      : nothing}
-    <sk-section-header>
-      <span slot="title">${mission.title}</span>
-      ${mission.tags.length > 0
-        ? html`<span slot="metadata"
-            >${mission.tags.map((tag) => html`<sk-pill-tag status=${tag.tone}>${tag.label}</sk-pill-tag>`)}</span
-          >`
-        : nothing}
-    </sk-section-header>`;
-}
-
-function renderFooter(ctx: SidebarContext): TemplateResult | typeof nothing {
-  if (ctx.layout === 'mission') {
-    const mission = ctx.mission;
-    if (mission === null) return nothing;
-    const progress = mission.progress;
-    return html`<span>${mission.id}</span>${progress ? html` <span>${progress.done}/${progress.total}</span>` : nothing}`;
-  }
-  return ctx.footerItem ? navItem(ctx.footerItem, ctx.marking, 'sidebar') : nothing;
 }
 
 /** True when `node` is `container` or sits inside it in the flat tree (slots and shadow hosts included). */
@@ -340,6 +306,16 @@ export class ShellOverlays implements ReactiveController {
     if (this.host.drawerOpen) this.host.drawerOpen = false;
   };
 
+  /** The global items as the library rail: below 720px it lays itself out as one row, which is the drawer strip. */
+  private renderStrip(ctx: DrawerContext): TemplateResult {
+    const main = ctx.railItems.filter((item) => item.pinned !== true);
+    const pinned = ctx.railItems.filter((item) => item.pinned === true);
+    return html`<sk-personal-rail data-drawer-strip label="Global navigation">
+      ${main.map((item) => html`<div slot="primary">${navItem(item, ctx.marking, 'rail', true)}</div>`)}
+      ${pinned.length > 0 ? html`<div slot="account">${pinned.map((item) => navItem(item, ctx.marking, 'rail', true))}</div>` : nothing}
+    </sk-personal-rail>`;
+  }
+
   renderDrawer(ctx: DrawerContext): TemplateResult | typeof nothing {
     if (this.host.tier !== 'mobile') return nothing;
     const open = this.host.drawerOpen;
@@ -356,19 +332,17 @@ export class ShellOverlays implements ReactiveController {
         ? html`<div data-drawer-body>
             <sk-context-sidebar label=${mission ? 'Mission sidebar' : 'Project sidebar'}>
               <div slot="header">
-                <sk-button data-drawer-close size="icon" variant="ghost" label="Close navigation" @click=${() => this.setDrawer(false, 'close', 'hamburger')}
-                  >${renderIcon('close')}</sk-button
-                >
-                ${mission && ctx.railItems.length > 0
-                  ? html`<nav data-drawer-strip aria-label="Global navigation">
-                      ${ctx.railItems.map((item) => navItem(item, ctx.marking, 'rail', true))}
-                    </nav>`
-                  : nothing}
+                <div data-drawer-top>
+                  <sk-button data-drawer-close size="icon" variant="ghost" label="Close navigation" @click=${() => this.setDrawer(false, 'close', 'hamburger')}
+                    >${renderIcon('close')}</sk-button
+                  >
+                </div>
+                ${mission && ctx.railItems.length > 0 ? this.renderStrip(ctx) : nothing}
                 ${renderHead(ctx)}
               </div>
-              <nav aria-label="Section navigation">${ctx.items.map((item) => navItem(item, ctx.marking, 'sidebar'))}</nav>
+              ${renderSectionNav(ctx)}
               <slot name="sidebar-section" @slotchange=${this.hooks.onSectionSlotChange}></slot>
-              <div slot="footer">${renderFooter(ctx)}</div>
+              ${renderFooter(ctx)}
             </sk-context-sidebar>
           </div>`
         : nothing}

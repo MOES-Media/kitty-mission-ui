@@ -34,7 +34,7 @@ export const mission: ShellMission = {
     { label: 'software-dev', tone: 'info' },
     { label: 'in review', tone: 'attention' },
   ],
-  backItem: { id: 'back-missions', label: 'Missions', href: '#/missions', icon: 'back' },
+  backItem: { id: 'back-missions', label: 'All Missions', href: '#/missions', icon: 'back' },
   progress: { done: 3, total: 6 },
 };
 
@@ -75,7 +75,7 @@ export const longMission: ShellMission = {
   title: 'A-mission-title-that-is-one-single-unbroken-word-which-keeps-going-and-going-past-any-sidebar-width',
   id: 'mission-with-a-very-long-identifier-that-also-does-not-break-anywhere-01M3V82X',
   tags: [{ label: 'a-tag-with-a-long-unbroken-label-in-it', tone: 'neutral' }],
-  backItem: { id: 'back-missions', label: 'Missions', href: '#/missions', icon: 'back' },
+  backItem: { id: 'back-missions', label: 'All Missions', href: '#/missions', icon: 'back' },
   progress: { done: 1, total: 12 },
 };
 

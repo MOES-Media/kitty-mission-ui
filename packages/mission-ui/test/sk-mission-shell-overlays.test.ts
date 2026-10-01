@@ -169,7 +169,7 @@ describe('drawer (mobile, FR-007)', () => {
     await openDrawer(el);
     expect(dialog(el).getAttribute('aria-label')).toBeTruthy();
     expect(dialog(el).querySelector('[role]')).toBeNull();
-    expect(dialog(el).querySelector('nav[aria-label="Global navigation"]')).not.toBeNull();
+    expect(dialog(el).querySelector('sk-personal-rail[label="Global navigation"]')).not.toBeNull();
     expect(dialog(el).querySelector('slot[name="sidebar-section"]')).not.toBeNull();
     expect(root(el).querySelectorAll('dialog')).toHaveLength(1);
     // The content behind a modal dialog cannot be focused.
@@ -257,7 +257,7 @@ describe('drawer (mobile, FR-007)', () => {
   it('a rail item and the back link close it too', async () => {
     const el = await mount(390);
     await openDrawer(el);
-    one<HTMLElement>(dialog(el), 'nav[aria-label="Global navigation"] sk-shell-nav-item[item-id="rail-drift"]').focus();
+    one<HTMLElement>(dialog(el), 'sk-personal-rail[label="Global navigation"] sk-shell-nav-item[item-id="rail-drift"]').focus();
     await userEvent.keyboard('{Enter}');
     await vi.waitFor(() => expect(dialog(el).open).toBe(false));
     await openDrawer(el);

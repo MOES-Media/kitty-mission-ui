@@ -23,7 +23,7 @@ const entryById = new Map(stories.map((entry) => [entry.id, entry]));
 
 // Story tags: `vw-<n>` sets the viewport width (and asserts the shell tier), `tab-<n>` presses Tab n times before the shot.
 // Stories with neither tag behave exactly as before.
-const TIER_BREAKPOINTS = { expanded: 1100, collapsed: 620 } as const;
+const TIER_BREAKPOINTS = { expanded: 1100, collapsed: 720 } as const;
 
 function tagNumber(entry: IndexEntry, prefix: string): number | undefined {
   const tag = (entry.tags ?? []).find((t) => new RegExp(`^${prefix}-\\d+$`).test(t));

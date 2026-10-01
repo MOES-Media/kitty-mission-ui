@@ -8,8 +8,8 @@
   and the content column inside a `main` landmark, with its own `status` view state (loading, error, empty, ready) shown
   at the top of the content. The host owns routing, data and persistence; the shell owns layout and the responsive tier.
 - Three responsive tiers, read from the window width and reflected on the `tier` attribute: expanded (1100px and up:
-  rail, sidebar and content), collapsed (620 to 1099px: icon column with a flyout for the sidebar sections) and mobile
-  (under 620px: a hamburger and an overlay drawer that also carries a one-row rail strip in the mission layout).
+  rail, sidebar and content), collapsed (720 to 1099px: icon column with a flyout for the sidebar sections) and mobile
+  (under 720px: a hamburger and an overlay drawer that also carries a one-row rail strip in the mission layout).
 - `sk-shell-nav-item` and `sk-shell-tree` (pattern elements, no `@screen`): a vertical navigation row with icon,
   `aria-current` and a compact icon-only mode with a label bubble, and a tree of leaves and folders with
   `aria-expanded` / `aria-controls`. Both are slotted into the shell as `sidebar-section`.
@@ -30,7 +30,7 @@ design library are filed by the orchestrator at pull-request time, not from this
 |---|---|---|---|
 | G-01 | `sk-app-shell` has no project (sidebar-only) layout or icon-column mode | `layout` and `sidebar` attributes on `sk-app-shell` | local grid deleted |
 | G-02 | no top-bar slot or banner landmark | `top-bar` slot in a `<header>` | local top bar removed |
-| G-03 | tier breakpoints are container-based and fixed | configurable or window-based thresholds (1100, 620) | `matchMedia` tier code removed |
+| G-03 | tier breakpoints are container-based and fixed | configurable or window-based thresholds (1100, 720) | `matchMedia` tier code removed |
 | G-04 | compact drawer is in-flow, not an overlay with backdrop | overlay drawer with focus trap, Escape, return focus | local dialog drawer removed |
 | G-05 | no vertical nav item or tree with expanded state | `sk-nav-item`, `sk-tree` | `sk-shell-nav-item` and `sk-shell-tree` become wrappers or go |
 | G-06 | `sk-button` forwards only `label` (no `aria-expanded`, `aria-controls`, `aria-current`) | attribute passthrough | state-in-name workaround removed |
