@@ -569,7 +569,8 @@
               },
               "default": "''",
               "description": "Selected leaf id; empty marks none.",
-              "attribute": "current"
+              "attribute": "current",
+              "reflects": true
             }
           ],
           "events": [

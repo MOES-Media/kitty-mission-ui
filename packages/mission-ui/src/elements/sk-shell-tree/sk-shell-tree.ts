@@ -37,8 +37,9 @@ export class SkShellTree extends LitElement {
   @property({ attribute: false })
   items: TreeNode[] = [];
 
+  // Reflected so the shell can observe the selection.
   /** Selected leaf id; empty marks none. */
-  @property()
+  @property({ reflect: true })
   current = '';
 
   static override styles = css`
