@@ -11,6 +11,9 @@ requirement_refs:
 planning_base_branch: feat/app-shell
 merge_target_branch: feat/app-shell
 branch_strategy: Planning artifacts for this mission were generated on feat/app-shell. During /spec-kitty.implement this WP may branch from a dependency-specific base, but completed changes must merge back into feat/app-shell unless the human explicitly redirects the landing branch.
+base_branch: kitty/mission-app-shell-01M3V82X
+base_commit: 8d685bd326443dcd487b79185db2a4141e2385c3
+created_at: '2026-10-01T08:48:11.839755+00:00'
 subtasks:
 - T001
 - T002

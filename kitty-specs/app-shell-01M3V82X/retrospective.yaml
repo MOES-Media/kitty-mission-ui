@@ -1,0 +1,258 @@
+schema_version: 1
+mission_id: 01M3V82XTXMDYCND2BWY7M5SZF
+mission_slug: app-shell-01M3V82X
+mission_number: 1
+friendly_name: App shell with all its states
+mission_type: software-dev
+target_branch: feat/app-shell
+created_at: '2026-10-01T11:44:26.773375+00:00'
+created_by:
+  kind: runtime
+  id: spec-kitty-generator
+  display: Spec Kitty Generator
+provenance:
+  kind: runtime_post_completion
+  invoked_at: '2026-10-01T11:44:26.773375+00:00'
+  policy_resolved_from:
+    enabled: <default>
+    timing: <default>
+    failure_policy: <default>
+    write_record: <default>
+    generate_proposals: <default>
+    apply_proposals: <default>
+    permissions.write_record: <default>
+    permissions.inspect_mission_artifacts: <default>
+    permissions.propose_glossary_changes: <default>
+    permissions.propose_drg_changes: <default>
+    permissions.propose_doctrine_changes: <default>
+    permissions.apply_low_risk_changes: <default>
+    permissions.apply_structural_changes: <default>
+    precedence: <default>
+    generator: <default>
+policy_source:
+  enabled: <default>
+  timing: <default>
+  failure_policy: <default>
+  write_record: <default>
+  generate_proposals: <default>
+  apply_proposals: <default>
+  permissions.write_record: <default>
+  permissions.inspect_mission_artifacts: <default>
+  permissions.propose_glossary_changes: <default>
+  permissions.propose_drg_changes: <default>
+  permissions.propose_doctrine_changes: <default>
+  permissions.apply_low_risk_changes: <default>
+  permissions.apply_structural_changes: <default>
+  precedence: <default>
+  generator: <default>
+findings_status: has_findings
+helped:
+- id: h-001
+  category: implementation
+  summary: WP03 completed without rejection cycles
+  evidence_refs:
+  - e-011
+- id: h-002
+  category: implementation
+  summary: WP06 completed without rejection cycles
+  evidence_refs:
+  - e-011
+not_helpful:
+- id: n-015
+  category: doc
+  summary: analysis-report.md present with findings
+  evidence_refs:
+  - e-026
+  details: An analysis-report.md artifact is present for this mission. Review its findings to understand documented
+    issues and decisions.
+- id: n-011
+  category: implementation
+  summary: WP01 needed 2 implementation cycles
+  evidence_refs:
+  - e-022
+  details: WP WP01 entered in_progress 2 times. Multiple implementation cycles suggest rework not captured as a
+    documented review rejection; the WP scope or contract may need refinement.
+- id: n-012
+  category: implementation
+  summary: WP02 needed 2 implementation cycles
+  evidence_refs:
+  - e-023
+  details: WP WP02 entered in_progress 2 times. Multiple implementation cycles suggest rework not captured as a
+    documented review rejection; the WP scope or contract may need refinement.
+- id: n-013
+  category: implementation
+  summary: WP04 needed 3 implementation cycles
+  evidence_refs:
+  - e-024
+  details: WP WP04 entered in_progress 3 times. Multiple implementation cycles suggest rework not captured as a
+    documented review rejection; the WP scope or contract may need refinement.
+- id: n-014
+  category: implementation
+  summary: WP05 needed 3 implementation cycles
+  evidence_refs:
+  - e-025
+  details: WP WP05 entered in_progress 3 times. Multiple implementation cycles suggest rework not captured as a
+    documented review rejection; the WP scope or contract may need refinement.
+- id: n-005
+  category: process
+  summary: WP01 required 4 --force override(s) during workflow
+  evidence_refs:
+  - e-016
+  details: WP WP01 required 4 operator-driven --force lane transition(s). Force overrides typically indicate the runtime
+    guard failed or the operator routed around it; investigate the underlying cause.
+- id: n-006
+  category: process
+  summary: WP02 required 4 --force override(s) during workflow
+  evidence_refs:
+  - e-017
+  details: WP WP02 required 4 operator-driven --force lane transition(s). Force overrides typically indicate the runtime
+    guard failed or the operator routed around it; investigate the underlying cause.
+- id: n-007
+  category: process
+  summary: WP03 required 2 --force override(s) during workflow
+  evidence_refs:
+  - e-018
+  details: WP WP03 required 2 operator-driven --force lane transition(s). Force overrides typically indicate the runtime
+    guard failed or the operator routed around it; investigate the underlying cause.
+- id: n-008
+  category: process
+  summary: WP04 required 6 --force override(s) during workflow
+  evidence_refs:
+  - e-019
+  details: WP WP04 required 6 operator-driven --force lane transition(s). Force overrides typically indicate the runtime
+    guard failed or the operator routed around it; investigate the underlying cause.
+- id: n-009
+  category: process
+  summary: WP05 required 6 --force override(s) during workflow
+  evidence_refs:
+  - e-020
+  details: WP WP05 required 6 operator-driven --force lane transition(s). Force overrides typically indicate the runtime
+    guard failed or the operator routed around it; investigate the underlying cause.
+- id: n-010
+  category: process
+  summary: WP06 required 2 --force override(s) during workflow
+  evidence_refs:
+  - e-021
+  details: WP WP06 required 2 operator-driven --force lane transition(s). Force overrides typically indicate the runtime
+    guard failed or the operator routed around it; investigate the underlying cause.
+- id: n-001
+  category: review_loop
+  summary: WP01 required 1 rejection cycle(s) before approval
+  evidence_refs:
+  - e-012
+  details: WP WP01 was sent back from review to planning 1 time(s).
+- id: n-002
+  category: review_loop
+  summary: WP02 required 1 rejection cycle(s) before approval
+  evidence_refs:
+  - e-013
+  details: WP WP02 was sent back from review to planning 1 time(s).
+- id: n-003
+  category: review_loop
+  summary: WP04 required 2 rejection cycle(s) before approval
+  evidence_refs:
+  - e-014
+  details: WP WP04 was sent back from review to planning 2 time(s).
+- id: n-004
+  category: review_loop
+  summary: WP05 required 2 rejection cycle(s) before approval
+  evidence_refs:
+  - e-015
+  details: WP WP05 was sent back from review to planning 2 time(s).
+gaps: []
+proposals: []
+evidence_refs:
+- id: e-001
+  kind: file
+  path: kitty-specs/app-shell-01M3V82X/meta.json
+- id: e-002
+  kind: file
+  path: kitty-specs/app-shell-01M3V82X/spec.md
+- id: e-003
+  kind: file
+  path: kitty-specs/app-shell-01M3V82X/plan.md
+- id: e-004
+  kind: file
+  path: kitty-specs/app-shell-01M3V82X/tasks.md
+- id: e-005
+  kind: file
+  path: kitty-specs/app-shell-01M3V82X/tasks/WP01-foundation-and-frozen-manifest.md
+- id: e-006
+  kind: file
+  path: kitty-specs/app-shell-01M3V82X/tasks/WP02-shell-nav-item-element.md
+- id: e-007
+  kind: file
+  path: kitty-specs/app-shell-01M3V82X/tasks/WP03-shell-tree-element.md
+- id: e-008
+  kind: file
+  path: kitty-specs/app-shell-01M3V82X/tasks/WP04-shell-frame-tiers-status.md
+- id: e-009
+  kind: file
+  path: kitty-specs/app-shell-01M3V82X/tasks/WP05-shell-drawer-and-flyout.md
+- id: e-010
+  kind: file
+  path: kitty-specs/app-shell-01M3V82X/tasks/WP06-shell-stories-baselines-integration.md
+- id: e-011
+  kind: file
+  path: kitty-specs/app-shell-01M3V82X/status.events.jsonl
+- id: e-012
+  kind: event_range
+  path: kitty-specs/app-shell-01M3V82X/status.events.jsonl
+  range: 01M3VBG96Z1FZ8NP447B4HD7TW
+- id: e-013
+  kind: event_range
+  path: kitty-specs/app-shell-01M3V82X/status.events.jsonl
+  range: 01M3VDWPTQNVJJ6YZ4TTDDEKGS
+- id: e-014
+  kind: event_range
+  path: kitty-specs/app-shell-01M3V82X/status.events.jsonl
+  range: 01M3VFHJGVV5FCZCAFJ6174BF5..01M3VFWSCW120HR9WCT7ZVQK3G
+- id: e-015
+  kind: event_range
+  path: kitty-specs/app-shell-01M3V82X/status.events.jsonl
+  range: 01M3VH8Q3S99K23MHK1MNMXM3X..01M3VHHJ6W0W2NDY38FZW2SRWV
+- id: e-016
+  kind: event_range
+  path: kitty-specs/app-shell-01M3V82X/status.events.jsonl
+  range: 01M3VB3X8JCH6KYHDQZW3PV9D1..01M3VBVYDBTGRNAQQS759RXSP0
+- id: e-017
+  kind: event_range
+  path: kitty-specs/app-shell-01M3V82X/status.events.jsonl
+  range: 01M3VDN7KGMKRC8C9HZ546PDFF..01M3VE93AZYW1DMVV9NNCYDKPW
+- id: e-018
+  kind: event_range
+  path: kitty-specs/app-shell-01M3V82X/status.events.jsonl
+  range: 01M3VEKAJTEZR1SN4ED6H6DDF7..01M3VETZS2ACW5KMCNR5P2DNMR
+- id: e-019
+  kind: event_range
+  path: kitty-specs/app-shell-01M3V82X/status.events.jsonl
+  range: 01M3VF8GDN0G2D4XB8AN11EYP6..01M3VG3RCQ71291G2JNYZTWRW8
+- id: e-020
+  kind: event_range
+  path: kitty-specs/app-shell-01M3V82X/status.events.jsonl
+  range: 01M3VGXZPGQR1DDNK94T78B50B..01M3VHZ31ES29C5X1C950GZ06C
+- id: e-021
+  kind: event_range
+  path: kitty-specs/app-shell-01M3V82X/status.events.jsonl
+  range: 01M3VKN4EZ5T2HE0WT2M2GEWTA..01M3VMC2G9P104GVD0G3ZDVJB8
+- id: e-022
+  kind: event_range
+  path: kitty-specs/app-shell-01M3V82X/status.events.jsonl
+  range: implementation_cycles
+- id: e-023
+  kind: event_range
+  path: kitty-specs/app-shell-01M3V82X/status.events.jsonl
+  range: implementation_cycles
+- id: e-024
+  kind: event_range
+  path: kitty-specs/app-shell-01M3V82X/status.events.jsonl
+  range: implementation_cycles
+- id: e-025
+  kind: event_range
+  path: kitty-specs/app-shell-01M3V82X/status.events.jsonl
+  range: implementation_cycles
+- id: e-026
+  kind: file
+  path: kitty-specs/app-shell-01M3V82X/analysis-report.md
+generator_version: '1.0'
+provenance_history: []
