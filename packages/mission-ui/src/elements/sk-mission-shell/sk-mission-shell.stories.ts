@@ -1,4 +1,4 @@
-import { html } from 'lit';
+import { html, nothing } from 'lit';
 import type { TemplateResult } from 'lit';
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 // The package entry point registers the tags (the element modules do not self-register).
@@ -51,6 +51,8 @@ interface ShellStoryArgs {
   sections: ShellSection[];
   content: ContentKind;
   skipLinkText: string;
+  /** Product name slotted into the brand slot; empty keeps the "kitty desktop" fallback. */
+  brandName: string;
 }
 
 // Rows whose destination does not exist yet read as unavailable through their meta text: the library row has no
@@ -81,6 +83,7 @@ const base: ShellStoryArgs = {
   sections: [],
   content: 'ready',
   skipLinkText: 'Skip to the sample content',
+  brandName: '',
 };
 
 /** Project layout, one destination (nav item id) marked. */
@@ -165,6 +168,7 @@ const meta: Meta<StoryArgs> = {
       ?flyout-open=${args.flyoutOpen}
     >
       <span slot="skip-link">${args.skipLinkText}</span>
+      ${args.brandName === '' ? nothing : html`<span slot="brand">${args.brandName}</span>`}
       <sk-button slot="top-bar-actions" size="icon" variant="ghost" label="Settings">${settingsIcon}</sk-button>
       ${args.sections.map(
         (section) =>
@@ -187,6 +191,8 @@ type Story = StoryObj<StoryArgs>;
 
 // Expanded tier (1280): rail, sidebar and content.
 export const ProjectMissions1280: Story = { tags: ['vw-1280'], args: project('nav-missions') };
+// The web dashboard host slots its own product name; the mark stays.
+export const MissionDashboardBrand1280: Story = { tags: ['vw-1280'], args: mission('nav-pipeline', [], { brandName: 'kitty dashboard' }) };
 export const ProjectDrift1280: Story = { tags: ['vw-1280'], args: project('nav-drift') };
 export const ProjectOps1280: Story = { tags: ['vw-1280'], args: project('nav-ops') };
 export const MissionPipeline1280: Story = { tags: ['vw-1280'], args: mission('nav-pipeline') };

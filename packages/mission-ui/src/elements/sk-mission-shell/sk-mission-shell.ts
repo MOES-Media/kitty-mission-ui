@@ -51,7 +51,7 @@ const COLLAPSED_QUERY = '(min-width: 720px)';
  * @fires {CustomEvent<ShellRetryDetail>} sk-shell-retry - the error-state retry button was activated
  *
  * @slot - the page content, inside the main landmark
- * @slot brand - the product mark in the top bar (falls back to "kitty desktop")
+ * @slot brand - the product name beside the mark (falls back to "kitty desktop")
  * @slot top-bar-actions - host actions on the right of the top bar
  * @slot skip-link - per-screen skip link text (falls back to "Skip to content")
  * @slot sidebar-section - sk-shell-tree sections shown in the sidebar, drawer and flyout

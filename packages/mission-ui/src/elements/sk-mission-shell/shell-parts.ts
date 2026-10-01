@@ -70,7 +70,7 @@ export function renderTopBar(ctx: TopBarContext): TemplateResult {
     ${ctx.tier === 'mobile'
       ? html`<sk-button size="icon" variant="ghost" label="Open navigation" @click=${ctx.onHamburger}>${renderIcon('menu')}</sk-button>`
       : nothing}
-    <div data-brand><slot name="brand">${renderBrandMark()}<span>kitty desktop</span></slot></div>
+    <div data-brand>${renderBrandMark()}<slot name="brand"><span>kitty desktop</span></slot></div>
     ${ctx.tier === 'mobile' && ctx.context !== '' ? html`<span data-top-bar-context>${ctx.context}</span>` : nothing}
     <div data-top-bar-actions><slot name="top-bar-actions"></slot></div>
   </header>`;

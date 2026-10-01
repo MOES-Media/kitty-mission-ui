@@ -118,7 +118,7 @@
               "name": ""
             },
             {
-              "description": "the product mark in the top bar (falls back to \"kitty desktop\")",
+              "description": "the product name beside the mark (falls back to \"kitty desktop\")",
               "name": "brand"
             },
             {

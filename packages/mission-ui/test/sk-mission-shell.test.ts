@@ -286,6 +286,7 @@ describe('frame and landmarks (FR-001, FR-002, FR-004, FR-008)', () => {
     const brand = one<HTMLSlotElement>(root(el), 'slot[name="brand"]');
     expect(brand.assignedNodes()).toHaveLength(0);
     expect(brand.textContent?.trim()).toBe('kitty desktop');
+    expect(root(el).querySelector('[data-brand] > svg[data-brand-mark]')).not.toBeNull();
     const action = document.createElement('span');
     action.slot = 'top-bar-actions';
     action.textContent = 'Theme';
@@ -295,6 +296,8 @@ describe('frame and landmarks (FR-001, FR-002, FR-004, FR-008)', () => {
     el.append(action, mark);
     await el.updateComplete;
     expect(one<HTMLSlotElement>(root(el), 'slot[name="brand"]').assignedNodes()).toEqual([mark]);
+    // The slot carries the name only: the mark stays.
+    expect(root(el).querySelector('[data-brand] > svg[data-brand-mark]')).not.toBeNull();
     expect(one<HTMLSlotElement>(root(el), 'slot[name="top-bar-actions"]').assignedNodes()).toEqual([action]);
   });
 
