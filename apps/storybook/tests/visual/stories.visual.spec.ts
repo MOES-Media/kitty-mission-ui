@@ -6,6 +6,7 @@ interface IndexEntry {
   id: string;
   type: string;
   title: string;
+  tags?: string[];
 }
 
 const MIN_STORIES_PER_COMPONENT = 4;
@@ -18,6 +19,22 @@ const index = JSON.parse(readFileSync(indexPath, 'utf8')) as { entries: Record<s
 // Autodocs adds `<id>--docs` entries of type 'docs'; every real story of every component gets a baseline.
 const stories = Object.values(index.entries).filter((entry) => entry.type === 'story');
 const storyIds = stories.map((entry) => entry.id).sort();
+const entryById = new Map(stories.map((entry) => [entry.id, entry]));
+
+// Story tags: `vw-<n>` sets the viewport width (and asserts the shell tier), `tab-<n>` presses Tab n times before the shot.
+// Stories with neither tag behave exactly as before.
+const TIER_BREAKPOINTS = { expanded: 1100, collapsed: 620 } as const;
+
+function tagNumber(entry: IndexEntry, prefix: string): number | undefined {
+  const tag = (entry.tags ?? []).find((t) => new RegExp(`^${prefix}-\\d+$`).test(t));
+  return tag === undefined ? undefined : Number(tag.slice(prefix.length + 1));
+}
+
+function expectedTier(width: number): string {
+  if (width >= TIER_BREAKPOINTS.expanded) return 'expanded';
+  if (width >= TIER_BREAKPOINTS.collapsed) return 'collapsed';
+  return 'mobile';
+}
 
 const perComponent = new Map<string, number>();
 for (const { title } of stories) perComponent.set(title, (perComponent.get(title) ?? 0) + 1);
@@ -34,11 +51,15 @@ let registered = 0;
 for (const id of storyIds) {
   registered += 1;
   test(id, async ({ page }) => {
+    const entry = entryById.get(id);
+    const width = entry === undefined ? undefined : tagNumber(entry, 'vw');
+    const tabs = entry === undefined ? undefined : tagNumber(entry, 'tab');
     const consoleProblems: string[] = [];
     page.on('console', (msg) => {
       if (/two copies|multiple versions of lit/i.test(msg.text())) consoleProblems.push(msg.text());
     });
 
+    if (width !== undefined) await page.setViewportSize({ width, height: 800 });
     await page.goto(`/iframe.html?id=${id}&viewMode=story`);
     const element = page.locator(STORY_ELEMENT);
     await element.waitFor({ state: 'attached' });
@@ -60,6 +81,15 @@ for (const id of storyIds) {
     expect(loadedFaces.some((f) => /inter/i.test(f)), `Inter font loaded, got ${loadedFaces.join(',')}`).toBe(true);
     const upgraded = await page.evaluate((name) => customElements.get(name) !== undefined, tag);
     expect(upgraded, `${tag} is registered`).toBe(true);
+
+    if (width !== undefined) {
+      // Mandatory for every vw-* story: the element must report the tier that matches the viewport width.
+      const tier = await element.getAttribute('tier');
+      expect(tier, `${id}: vw-${width} story element must reflect tier="${expectedTier(width)}", got ${tier}`).toBe(
+        expectedTier(width),
+      );
+    }
+    for (let i = 0; i < (tabs ?? 0); i += 1) await page.keyboard.press('Tab');
 
     const root = page.locator('#storybook-root');
     const shot = await root.screenshot({ animations: 'disabled' });
