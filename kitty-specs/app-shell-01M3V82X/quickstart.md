@@ -34,5 +34,5 @@ pnpm gate-proof                        # every gate still fails with its plant
 
 Manual checks at 1280, 1024, 800, 680, 390 and 320: icon column with label bubbles (hover, focus, Escape); the current
 section icon opens the flyout (Escape, outside click and choosing an item close it); at 390 the hamburger opens the overlay
-drawer (close button, Escape and backdrop return focus to the hamburger); resize across 1100 and 620, and across 620 with
+drawer (close button, Escape and backdrop return focus to the hamburger); resize across 1100 and 720, and across 720 with
 the drawer or flyout open (both close); Tab from the page start reaches the skip link first and it focuses the content.

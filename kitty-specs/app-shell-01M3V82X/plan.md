@@ -7,7 +7,7 @@
 
 Add one shared application shell to `@spec-kitty/mission-ui`: a screen-contract element `sk-mission-shell` (top bar, local
 rail, context sidebar, content focus target, shell status, skip link) plus two pattern elements, `sk-shell-nav-item` and
-`sk-shell-tree`. A `tier` (expanded at 1100 px and above, collapsed 620 to 1099 px, mobile below 620 px) is computed from
+`sk-shell-tree`. A `tier` (expanded at 1100 px and above, collapsed 720 to 1099 px, mobile below 720 px) is computed from
 the window width with `matchMedia` through one private function and drives CSS and behaviour; no toggle, nothing stored.
 Collapsed tier: an icon column whose icons show label bubbles (R3) and whose current-section icon opens a flyout with the
 section's head and tree (R1). Mobile tier: a local overlay drawer (native `<dialog>`, backdrop, content never moves, R2).
@@ -54,8 +54,8 @@ flowchart LR
 | Window width | Tier | Mission layout | Project layout |
 |---|---|---|---|
 | 1100 px and above | expanded | top bar; rail 3.5rem; sidebar 15rem; content | top bar; sidebar 15rem; content |
-| 620 to 1099 px | collapsed | rail; icon column 3.5rem (label bubbles; current section icon opens flyout); content | icon column; content |
-| below 620 px | mobile | hamburger; overlay drawer (rail strip, sidebar, trees); content | hamburger; overlay drawer; content |
+| 720 to 1099 px | collapsed | rail; icon column 3.5rem (label bubbles; current section icon opens flyout); content | icon column; content |
+| below 720 px | mobile | hamburger; overlay drawer (rail strip, sidebar, trees); content | hamburger; overlay drawer; content |
 
 ## Project Structure
 
@@ -115,7 +115,7 @@ on two lanes), so no parallel lanes.
 ### IC-04 — Shell frame, tiers, status
 - **Purpose**: grid, top bar, rail, sidebar heads, footer, status region, content focus target, skip link slot, `readTier()`, current marks, landmarks.
 - **Relevant requirements**: FR-001, FR-002, FR-004 to FR-006, FR-008 to FR-010, FR-012, FR-018, FR-019, NFR-003, NFR-005
-- **Affected surfaces**: `sk-mission-shell.ts`, `shell-parts.ts`, `fixtures.ts`, `test/sk-mission-shell.test.ts` (frame, tiers at 619/620/1099/1100/680, status, landmarks, Tab-walk, 200% font)
+- **Affected surfaces**: `sk-mission-shell.ts`, `shell-parts.ts`, `fixtures.ts`, `test/sk-mission-shell.test.ts` (frame, tiers at 719/720/1099/1100/680, status, landmarks, Tab-walk, 200% font)
 - **Sequencing/depends-on**: IC-03
 - **Risks**: exactly one `main`; content top edge unchanged across breakpoints within a status; long unbroken names wrap (G-14).
 

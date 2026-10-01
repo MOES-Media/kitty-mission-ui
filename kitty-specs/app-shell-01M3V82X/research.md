@@ -38,7 +38,7 @@ Rejected: build everything on `sk-app-shell`; separate top-bar, rail and sidebar
 ### D-02 Tier mechanism: window width read with `matchMedia`, one private source
 
 `tier` is `expanded | collapsed | mobile` from two `MediaQueryList`s created with the bare global
-`matchMedia('(min-width: 1100px)')` and `matchMedia('(min-width: 620px)')` (constants in TypeScript). The shell reads
+`matchMedia('(min-width: 1100px)')` and `matchMedia('(min-width: 720px)')` (constants in TypeScript). The shell reads
 them in ONE private function `readTier()`; a later container-query swap (Kitty Desktop panes) replaces only that
 function. Contract text: render the shell full-bleed; the tier follows the window width.
 
@@ -66,7 +66,7 @@ function. Contract text: render the shell full-bleed; the tier follows the windo
 
 ### D-03 Collapsed icons, labels, flyout and the mobile drawer
 
-Collapsed tier (620 to 1099 px). The sidebar becomes a LOCAL icon column (a `<nav>` of `sk-shell-nav-item`, like the local
+Collapsed tier (720 to 1099 px). The sidebar becomes a LOCAL icon column (a `<nav>` of `sk-shell-nav-item`, like the local
 rail, of `var(--sk-layout-personal-rail-width)`), not `sk-context-sidebar`: that element has the same
 `@media (max-width: 720px)` flip as the dropped `sk-personal-rail` (height auto, border moves to the bottom; not
 overridable under the lint rules) and its `var(--sk-space-4)` padding crowds a 3.5rem column (G-15). The mission layout
@@ -98,7 +98,7 @@ cancelable. Other icons (and the current icon when there is no section content) 
 `aria-expanded` on `sk-action-row` the icon cannot announce the flyout state; focus moving into a labelled flyout
 region is the cue (G-05). The slotted tree is rendered only while the flyout is open, so it is not duplicated.
 
-Mobile tier (below 620 px), R2. A local overlay drawer: native `<dialog>` opened with `showModal()` (backdrop and focus
+Mobile tier (below 720 px), R2. A local overlay drawer: native `<dialog>` opened with `showModal()` (backdrop and focus
 trap, inert page, Escape fires `cancel`, content never moves). Native dialog is the only way to get a dimmed backdrop
 under the layout-only CSS rule: a backdrop colour cannot be written (no colour properties), but `::backdrop` has the
 UA default dim. The dialog is placed at the inline start edge of the viewport (`inset`, `margin: 0`, `padding: 0`,
@@ -140,7 +140,7 @@ Drawer behaviour:
   `:focus-within`). Its visible text comes from a `skip-link` slot (fallback "Skip to content"), e.g. "Skip to Missions".
 - Shell status (FR-010) renders in NORMAL FLOW at the top of the content column in every tier (above `main`; an overlay would hide the screen's page header and its focusable actions, WCAG 2.4.11), never only in the sidebar head. A status change may move the content. Loading `sk-status-indicator pulsing`, error `sk-notice tone="danger"` with Retry in `actions`, empty
   `sk-notice tone="info"`. The head stays blank or shows its last data. `aria-busy="true"` is set on the status region
-  only, never over `main`. NFR-003 test (no layout shift on tier change): within the same status, the content area's top edge is unchanged when the width crosses 1100 and 620.
+  only, never over `main`. NFR-003 test (no layout shift on tier change): within the same status, the content area's top edge is unchanged when the width crosses 1100 and 720.
 - Current marking (FR-018): properties `current` (sidebar item) and `railCurrent` (rail item; the prototype marks the
   rail item for the project-level destination, `<prototype>/03-pipeline.html:16,24`). Only the deepest item carries
   `aria-current="page"` (the selected tree leaf, else the sidebar item); its ancestors in the shell (sidebar item when a
@@ -186,7 +186,7 @@ Visual spec (`apps/storybook/tests/visual/stories.visual.spec.ts`), no wrapper d
 
 Tests (FR-014, NFR-003/004/005, Vitest browser mode): `import { page } from 'vitest/browser'`; call
 `page.viewport(w, h)` first in each test because the default iframe is 414x896 (mobile); reset in `afterEach`.
-Tier assertions at 619, 620, 1099, 1100 and 680. One test at root font-size 200% at 1100 and 620 (NFR-005).
+Tier assertions at 719, 720, 1099, 1100 and 680. One test at root font-size 200% at 1100 and 720 (NFR-005).
 One Tab-walk per tier counting stops equals items shown plus skip link and hamburger (SC-003). One `main` per tier.
 `main` top edge equal across tiers within the same status (NFR-003; status changes may move content). Every event and its payload; cancelable drawer and flyout
 (prevented means no change); drawer Escape, close, backdrop, navigate, resize-out; focus into and back; flyout open,
@@ -212,7 +212,7 @@ State matrix (title `Mission/Shell`, id `mission-shell--<export>`; tag in bracke
 | 26 | `LabelBubbleVisible1024` [tab-2] | R3 bubble on keyboard focus | collapsed |
 | 27-28 | `FlyoutWorkPackages1024`, `FlyoutArtifacts1024` | R1 flyout open (arg `flyoutOpen`) | collapsed |
 | 29-31 | `ProjectMissions800`, `ProjectOps800`, `MissionArtifacts800` | 800 baselines | collapsed |
-| 32 | `ProjectMissions680` | inside the 620..720 corner | collapsed |
+| 32 | `ProjectMissions680` | below the 720 breakpoint (was the 620..720 corner before the 2026-10-01 ruling) | mobile |
 | 33-34 | `ProjectClosed390`, `MissionClosed390` | drawer closed (SH-17) | mobile |
 | 35-36 | `ProjectDrawerOpen390`, `MissionDrawerOpen390` | overlay drawer open (SH-18, 19) | mobile |
 | 37 | `MissionDrawerOpenLongTree390` | drawer scrolls, content does not | mobile |
@@ -257,7 +257,7 @@ the operator approves the exceptions when reviewing the PR). Each gap is also an
 |---|---|---|---|---|
 | G-01 | `sk-app-shell` grid is fixed to rail, sidebar, content; no project (sidebar-only) layout and no icon-column mode | `layout="project\|mission"` and `sidebar="expanded\|icons"` on `sk-app-shell` | the shell's grid renders project and collapsed layouts from attributes, no empty column | the local grid is deleted when the library ships it |
 | G-02 | no top-bar slot or banner landmark | a `top-bar` slot rendered in a `<header>` | banner landmark present, full-width above rail and sidebar | local top bar removed |
-| G-03 | tier breakpoints are container-based and fixed (860/1100/720) | configurable or window-based thresholds, 1100 and 620 | tiers switch at 1100/620 without CSS overrides | `matchMedia` tier code removed |
+| G-03 | tier breakpoints are container-based and fixed (860/1100/720) | configurable or window-based thresholds, 1100 and 720 (720 since 2026-10-01, aligned with `sk-personal-rail`'s flip) | tiers switch at 1100/620 without CSS overrides | `matchMedia` tier code removed |
 | G-04 | compact drawer is an in-flow block, not an overlay with backdrop; hides the rail | overlay drawer with backdrop, focus trap, Escape, return focus | content never moves; keyboard parity | local dialog drawer removed |
 | G-05 | no vertical navigation item (icon, current, icon-only) and no tree with `aria-expanded`/`aria-controls`; `sk-action-row` has no expanded state | `sk-nav-item` and `sk-tree` | name kept in icon-only, `aria-current` and `aria-expanded` exposed | `sk-shell-nav-item` and `sk-shell-tree` become thin wrappers or are removed |
 | G-06 | `sk-button` forwards only `label`; no `aria-expanded`, `aria-controls`, `aria-current` | passthrough of those attributes to the inner control | state announced on the real control | state-in-name workaround removed |
@@ -287,3 +287,24 @@ trees, drawer state ownership, skip link target, status placement, current marki
 4. Pixel stability at 1024, 800 and 680 across 5 repeats (NFR-002).
 5. Design review items (C-001): the UA modal border WILL show on the drawer dialog (G-11; operator design-review item, no IC-05 escalation), icon column without a tree, flyout, overlay drawer chrome, 48 px top bar (no 52 px token;
    `--sk-space-12` is 8rem), no progress bar, yellow edge not reproducible (G-13), local icons, non-flush bordered rows in a 3.5rem column, and the edge-less local top bar and rail (no border or surface can be written locally).
+
+## Visual-fidelity rework (operator rulings, 2026-10-01)
+
+After the WP01-WP06 merge the operator reviewed Storybook against the V2 prototype and rejected the frame
+(bordered rows, a surfaceless icon rail, unpainted top bar). Root cause: the prototype paints its chrome with
+`background`, `border` and `color` in `prototype.css`, while the project stylelint allow-list rejected those
+properties even with token values, and D-04 chose the library's bordered (non-flush) row. Rulings:
+
+- **Paint exception (shell only).** The shell element files (`sk-mission-shell`, `sk-shell-nav-item`,
+  `sk-shell-tree`) may use paint properties with token values only. Scope, rationale and sunset are recorded in the
+  stylelint override and the PR. Sunset: when `@spec-kitty/elements` ships the missing primitives, tracked as
+  design-library issues.
+- **Flat rows, no edge (supersedes D-04).** Nav and tree rows use `sk-action-row` `presentation="flush"`; the
+  current item shows through the library's selected state only. No painted current edge.
+- **Library rail, breakpoint 720 (supersedes D-01's rail part and G-07).** The primary rail is
+  `sk-personal-rail`; the collapsed/mobile breakpoint moves from 620 to 720 so the rail's own `max-width: 720px`
+  flip coincides with the mobile tier. Tiers: expanded >= 1100, collapsed 720-1099, mobile < 720.
+- **G-16 (new gap).** The library route row only exposes `aria-current="page"`; ancestors carry no current state
+  (only the leaf is selected) until the library supports `aria-current="true"`.
+- **Review rule.** Visual drift from the prototype frame fails review; it is not deferred to a design-review list
+  unless the operator accepts it.

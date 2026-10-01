@@ -42,8 +42,8 @@ collapsed column).
 Library events (`sk-action-row-activate`) are stopped at the shell and tree boundary; only these cross.
 
 ## Behaviour
-- Tiers: expanded 1100 and above (rail 3.5rem if mission, sidebar 15rem); collapsed 620 to 1099 (icon column 3.5rem, rail
-  kept); mobile below 620 (hamburger; overlay drawer). Drawer is a native `<dialog>` modal with backdrop (an `sk-context-sidebar` fills it); the collapsed icon column is a local `<nav>`; the flyout is a
+- Tiers: expanded 1100 and above (rail 3.5rem if mission, sidebar 15rem); collapsed 720 to 1099 (icon column 3.5rem, rail
+  kept); mobile below 720 (hamburger; overlay drawer). Drawer is a native `<dialog>` modal with backdrop (an `sk-context-sidebar` fills it); the collapsed icon column is a local `<nav>`; the flyout is a
   grid-placed overlay over the content cell. Neither moves the content.
 - Flyout (wrapped in `sk-context-sidebar`; closes on focus leaving it and its icon): activating the current section's icon, when `sidebar-section` content exists, opens it without emitting `sk-navigate`; Escape, outside
   `pointerdown`, choosing an item or leaving the tier close it; focus into the flyout then back to the icon, or to the
@@ -54,3 +54,4 @@ Library events (`sk-action-row-activate`) are stopped at the shell and tree boun
 - Tab order: skip link, top bar (hamburger in mobile), rail, sidebar, content. The skip link focuses the content focus
   target.
 - Current marking: only the deepest marked item has `aria-current="page"`, shell ancestors `"true"`.
+- Forced closes: when a tier change or resize forces the drawer or flyout shut, `sk-toggle-drawer` / `sk-toggle-flyout` is still dispatched (cancelable for API consistency) but `preventDefault()` cannot keep the overlay open outside its tier.

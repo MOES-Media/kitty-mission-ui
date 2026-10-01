@@ -67,8 +67,8 @@ navigation (Missions, Drift, Ops), no rail.
 
 ### User Story 3 - The frame adapts to the window width (Priority: P1)
 
-A user narrows the window. Above 1100 px the full layout shows. Between 620 and 1099 px the sidebar shrinks to an
-icon column on its own (the mission layout keeps the global rail beside it). Below 620 px the rail and sidebar move
+A user narrows the window. Above 1100 px the full layout shows. Between 720 and 1099 px the sidebar shrinks to an
+icon column on its own (the mission layout keeps the global rail beside it). Below 720 px the rail and sidebar move
 into a drawer opened from a hamburger in the top bar.
 
 **Why this priority**: the operator ruled out stacking the sidebar above the content and ruled out a desktop
@@ -131,8 +131,8 @@ states.
 | FR-003 | Sidebar content variants | As a developer, I want the mission sidebar to show navigation only, navigation plus a work package tree (with or without a selected item), or navigation plus an artifact tree (folder expanded or collapsed), as in the prototype. | High | Open |
 | FR-004 | Current destination | As a user, I want the current destination marked visually and to assistive technology, so that I always know where I am. | High | Open |
 | FR-005 | Expanded tier | As a user, I want the full layout at window widths of 1100 px and above. | High | Open |
-| FR-006 | Collapsed tier | As a user, I want the sidebar to shrink automatically to a labelled icon column between 620 and 1099 px (the mission layout keeps the global rail beside it), so that content stays readable without any control. | High | Open |
-| FR-007 | Mobile tier | As a user, I want the rail and sidebar in a drawer opened from a hamburger in the top bar below 620 px as an overlay with a backdrop (the content never moves), closed by Escape, the backdrop, a close action or a navigation, with focus moving into the drawer and back to the hamburger. | High | Open |
+| FR-006 | Collapsed tier | As a user, I want the sidebar to shrink automatically to a labelled icon column between 720 and 1099 px (the mission layout keeps the global rail beside it), so that content stays readable without any control. | High | Open |
+| FR-007 | Mobile tier | As a user, I want the rail and sidebar in a drawer opened from a hamburger in the top bar below 720 px as an overlay with a backdrop (the content never moves), closed by Escape, the backdrop, a close action or a navigation, with focus moving into the drawer and back to the hamburger. | High | Open |
 | FR-008 | Top bar | As a host, I want the shell to own the top bar (brand, the mobile hamburger, and a place for my own actions), with no Settings or Help built in. | High | Open |
 | FR-009 | Content area | As a developer, I want the screen's content placed into the shell, and content loading, empty and error states to leave the frame unchanged. | High | Open |
 | FR-010 | Shell status | As a host, I want a shell status (loading, error, empty, ready) for when the shell's own data is unavailable, shown at the top edge of the content column in every tier (never only inside a sidebar head that a tier hides), with a retry action on error. | Medium | Open |
@@ -154,7 +154,7 @@ states.
 | NFR-002 | Visual stability | Visual baselines at 1280, 1024, 800, 680, 390 and 320 px produce 0 failures across 5 consecutive runs on an unchanged commit. | Reliability | High | Open |
 | NFR-003 | No layout shift on tier change | Crossing a breakpoint changes only the shell regions defined for that tier; within the same shell status, the content area's top edge is unchanged by the crossing (status changes may move content). | Usability | Medium | Open |
 | NFR-004 | Keyboard reachability | 100% of interactive shell controls are reachable and operable by keyboard alone in every tier. | Accessibility | High | Open |
-| NFR-005 | Large text | At a root font size of 200%, the shell keeps its tier at 1100 px and 620 px and its content area has no horizontal overflow caused by the shell. | Accessibility | Medium | Open |
+| NFR-005 | Large text | At a root font size of 200%, the shell keeps its tier at 1100 px and 720 px and its content area has no horizontal overflow caused by the shell. | Accessibility | Medium | Open |
 
 ### Constraints
 
@@ -191,4 +191,4 @@ states.
 - The global icon rail's items are those of the prototype's mission screens.
 - The design library ships no icon set, so icons are local inline SVGs from the prototype's own drawings and the gap is recorded (FR-015).
 - Toast, status strip, Settings and Help are host or later concerns.
-- Breakpoints are measured on the window width (1100 px and 620 px).
+- Breakpoints are measured on the window width (1100 px and 720 px).
