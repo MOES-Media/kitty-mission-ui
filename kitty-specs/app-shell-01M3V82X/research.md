@@ -308,3 +308,21 @@ properties even with token values, and D-04 chose the library's bordered (non-fl
   (only the leaf is selected) until the library supports `aria-current="true"`.
 - **Review rule.** Visual drift from the prototype frame fails review; it is not deferred to a design-review list
   unless the operator accepts it.
+
+### Operator review rounds (2026-10-01, after the visual-fidelity rework)
+
+- **Brand.** The prototype's bowtie mark is replaced by the official Spec Kitty cat-with-glasses (vector from the
+  organisation's pinned-tab icon), rendered in `--sk-fg-muted`. The shell always renders the mark; the `brand` slot
+  carries only the product name (fallback "kitty desktop"; the web dashboard passes "kitty dashboard").
+- **Loading and footer progress.** Loading uses the library's indeterminate `.sk-progress` (the stylesheet from
+  `@spec-kitty/styles` adopted into the shell, not copied); the mission footer uses the determinate bar.
+  `sk-status-indicator pulsing` without a marker showed the library's empty fallback box.
+- **Icons.** Rail and section-nav glyphs are the prototype's paths; back and menu stay local (no prototype glyph).
+- **Hierarchy (deliberate departure from the prototype).** The section nav (44px, icons) is primary; the tree below
+  is secondary (32px, `--sk-text-sm`, muted). The prototype gives both equal weight.
+- **Shared footer band.** The rail's bottom group, the sidebar footer and the icon column's pinned group share one
+  token-derived block size (`--shell-band`) and one top border.
+- **Exceptions declared in the PR.** (1) Stylelint: shell-only paint properties with token values (plus keyword-only
+  text-overflow/white-space/overflow-wrap and `--shell-band`), sunset by spec-kitty-design#492-#497;
+  (2) ESLint: `class=` allowed in `shell-parts.ts` only, for the library's `.sk-progress` markup, sunset when an
+  `sk-progress` element ships.
