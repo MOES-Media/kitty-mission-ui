@@ -1,0 +1,2 @@
+const r = Reflect;
+export const f = () => r.get(globalThis, 'fetch');

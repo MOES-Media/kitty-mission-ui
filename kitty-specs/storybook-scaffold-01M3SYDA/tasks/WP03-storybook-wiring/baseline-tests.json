@@ -1,0 +1,13 @@
+{
+  "wp_id": "WP03",
+  "captured_at": "2026-09-30T21:58:42Z",
+  "base_branch": "feat/storybook-scaffold",
+  "base_commit": "65b1fb97e4b3ecbce521232d0df253c8c968ca9a",
+  "test_runner": "pytest",
+  "total": 0,
+  "passed": 0,
+  "failed": 0,
+  "skipped": 0,
+  "failures": [],
+  "source_identity": "GateCoverageScopeSource/junit_xml"
+}

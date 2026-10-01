@@ -1,0 +1,12 @@
+{
+  "gate": "hygiene",
+  "ciCommand": "pnpm hygiene",
+  "expectFailPattern": "plant-hygiene-token",
+  "overlays": [
+    {
+      "target": "plant-hygiene.txt",
+      "generated": "a NEW UNTRACKED file at the repo root holding a run-time assembled, non-placeholder token-shaped string; proves untracked files are scanned and no token literal is committed",
+      "generator": "node -e \"require('fs').writeFileSync('plant-hygiene.txt','tok='+'ghp_'+'A1b2C3d4E5f6G7h8I9j0K1l2M3n4O5p6Q7r8')\""
+    }
+  ]
+}

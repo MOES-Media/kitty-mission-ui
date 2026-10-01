@@ -1,0 +1,1 @@
+export const f = (d: Document) => d.defaultView!.fetch('/x');

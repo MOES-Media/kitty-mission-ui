@@ -1,0 +1,2 @@
+const g = () => 0;
+export const f = () => (g.constructor as FunctionConstructor)('return fetch')();

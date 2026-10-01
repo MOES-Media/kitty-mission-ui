@@ -1,0 +1,1 @@
+export const f = () => setTimeout('1', 0);

@@ -1,0 +1,597 @@
+# CI gates: one workflow, one separately named job per gate (contracts/ci-gates.md, research R7-R9).
+#
+# Job ids ARE the gate ids. The proof matrix (`proof-leg`, `matrix.gate`) must list exactly the directory names under
+# gates/plants; `proof` and `all` are not gates. Coverage is derived from job ids and matrix.gate, never display names.
+#
+# Proof binding: in every gate job exactly one step has `id: gate`, carries no `if:` and is the command whose exit
+# status is the gate. gates/plants/<gate>/plant.json declares the same command as `ciCommand`; `gate-proof.mjs coverage`
+# fails if they differ, and the proof leg runs that very command. `all` must need every gate job, proof-leg and proof.
+#
+# Interface this workflow needs from scripts/gate-proof.mjs (delivered by WP10; the proof jobs cannot be green before
+# it merges). Exit codes: 0 success, 1 failure.
+#   gate-proof.mjs leg --gate <id> [--out <dir>]    clean run, plant, planted run; writes <dir>/<id>.json fragment
+#   gate-proof.mjs coverage [--fragments <dir>]     job ids minus {proof, proof-leg, all} == matrix gate list ==
+#                                                   gates/plants dirs == fragment set
+#   gate-proof.mjs assemble [--fragments <dir>] [--out <dir>]   writes <out>/proof-record.json and <out>/PROOF.md,
+#                                                   schema-validates and scans them, fails closed
+# This workflow passes --out proof-output/fragments to leg, --fragments proof-output/fragments to coverage and
+# assemble, and --out proof-output to assemble.
+#
+# Matrix image decision (verifier N4): ONE matrix; `container` is the matrix `image` value, the digest-pinned
+# Playwright image for the unit-tests and visual legs and an empty string for runner legs. An empty container value
+# is expected to run the job on the host; if GitHub rejects it on the first PR run, split into two matrices
+# (proof-leg-runner, proof-leg-container) with identical steps and record that in contracts/ci-gates.md.
+#
+# Credential lifecycle, in every job that installs (local composite action .github/actions/install): step-level env
+# only, mask, umask 077 write of the user npmrc, chmod 600, used by the frozen install only, deleted right after, and
+# again in an always() step of the calling job. Gate steps run
+# without it. The pnpm store is cached (restored before the credential step, saved after deletion); nothing else is.
+
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  preflight:
+    name: "Gate: preflight"
+    runs-on: ubuntu-24.04
+    timeout-minutes: 1
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+        with:
+          version: 11.18.0
+          run_install: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22.22.2
+      - name: Assert Node version
+        run: test "$(node -v)" = "v22.22.2"
+      - name: Credential preflight
+        id: gate
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: node scripts/preflight.mjs --ci
+
+  typecheck:
+    name: "Gate: typecheck"
+    needs: preflight
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+        with:
+          version: 11.18.0
+          run_install: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22.22.2
+      - name: Assert Node version
+        run: test "$(node -v)" = "v22.22.2"
+      - name: Locate pnpm store
+        id: store
+        run: echo "path=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
+      - name: Cache pnpm store
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ steps.store.outputs.path }}
+          key: pnpm-store-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+      - name: Install dependencies
+        uses: ./.github/actions/install
+        with:
+          npm-token: ${{ secrets.NPM_TOKEN }}
+      - name: typecheck
+        id: gate
+        run: pnpm typecheck
+      - name: Remove registry credential (always)
+        if: always()
+        run: rm -f "$HOME/.npmrc"
+
+  eslint:
+    name: "Gate: eslint"
+    needs: preflight
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+        with:
+          version: 11.18.0
+          run_install: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22.22.2
+      - name: Assert Node version
+        run: test "$(node -v)" = "v22.22.2"
+      - name: Locate pnpm store
+        id: store
+        run: echo "path=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
+      - name: Cache pnpm store
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ steps.store.outputs.path }}
+          key: pnpm-store-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+      - name: Install dependencies
+        uses: ./.github/actions/install
+        with:
+          npm-token: ${{ secrets.NPM_TOKEN }}
+      - name: eslint
+        id: gate
+        run: pnpm lint
+      - name: Remove registry credential (always)
+        if: always()
+        run: rm -f "$HOME/.npmrc"
+
+  stylelint:
+    name: "Gate: stylelint"
+    needs: preflight
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+        with:
+          version: 11.18.0
+          run_install: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22.22.2
+      - name: Assert Node version
+        run: test "$(node -v)" = "v22.22.2"
+      - name: Locate pnpm store
+        id: store
+        run: echo "path=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
+      - name: Cache pnpm store
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ steps.store.outputs.path }}
+          key: pnpm-store-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+      - name: Install dependencies
+        uses: ./.github/actions/install
+        with:
+          npm-token: ${{ secrets.NPM_TOKEN }}
+      - name: stylelint
+        id: gate
+        run: pnpm lint:styles
+      - name: Remove registry credential (always)
+        if: always()
+        run: rm -f "$HOME/.npmrc"
+
+  no-io:
+    name: "Gate: no-io"
+    needs: preflight
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+        with:
+          version: 11.18.0
+          run_install: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22.22.2
+      - name: Assert Node version
+        run: test "$(node -v)" = "v22.22.2"
+      - name: Locate pnpm store
+        id: store
+        run: echo "path=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
+      - name: Cache pnpm store
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ steps.store.outputs.path }}
+          key: pnpm-store-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+      - name: Install dependencies
+        uses: ./.github/actions/install
+        with:
+          npm-token: ${{ secrets.NPM_TOKEN }}
+      - name: no-io
+        id: gate
+        run: pnpm lint:no-io && pnpm test:no-io
+      - name: Remove registry credential (always)
+        if: always()
+        run: rm -f "$HOME/.npmrc"
+
+  manifest:
+    name: "Gate: manifest"
+    needs: preflight
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+        with:
+          version: 11.18.0
+          run_install: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22.22.2
+      - name: Assert Node version
+        run: test "$(node -v)" = "v22.22.2"
+      - name: Locate pnpm store
+        id: store
+        run: echo "path=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
+      - name: Cache pnpm store
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ steps.store.outputs.path }}
+          key: pnpm-store-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+      - name: Install dependencies
+        uses: ./.github/actions/install
+        with:
+          npm-token: ${{ secrets.NPM_TOKEN }}
+      - name: manifest
+        id: gate
+        run: pnpm manifest:check
+      - name: Remove registry credential (always)
+        if: always()
+        run: rm -f "$HOME/.npmrc"
+
+  hygiene:
+    name: "Gate: hygiene"
+    needs: preflight
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+        with:
+          version: 11.18.0
+          run_install: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22.22.2
+      - name: Assert Node version
+        run: test "$(node -v)" = "v22.22.2"
+      - name: Locate pnpm store
+        id: store
+        run: echo "path=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
+      - name: Cache pnpm store
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ steps.store.outputs.path }}
+          key: pnpm-store-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+      - name: Install dependencies
+        uses: ./.github/actions/install
+        with:
+          npm-token: ${{ secrets.NPM_TOKEN }}
+      - name: hygiene
+        id: gate
+        run: pnpm hygiene
+      - name: Remove registry credential (always)
+        if: always()
+        run: rm -f "$HOME/.npmrc"
+
+  storybook-build:
+    name: "Gate: storybook-build"
+    needs: preflight
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+        with:
+          version: 11.18.0
+          run_install: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22.22.2
+      - name: Assert Node version
+        run: test "$(node -v)" = "v22.22.2"
+      - name: Locate pnpm store
+        id: store
+        run: echo "path=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
+      - name: Cache pnpm store
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ steps.store.outputs.path }}
+          key: pnpm-store-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+      - name: Install dependencies
+        uses: ./.github/actions/install
+        with:
+          npm-token: ${{ secrets.NPM_TOKEN }}
+      - name: Build Storybook and scan the static output
+        id: gate
+        run: pnpm build-storybook
+      - name: Upload storybook-static
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: storybook-static
+          path: apps/storybook/storybook-static
+          retention-days: 1
+          if-no-files-found: error
+      - name: Remove registry credential (always)
+        if: always()
+        run: rm -f "$HOME/.npmrc"
+
+  unit-tests:
+    name: "Gate: unit-tests"
+    needs: preflight
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    permissions:
+      contents: read
+    container:
+      image: mcr.microsoft.com/playwright:v1.62.1-noble@sha256:dcc5531e97840b9b5e794f2814476b21571c5124a3fca2267d73041f56e7580e
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+        with:
+          version: 11.18.0
+          run_install: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22.22.2
+      - name: Assert Node version
+        run: test "$(node -v)" = "v22.22.2"
+      - name: Locate pnpm store
+        id: store
+        run: echo "path=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
+      - name: Cache pnpm store
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ steps.store.outputs.path }}
+          key: pnpm-store-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+      - name: Install dependencies
+        uses: ./.github/actions/install
+        with:
+          npm-token: ${{ secrets.NPM_TOKEN }}
+      - name: unit-tests
+        id: gate
+        run: pnpm test
+      - name: Remove registry credential (always)
+        if: always()
+        run: rm -f "$HOME/.npmrc"
+
+  visual:
+    name: "Gate: visual"
+    needs: [preflight, storybook-build]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    permissions:
+      contents: read
+    container:
+      image: mcr.microsoft.com/playwright:v1.62.1-noble@sha256:dcc5531e97840b9b5e794f2814476b21571c5124a3fca2267d73041f56e7580e
+    env:
+      # scripts/visual.sh runs Playwright directly when it is already inside the pinned image: the same command the
+      # proof leg and a local run use.
+      SK_VISUAL_IMAGE: mcr.microsoft.com/playwright:v1.62.1-noble@sha256:dcc5531e97840b9b5e794f2814476b21571c5124a3fca2267d73041f56e7580e
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+        with:
+          version: 11.18.0
+          run_install: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22.22.2
+      - name: Assert Node version
+        run: test "$(node -v)" = "v22.22.2"
+      - name: Locate pnpm store
+        id: store
+        run: echo "path=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
+      - name: Cache pnpm store
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ steps.store.outputs.path }}
+          key: pnpm-store-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+      - name: Install dependencies
+        uses: ./.github/actions/install
+        with:
+          npm-token: ${{ secrets.NPM_TOKEN }}
+      - name: Download storybook-static
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: storybook-static
+          path: apps/storybook/storybook-static
+      - name: visual
+        id: gate
+        run: bash scripts/visual.sh -- --repeat-each=5
+      - name: Remove registry credential (always)
+        if: always()
+        run: rm -f "$HOME/.npmrc"
+
+  proof-leg:
+    name: 'Gate: proof (${{ matrix.gate }})'
+    needs: preflight
+    runs-on: ubuntu-24.04
+    timeout-minutes: ${{ matrix.timeout }}
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        gate: [preflight, typecheck, eslint, stylelint, no-io, manifest, hygiene, storybook-build, unit-tests, visual]
+        include:
+          - gate: preflight
+            timeout: 4
+            image: ''
+          - gate: typecheck
+            timeout: 6
+            image: ''
+          - gate: eslint
+            timeout: 6
+            image: ''
+          - gate: stylelint
+            timeout: 6
+            image: ''
+          - gate: no-io
+            timeout: 6
+            image: ''
+          - gate: manifest
+            timeout: 6
+            image: ''
+          - gate: hygiene
+            timeout: 6
+            image: ''
+          - gate: storybook-build
+            timeout: 8
+            image: ''
+          - gate: unit-tests
+            timeout: 8
+            image: 'mcr.microsoft.com/playwright:v1.62.1-noble@sha256:dcc5531e97840b9b5e794f2814476b21571c5124a3fca2267d73041f56e7580e'
+          - gate: visual
+            timeout: 9
+            image: 'mcr.microsoft.com/playwright:v1.62.1-noble@sha256:dcc5531e97840b9b5e794f2814476b21571c5124a3fca2267d73041f56e7580e'
+    container: ${{ matrix.image }}
+    env:
+      SK_VISUAL_IMAGE: ${{ matrix.image }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+        with:
+          version: 11.18.0
+          run_install: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22.22.2
+      - name: Assert Node version
+        run: test "$(node -v)" = "v22.22.2"
+      - name: Locate pnpm store
+        if: matrix.gate != 'preflight'
+        id: store
+        run: echo "path=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
+      - name: Cache pnpm store
+        if: matrix.gate != 'preflight'
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ steps.store.outputs.path }}
+          key: pnpm-store-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+      - name: Install dependencies
+        if: matrix.gate != 'preflight'
+        uses: ./.github/actions/install
+        with:
+          npm-token: ${{ secrets.NPM_TOKEN }}
+      - name: Run the gate proof leg
+        run: node scripts/gate-proof.mjs leg --gate ${{ matrix.gate }} --out proof-output/fragments
+      - name: Upload proof fragment
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: proof-fragment-${{ matrix.gate }}
+          path: proof-output/fragments
+          retention-days: 1
+          if-no-files-found: error
+      - name: Remove registry credential (always)
+        if: always() && matrix.gate != 'preflight'
+        run: rm -f "$HOME/.npmrc"
+
+  proof:
+    name: "Gate: proof"
+    needs: proof-leg
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+        with:
+          version: 11.18.0
+          run_install: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22.22.2
+      - name: Assert Node version
+        run: test "$(node -v)" = "v22.22.2"
+      - name: Locate pnpm store
+        id: store
+        run: echo "path=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
+      - name: Cache pnpm store
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ steps.store.outputs.path }}
+          key: pnpm-store-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+      - name: Install dependencies
+        uses: ./.github/actions/install
+        with:
+          npm-token: ${{ secrets.NPM_TOKEN }}
+      - name: Download proof fragments
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: proof-fragment-*
+          merge-multiple: true
+          path: proof-output/fragments
+      - name: Coverage check
+        run: node scripts/gate-proof.mjs coverage --fragments proof-output/fragments
+      - name: Assemble and validate the proof record
+        run: node scripts/gate-proof.mjs assemble --fragments proof-output/fragments --out proof-output
+      - name: Upload proof record
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: proof-record
+          path: |
+            proof-output/proof-record.json
+            proof-output/PROOF.md
+          retention-days: 1
+          if-no-files-found: error
+      - name: Remove registry credential (always)
+        if: always()
+        run: rm -f "$HOME/.npmrc"
+
+  all:
+    name: "Gate: all"
+    needs: [preflight, typecheck, eslint, stylelint, no-io, manifest, hygiene, storybook-build, unit-tests, visual, proof-leg, proof]
+    if: always()
+    runs-on: ubuntu-24.04
+    timeout-minutes: 1
+    permissions:
+      contents: read
+    steps:
+      - name: Require every gate to have succeeded
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+        run: |
+          echo "$NEEDS" | jq -r 'to_entries[] | "\(.key): \(.value.result)"'
+          echo "$NEEDS" | jq -e 'all(.[]; .result == "success")' > /dev/null

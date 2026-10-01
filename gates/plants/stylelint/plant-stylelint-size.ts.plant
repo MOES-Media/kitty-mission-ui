@@ -1,0 +1,7 @@
+import { css } from 'lit';
+
+export const plantStylelintSize = css`
+  .plant-stylelint-size {
+    padding: 16px;
+  }
+`;

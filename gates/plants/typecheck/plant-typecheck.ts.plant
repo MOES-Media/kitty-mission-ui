@@ -1,0 +1,2 @@
+// tsc names the undeclared identifier in its message, so the token reaches the output.
+export const plantTypecheckValue: number = plantTypecheck;

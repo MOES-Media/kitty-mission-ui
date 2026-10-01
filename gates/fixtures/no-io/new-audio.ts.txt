@@ -1,0 +1,1 @@
+export const f = () => new Audio('/x.mp3');

@@ -1,0 +1,13 @@
+import { LitElement } from 'lit';
+import { customElement, property } from 'lit/decorators.js';
+
+@customElement('sk-plant-manifest')
+export class SkPlantManifest extends LitElement {
+  @property({ reflect: true })
+  status = 'ready';
+
+  override connectedCallback(): void {
+    super.connectedCallback();
+    this.dispatchEvent(new CustomEvent('sk-plant-manifest-x', { bubbles: true, composed: true }));
+  }
+}

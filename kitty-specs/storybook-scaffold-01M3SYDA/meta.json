@@ -1,0 +1,34 @@
+{
+  "accept_commit": "82cd1d35c9408ac2652608ce627105b9f46cf594",
+  "acceptance_history": [
+    {
+      "accept_commit": "82cd1d35c9408ac2652608ce627105b9f46cf594",
+      "acceptance_mode": "pr",
+      "accepted_at": "2026-10-01T06:59:02.479581+00:00",
+      "accepted_by": "claude",
+      "accepted_from_commit": "dee91ec62d44a2c275773177ac36c7f249f4e5c5"
+    }
+  ],
+  "acceptance_mode": "pr",
+  "accepted_at": "2026-10-01T06:59:02.479581+00:00",
+  "accepted_by": "claude",
+  "accepted_from_commit": "dee91ec62d44a2c275773177ac36c7f249f4e5c5",
+  "baseline_merge_commit": "a96a303b565a5e7ed99a136a028575091a018071",
+  "coordination_branch": "kitty/mission-storybook-scaffold-01M3SYDA",
+  "created_at": "2026-09-30T19:59:35.908415+00:00",
+  "flattened": false,
+  "friendly_name": "Storybook scaffold",
+  "mission_id": "01M3SYDAYX8HQRJKCEN9S1A5SE",
+  "mission_number": null,
+  "mission_slug": "storybook-scaffold-01M3SYDA",
+  "mission_type": "software-dev",
+  "pr_bound": true,
+  "purpose_context": "The shared Spec Kitty mission screens need a workspace where Lit screen elements are built, previewed in Storybook against the design system, and checked by the charter's quality gates before any real screen is written.",
+  "purpose_tldr": "Stand up the mission-ui monorepo with Storybook and quality gates so screen work can start.",
+  "slug": "storybook-scaffold-01M3SYDA",
+  "status_phase": "1",
+  "target_branch": "feat/storybook-scaffold",
+  "topology": "coord",
+  "vcs": "git",
+  "vcs_locked_at": "2026-09-30T21:25:53.718660+00:00"
+}

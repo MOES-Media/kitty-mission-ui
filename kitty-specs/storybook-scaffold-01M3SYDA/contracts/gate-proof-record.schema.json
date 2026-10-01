@@ -1,0 +1,114 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "GateProofRecord",
+  "description": "Assembled by the final `Gate: proof` job from the per-leg fragments (or produced locally by `pnpm gate-proof`). A record committed to the repository is a snapshot of its PARENT commit, informational only. SC-002 evidence is green `Gate: proof` on the PR head plus the uploaded sanitised artifact.",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "commit",
+    "snapshotOf",
+    "image",
+    "generatedAt",
+    "verdict",
+    "gates"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": 2
+    },
+    "commit": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$",
+      "description": "Commit the proof ran against"
+    },
+    "snapshotOf": {
+      "enum": [
+        "head",
+        "parent"
+      ],
+      "description": "'head' for the CI artifact; 'parent' if the record is committed (it cannot describe its own commit)"
+    },
+    "image": {
+      "type": "string",
+      "description": "Rendering image reference (tag and digest) used for browser gates"
+    },
+    "generatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "verdict": {
+      "enum": [
+        "pass",
+        "fail"
+      ]
+    },
+    "gates": {
+      "type": "array",
+      "minItems": 10,
+      "uniqueItems": true,
+      "description": "Coverage (checked by the final job): gate ids equal the `Gate: <id>` jobs in ci.yml minus {proof, all}, equal the matrix gate list, equal the gates/plants/* directories, equal the fragment set; ids pairwise distinct (asserted by the script; uniqueItems alone only rejects identical objects).",
+      "items": {
+        "type": "object",
+        "required": [
+          "gate",
+          "cleanExit",
+          "plantedExit",
+          "patternMatched",
+          "tokenAbsentFromCleanOutput",
+          "durationMs",
+          "excerpt"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "gate": {
+            "enum": [
+              "preflight",
+              "typecheck",
+              "eslint",
+              "stylelint",
+              "storybook-build",
+              "unit-tests",
+              "visual",
+              "manifest",
+              "no-io",
+              "hygiene"
+            ]
+          },
+          "plantedExit": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "patternMatched": {
+            "const": true,
+            "description": "the plant-unique token was found in the planted run's output"
+          },
+          "tokenAbsentFromCleanOutput": {
+            "const": true,
+            "description": "the plant-unique token is absent from the leg's clean run output"
+          },
+          "durationMs": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "excerpt": {
+            "type": "string",
+            "maxLength": 2000,
+            "description": "Sanitised: roots replaced by <repo>/<home>; any _authToken value rewritten to <redacted>.",
+            "not": {
+              "pattern": "(?:[/]home[/]|[/]Users[/]|[A-Za-z]:[\\\\]|_authToken\\s*[=:]\\s*(?!<)|gh[pousr]_[A-Za-z0-9]{36}|github_pat_[A-Za-z0-9_]{22,}|npm_[A-Za-z0-9]{36})"
+            }
+          },
+          "cleanExit": {
+            "const": 0,
+            "description": "the leg's own clean run of the gate command"
+          },
+          "localWorktreeCleanAfterRestore": {
+            "const": true,
+            "description": "local runs only: `git status --porcelain` empty in the throwaway worktree after restore"
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,1 @@
+export const f = () => Object.getPrototypeOf(async () => {}).constructor('return fetch')();

@@ -1,0 +1,401 @@
+schema_version: 1
+mission_id: 01M3SYDAYX8HQRJKCEN9S1A5SE
+mission_slug: storybook-scaffold-01M3SYDA
+mission_number:
+friendly_name: Storybook scaffold
+mission_type: software-dev
+target_branch: feat/storybook-scaffold
+created_at: '2026-09-30T23:38:38.872034+00:00'
+created_by:
+  kind: runtime
+  id: spec-kitty-generator
+  display: Spec Kitty Generator
+provenance:
+  kind: runtime_post_completion
+  invoked_at: '2026-09-30T23:38:38.872034+00:00'
+  policy_resolved_from:
+    enabled: <default>
+    timing: <default>
+    failure_policy: <default>
+    write_record: <default>
+    generate_proposals: <default>
+    apply_proposals: <default>
+    permissions.write_record: <default>
+    permissions.inspect_mission_artifacts: <default>
+    permissions.propose_glossary_changes: <default>
+    permissions.propose_drg_changes: <default>
+    permissions.propose_doctrine_changes: <default>
+    permissions.apply_low_risk_changes: <default>
+    permissions.apply_structural_changes: <default>
+    precedence: <default>
+    generator: <default>
+policy_source:
+  enabled: <default>
+  timing: <default>
+  failure_policy: <default>
+  write_record: <default>
+  generate_proposals: <default>
+  apply_proposals: <default>
+  permissions.write_record: <default>
+  permissions.inspect_mission_artifacts: <default>
+  permissions.propose_glossary_changes: <default>
+  permissions.propose_drg_changes: <default>
+  permissions.propose_doctrine_changes: <default>
+  permissions.apply_low_risk_changes: <default>
+  permissions.apply_structural_changes: <default>
+  precedence: <default>
+  generator: <default>
+findings_status: has_findings
+helped:
+- id: h-001
+  category: implementation
+  summary: WP02 completed without rejection cycles
+  evidence_refs:
+  - e-016
+- id: h-002
+  category: implementation
+  summary: WP03 completed without rejection cycles
+  evidence_refs:
+  - e-016
+- id: h-003
+  category: implementation
+  summary: WP09 completed without rejection cycles
+  evidence_refs:
+  - e-016
+- id: h-004
+  category: implementation
+  summary: WP11 completed without rejection cycles
+  evidence_refs:
+  - e-016
+not_helpful:
+- id: n-026
+  category: doc
+  summary: analysis-report.md present with findings
+  evidence_refs:
+  - e-042
+  details: An analysis-report.md artifact is present for this mission. Review its findings to understand documented
+    issues and decisions.
+- id: n-019
+  category: implementation
+  summary: WP01 needed 2 implementation cycles
+  evidence_refs:
+  - e-035
+  details: WP WP01 entered in_progress 2 times. Multiple implementation cycles suggest rework not captured as a
+    documented review rejection; the WP scope or contract may need refinement.
+- id: n-020
+  category: implementation
+  summary: WP04 needed 2 implementation cycles
+  evidence_refs:
+  - e-036
+  details: WP WP04 entered in_progress 2 times. Multiple implementation cycles suggest rework not captured as a
+    documented review rejection; the WP scope or contract may need refinement.
+- id: n-021
+  category: implementation
+  summary: WP05 needed 3 implementation cycles
+  evidence_refs:
+  - e-037
+  details: WP WP05 entered in_progress 3 times. Multiple implementation cycles suggest rework not captured as a
+    documented review rejection; the WP scope or contract may need refinement.
+- id: n-022
+  category: implementation
+  summary: WP06 needed 3 implementation cycles
+  evidence_refs:
+  - e-038
+  details: WP WP06 entered in_progress 3 times. Multiple implementation cycles suggest rework not captured as a
+    documented review rejection; the WP scope or contract may need refinement.
+- id: n-023
+  category: implementation
+  summary: WP07 needed 2 implementation cycles
+  evidence_refs:
+  - e-039
+  details: WP WP07 entered in_progress 2 times. Multiple implementation cycles suggest rework not captured as a
+    documented review rejection; the WP scope or contract may need refinement.
+- id: n-024
+  category: implementation
+  summary: WP08 needed 2 implementation cycles
+  evidence_refs:
+  - e-040
+  details: WP WP08 entered in_progress 2 times. Multiple implementation cycles suggest rework not captured as a
+    documented review rejection; the WP scope or contract may need refinement.
+- id: n-025
+  category: implementation
+  summary: WP10 needed 2 implementation cycles
+  evidence_refs:
+  - e-041
+  details: WP WP10 entered in_progress 2 times. Multiple implementation cycles suggest rework not captured as a
+    documented review rejection; the WP scope or contract may need refinement.
+- id: n-008
+  category: process
+  summary: WP01 required 4 --force override(s) during workflow
+  evidence_refs:
+  - e-024
+  details: WP WP01 required 4 operator-driven --force lane transition(s). Force overrides typically indicate the runtime
+    guard failed or the operator routed around it; investigate the underlying cause.
+- id: n-009
+  category: process
+  summary: WP02 required 2 --force override(s) during workflow
+  evidence_refs:
+  - e-025
+  details: WP WP02 required 2 operator-driven --force lane transition(s). Force overrides typically indicate the runtime
+    guard failed or the operator routed around it; investigate the underlying cause.
+- id: n-010
+  category: process
+  summary: WP03 required 2 --force override(s) during workflow
+  evidence_refs:
+  - e-026
+  details: WP WP03 required 2 operator-driven --force lane transition(s). Force overrides typically indicate the runtime
+    guard failed or the operator routed around it; investigate the underlying cause.
+- id: n-011
+  category: process
+  summary: WP04 required 4 --force override(s) during workflow
+  evidence_refs:
+  - e-027
+  details: WP WP04 required 4 operator-driven --force lane transition(s). Force overrides typically indicate the runtime
+    guard failed or the operator routed around it; investigate the underlying cause.
+- id: n-012
+  category: process
+  summary: WP05 required 6 --force override(s) during workflow
+  evidence_refs:
+  - e-028
+  details: WP WP05 required 6 operator-driven --force lane transition(s). Force overrides typically indicate the runtime
+    guard failed or the operator routed around it; investigate the underlying cause.
+- id: n-013
+  category: process
+  summary: WP06 required 6 --force override(s) during workflow
+  evidence_refs:
+  - e-029
+  details: WP WP06 required 6 operator-driven --force lane transition(s). Force overrides typically indicate the runtime
+    guard failed or the operator routed around it; investigate the underlying cause.
+- id: n-007
+  category: process
+  summary: WP07 had 1 lane bounce(s) before approval
+  evidence_refs:
+  - e-023
+  details: WP WP07 moved backward across workflow lanes 1 time(s) outside the documented reviewer-feedback flow.
+- id: n-014
+  category: process
+  summary: WP07 required 4 --force override(s) during workflow
+  evidence_refs:
+  - e-030
+  details: WP WP07 required 4 operator-driven --force lane transition(s). Force overrides typically indicate the runtime
+    guard failed or the operator routed around it; investigate the underlying cause.
+- id: n-015
+  category: process
+  summary: WP08 required 4 --force override(s) during workflow
+  evidence_refs:
+  - e-031
+  details: WP WP08 required 4 operator-driven --force lane transition(s). Force overrides typically indicate the runtime
+    guard failed or the operator routed around it; investigate the underlying cause.
+- id: n-016
+  category: process
+  summary: WP09 required 2 --force override(s) during workflow
+  evidence_refs:
+  - e-032
+  details: WP WP09 required 2 operator-driven --force lane transition(s). Force overrides typically indicate the runtime
+    guard failed or the operator routed around it; investigate the underlying cause.
+- id: n-017
+  category: process
+  summary: WP10 required 4 --force override(s) during workflow
+  evidence_refs:
+  - e-033
+  details: WP WP10 required 4 operator-driven --force lane transition(s). Force overrides typically indicate the runtime
+    guard failed or the operator routed around it; investigate the underlying cause.
+- id: n-018
+  category: process
+  summary: WP11 required 2 --force override(s) during workflow
+  evidence_refs:
+  - e-034
+  details: WP WP11 required 2 operator-driven --force lane transition(s). Force overrides typically indicate the runtime
+    guard failed or the operator routed around it; investigate the underlying cause.
+- id: n-001
+  category: review_loop
+  summary: WP01 required 1 rejection cycle(s) before approval
+  evidence_refs:
+  - e-017
+  details: WP WP01 was sent back from review to planning 1 time(s).
+- id: n-002
+  category: review_loop
+  summary: WP04 required 1 rejection cycle(s) before approval
+  evidence_refs:
+  - e-018
+  details: WP WP04 was sent back from review to planning 1 time(s).
+- id: n-003
+  category: review_loop
+  summary: WP05 required 2 rejection cycle(s) before approval
+  evidence_refs:
+  - e-019
+  details: WP WP05 was sent back from review to planning 2 time(s).
+- id: n-004
+  category: review_loop
+  summary: WP06 required 2 rejection cycle(s) before approval
+  evidence_refs:
+  - e-020
+  details: WP WP06 was sent back from review to planning 2 time(s).
+- id: n-005
+  category: review_loop
+  summary: WP08 required 1 rejection cycle(s) before approval
+  evidence_refs:
+  - e-021
+  details: WP WP08 was sent back from review to planning 1 time(s).
+- id: n-006
+  category: review_loop
+  summary: WP10 required 1 rejection cycle(s) before approval
+  evidence_refs:
+  - e-022
+  details: WP WP10 was sent back from review to planning 1 time(s).
+gaps: []
+proposals: []
+evidence_refs:
+- id: e-001
+  kind: file
+  path: kitty-specs/storybook-scaffold-01M3SYDA/meta.json
+- id: e-002
+  kind: file
+  path: kitty-specs/storybook-scaffold-01M3SYDA/spec.md
+- id: e-003
+  kind: file
+  path: kitty-specs/storybook-scaffold-01M3SYDA/plan.md
+- id: e-004
+  kind: file
+  path: kitty-specs/storybook-scaffold-01M3SYDA/tasks.md
+- id: e-005
+  kind: file
+  path: kitty-specs/storybook-scaffold-01M3SYDA/tasks/WP01-workspace-skeleton.md
+- id: e-006
+  kind: file
+  path: kitty-specs/storybook-scaffold-01M3SYDA/tasks/WP02-credential-preflight.md
+- id: e-007
+  kind: file
+  path: kitty-specs/storybook-scaffold-01M3SYDA/tasks/WP03-storybook-wiring.md
+- id: e-008
+  kind: file
+  path: kitty-specs/storybook-scaffold-01M3SYDA/tasks/WP04-sample-element.md
+- id: e-009
+  kind: file
+  path: kitty-specs/storybook-scaffold-01M3SYDA/tasks/WP05-lint-and-typecheck-gates.md
+- id: e-010
+  kind: file
+  path: kitty-specs/storybook-scaffold-01M3SYDA/tasks/WP06-no-io-and-manifest-gates.md
+- id: e-011
+  kind: file
+  path: kitty-specs/storybook-scaffold-01M3SYDA/tasks/WP07-hygiene-gate.md
+- id: e-012
+  kind: file
+  path: kitty-specs/storybook-scaffold-01M3SYDA/tasks/WP08-visual-regression-gate.md
+- id: e-013
+  kind: file
+  path: kitty-specs/storybook-scaffold-01M3SYDA/tasks/WP09-ci-workflow.md
+- id: e-014
+  kind: file
+  path: kitty-specs/storybook-scaffold-01M3SYDA/tasks/WP10-gate-proof-harness.md
+- id: e-015
+  kind: file
+  path: kitty-specs/storybook-scaffold-01M3SYDA/tasks/WP11-contributor-docs.md
+- id: e-016
+  kind: file
+  path: kitty-specs/storybook-scaffold-01M3SYDA/status.events.jsonl
+- id: e-017
+  kind: event_range
+  path: kitty-specs/storybook-scaffold-01M3SYDA/status.events.jsonl
+  range: 01M3T4Q0WNPKBFDAP52JGQRKX9
+- id: e-018
+  kind: event_range
+  path: kitty-specs/storybook-scaffold-01M3SYDA/status.events.jsonl
+  range: 01M3T5W8PDD8C71SQTZVV3X8X6
+- id: e-019
+  kind: event_range
+  path: kitty-specs/storybook-scaffold-01M3SYDA/status.events.jsonl
+  range: 01M3T6K9WY61J2GWM6E02G9Z99..01M3T6TM2NK4HBTFSWWQ0RRJ44
+- id: e-020
+  kind: event_range
+  path: kitty-specs/storybook-scaffold-01M3SYDA/status.events.jsonl
+  range: 01M3T6HTN7EHJEQRNX49DGDZ3Z..01M3T6SZKDHWQKXN0M9PKFWXVS
+- id: e-021
+  kind: event_range
+  path: kitty-specs/storybook-scaffold-01M3SYDA/status.events.jsonl
+  range: 01M3T6PV69N3H09J4RN2G57C7F
+- id: e-022
+  kind: event_range
+  path: kitty-specs/storybook-scaffold-01M3SYDA/status.events.jsonl
+  range: 01M3T994MWQHWEWA43ZB2HM3HS
+- id: e-023
+  kind: event_range
+  path: kitty-specs/storybook-scaffold-01M3SYDA/status.events.jsonl
+  range: 01M3T6R1X1NZ0AB0ANTE2B355P
+- id: e-024
+  kind: event_range
+  path: kitty-specs/storybook-scaffold-01M3SYDA/status.events.jsonl
+  range: 01M3T4HAEHWQ41AC9GDJPZ0J2J..01M3T55CVKKN8CFN977ANMNB1Q
+- id: e-025
+  kind: event_range
+  path: kitty-specs/storybook-scaffold-01M3SYDA/status.events.jsonl
+  range: 01M3T5C8B3674Y7ATRS6MPNWWA..01M3T5GXWVN5ERPJDQN9DQ8BVQ
+- id: e-026
+  kind: event_range
+  path: kitty-specs/storybook-scaffold-01M3SYDA/status.events.jsonl
+  range: 01M3T5AZVH47R2PQ8JQHSQHKBV..01M3T5FA8NPGKE7DADA5JBB5H3
+- id: e-027
+  kind: event_range
+  path: kitty-specs/storybook-scaffold-01M3SYDA/status.events.jsonl
+  range: 01M3T5Q0JVNY2NVZVZRPGBFKH2..01M3T61RKADS84BMW6AC7EJJQ7
+- id: e-028
+  kind: event_range
+  path: kitty-specs/storybook-scaffold-01M3SYDA/status.events.jsonl
+  range: 01M3T6BZQN9X29VXGRTZT4H2YN..01M3T76A658KGJ453MW8QK5R7X
+- id: e-029
+  kind: event_range
+  path: kitty-specs/storybook-scaffold-01M3SYDA/status.events.jsonl
+  range: 01M3T6A9V7DHJGT9FVH4AG2GXA..01M3T7790ZR1462P4GFV6956SH
+- id: e-030
+  kind: event_range
+  path: kitty-specs/storybook-scaffold-01M3SYDA/status.events.jsonl
+  range: 01M3T6FWZKEC0F6G16JJDNW3ZB..01M3T784X4G1ZV3AXNEHQSKE1P
+- id: e-031
+  kind: event_range
+  path: kitty-specs/storybook-scaffold-01M3SYDA/status.events.jsonl
+  range: 01M3T6FM6FA7ZW73GEDNN2YZXH..01M3T7324H2A7YFQTG101NNNKZ
+- id: e-032
+  kind: event_range
+  path: kitty-specs/storybook-scaffold-01M3SYDA/status.events.jsonl
+  range: 01M3T7NRDZSVXMQXPVPN5QJ006..01M3T7XDAS3SKZ4MV7K904HRPT
+- id: e-033
+  kind: event_range
+  path: kitty-specs/storybook-scaffold-01M3SYDA/status.events.jsonl
+  range: 01M3T8Y77A7NVDECXN6WB9VC12..01M3T9P6MFDNWPHANTTCVRQTED
+- id: e-034
+  kind: event_range
+  path: kitty-specs/storybook-scaffold-01M3SYDA/status.events.jsonl
+  range: 01M3TAKXD2XR3PGP0EGMHN87RD..01M3TAQHFF3K7G59NTA43JVQ5M
+- id: e-035
+  kind: event_range
+  path: kitty-specs/storybook-scaffold-01M3SYDA/status.events.jsonl
+  range: implementation_cycles
+- id: e-036
+  kind: event_range
+  path: kitty-specs/storybook-scaffold-01M3SYDA/status.events.jsonl
+  range: implementation_cycles
+- id: e-037
+  kind: event_range
+  path: kitty-specs/storybook-scaffold-01M3SYDA/status.events.jsonl
+  range: implementation_cycles
+- id: e-038
+  kind: event_range
+  path: kitty-specs/storybook-scaffold-01M3SYDA/status.events.jsonl
+  range: implementation_cycles
+- id: e-039
+  kind: event_range
+  path: kitty-specs/storybook-scaffold-01M3SYDA/status.events.jsonl
+  range: implementation_cycles
+- id: e-040
+  kind: event_range
+  path: kitty-specs/storybook-scaffold-01M3SYDA/status.events.jsonl
+  range: implementation_cycles
+- id: e-041
+  kind: event_range
+  path: kitty-specs/storybook-scaffold-01M3SYDA/status.events.jsonl
+  range: implementation_cycles
+- id: e-042
+  kind: file
+  path: kitty-specs/storybook-scaffold-01M3SYDA/analysis-report.md
+generator_version: '1.0'
+provenance_history: []

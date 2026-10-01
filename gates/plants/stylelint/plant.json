@@ -1,0 +1,24 @@
+[
+  {
+    "gate": "stylelint",
+    "ciCommand": "pnpm lint:styles",
+    "expectFailPattern": "plant-stylelint-color",
+    "overlays": [
+      {
+        "target": "packages/mission-ui/src/plant-stylelint-color.ts",
+        "source": "plant-stylelint-color.ts.plant"
+      }
+    ]
+  },
+  {
+    "gate": "stylelint",
+    "ciCommand": "pnpm lint:styles",
+    "expectFailPattern": "plant-stylelint-size",
+    "overlays": [
+      {
+        "target": "packages/mission-ui/src/plant-stylelint-size.ts",
+        "source": "plant-stylelint-size.ts.plant"
+      }
+    ]
+  }
+]

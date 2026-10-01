@@ -1,0 +1,26 @@
+[
+  {
+    "gate": "preflight",
+    "ciCommand": "node scripts/preflight.mjs --ci",
+    "command": "sh -c 'd=\"$(mktemp -d)\"; trap \"rm -rf -- \\${d:?}\" EXIT; env -i PATH=\"$PATH\" HOME=\"$d\" node scripts/preflight.mjs'",
+    "expectFailPattern": "PLANT-PREFLIGHT-MISSING",
+    "overlays": [
+      {
+        "target": "<empty HOME>",
+        "generated": "a fresh empty directory used as HOME with an empty environment, so no user npmrc and no NPM_TOKEN exist; the message names ~/.npmrc"
+      }
+    ]
+  },
+  {
+    "gate": "preflight",
+    "ciCommand": "node scripts/preflight.mjs --ci",
+    "command": "sh -c 'd=\"$(mktemp -d)\"; trap \"rm -rf -- \\${d:?}\" EXIT; printf \"//npm.pkg.github.com/:_authToken=%s\\n\" \"placeholder-$$\" > \"$d/.npmrc\"; env -i PATH=\"$PATH\" HOME=\"$d\" node scripts/preflight.mjs'",
+    "expectFailPattern": "token rejected or expired",
+    "overlays": [
+      {
+        "target": "<temp HOME>/.npmrc",
+        "generated": "a temp user npmrc whose _authToken value is a run-time placeholder (placeholder-<pid>), never a token-shaped literal; needs network, so it runs in the preflight proof leg only"
+      }
+    ]
+  }
+]

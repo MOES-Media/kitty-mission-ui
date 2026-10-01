@@ -1,0 +1,2 @@
+const n = navigator;
+export const f = () => n.sendBeacon('/x');

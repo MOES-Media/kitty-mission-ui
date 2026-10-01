@@ -1,0 +1,6 @@
+// Planted violation: imports a module that does not exist, so the Storybook build must fail.
+import './plant-storybook-missing.js';
+
+export default { title: 'Plant/StorybookMissing' };
+
+export const Default = { render: () => document.createElement('div') };

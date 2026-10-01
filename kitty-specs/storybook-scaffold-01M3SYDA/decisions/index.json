@@ -1,0 +1,30 @@
+{
+  "entries": [
+    {
+      "created_at": "2026-09-30T20:00:25.468686Z",
+      "decision_id": "01M3SYEVBW2T2DBAK77SVNMWRC",
+      "final_answer": "CI runs on GitHub-hosted ubuntu-24.04 runners and installs @spec-kitty/* with a read:packages classic PAT stored as the repo secret NPM_TOKEN (same kind as QA_NPM_TOKEN). The repo .npmrc holds only the scope mapping; local builds use the developer's own ~/.npmrc token.",
+      "input_key": "ci_package_access",
+      "mission_id": "01M3SYDAYX8HQRJKCEN9S1A5SE",
+      "mission_slug": "storybook-scaffold-01M3SYDA",
+      "opened_by": "cli",
+      "options": [
+        "GITHUB_TOKEN with this repo granted Actions access on each package",
+        "Org secret holding a read:packages PAT",
+        "Other"
+      ],
+      "origin_flow": "specify",
+      "other_answer": true,
+      "question": "How should CI authenticate to install the private @spec-kitty/* packages from GitHub Packages?",
+      "rationale": null,
+      "resolved_at": "2026-09-30T20:17:08.313492Z",
+      "resolved_by": null,
+      "slot_key": "specify.ci.package-access",
+      "status": "resolved",
+      "step_id": null,
+      "summary_json": null
+    }
+  ],
+  "mission_id": "01M3SYDAYX8HQRJKCEN9S1A5SE",
+  "version": 1
+}

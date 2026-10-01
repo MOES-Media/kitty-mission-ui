@@ -1,0 +1,52 @@
+{
+  "name": "spec-kitty-mission-ui",
+  "private": true,
+  "packageManager": "pnpm@11.18.0+sha512.33d83c77da82f49fba836925c6f1b841181ec3132b670639bd012f7075f5c7cf634c5f870147c19aae7478fac01df09d8892e880454896edd23ee9b33757563c",
+  "engines": {
+    "node": "22.22.2",
+    "pnpm": "11.18.0"
+  },
+  "scripts": {
+    "preflight": "node scripts/preflight.mjs",
+    "typecheck": "pnpm -r typecheck",
+    "lint": "eslint . --max-warnings 0",
+    "lint:styles": "stylelint \"packages/*/src/**/*.{css,ts,mts,cts,tsx,js,mjs,cjs,jsx}\"",
+    "lint:no-io": "eslint -c eslint.no-io.config.mjs packages/*/src",
+    "test:no-io": "vitest run --config gates/vitest.config.ts gates/no-io.selftest.ts",
+    "manifest:generate": "pnpm --filter @spec-kitty/mission-ui manifest:generate",
+    "manifest:check": "node scripts/check-manifest.mjs",
+    "hygiene": "node scripts/check-hygiene.mjs",
+    "test": "pnpm --filter @spec-kitty/mission-ui test",
+    "storybook": "pnpm --filter @spec-kitty/storybook-app storybook",
+    "storybook:build-only": "pnpm --filter @spec-kitty/storybook-app build",
+    "build-storybook": "pnpm storybook:build-only && node scripts/check-hygiene.mjs --storybook-static",
+    "visual:run": "pnpm --filter @spec-kitty/storybook-app visual:run",
+    "visual": "pnpm build-storybook && bash scripts/visual.sh",
+    "visual:update": "pnpm build-storybook && bash scripts/visual.sh --update",
+    "gate-proof": "node scripts/gate-proof.mjs",
+    "test:preflight": "node --test scripts/preflight.test.mjs",
+    "test:manifest-screen": "node --test scripts/manifest-screen.test.mjs"
+  },
+  "devDependencies": {
+    "@custom-elements-manifest/analyzer": "0.11.0",
+    "@eslint/js": "9.39.5",
+    "@playwright/test": "1.62.1",
+    "@storybook/addon-docs": "10.6.1",
+    "@storybook/web-components-vite": "10.6.1",
+    "@types/node": "22.20.4",
+    "@vitest/browser": "4.1.11",
+    "@vitest/browser-playwright": "4.1.11",
+    "ajv": "8.20.0",
+    "eslint": "9.39.5",
+    "eslint-plugin-lit": "2.3.1",
+    "postcss-lit": "1.4.1",
+    "storybook": "10.6.1",
+    "stylelint": "16.26.1",
+    "stylelint-declaration-strict-value": "1.12.1",
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.71.0",
+    "vite": "7.3.6",
+    "vitest": "4.1.11",
+    "yaml": "2.9.1"
+  }
+}

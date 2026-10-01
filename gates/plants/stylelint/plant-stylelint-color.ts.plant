@@ -1,0 +1,7 @@
+import { css } from 'lit';
+
+export const plantStylelintColor = css`
+  .plant-stylelint-color {
+    color: #ff00aa;
+  }
+`;

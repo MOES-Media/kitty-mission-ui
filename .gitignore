@@ -35,3 +35,15 @@
 .kittify/workspaces/
 .worktrees/
 kitty-ops/ops-index.jsonl
+
+# Workspace (WP01)
+node_modules/
+storybook-static/
+test-results/
+playwright-report/
+.env*
+# gate-proof output (CI artifact)
+proof-output/
+
+# spec-kitty runtime state (review locks carry absolute paths)
+.spec-kitty/

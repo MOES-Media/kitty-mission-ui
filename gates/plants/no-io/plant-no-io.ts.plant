@@ -1,0 +1,1 @@
+export const plantNoIo = (): Promise<Response> => fetch('/plant-no-io');

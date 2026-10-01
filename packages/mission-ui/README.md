@@ -1,0 +1,12 @@
+# @spec-kitty/mission-ui
+
+Private Lit elements for the Spec Kitty mission screens, built on `@spec-kitty/elements`. The repository README
+(setup, credential, gates, "Add an element") applies; this note covers the package itself.
+
+- `src/index.ts` is the only place custom elements are registered (guarded `customElements.define`). Element modules
+  never self-register.
+- Events are typed: import `SkMissionOpenDetail` and `SkMissionRetryDetail` from the package entry; they are also in
+  `HTMLElementEventMap` and in the generated `custom-elements.json`.
+- **`@spec-kitty/styles` is declared only because `@spec-kitty/elements` lists it as a peer dependency** (so the
+  frozen install resolves one copy of each). Nothing in this package imports it directly; component CSS only uses `--sk-*` custom properties, whose
+  stylesheet (`@spec-kitty/tokens`) the host page loads (the Storybook preview does).

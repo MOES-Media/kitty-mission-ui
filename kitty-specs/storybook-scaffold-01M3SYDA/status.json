@@ -1,0 +1,197 @@
+{
+  "event_count": 121,
+  "last_event_id": "01M3TAY81H3YNAWZBNAPMZG9XJ",
+  "materialized_at": "2026-09-30T23:38:32.881822+00:00",
+  "mission_number": "",
+  "mission_slug": "storybook-scaffold-01M3SYDA",
+  "mission_type": "",
+  "summary": {
+    "approved": 0,
+    "blocked": 0,
+    "canceled": 0,
+    "claimed": 0,
+    "done": 11,
+    "for_review": 0,
+    "in_progress": 0,
+    "in_review": 0,
+    "planned": 0
+  },
+  "work_packages": {
+    "WP01": {
+      "actor": "merge",
+      "agent": "claude",
+      "force_count": 4,
+      "lane": "done",
+      "last_event_id": "01M3TAXY2WAXW9V9WKQCC0HEW7",
+      "last_transition_at": "2026-09-30T23:38:22.684068+00:00",
+      "review_result": {
+        "feedback_path": "~/dev/spec-kitty-mission-ui/kitty-specs/storybook-scaffold-01M3SYDA/tasks/WP01-workspace-skeleton/review-cycle-2.md",
+        "reference": "review-cycle://storybook-scaffold-01M3SYDA/WP01-workspace-skeleton/review-cycle-2.md",
+        "reviewer": "claude",
+        "verdict": "approved"
+      },
+      "shell_pid": 944296,
+      "shell_pid_created_at": "1790805027.23"
+    },
+    "WP02": {
+      "actor": "merge",
+      "agent": "claude",
+      "force_count": 2,
+      "lane": "done",
+      "last_event_id": "01M3TAXZ2FX76RBPHTX7SXRYFS",
+      "last_transition_at": "2026-09-30T23:38:23.695273+00:00",
+      "review_result": {
+        "feedback_path": "~/dev/spec-kitty-mission-ui/kitty-specs/storybook-scaffold-01M3SYDA/tasks/WP02-credential-preflight/review-cycle-1.md",
+        "reference": "review-cycle://storybook-scaffold-01M3SYDA/WP02-credential-preflight/review-cycle-1.md",
+        "reviewer": "claude",
+        "verdict": "approved"
+      },
+      "shell_pid": 971355,
+      "shell_pid_created_at": "1790805599.31"
+    },
+    "WP03": {
+      "actor": "merge",
+      "agent": "claude",
+      "force_count": 2,
+      "lane": "done",
+      "last_event_id": "01M3TAY00JEY7PA0K0AR64YNBR",
+      "last_transition_at": "2026-09-30T23:38:24.658782+00:00",
+      "review_result": {
+        "feedback_path": "~/dev/spec-kitty-mission-ui/kitty-specs/storybook-scaffold-01M3SYDA/tasks/WP03-storybook-wiring/review-cycle-1.md",
+        "reference": "review-cycle://storybook-scaffold-01M3SYDA/WP03-storybook-wiring/review-cycle-1.md",
+        "reviewer": "claude",
+        "verdict": "approved"
+      },
+      "shell_pid": 966742,
+      "shell_pid_created_at": "1790805517.76"
+    },
+    "WP04": {
+      "actor": "merge",
+      "agent": "claude",
+      "force_count": 4,
+      "lane": "done",
+      "last_event_id": "01M3TAY1T6V17SXDK64C80CVGS",
+      "last_transition_at": "2026-09-30T23:38:26.502532+00:00",
+      "review_result": {
+        "feedback_path": "~/dev/spec-kitty-mission-ui/kitty-specs/storybook-scaffold-01M3SYDA/tasks/WP04-sample-element/review-cycle-2.md",
+        "reference": "review-cycle://storybook-scaffold-01M3SYDA/WP04-sample-element/review-cycle-2.md",
+        "reviewer": "claude",
+        "verdict": "approved"
+      },
+      "shell_pid": 1031550,
+      "shell_pid_created_at": "1790806238.07"
+    },
+    "WP05": {
+      "actor": "merge",
+      "agent": "claude",
+      "force_count": 6,
+      "lane": "done",
+      "last_event_id": "01M3TAY2SYEGPSS0NZ0D1Y4T4S",
+      "last_transition_at": "2026-09-30T23:38:27.518955+00:00",
+      "review_result": {
+        "feedback_path": "~/dev/spec-kitty-mission-ui/kitty-specs/storybook-scaffold-01M3SYDA/tasks/WP05-lint-and-typecheck-gates/review-cycle-3.md",
+        "reference": "review-cycle://storybook-scaffold-01M3SYDA/WP05-lint-and-typecheck-gates/review-cycle-3.md",
+        "reviewer": "claude",
+        "verdict": "approved"
+      },
+      "shell_pid": 1200058,
+      "shell_pid_created_at": "1790807350.64"
+    },
+    "WP06": {
+      "actor": "merge",
+      "agent": "claude",
+      "force_count": 6,
+      "lane": "done",
+      "last_event_id": "01M3TAY3KD5C60RRWWPHRT5070",
+      "last_transition_at": "2026-09-30T23:38:28.333738+00:00",
+      "review_result": {
+        "feedback_path": "~/dev/spec-kitty-mission-ui/kitty-specs/storybook-scaffold-01M3SYDA/tasks/WP06-no-io-and-manifest-gates/review-cycle-4.md",
+        "reference": "review-cycle://storybook-scaffold-01M3SYDA/WP06-no-io-and-manifest-gates/review-cycle-4.md",
+        "reviewer": "claude",
+        "verdict": "approved"
+      },
+      "shell_pid": 1200112,
+      "shell_pid_created_at": "1790807350.93"
+    },
+    "WP07": {
+      "actor": "merge",
+      "agent": "claude",
+      "force_count": 4,
+      "lane": "done",
+      "last_event_id": "01M3TAY4E9EQBM0ADMQ9N9E03E",
+      "last_transition_at": "2026-09-30T23:38:29.193804+00:00",
+      "review_result": {
+        "feedback_path": "~/dev/spec-kitty-mission-ui/kitty-specs/storybook-scaffold-01M3SYDA/tasks/WP07-hygiene-gate/review-cycle-2.md",
+        "reference": "review-cycle://storybook-scaffold-01M3SYDA/WP07-hygiene-gate/review-cycle-2.md",
+        "reviewer": "claude",
+        "verdict": "approved"
+      },
+      "shell_pid": 1200140,
+      "shell_pid_created_at": "1790807351.13"
+    },
+    "WP08": {
+      "actor": "merge",
+      "agent": "claude",
+      "force_count": 4,
+      "lane": "done",
+      "last_event_id": "01M3TAY59QFKM3WWVX8SJGRRZK",
+      "last_transition_at": "2026-09-30T23:38:30.071832+00:00",
+      "review_result": {
+        "feedback_path": "~/dev/spec-kitty-mission-ui/kitty-specs/storybook-scaffold-01M3SYDA/tasks/WP08-visual-regression-gate/review-cycle-2.md",
+        "reference": "review-cycle://storybook-scaffold-01M3SYDA/WP08-visual-regression-gate/review-cycle-2.md",
+        "reviewer": "claude",
+        "verdict": "approved"
+      },
+      "shell_pid": 1176560,
+      "shell_pid_created_at": "1790807108.08"
+    },
+    "WP09": {
+      "actor": "merge",
+      "agent": "claude",
+      "force_count": 2,
+      "lane": "done",
+      "last_event_id": "01M3TAY66Y6QQVT3JAA3XFCYPP",
+      "last_transition_at": "2026-09-30T23:38:31.006901+00:00",
+      "review_result": {
+        "feedback_path": "~/dev/spec-kitty-mission-ui/kitty-specs/storybook-scaffold-01M3SYDA/tasks/WP09-ci-workflow/review-cycle-1.md",
+        "reference": "review-cycle://storybook-scaffold-01M3SYDA/WP09-ci-workflow/review-cycle-1.md",
+        "reviewer": "claude",
+        "verdict": "approved"
+      },
+      "shell_pid": 1244054,
+      "shell_pid_created_at": "1790807723.48"
+    },
+    "WP10": {
+      "actor": "merge",
+      "agent": "claude",
+      "force_count": 4,
+      "lane": "done",
+      "last_event_id": "01M3TAY763XTR823DJ1RBQ9B4T",
+      "last_transition_at": "2026-09-30T23:38:32.003405+00:00",
+      "review_result": {
+        "feedback_path": "~/dev/spec-kitty-mission-ui/kitty-specs/storybook-scaffold-01M3SYDA/tasks/WP10-gate-proof-harness/review-cycle-2.md",
+        "reference": "review-cycle://storybook-scaffold-01M3SYDA/WP10-gate-proof-harness/review-cycle-2.md",
+        "reviewer": "claude",
+        "verdict": "approved"
+      },
+      "shell_pid": 1583881,
+      "shell_pid_created_at": "1790809803.94"
+    },
+    "WP11": {
+      "actor": "merge",
+      "agent": "claude",
+      "force_count": 2,
+      "lane": "done",
+      "last_event_id": "01M3TAY81H3YNAWZBNAPMZG9XJ",
+      "last_transition_at": "2026-09-30T23:38:32.881822+00:00",
+      "review_result": {
+        "feedback_path": "~/dev/spec-kitty-mission-ui/kitty-specs/storybook-scaffold-01M3SYDA/tasks/WP11-contributor-docs/review-cycle-1.md",
+        "reference": "review-cycle://storybook-scaffold-01M3SYDA/WP11-contributor-docs/review-cycle-1.md",
+        "reviewer": "claude",
+        "verdict": "approved"
+      },
+      "shell_pid": 1645485,
+      "shell_pid_created_at": "1790810231.49"
+    }
+  }
+}

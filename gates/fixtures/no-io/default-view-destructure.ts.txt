@@ -1,0 +1,1 @@
+export const f = (el: Element) => { const { defaultView } = el.ownerDocument; return defaultView; };

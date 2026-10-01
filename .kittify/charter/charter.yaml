@@ -1583,7 +1583,7 @@ catalog:
     local_path: _LIBRARY/template-set-software-dev-default.md
 overrides: {}
 metadata:
-  generated_at: '2026-09-30T19:56:42Z'
+  generated_at: '2026-09-30T20:00:07Z'
   bundle_schema_version: 2
 mission_type_activations:
 - software-dev

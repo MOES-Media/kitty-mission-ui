@@ -1,0 +1,18 @@
+{
+  "name": "@spec-kitty/mission-ui",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "src/index.ts",
+  "dependencies": {
+    "@spec-kitty/elements": "1.1.0-rc.10",
+    "@spec-kitty/styles": "1.1.0-rc.10",
+    "@spec-kitty/tokens": "1.1.0-rc.10",
+    "lit": "3.3.3"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "manifest:generate": "cem analyze --config custom-elements-manifest.config.mjs"
+  }
+}

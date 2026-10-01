@@ -1,0 +1,1 @@
+export const f = (e: Element) => e.insertAdjacentHTML('beforeend', '<i></i>');

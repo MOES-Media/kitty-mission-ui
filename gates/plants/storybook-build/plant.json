@@ -1,0 +1,11 @@
+{
+  "gate": "storybook-build",
+  "ciCommand": "pnpm build-storybook",
+  "expectFailPattern": "plant-storybook-missing",
+  "overlays": [
+    {
+      "target": "packages/mission-ui/src/elements/sk-mission-sample/plant-storybook-build.stories.ts",
+      "source": "plant-storybook-missing.stories.ts.plant"
+    }
+  ]
+}

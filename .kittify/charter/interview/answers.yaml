@@ -25,7 +25,15 @@ answers:
     interaction tests, visual regression, and a custom-elements manifest that is
     current and declares every public property and event. An architectural gate
     fails if a screen or pattern package performs I/O (fetch, XMLHttpRequest,
-    WebSocket, Tauri APIs, localStorage/sessionStorage/IndexedDB).
+    WebSocket, Tauri APIs, localStorage/sessionStorage/IndexedDB). Elements over
+    CSS: every UI primitive that @spec-kitty/elements provides (card, notice, pill
+    tag, nav pill, status indicator, button, and so on) is rendered with that sk-*
+    element; re-implementing it with hand-written CSS or copied @spec-kitty/styles
+    classes is a review failure. Project CSS is limited to layout (positioning,
+    grid, flex, gaps) and uses --sk-* tokens only; Stylelint rejects raw colour,
+    font and size literals. A primitive the library lacks is recorded as a
+    component gap for the design library, not hand-rolled; a temporary local
+    stand-in needs an exception recorded in the PR.
   review_policy: >-
     Pull requests into main. Every work package is reviewed by a separate reviewer
     agent before approval. An adversarial review squad runs after the plan phase

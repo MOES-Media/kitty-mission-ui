@@ -1,0 +1,16 @@
+{
+  "gate": "unit-tests",
+  "ciCommand": "pnpm test",
+  "expectFailPattern": "plant-unit-slug",
+  "overlays": [
+    {
+      "target": "packages/mission-ui/src/elements/sk-mission-sample/sk-mission-sample.ts",
+      "edits": [
+        {
+          "find": "{ slug }",
+          "replace": "{ 'plant-unit-slug': slug }"
+        }
+      ]
+    }
+  ]
+}

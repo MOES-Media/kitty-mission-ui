@@ -1,0 +1,11 @@
+{
+  "gate": "eslint",
+  "ciCommand": "pnpm lint",
+  "expectFailPattern": "plantEslintUnused",
+  "overlays": [
+    {
+      "target": "packages/mission-ui/src/plant-eslint.ts",
+      "source": "plant-eslint.ts.plant"
+    }
+  ]
+}

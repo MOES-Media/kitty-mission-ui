@@ -1,0 +1,1 @@
+export const f = () => window['fe' + 'tch']('/x');

@@ -1,0 +1,2 @@
+const e = eval;
+export const f = () => e('1');

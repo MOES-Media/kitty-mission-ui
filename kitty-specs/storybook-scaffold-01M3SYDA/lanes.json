@@ -1,0 +1,256 @@
+{
+  "version": 1,
+  "mission_slug": "storybook-scaffold-01M3SYDA",
+  "mission_id": "01M3SYDAYX8HQRJKCEN9S1A5SE",
+  "mission_branch": "kitty/mission-storybook-scaffold-01M3SYDA",
+  "target_branch": "feat/storybook-scaffold",
+  "lanes": [
+    {
+      "lane_id": "lane-a",
+      "wp_ids": [
+        "WP01"
+      ],
+      "write_scope": [
+        ".gitignore",
+        ".npmrc",
+        ".nvmrc",
+        ".pnpmfile.cjs",
+        "apps/storybook/package.json",
+        "apps/storybook/tsconfig.json",
+        "package.json",
+        "packages/mission-ui/package.json",
+        "packages/mission-ui/tsconfig.json",
+        "pnpm-lock.yaml",
+        "pnpm-workspace.yaml",
+        "scripts/preflight-core.cjs",
+        "tsconfig.base.json"
+      ],
+      "predicted_surfaces": [
+        "api",
+        "workspace"
+      ],
+      "depends_on_lanes": [],
+      "parallel_group": 0
+    },
+    {
+      "lane_id": "lane-b",
+      "wp_ids": [
+        "WP02"
+      ],
+      "write_scope": [
+        "gates/plants/preflight/**",
+        "scripts/preflight.mjs",
+        "scripts/preflight.test.mjs"
+      ],
+      "predicted_surfaces": [
+        "api",
+        "tests",
+        "workspace"
+      ],
+      "depends_on_lanes": [
+        "lane-a"
+      ],
+      "parallel_group": 1
+    },
+    {
+      "lane_id": "lane-c",
+      "wp_ids": [
+        "WP03"
+      ],
+      "write_scope": [
+        "apps/storybook/.storybook/**",
+        "gates/plants/storybook-build/**"
+      ],
+      "predicted_surfaces": [
+        "api",
+        "app-shell",
+        "artifact-rendering",
+        "legacy-cleanup",
+        "workspace"
+      ],
+      "depends_on_lanes": [
+        "lane-a"
+      ],
+      "parallel_group": 1
+    },
+    {
+      "lane_id": "lane-d",
+      "wp_ids": [
+        "WP04"
+      ],
+      "write_scope": [
+        "gates/plants/unit-tests/**",
+        "packages/mission-ui/CHANGELOG.md",
+        "packages/mission-ui/src/**",
+        "packages/mission-ui/test/**",
+        "packages/mission-ui/vitest.config.ts"
+      ],
+      "predicted_surfaces": [
+        "api",
+        "artifact-rendering",
+        "legacy-cleanup",
+        "workspace"
+      ],
+      "depends_on_lanes": [
+        "lane-c"
+      ],
+      "parallel_group": 2
+    },
+    {
+      "lane_id": "lane-e",
+      "wp_ids": [
+        "WP05"
+      ],
+      "write_scope": [
+        "eslint-rules/**",
+        "eslint.config.mjs",
+        "gates/plants/eslint/**",
+        "gates/plants/stylelint/**",
+        "gates/plants/typecheck/**",
+        "stylelint.config.mjs"
+      ],
+      "predicted_surfaces": [
+        "api",
+        "app-shell",
+        "artifact-rendering",
+        "workspace"
+      ],
+      "depends_on_lanes": [
+        "lane-d"
+      ],
+      "parallel_group": 3
+    },
+    {
+      "lane_id": "lane-f",
+      "wp_ids": [
+        "WP06"
+      ],
+      "write_scope": [
+        "eslint.no-io.config.mjs",
+        "gates/fixtures/no-io/**",
+        "gates/no-io.selftest.ts",
+        "gates/plants/manifest/**",
+        "gates/plants/no-io/**",
+        "gates/vitest.config.ts",
+        "packages/mission-ui/custom-elements-manifest.config.mjs",
+        "packages/mission-ui/custom-elements.json",
+        "scripts/check-manifest.mjs"
+      ],
+      "predicted_surfaces": [
+        "api",
+        "workspace"
+      ],
+      "depends_on_lanes": [
+        "lane-d"
+      ],
+      "parallel_group": 3
+    },
+    {
+      "lane_id": "lane-g",
+      "wp_ids": [
+        "WP07"
+      ],
+      "write_scope": [
+        "gates/plants/hygiene/**",
+        "scripts/check-hygiene.mjs",
+        "scripts/hygiene/**"
+      ],
+      "predicted_surfaces": [
+        "api",
+        "artifact-rendering",
+        "legacy-cleanup",
+        "tests",
+        "workspace"
+      ],
+      "depends_on_lanes": [
+        "lane-d"
+      ],
+      "parallel_group": 3
+    },
+    {
+      "lane_id": "lane-h",
+      "wp_ids": [
+        "WP08"
+      ],
+      "write_scope": [
+        "apps/storybook/playwright.config.ts",
+        "apps/storybook/tests/visual/**",
+        "gates/plants/visual/**",
+        "scripts/visual.sh"
+      ],
+      "predicted_surfaces": [
+        "api",
+        "artifact-rendering",
+        "legacy-cleanup",
+        "workspace"
+      ],
+      "depends_on_lanes": [
+        "lane-c",
+        "lane-d"
+      ],
+      "parallel_group": 3
+    },
+    {
+      "lane_id": "lane-i",
+      "wp_ids": [
+        "WP09"
+      ],
+      "write_scope": [
+        ".github/workflows/ci.yml"
+      ],
+      "predicted_surfaces": [
+        "api",
+        "artifact-rendering",
+        "workspace"
+      ],
+      "depends_on_lanes": [
+        "lane-b",
+        "lane-e",
+        "lane-f",
+        "lane-g",
+        "lane-h"
+      ],
+      "parallel_group": 4
+    },
+    {
+      "lane_id": "lane-j",
+      "wp_ids": [
+        "WP10"
+      ],
+      "write_scope": [
+        "scripts/gate-proof.mjs",
+        "scripts/gate-proof/**"
+      ],
+      "predicted_surfaces": [
+        "api",
+        "legacy-cleanup",
+        "workspace"
+      ],
+      "depends_on_lanes": [
+        "lane-i"
+      ],
+      "parallel_group": 5
+    },
+    {
+      "lane_id": "lane-k",
+      "wp_ids": [
+        "WP11"
+      ],
+      "write_scope": [
+        "README.md"
+      ],
+      "predicted_surfaces": [
+        "api",
+        "workspace"
+      ],
+      "depends_on_lanes": [
+        "lane-j"
+      ],
+      "parallel_group": 6
+    }
+  ],
+  "computed_at": "2026-09-30T21:20:18.767535+00:00",
+  "computed_from": "dependency_graph+ownership",
+  "planning_artifact_wps": [],
+  "planning_commit_sha": "249c9074e7dab786692b01a6e9e62a85ab576493"
+}

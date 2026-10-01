@@ -22,6 +22,16 @@ the approved Kitty Desktop V2 interactive prototype.
 - Screens are composed from pattern elements built on `@spec-kitty/elements` (atomic
   design); each element keeps a small, stable interface (deep modules).
 
+## Elements over CSS
+
+- Every UI primitive that `@spec-kitty/elements` provides (card, notice, pill tag, nav pill,
+  status indicator, button, …) is rendered with that `sk-*` element. Re-implementing it with
+  hand-written CSS or copied `@spec-kitty/styles` classes is a review failure.
+- Project CSS is limited to layout: positioning, grid, flex, gaps. It uses `--sk-*` tokens
+  only; Stylelint rejects raw colour, font and size literals.
+- A primitive the library lacks is recorded as a component gap for the design library, not
+  hand-rolled. A temporary local stand-in needs an exception recorded in the PR.
+
 ## Stack
 
 TypeScript (strict), Lit 3, Storybook, Vite, pnpm workspaces. `@spec-kitty/tokens`,
@@ -31,7 +41,7 @@ TypeScript (strict), Lit 3, Storybook, Vite, pnpm workspaces. `@spec-kitty/token
 
 Typecheck, ESLint, Stylelint, Storybook build, unit and interaction tests, visual regression
 against the prototype, a current custom-elements manifest declaring every public property and
-event, and the no-I/O architectural gate.
+event, the no-I/O architectural gate, and the token-only Stylelint rules (elements over CSS).
 
 Every screen has a story per view state with synthetic fixtures; interaction tests assert
 every emitted event and its payload.

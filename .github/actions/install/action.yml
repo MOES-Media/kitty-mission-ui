@@ -1,0 +1,28 @@
+# Frozen install with the registry credential's whole lifecycle in one place (the same steps every job used to repeat):
+# mask, umask 077 write of the user npmrc, chmod 600, `pnpm install --frozen-lockfile`, delete. The token reaches only
+# step-level env of the write step. Callers still add their own `if: always()` removal after the gate step.
+name: Install dependencies
+description: Write the registry credential, run the frozen pnpm install, remove the credential.
+inputs:
+  npm-token:
+    description: Registry token for npm.pkg.github.com (pass secrets.NPM_TOKEN).
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Write registry credential
+      shell: bash
+      env:
+        NPM_TOKEN: ${{ inputs.npm-token }}
+      run: |
+        echo "::add-mask::$NPM_TOKEN"
+        umask 077
+        printf '//npm.pkg.github.com/:_authToken=%s\n' "$NPM_TOKEN" > "$HOME/.npmrc"
+        chmod 600 "$HOME/.npmrc"
+    - name: Install dependencies
+      shell: bash
+      run: pnpm install --frozen-lockfile
+    - name: Remove registry credential
+      if: always()
+      shell: bash
+      run: rm -f "$HOME/.npmrc"

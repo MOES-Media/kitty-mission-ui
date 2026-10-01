@@ -1,0 +1,2 @@
+const I = Image;
+export const f = () => new I();

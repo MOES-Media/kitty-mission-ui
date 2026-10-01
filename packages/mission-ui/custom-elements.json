@@ -1,0 +1,168 @@
+{
+  "schemaVersion": "1.0.0",
+  "readme": "",
+  "modules": [
+    {
+      "kind": "javascript-module",
+      "path": "src/elements/sk-mission-sample/sk-mission-sample.ts",
+      "declarations": [
+        {
+          "kind": "class",
+          "description": "Template element encoding the charter screen contract: data in as properties,\na `status` view state, events out, no I/O.\n\nNot self-registering: `src/index.ts` defines the tag once (guarded), so importing this module alone never\nthrows on a duplicate definition.",
+          "name": "SkMissionSample",
+          "members": [
+            {
+              "kind": "field",
+              "name": "status",
+              "type": {
+                "text": "ViewState"
+              },
+              "default": "'loading'",
+              "attribute": "status",
+              "reflects": true
+            },
+            {
+              "kind": "field",
+              "name": "mission",
+              "type": {
+                "text": "MissionSummary | null"
+              },
+              "default": "null"
+            },
+            {
+              "kind": "field",
+              "name": "errorMessage",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "attribute": "error-message"
+            },
+            {
+              "kind": "method",
+              "name": "onOpen",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "name": "onRetry",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "name": "renderReady",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "TemplateResult"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "mission",
+                  "type": {
+                    "text": "MissionSummary"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "renderEmpty",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "TemplateResult"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "name": "renderLoading",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "TemplateResult"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "name": "renderError",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "TemplateResult"
+                }
+              }
+            }
+          ],
+          "events": [
+            {
+              "name": "sk-mission-open",
+              "type": {
+                "text": "CustomEvent<SkMissionOpenDetail>"
+              },
+              "description": "the ready-state open button was activated"
+            },
+            {
+              "name": "sk-mission-retry",
+              "type": {
+                "text": "CustomEvent<SkMissionRetryDetail>"
+              },
+              "description": "the error-state retry button was activated"
+            }
+          ],
+          "attributes": [
+            {
+              "name": "status",
+              "type": {
+                "text": "ViewState"
+              },
+              "default": "'loading'",
+              "fieldName": "status"
+            },
+            {
+              "name": "error-message",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "fieldName": "errorMessage"
+            }
+          ],
+          "superclass": {
+            "name": "LitElement",
+            "package": "lit"
+          },
+          "tagName": "sk-mission-sample",
+          "customElement": true
+        },
+        {
+          "kind": "variable",
+          "name": "slug"
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "SkMissionSample",
+          "declaration": {
+            "name": "SkMissionSample",
+            "module": "src/elements/sk-mission-sample/sk-mission-sample.ts"
+          }
+        }
+      ]
+    }
+  ]
+}

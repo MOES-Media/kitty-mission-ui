@@ -1,0 +1,1 @@
+export const f = (e: HTMLImageElement) => { e.src = '/x'; };

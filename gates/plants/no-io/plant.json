@@ -1,0 +1,11 @@
+{
+  "gate": "no-io",
+  "ciCommand": "pnpm lint:no-io && pnpm test:no-io",
+  "expectFailPattern": "plant-no-io",
+  "overlays": [
+    {
+      "target": "packages/mission-ui/src/plant-no-io.ts",
+      "source": "plant-no-io.ts.plant"
+    }
+  ]
+}
