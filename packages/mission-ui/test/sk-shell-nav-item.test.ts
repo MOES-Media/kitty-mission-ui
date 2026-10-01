@@ -72,7 +72,7 @@ describe('sk-shell-nav-item rendering', () => {
   it('puts the label as visible text in the title slot and the icon in the marker slot', async () => {
     const el = await mount();
     const r = row(el);
-    expect(r.hasAttribute('presentation')).toBe(false);
+    expect(r.getAttribute('presentation')).toBe('flush');
     expect(r.getAttribute('href')).toBe(workPackagesItem.href);
     expect(r.querySelector('[slot="title"]')?.textContent?.trim()).toBe(workPackagesItem.label);
     expect(r.querySelector('[slot="marker"] svg')).not.toBeNull();

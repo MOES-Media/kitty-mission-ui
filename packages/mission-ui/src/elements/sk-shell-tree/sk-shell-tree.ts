@@ -1,6 +1,8 @@
 // Gap G-05 (sunset: library `sk-tree`): the library has no tree with `aria-expanded`, so each folder is a native
 // `<details>`/`<summary>` (browsers expose the disclosure and its expanded state). The default marker is hidden with
 // `::-webkit-details-marker` (Safari; `display: block` on the summary removes the marker in other engines) and the default summary focus ring is kept.
+// Rows are flush and painted with tokens under the shell paint exception (see sk-shell-nav-item); the heading is the
+// section header's mono uppercase eyebrow.
 // Gap G-16: library route mode only exposes `aria-current="page"` on its link. Operator ruling: only the selected LEAF
 // is `selected`; folders (its ancestors) carry no library current state.
 import { LitElement, css, html, nothing } from 'lit';
@@ -62,7 +64,58 @@ export class SkShellTree extends LitElement {
     }
     [data-children] {
       display: block;
-      padding-inline: var(--sk-space-4) 0;
+      padding-inline: var(--sk-space-5) 0;
+    }
+    sk-section-header {
+      margin-block: 0 var(--sk-space-3);
+      padding-inline: var(--sk-space-3);
+    }
+    sk-section-header::part(header) {
+      column-gap: 0;
+      row-gap: 0;
+    }
+    sk-section-header::part(eyebrow) {
+      color: var(--sk-fg-subtle);
+    }
+    sk-action-row::part(trigger) {
+      grid-template-areas: 'marker title metadata';
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      min-block-size: calc(var(--sk-space-9) - var(--sk-space-1));
+      padding-block: var(--sk-space-2);
+      padding-inline: var(--sk-space-3);
+    }
+    sk-action-row::part(row) {
+      border-radius: var(--sk-radius-sm);
+    }
+    sk-action-row::part(marker) {
+      align-self: center;
+      color: inherit;
+    }
+    sk-action-row::part(title) {
+      color: var(--sk-fg-muted);
+      font-family: var(--sk-font-sans);
+      font-weight: var(--sk-weight-normal);
+    }
+    sk-action-row:hover::part(title),
+    sk-action-row[selected]::part(title) {
+      color: var(--sk-fg-default);
+    }
+    sk-action-row::part(tags),
+    sk-action-row::part(supporting),
+    sk-action-row::part(controls) {
+      display: none;
+    }
+    sk-action-row::part(reference) {
+      display: none;
+    }
+    sk-action-row::part(trigger) {
+      grid-template-columns: auto minmax(0, 1fr) fit-content(40%);
+    }
+    sk-action-row::part(metadata) {
+      margin-block: 0;
+      margin-inline: var(--sk-space-2) 0;
+      white-space: normal;
+      overflow-wrap: anywhere;
     }
     [slot='marker'] {
       display: block;
@@ -118,6 +171,7 @@ export class SkShellTree extends LitElement {
   private renderLeaf(node: TreeNode): TemplateResult {
     const route = node.unavailable !== true && node.href !== undefined && node.href !== '';
     return html`<sk-action-row
+      presentation="flush"
       href=${ifDefined(route ? node.href : undefined)}
       ?selected=${route && node.id === this.current}
       @click=${route ? (event: MouseEvent) => this.onRowClick(event, node) : nothing}
@@ -133,7 +187,7 @@ export class SkShellTree extends LitElement {
     const count = node.meta ?? String(children.length);
     return html`<details ?open=${node.expanded === true} @toggle=${(event: Event) => this.onToggle(event, node)}>
       <summary>
-        <sk-action-row>
+        <sk-action-row presentation="flush">
           <span slot="marker">${renderIcon(node.icon ?? 'folder')}</span>
           <span slot="title">${this.renderLabel(node)}</span>
           <span slot="metadata">${count}</span>
@@ -159,7 +213,7 @@ export class SkShellTree extends LitElement {
 
   protected override render(): TemplateResult {
     return html`<div role="group" aria-label=${ifDefined(this.label || undefined)} @sk-action-row-activate=${this.onRowActivate}>
-      ${this.heading ? html`<sk-section-header><span slot="title">${this.heading}</span></sk-section-header>` : nothing}
+      ${this.heading ? html`<sk-section-header><span slot="eyebrow">${this.heading}</span></sk-section-header>` : nothing}
       ${keyed(this.items, html`${this.items.map((node) => this.renderNode(node))}`)}
     </div>`;
   }

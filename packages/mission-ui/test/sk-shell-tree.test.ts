@@ -74,17 +74,17 @@ const settle = async (el: SkShellTree): Promise<void> => {
 };
 
 describe('sk-shell-tree rendering', () => {
-  it('names the group through the label and shows the heading as visible text in the title slot', async () => {
+  it('names the group through the label and shows the heading as visible text in the eyebrow slot', async () => {
     const el = await mount();
     const group = el.shadowRoot?.querySelector('[role="group"]');
     expect(group?.getAttribute('aria-label')).toBe('Work packages');
-    expect(el.shadowRoot?.querySelector('sk-section-header [slot="title"]')?.textContent?.trim()).toBe('Work Packages');
+    expect(el.shadowRoot?.querySelector('sk-section-header [slot="eyebrow"]')?.textContent?.trim()).toBe('Work Packages');
   });
 
-  it('renders leaves as non-flush route rows with prefix and label as visible text and meta in the metadata slot', async () => {
+  it('renders leaves as flush route rows with prefix and label as visible text and meta in the metadata slot', async () => {
     const el = await mount();
     const row = rowOf(el, 'Shell tree');
-    expect(row.hasAttribute('presentation')).toBe(false);
+    expect(row.getAttribute('presentation')).toBe('flush');
     expect(row.getAttribute('href')).toBe('#/wp/03');
     expect(row.querySelector('[slot="title"]')?.textContent).toContain('WP03');
     expect(row.querySelector('[slot="metadata"]')?.textContent?.trim()).toBe('doing');

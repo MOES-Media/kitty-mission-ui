@@ -1,3 +1,5 @@
+// Rows are flush (no border, no background) and painted with tokens under the shell paint exception; the empty tags,
+// supporting, controls, reference and metadata parts are hidden so a row is one 44px line like the prototype.
 // Gap G-12 (sunset: library `sk-tooltip`): the library has no label bubble that meets WCAG 1.4.13, so compact mode
 // builds one locally from `sk-pill-tag`. Gap G-13: library rows mark the current item with `--sk-border-strong` and
 // `--sk-surface-pill`, not the yellow edge of the approved PNG; the library look is used. Gap G-08: icons are local.
@@ -54,11 +56,46 @@ export class SkShellNavItem extends LitElement {
       height: 0;
       overflow: hidden;
     }
-    sk-action-row[data-compact]::part(trigger) {
+    sk-action-row::part(trigger) {
+      grid-template-areas: 'marker title metadata';
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      min-block-size: calc(var(--sk-space-9) - var(--sk-space-1));
+      padding-block: var(--sk-space-2);
       padding-inline: var(--sk-space-3);
     }
-    sk-action-row[data-compact]::part(marker) {
+    sk-action-row::part(row) {
+      border-radius: var(--sk-radius-sm);
+    }
+    sk-action-row::part(marker) {
       align-self: center;
+      color: inherit;
+    }
+    sk-action-row::part(title) {
+      color: var(--sk-fg-muted);
+      font-family: var(--sk-font-sans);
+      font-weight: var(--sk-weight-normal);
+    }
+    sk-action-row:hover::part(title),
+    sk-action-row[selected]::part(title) {
+      color: var(--sk-fg-default);
+    }
+    sk-action-row::part(tags),
+    sk-action-row::part(supporting),
+    sk-action-row::part(controls) {
+      display: none;
+    }
+    sk-action-row::part(reference),
+    sk-action-row::part(metadata) {
+      display: none;
+    }
+    sk-action-row[data-compact]::part(trigger) {
+      min-block-size: var(--sk-space-9);
+      padding-inline: 0;
+    }
+    sk-action-row[data-compact]::part(marker) {
+      grid-column: 1 / -1;
+      justify-self: center;
+      margin-inline: 0;
     }
     sk-pill-tag {
       grid-column: 2;
@@ -249,6 +286,7 @@ export class SkShellNavItem extends LitElement {
   protected override render(): TemplateResult {
     const marked = this.current === 'page';
     return html`<sk-action-row
+        presentation="flush"
         href=${this.href}
         ?selected=${marked}
         ?data-compact=${this.compact}

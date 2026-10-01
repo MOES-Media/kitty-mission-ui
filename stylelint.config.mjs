@@ -138,8 +138,8 @@ const SHELL_PAINT_PROPERTIES = [
   'min-block-size',
 ];
 
-// Keyword-only typography behaviour needed to truncate one line of chrome text (no colour, length or font value).
-const SHELL_KEYWORD_PROPERTIES = ['text-overflow', 'white-space'];
+// Keyword-only typography behaviour needed to truncate or wrap chrome text (no colour, length or font value).
+const SHELL_KEYWORD_PROPERTIES = ['text-overflow', 'white-space', 'overflow-wrap'];
 
 const SHELL_FILES = [
   '**/src/elements/sk-mission-shell/**',
