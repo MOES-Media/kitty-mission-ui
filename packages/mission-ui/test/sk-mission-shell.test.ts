@@ -253,12 +253,12 @@ describe('frame and landmarks (FR-001, FR-002, FR-004, FR-008)', () => {
     expect(root(el).querySelector('header sk-button')).toBeNull();
   });
 
-  it('leaves the WP05 seams empty: no dialog, no flyout', async () => {
+  it('closed overlays add nothing to the landmarks: the drawer dialog is empty and shut, no flyout', async () => {
     const el = await mount(390, missionArgs);
-    expect(root(el).querySelector('dialog')).toBeNull();
-    el.drawerOpen = true;
-    await el.updateComplete;
-    expect(root(el).querySelector('dialog')).toBeNull();
+    const dialog = one<HTMLDialogElement>(root(el), 'dialog');
+    expect(dialog.open).toBe(false);
+    expect(dialog.children).toHaveLength(0);
+    expect(root(el).querySelector('[data-flyout]')).toBeNull();
   });
 
   it('top bar offers the brand and top-bar-actions slots with the brand fallback', async () => {

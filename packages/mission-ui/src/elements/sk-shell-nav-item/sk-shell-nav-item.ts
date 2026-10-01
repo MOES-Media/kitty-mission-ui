@@ -7,6 +7,7 @@
 import { LitElement, css, html, nothing } from 'lit';
 import type { TemplateResult } from 'lit';
 import { property } from 'lit/decorators.js';
+import { ifDefined } from 'lit/directives/if-defined.js';
 import '@spec-kitty/elements';
 import { renderIcon } from '../../shell-icons.js';
 import type { CurrentMark, ShellIcon, ShellNavigateDetail } from '../../shell-types.js';
@@ -30,6 +31,7 @@ export class SkShellNavItem extends LitElement {
   static override styles = css`
     :host {
       display: grid;
+      position: relative;
       grid-template-columns: 100%;
       overflow: visible;
       min-width: 0;
@@ -64,12 +66,27 @@ export class SkShellNavItem extends LitElement {
       align-self: center;
       z-index: 10;
     }
+    /* Flipped placement (the default would be clipped): below the item, floating over what follows. */
+    sk-pill-tag[data-placement] {
+      position: absolute;
+      grid-column: 1;
+      grid-row: 2;
+      align-self: start;
+    }
+    sk-pill-tag[data-placement='below-end'] {
+      justify-self: end;
+    }
+    sk-pill-tag[data-placement='below-start'] {
+      justify-self: start;
+    }
   `;
 
   private hovered = false;
   private focused = false;
   private dismissed = false;
   private bubbleShown = false;
+  // Private placement of the bubble: beside the item, or below it when beside would be clipped (re-measured per show).
+  private placement: 'after' | 'below-end' | 'below-start' = 'after';
 
   constructor() {
     super();
@@ -127,6 +144,49 @@ export class SkShellNavItem extends LitElement {
     this.syncBubble();
   }
 
+  protected override updated(): void {
+    if (!this.bubbleShown) return;
+    const bubble = this.renderRoot.querySelector('sk-pill-tag');
+    if (!bubble) return;
+    // A fresh library tag has no width until it has rendered: measure then.
+    void Promise.resolve((bubble as { updateComplete?: unknown }).updateComplete).then(() => this.placeBubble(bubble));
+  }
+
+  private placeBubble(bubble: Element): void {
+    if (!this.bubbleShown || !bubble.isConnected) return;
+    const clip = this.clipBounds();
+    const box = bubble.getBoundingClientRect();
+    const crossesEnd = box.right > clip.right;
+    const crossesStart = box.left < clip.left;
+    let next = this.placement;
+    if (this.placement === 'after' && (crossesEnd || crossesStart)) next = 'below-end';
+    else if (this.placement === 'below-end' && crossesStart) next = 'below-start';
+    if (next !== this.placement) {
+      this.placement = next;
+      this.requestUpdate();
+    }
+  }
+
+  // The visible inline extent: the viewport narrowed by every clipping ancestor, across shadow boundaries and slots.
+  private clipBounds(): { left: number; right: number } {
+    let left = 0;
+    let right = document.documentElement.clientWidth;
+    let node: Node | null = this.assignedSlot ?? this.parentNode;
+    while (node) {
+      if (node instanceof Element) {
+        const style = getComputedStyle(node);
+        if (style.overflowX !== 'visible' || style.overflowY !== 'visible') {
+          const box = node.getBoundingClientRect();
+          left = Math.max(left, box.left);
+          right = Math.min(right, box.right);
+        }
+      }
+      const slot: Node | null = node instanceof Element ? node.assignedSlot : null;
+      node = slot ?? node.parentNode ?? (node instanceof ShadowRoot ? node.host : null);
+    }
+    return { left, right };
+  }
+
   private readonly onPointerEnter = (): void => {
     this.hovered = true;
     this.dismissed = false;
@@ -161,6 +221,7 @@ export class SkShellNavItem extends LitElement {
     const shown = this.isConnected && this.compact && !this.dismissed && (this.hovered || this.focused);
     if (shown === this.bubbleShown) return;
     this.bubbleShown = shown;
+    this.placement = 'after';
     if (shown) {
       document.addEventListener('keydown', this.onDocumentKeydown);
     } else {
@@ -197,7 +258,7 @@ export class SkShellNavItem extends LitElement {
         <span slot="marker">${renderIcon(this.icon)}</span>
         <span slot="title">${this.label}</span>
       </sk-action-row>
-      ${this.bubbleShown ? html`<sk-pill-tag aria-hidden="true">${this.label}</sk-pill-tag>` : nothing}`;
+      ${this.bubbleShown ? html`<sk-pill-tag aria-hidden="true" data-placement=${ifDefined(this.placement === 'after' ? undefined : this.placement)}>${this.label}</sk-pill-tag>` : nothing}`;
   }
 }
 

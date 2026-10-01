@@ -193,6 +193,29 @@ describe('compact mode', () => {
 });
 
 describe('label bubble (WCAG 1.4.13)', () => {
+  it('flips below the item when a clipping container would cut the bubble, and stays beside it otherwise', async () => {
+    const box = document.createElement('div');
+    box.style.cssText = 'overflow:hidden;width:140px;margin-left:100px;';
+    document.body.append(box);
+    const el = await mount({ compact: true }, box);
+    await userEvent.hover(page.elementLocator(el));
+    await vi.waitFor(() => expect(bubble(el)?.getAttribute('data-placement')).toBe('below-end'));
+    const clip = box.getBoundingClientRect();
+    const tag = bubble(el)?.getBoundingClientRect();
+    expect(tag?.right).toBeLessThanOrEqual(clip.right + 0.5);
+    expect(tag?.left).toBeGreaterThanOrEqual(clip.left - 0.5);
+    await userEvent.unhover(page.elementLocator(el));
+    await el.updateComplete;
+    expect(bubble(el)).toBeNull();
+    // Recomputed on each show: roomy container, beside again.
+    box.style.width = '600px';
+    el.style.width = '56px';
+    await userEvent.hover(page.elementLocator(el));
+    await vi.waitFor(() => expect(bubble(el)).not.toBeNull());
+    await el.updateComplete;
+    expect(bubble(el)?.hasAttribute('data-placement')).toBe(false);
+  });
+
   it('shows on hover with the label, aria-hidden, and hides when the pointer leaves', async () => {
     const el = await mount({ compact: true });
     await userEvent.hover(page.elementLocator(el));

@@ -94,6 +94,12 @@
     },
     {
       "kind": "javascript-module",
+      "path": "src/elements/sk-mission-shell/shell-overlays.ts",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
       "path": "src/elements/sk-mission-shell/shell-parts.ts",
       "declarations": [],
       "exports": []

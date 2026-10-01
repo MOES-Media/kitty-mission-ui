@@ -26,6 +26,8 @@ import {
   renderTopBar,
   resolveMarking,
 } from './shell-parts.js';
+import type { SidebarContext } from './shell-parts.js';
+import { ShellOverlays } from './shell-overlays.js';
 
 const EXPANDED_QUERY = '(min-width: 1100px)';
 const COLLAPSED_QUERY = '(min-width: 620px)';
@@ -216,6 +218,13 @@ export class SkMissionShell extends LitElement {
 
   private treeShown = false;
 
+  private readonly overlays = new ShellOverlays(this, {
+    emitDrawer: (open, reason) => this.emitToggleDrawer(open, reason),
+    emitFlyout: (open, reason) => this.emitToggleFlyout(open, reason),
+    focusContent: () => this.focusContent(),
+    onSectionSlotChange: () => this.onSectionSlotChange(),
+  });
+
   constructor() {
     super();
     // Library events stop at the shell: only the declared `sk-*` events cross its boundary.
@@ -264,25 +273,23 @@ export class SkMissionShell extends LitElement {
     this.requestUpdate();
   };
 
-  // Seam for WP05: close the drawer or flyout (and dispatch their events) when the tier leaves theirs.
+  // Closes the drawer or flyout (and dispatches their events) when the tier leaves theirs.
   private onTierChanged(previous: ShellTier, next: ShellTier): void {
-    // WP05 fills this in.
-    void previous;
-    void next;
+    this.overlays.onTierChanged(previous, next);
   }
 
-  // Seam for WP05: the hamburger asks for the drawer.
+  // The hamburger asks for the drawer.
   private requestDrawer(reason: DrawerReason): void {
-    // WP05 fills this in.
-    void reason;
+    this.overlays.requestDrawer(reason);
   }
 
   /**
    * True while a sidebar tree is shown AND one of its leaves is selected: only then does that leaf (not a nav item)
-   * carry `aria-current="page"`. WP05 extends "shown" to the open drawer and flyout.
+   * carry `aria-current="page"`. The tree is shown in the expanded sidebar, the open drawer and the open flyout.
    */
   private isSidebarTreeShown(): boolean {
-    if (this.tier !== 'expanded') return false;
+    const shown = this.tier === 'expanded' || (this.tier === 'mobile' && this.drawerOpen) || (this.tier === 'collapsed' && this.flyoutOpen);
+    if (!shown) return false;
     for (const tree of this.querySelectorAll('sk-shell-tree[slot="sidebar-section"]')) {
       const current = (tree as { current?: unknown }).current;
       if (typeof current === 'string' && current !== '') return true;
@@ -353,12 +360,12 @@ export class SkMissionShell extends LitElement {
     this.dispatchEvent(new CustomEvent<ShellRetryDetail>('sk-shell-retry', { detail, bubbles: true, composed: true }));
   }
 
-  private renderDrawerRegion(): typeof nothing {
-    return nothing;
+  private renderDrawerRegion(context: SidebarContext): TemplateResult | typeof nothing {
+    return this.overlays.renderDrawer({ ...context, railItems: this.railItems });
   }
 
-  private renderFlyoutRegion(): typeof nothing {
-    return nothing;
+  private renderFlyoutRegion(context: SidebarContext): TemplateResult | typeof nothing {
+    return this.overlays.renderFlyout(context);
   }
 
   protected override render(): TemplateResult {
@@ -390,12 +397,13 @@ export class SkMissionShell extends LitElement {
         ${showRail ? renderRail({ items: this.railItems, marking }) : nothing}
         ${tier === 'expanded' ? renderSidebar(sidebarContext) : nothing}
         ${tier === 'collapsed' ? renderIconColumn(sidebarContext) : nothing}
+        ${this.renderFlyoutRegion(sidebarContext)}
         <div data-content>
           ${renderStatus({ status: this.status, errorMessage: this.errorMessage, onRetry: () => this.emitRetry() })}
           ${renderContent()}
         </div>
       </div>
-      ${this.renderDrawerRegion()}${this.renderFlyoutRegion()}
+      ${this.renderDrawerRegion(sidebarContext)}
     </div>`;
   }
 }
