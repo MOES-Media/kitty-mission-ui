@@ -54,6 +54,14 @@ export default tseslint.config(
     },
   },
   {
+    // Operator ruling (2026-10-02): the shell adopts the library's own `.sk-progress` stylesheet, whose markup contract is
+    // class-based, so class= is allowed in this one file. Every other restriction stays.
+    files: ['packages/*/src/elements/sk-mission-shell/shell-parts.ts'],
+    rules: {
+      'no-restricted-syntax': ['error', ...elementSyntaxRestrictions.filter((entry) => !entry.message.startsWith('class= is forbidden'))],
+    },
+  },
+  {
     // Lit binds @event handlers to the host, so `@click=${this.onX}` is not an unbound method.
     // Not fixed in the element: the unit-tests plant overlays that file by base sha256.
     files: ['packages/*/src/elements/**/*.{ts,mts,cts,tsx}'],

@@ -27,6 +27,7 @@ import {
   resolveMarking,
 } from './shell-parts.js';
 import type { SidebarContext } from './shell-parts.js';
+import { progressSheet } from '../../progress-sheet.js';
 import { ShellOverlays } from './shell-overlays.js';
 
 const EXPANDED_QUERY = '(min-width: 1100px)';
@@ -58,7 +59,9 @@ const COLLAPSED_QUERY = '(min-width: 720px)';
 export class SkMissionShell extends LitElement {
   // Layout, plus shell chrome paint (operator-approved stylelint exception 2026-10-01: token values only). Gap G-01..G-03,
   // G-07, G-10, G-15: grid, top bar, rail, icon column and skip link are local until the library ships them.
-  static override styles = css`
+  static override styles = [
+    progressSheet,
+    css`
     :host {
       display: block;
       min-width: 0;
@@ -288,14 +291,23 @@ export class SkMissionShell extends LitElement {
       border-block-start: var(--sk-border-width-1) solid var(--sk-border-default);
     }
     [data-footer-progress] {
-      display: flex;
-      justify-content: space-between;
-      gap: var(--sk-space-3);
-      color: var(--sk-fg-muted);
-      font-size: var(--sk-text-sm);
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      grid-template-areas:
+        'label meta'
+        'bar bar';
+      align-items: center;
+      gap: var(--sk-space-2) var(--sk-space-3);
     }
-    [data-footer-percent] {
-      font-family: var(--sk-font-mono);
+    [data-footer-progress] .sk-progress__label {
+      grid-area: label;
+      color: var(--sk-fg-muted);
+    }
+    [data-footer-progress] .sk-progress__bar {
+      grid-area: bar;
+    }
+    [data-footer-progress] .sk-progress__meta {
+      grid-area: meta;
     }
     [data-content] {
       display: flex;
@@ -321,7 +333,8 @@ export class SkMissionShell extends LitElement {
     [data-focus-target] {
       min-width: 0;
     }
-  `;
+  `,
+  ];
 
   /** Which regions render; unknown values fall back to `project`. */
   @property({ reflect: true })

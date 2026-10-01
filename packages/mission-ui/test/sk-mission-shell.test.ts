@@ -314,9 +314,12 @@ describe('status (FR-010, D-04)', () => {
     return one<HTMLElement>(root(el), '[data-status]');
   }
 
-  it('loading: a pulsing indicator, aria-busy on the region only', async () => {
+  it('loading: a labelled indeterminate progress bar, aria-busy on the region only', async () => {
     const el = await mount(1280, { ...projectArgs, ...statusArgs('loading') });
-    expect(region(el).querySelector('sk-status-indicator[pulsing]')).not.toBeNull();
+    const bar = region(el).querySelector<HTMLProgressElement>('.sk-progress--indeterminate progress');
+    expect(bar).not.toBeNull();
+    expect(bar?.hasAttribute('value')).toBe(false);
+    expect(bar?.labels?.[0]?.textContent?.trim()).toBe('Loading');
     expect(region(el).getAttribute('aria-busy')).toBe('true');
     expect(deepAll(root(el), '[aria-busy]')).toEqual([region(el)]);
     expect(one(root(el), 'main').closest('[aria-busy]')).toBeNull();
@@ -356,7 +359,7 @@ describe('status (FR-010, D-04)', () => {
 
   it('ready: nothing in the region', async () => {
     const el = await mount(1280, { ...projectArgs, status: 'ready' });
-    expect(region(el).querySelector('sk-notice, sk-status-indicator')).toBeNull();
+    expect(region(el).querySelector('sk-notice, progress')).toBeNull();
     expect(region(el).hasAttribute('aria-busy')).toBe(false);
   });
 
@@ -508,6 +511,16 @@ describe('long content (NFR-005)', () => {
     await mission.updateComplete;
     const missionSide = one<HTMLElement>(root(mission), 'sk-context-sidebar');
     expect(missionSide.getBoundingClientRect().width).toBeLessThanOrEqual(parseFloat(getComputedStyle(document.documentElement).fontSize) * 15 + 1);
+  });
+});
+
+describe('sidebar footer progress', () => {
+  it('mission footer: a labelled determinate progress bar from the progress data', async () => {
+    const el = await mount(1280, missionArgs);
+    const bar = one<HTMLProgressElement>(root(el), '[data-footer] progress');
+    expect(bar.value).toBe(missionArgs.mission.progress?.done);
+    expect(bar.max).toBe(missionArgs.mission.progress?.total);
+    expect(bar.labels?.[0]?.textContent?.trim()).toBe(`${missionArgs.mission.progress?.total} Work Packages`);
   });
 });
 

@@ -18,6 +18,9 @@ import type {
 } from '../../shell-types.js';
 import type { ViewState } from '../../view-state.js';
 
+// Ids are scoped to the shell's shadow root, so they are unique per shell instance.
+const LOADING_PROGRESS_ID = 'shell-loading-progress';
+const FOOTER_PROGRESS_ID = 'shell-footer-progress';
 const GENERIC_ERROR = 'Something went wrong while loading.';
 
 /** Which shell item is the deepest marked one: the tree leaf when a tree is shown, else the sidebar item, else the rail. */
@@ -154,8 +157,12 @@ export function renderFooter(ctx: SidebarContext): TemplateResult | typeof nothi
     const progress = ctx.mission?.progress;
     if (!progress) return nothing;
     const percent = progress.total > 0 ? Math.round((progress.done / progress.total) * 100) : 0;
-    return html`<div slot="footer" data-footer data-footer-progress>
-      <span>${progress.total} Work Packages</span><span data-footer-percent>${percent}%</span>
+    return html`<div slot="footer" data-footer>
+      <div class="sk-progress sk-progress--narrow" data-footer-progress>
+        <label class="sk-progress__label" for=${FOOTER_PROGRESS_ID}>${progress.total} Work Packages</label>
+        <progress class="sk-progress__bar" id=${FOOTER_PROGRESS_ID} value=${progress.done} max=${progress.total}></progress>
+        <span class="sk-progress__meta">${percent}%</span>
+      </div>
     </div>`;
   }
   const item = ctx.footerItem;
@@ -198,7 +205,10 @@ export interface StatusContext {
 export function renderStatus(ctx: StatusContext): TemplateResult {
   let body: TemplateResult | typeof nothing = nothing;
   if (ctx.status === 'loading') {
-    body = html`<sk-status-indicator pulsing>Loading</sk-status-indicator>`;
+    body = html`<div class="sk-progress sk-progress--indeterminate sk-progress--compact">
+      <label class="sk-progress__label" for=${LOADING_PROGRESS_ID}>Loading</label>
+      <progress class="sk-progress__bar" id=${LOADING_PROGRESS_ID}></progress>
+    </div>`;
   } else if (ctx.status === 'error') {
     body = html`<sk-notice tone="danger">
       ${ctx.errorMessage === '' ? GENERIC_ERROR : ctx.errorMessage}
