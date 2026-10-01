@@ -566,6 +566,14 @@ describe('sidebar footer progress', () => {
   });
 });
 
+describe('sidebar footer without progress', () => {
+  it('renders no footer or progress bar when the total is 0', async () => {
+    const el = await mount(1280, { ...missionArgs, mission: { ...missionArgs.mission, progress: { done: 0, total: 0 } } });
+    expect(root(el).querySelector('[data-footer]')).toBeNull();
+    expect(root(el).querySelector('progress')).toBeNull();
+  });
+});
+
 describe('long tree titles truncate', () => {
   it('a long row title is one ellipsised line and keeps its full name; the metadata stays visible', async () => {
     const el = await mount(1280, { ...missionArgs, mission: longMission });

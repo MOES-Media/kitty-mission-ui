@@ -155,8 +155,8 @@ export function renderHead(ctx: SidebarContext): TemplateResult {
 export function renderFooter(ctx: SidebarContext): TemplateResult | typeof nothing {
   if (ctx.layout === 'mission') {
     const progress = ctx.mission?.progress;
-    if (!progress) return nothing;
-    const percent = progress.total > 0 ? Math.round((progress.done / progress.total) * 100) : 0;
+    if (!progress || progress.total <= 0) return nothing;
+    const percent = Math.round((progress.done / progress.total) * 100);
     return html`<div slot="footer" data-footer>
       <div class="sk-progress sk-progress--narrow" data-footer-progress>
         <label class="sk-progress__label" for=${FOOTER_PROGRESS_ID}>${progress.total} Work Packages</label>

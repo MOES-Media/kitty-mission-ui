@@ -170,6 +170,10 @@ export default {
           },
         ],
         'property-allowed-list': [...LAYOUT_PROPERTIES, ...SHELL_PAINT_PROPERTIES, ...SHELL_KEYWORD_PROPERTIES],
+        // The shell-private band property takes a calc of two library tokens, nothing else.
+        'declaration-property-value-allowed-list': {
+          '--shell-band': ['/^calc\\(var\\(--sk-[a-z0-9-]+\\) [+-] var\\(--sk-[a-z0-9-]+\\)\\)$/'],
+        },
       },
     },
   ],
