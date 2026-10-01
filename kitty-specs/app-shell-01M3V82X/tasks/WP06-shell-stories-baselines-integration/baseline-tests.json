@@ -1,0 +1,13 @@
+{
+  "wp_id": "WP06",
+  "captured_at": "2026-10-01T11:01:09Z",
+  "base_branch": "feat/app-shell",
+  "base_commit": "a0e87ea5b638604f7287cbc16fcba6085dc4f64c",
+  "test_runner": "pytest",
+  "total": 0,
+  "passed": 0,
+  "failed": 0,
+  "skipped": 0,
+  "failures": [],
+  "source_identity": "GateCoverageScopeSource/junit_xml"
+}
