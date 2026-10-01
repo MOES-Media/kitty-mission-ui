@@ -65,7 +65,7 @@ export class SkShellTree extends LitElement {
     }
     [data-children] {
       display: block;
-      padding-inline: var(--sk-space-5) 0;
+      padding-inline: var(--sk-space-4) 0;
     }
     [data-prefix] {
       font-family: var(--sk-font-mono);
@@ -119,6 +119,15 @@ export class SkShellTree extends LitElement {
     }
     sk-action-row::part(trigger) {
       grid-template-columns: auto minmax(0, 1fr) fit-content(50%);
+      min-block-size: calc(var(--sk-space-8) - var(--sk-space-2));
+      padding-block: var(--sk-space-1);
+    }
+    /* Secondary to the section navigation: denser, smaller, quieter rows. */
+    sk-action-row::part(title) {
+      font-size: var(--sk-text-sm);
+    }
+    sk-action-row::part(marker) {
+      margin-inline: 0 var(--sk-space-2);
     }
     sk-action-row::part(metadata) {
       margin-block: 0;
@@ -131,8 +140,8 @@ export class SkShellTree extends LitElement {
     }
     [slot='marker'] svg {
       display: block;
-      inline-size: var(--sk-space-5);
-      block-size: var(--sk-space-5);
+      inline-size: var(--sk-space-4);
+      block-size: var(--sk-space-4);
     }
   `;
 
