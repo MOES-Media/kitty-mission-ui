@@ -118,7 +118,7 @@ export class SkMissionShell extends LitElement {
     [data-brand-mark] {
       inline-size: var(--sk-space-6);
       block-size: var(--sk-space-6);
-      color: var(--sk-color-yellow);
+      color: var(--sk-fg-muted);
     }
     [data-top-bar-context] {
       flex: 1 1 0;
