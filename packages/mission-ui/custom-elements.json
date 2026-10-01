@@ -437,7 +437,7 @@
                 "text": "CurrentMark"
               },
               "default": "''",
-              "description": "`'page'` or `'true'` marks the item selected and sets `aria-current`.",
+              "description": "`'page'` marks the item selected and sets `aria-current=\"page\"` on its link. `'true'` (an ancestor) carries no library current state yet (G-16).",
               "attribute": "current"
             },
             {
@@ -492,7 +492,7 @@
                 "text": "CurrentMark"
               },
               "default": "''",
-              "description": "`'page'` or `'true'` marks the item selected and sets `aria-current`.",
+              "description": "`'page'` marks the item selected and sets `aria-current=\"page\"` on its link. `'true'` (an ancestor) carries no library current state yet (G-16).",
               "fieldName": "current"
             },
             {
