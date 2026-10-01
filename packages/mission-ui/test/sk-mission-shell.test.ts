@@ -176,6 +176,45 @@ describe('tier (FR-005, D-02)', () => {
   });
 });
 
+describe('one bottom band', () => {
+  const centre = (box: DOMRect): number => box.top + box.height / 2;
+
+  it('1280 mission: the rail bottom group and the sidebar footer share top line, height and centre', async () => {
+    const el = await mount(1280, missionArgs);
+    const rail = one<HTMLElement>(root(el), 'sk-personal-rail[data-rail]');
+    const bottom = one<HTMLElement>(rail.shadowRoot as ShadowRoot, '[part="bottom"]').getBoundingClientRect();
+    const footer = one<HTMLElement>(root(el), '[data-footer]').getBoundingClientRect();
+    const icon = one<HTMLElement>(rail, '[data-rail-pinned] sk-shell-nav-item').getBoundingClientRect();
+    expect(bottom.top).toBe(footer.top);
+    expect(bottom.height).toBe(footer.height);
+    expect(Math.abs(centre(icon) - centre(footer))).toBeLessThanOrEqual(1);
+  });
+
+  it('1280 project: the footer item is centred in the footer band', async () => {
+    const el = await mount(1280, projectArgs);
+    const footer = one<HTMLElement>(root(el), '[data-footer]').getBoundingClientRect();
+    const item = one<HTMLElement>(root(el), '[data-footer] sk-shell-nav-item').getBoundingClientRect();
+    expect(Math.abs(centre(item) - centre(footer))).toBeLessThanOrEqual(1);
+  });
+
+  it('1024: the rail bottom group and the icon column pinned group sit on the same band at the bottom edge', async () => {
+    const mission = await mount(1024, missionArgs);
+    const rail = one<HTMLElement>(root(mission), 'sk-personal-rail[data-rail]');
+    const bottom = one<HTMLElement>(rail.shadowRoot as ShadowRoot, '[part="bottom"]').getBoundingClientRect();
+    const body = one<HTMLElement>(root(mission), '[data-body]').getBoundingClientRect();
+    expect(bottom.bottom).toBe(body.bottom);
+    const icon = one<HTMLElement>(rail, '[data-rail-pinned] sk-shell-nav-item').getBoundingClientRect();
+    expect(Math.abs(centre(icon) - centre(bottom))).toBeLessThanOrEqual(1);
+    mission.remove();
+    const project = await mount(1024, projectArgs);
+    const pinned = one<HTMLElement>(root(project), '[data-icon-column-pinned]').getBoundingClientRect();
+    expect(pinned.bottom).toBe(one<HTMLElement>(root(project), '[data-body]').getBoundingClientRect().bottom);
+    expect(pinned.height).toBe(bottom.height);
+    const item = one<HTMLElement>(root(project), '[data-icon-column-pinned] sk-shell-nav-item').getBoundingClientRect();
+    expect(Math.abs(centre(item) - centre(pinned))).toBeLessThanOrEqual(1);
+  });
+});
+
 describe('rail layout at the tier edges', () => {
   // The library rail flips to a row at max-width 720px inclusive; the shell holds it in a column from 720px up.
   for (const width of [720, 1100]) {

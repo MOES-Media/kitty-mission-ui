@@ -141,7 +141,8 @@ const SHELL_PAINT_PROPERTIES = [
 ];
 
 // Keyword-only typography behaviour needed to truncate or wrap chrome text (no colour, length or font value).
-const SHELL_KEYWORD_PROPERTIES = ['text-overflow', 'white-space', 'overflow-wrap'];
+// `--shell-band` is the one shell-private custom property: the shared block-size of the bottom band (token calc).
+const SHELL_KEYWORD_PROPERTIES = ['text-overflow', 'white-space', 'overflow-wrap', '--shell-band'];
 
 const SHELL_FILES = [
   '**/src/elements/sk-mission-shell/**',

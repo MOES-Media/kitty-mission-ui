@@ -68,6 +68,8 @@ export class SkMissionShell extends LitElement {
       color: var(--sk-fg-body);
       background: var(--sk-surface-page);
       font-family: var(--sk-font-sans);
+      /* One bottom band: the rail's bottom group and the sidebar footer share this block-size and top border. */
+      --shell-band: calc(var(--sk-space-9) + var(--sk-space-2));
     }
     [data-frame] {
       display: grid;
@@ -167,7 +169,7 @@ export class SkMissionShell extends LitElement {
       flex-direction: column;
       flex-wrap: nowrap;
       align-items: stretch;
-      padding-block: var(--sk-space-3);
+      padding-block: var(--sk-space-3) 0;
       padding-inline: 0;
       overflow: visible;
       background: var(--sk-surface-hero);
@@ -183,13 +185,16 @@ export class SkMissionShell extends LitElement {
       align-items: stretch;
     }
     [data-rail]::part(bottom) {
+      box-sizing: border-box;
+      block-size: var(--shell-band);
+      justify-content: center;
+      gap: 0;
       margin-block: auto 0;
       margin-inline: 0;
+      border-block-start: var(--sk-border-width-1) solid var(--sk-border-default);
     }
     [data-rail]::part(divider) {
-      align-self: stretch;
-      width: auto;
-      height: var(--sk-border-width-1);
+      display: none;
     }
     [data-rail-pinned] {
       display: flex;
@@ -203,7 +208,7 @@ export class SkMissionShell extends LitElement {
       flex-direction: column;
       gap: var(--sk-space-2);
       box-sizing: border-box;
-      padding-block: var(--sk-space-3);
+      padding-block: var(--sk-space-3) 0;
       min-width: 0;
       min-height: 0;
       overflow: visible;
@@ -213,8 +218,11 @@ export class SkMissionShell extends LitElement {
     [data-icon-column-pinned] {
       display: flex;
       flex-direction: column;
-      gap: var(--sk-space-2);
+      justify-content: center;
+      box-sizing: border-box;
+      block-size: var(--shell-band);
       margin-block: auto 0;
+      border-block-start: var(--sk-border-width-1) solid var(--sk-border-default);
     }
     sk-context-sidebar {
       min-height: 0;
@@ -286,8 +294,13 @@ export class SkMissionShell extends LitElement {
       border-block-start: var(--sk-border-width-1) solid var(--sk-border-default);
     }
     [data-footer] {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
       box-sizing: border-box;
-      padding: var(--sk-space-3);
+      block-size: var(--shell-band);
+      padding-block: 0;
+      padding-inline: var(--sk-space-3);
       border-block-start: var(--sk-border-width-1) solid var(--sk-border-default);
     }
     [data-footer-progress] {
