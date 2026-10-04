@@ -4,6 +4,30 @@
 
 ### Added
 
+- `sk-missions-screen` (screen): the Missions list of a project. Header with the project name, the host `branch` and the
+  Mission count; a search field; a status filter (`sk-filter-toggle-group`: All, Active, Planned, Done, Stale and
+  Discarded); one row per Mission with its badges, lane summary, lifecycle and relative activity; a Load more row. Views
+  `loading`, `error`, `empty` and a no-match panel. Four typed events: `sk-open-mission`, `sk-search`, `sk-load-more` and
+  the group's own `sk-filter-change`. `now`, `branch` and the `stale` flag are host values.
+- `sk-pipeline-screen` (screen): one Mission's pipeline. Breadcrumb, `sk-phase-bar`, the work-package board and a flat
+  inspector with the current step, progress, target branch and blockers. Views `loading`, `error` and `empty`. Three typed
+  events: `sk-open-missions`, `sk-view-artifacts` and `sk-select-work-package`. Phases and lanes are read from the data;
+  no phase name, count or lane word is written in the screen.
+- `sk-filter-toggle-group`, `sk-phase-bar` and `sk-work-package-board` (pattern elements, no `@screen`): a pressed-state
+  button group (`sk-filter-change`), an ordered phase bar of any length, and a board of five lane columns whose cards emit
+  `sk-select-work-package`. The board places blocked, reviewing and canceled work packages in Planned, Review and Done.
+- 60 new stories with visual baselines (24 `Mission/Missions`, 22 `Mission/Pipeline`, 6 board, 4 filter group, 4 phase bar;
+  118 stories in the workbench), one story per row of the state matrix.
+- Gaps in the design library (G-01 to G-08, with their proposed APIs and sunsets) and the approved scoped exceptions E-01
+  to E-16 are recorded in `research.md` and `contracts/gates.md` of mission `missions-and-pipeline-screens-01M40SKZ`;
+  each local stand-in is deleted when the library ships the primitive.
+- `src/defaults/` and `src/logic/`: the single vocabulary module (phase, lane, lifecycle and screen copy, every contract
+  value that may appear in the UI) and the pure logic that reads it (lookup, board placement, lane summary, search,
+  relative time, current step, row view, label hooks). No other source in the package may contain that vocabulary;
+  the `data-driven` gate enforces it.
+- `src/contract/`: the types generated from the pinned Mission Status contract (`types.generated.ts`), hand-written
+  aliases and the three widened view types (`types.ts`), 22 generated synthetic fixtures (`fixtures.generated.ts`) and
+  the large-page generator of `bulk.ts`. Nothing in the package hand-writes a contract type or a fixture.
 - `sk-mission-shell` (screen): the application shell. A top bar, an optional global rail, a project or mission sidebar
   and the content column inside a `main` landmark, with its own `status` view state (loading, error, empty, ready) shown
   at the top of the content. The host owns routing, data and persistence; the shell owns layout and the responsive tier.

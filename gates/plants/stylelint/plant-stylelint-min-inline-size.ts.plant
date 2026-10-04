@@ -1,0 +1,8 @@
+import { css } from 'lit';
+
+// min-inline-size is allowed only in E-10's file (sk-work-package-board.ts): a sibling file must fail.
+export const plantStylelintMinInlineSize = css`
+  .plant-stylelint-min-inline-size {
+    min-inline-size: 90px;
+  }
+`;

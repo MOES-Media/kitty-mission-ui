@@ -1,0 +1,8 @@
+import { css } from 'lit';
+
+// Token-only paint (the E-04 shape) in a file no exception names: must still fail.
+export const plantStylelintExceptionLeak = css`
+  .plant-stylelint-exception-leak {
+    background: var(--sk-border-default);
+  }
+`;

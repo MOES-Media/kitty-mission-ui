@@ -20,5 +20,49 @@
         "source": "plant-stylelint-size.ts.plant"
       }
     ]
+  },
+  {
+    "gate": "stylelint",
+    "ciCommand": "pnpm lint:styles",
+    "expectFailPattern": "plant-stylelint-exception-leak",
+    "overlays": [
+      {
+        "target": "packages/mission-ui/src/elements/sk-phase-bar/plant-stylelint-exception-leak.ts",
+        "source": "plant-stylelint-exception-leak.ts.plant"
+      }
+    ]
+  },
+  {
+    "gate": "stylelint",
+    "ciCommand": "pnpm lint:styles",
+    "expectFailPattern": "plant-stylelint-min-inline-size",
+    "overlays": [
+      {
+        "target": "packages/mission-ui/src/elements/sk-pipeline-screen/plant-stylelint-min-inline-size.ts",
+        "source": "plant-stylelint-min-inline-size.ts.plant"
+      }
+    ]
+  },
+  {
+    "gate": "stylelint",
+    "ciCommand": "pnpm lint:styles",
+    "expectFailPattern": "plant-stylelint-inspector-leak",
+    "overlays": [
+      {
+        "target": "packages/mission-ui/src/elements/sk-pipeline-screen/plant-stylelint-inspector-leak.ts",
+        "source": "plant-stylelint-inspector-leak.ts.plant"
+      }
+    ]
+  },
+  {
+    "gate": "stylelint",
+    "ciCommand": "pnpm lint:styles",
+    "expectFailPattern": "plant-stylelint-weight",
+    "overlays": [
+      {
+        "target": "packages/mission-ui/src/elements/sk-missions-screen/plant-stylelint-weight.ts",
+        "source": "plant-stylelint-weight.ts.plant"
+      }
+    ]
   }
 ]

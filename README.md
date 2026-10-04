@@ -77,13 +77,15 @@ packages, never only the changed files.
 | `Gate: preflight` | `pnpm preflight` | the registry credential is present and accepted (CI: `node scripts/preflight.mjs --ci`) |
 | `Gate: typecheck` | `pnpm typecheck` | strict TypeScript over every workspace package |
 | `Gate: eslint` | `pnpm lint` | elements-over-CSS template rules, Lit rules, no warnings allowed |
-| `Gate: stylelint` | `pnpm lint:styles` | layout-only CSS, `--sk-*` tokens, no colour, font or size literals |
+| `Gate: stylelint` | `pnpm lint:styles` | layout-only CSS, `--sk-*` tokens, no colour, font or size literals; the operator-approved exceptions E-04 and E-08 to E-16 are scoped to named element files in `stylelint.config.mjs`, token values only (each sunsets on a spec-kitty-design issue) |
 | `Gate: no-io` | `pnpm lint:no-io` and `pnpm test:no-io` | no network, desktop-bridge or browser-storage I/O in `packages/*/src`; the self-test asserts one fixture per rule |
 | `Gate: manifest` | `pnpm manifest:check` | `custom-elements.json` equals a fresh regeneration and declares every property and event |
-| `Gate: hygiene` | `pnpm hygiene` | no token, no absolute user path, pinned dependencies and actions, safe workflow triggers, baseline PNG checks |
-| `Gate: storybook-build` | `pnpm build-storybook` | the static Storybook builds, then the output is scanned for tokens |
-| `Gate: unit-tests` | `pnpm test` | Vitest browser-mode tests: one per emitted event and payload |
-| `Gate: visual` | `pnpm visual` | screenshots of every story against the committed baselines, inside the pinned Playwright container |
+| `Gate: hygiene` | `pnpm hygiene` and `pnpm test:scripts` | no token, no absolute user path, no e-mail address in the contract and fixture paths, pinned dependencies and actions, safe workflow triggers, baseline PNG checks; then the `node:test` suites of the gate scripts (hygiene, gate-proof, preflight, manifest-screen, settle, the stylelint exception scope proofs and the terminology scan: the word "feature" never appears in `packages/*/src` or the mission quickstart, the canonical term is "mission") |
+| `Gate: contract` | `pnpm contract:check` and `pnpm test:contract` | the vendored Mission Status contract equals its pin, the generated types and fixtures are fresh, every fixture is a valid and coherent contract document (closed shapes), no event-stream identifier in `packages/*/src` |
+| `Gate: data-driven` | `pnpm lint:data-driven` and `pnpm test:data-driven` | no phase name, status lane or other contract status word (`pending`, `complete`, `draft`, `discarded`) hard-coded in `packages/*/src` outside `src/defaults/`, `src/contract/`, stories, fixtures and `src/story-support/`; 31 selectors, a self-test with 36 positive fixtures and inline `eslint-disable` comments ignored |
+| `Gate: storybook-build` | `pnpm build-storybook` | the static Storybook builds (118 stories), then the output is scanned for tokens |
+| `Gate: unit-tests` | `pnpm test` | Vitest browser-mode tests: one per emitted event and payload, plus the host composition test (both screens rendered from contract-shaped data with no I/O) |
+| `Gate: visual` | `pnpm visual` | screenshots of every story (118) against the committed baselines (118, one per story), inside the pinned Playwright container |
 | `Gate: proof (<gate>)` | `pnpm gate-proof` | one leg per gate: passes clean, fails with the plant (see below) |
 | `Gate: proof` | (CI only) | checks coverage, assembles and schema-validates the proof record |
 | `Gate: all` | (CI only) | fails unless every job above succeeded; skipped or cancelled counts as failed |
@@ -145,6 +147,14 @@ In CI, evidence for SC-002 is the green `Gate: proof (<gate>)` legs and `Gate: p
 uploaded, sanitised `proof-record` artifact of that run (retained one day). A record committed to the repo, if any, is
 a snapshot of its parent commit, not proof of the current head.
 
+### The Mission Status contract
+
+The screens are typed from a pinned copy of the spec-kitty Mission Status contract, vendored byte for byte under
+`contracts/spec-kitty/` with a `PIN.json` record. `pnpm contract:generate` writes `types.generated.ts` and
+`fixtures.generated.ts` under `packages/mission-ui/src/contract/`; never edit either by hand. `pnpm contract:update --sha
+<sha>` re-pins (network), `pnpm contract:verify-remote` confirms the vendored bytes equal upstream (network). Fixtures
+are valid contract documents; the only deviations are the two named relaxations in `scripts/contract/registry.mjs`.
+
 ### Timed clean-clone check (NFR-001, SC-001)
 
 The accepting reviewer, on a machine with the prerequisites done and a valid credential, starts a stopwatch at
@@ -155,6 +165,14 @@ minutes and all four Sample stories must render. The measured time goes in the P
 
 No lint gate is complete. These are documented, not gated; reviewers must catch them.
 
+- **`data-driven`** (`eslint.data-driven.config.mjs`): a value assembled at run time (`'in_' + 'progress'`,
+  `['in', 'progress'].join('_')`), a lane counts object aliased before a named read (`const c = m.statusLaneCounts;
+  c.done`) or destructured under a name other than the eight lanes, the lifecycle value `active` and any other value
+  outside the 14 phase and lane words and `pending`, `complete`, `draft`, `discarded`, a lone object key `plan`, `review`
+  or `done`, `phases.at(-1)` and `phases.slice(i)` with a negative or non-literal argument (legitimate, not flagged),
+  class-name fragments such as `is-blocked`, padded literals (`' blocked'`, `'blocked '`), vocabulary in `.d.ts` or JSON, and code under `packages/*/test` are not
+  seen. A foreign-vocabulary behavioural test of each element is the backstop. Inline `eslint-disable` comments are
+  ignored by this gate and by `no-io`.
 - **`no-io`** (`eslint.no-io.config.mjs`): Lit template attributes that load URLs (`<img src=${url}>`, `<link href>`,
   `<iframe>`) and `@import` or `url()` inside `css` text are not analysed (stylelint owns CSS). `setAttribute` is only
   checked for a literal `src`, `href`, `srcdoc`, `action`, `formaction` or `data` name. Aliases of objects other than
@@ -170,9 +188,21 @@ No lint gate is complete. These are documented, not gated; reviewers must catch 
   strings at run time (`document.createElement('button')`, `innerHTML = ...`), a second template library imported
   under another name, and CSS built from run-time strings are invisible to static rules. ESLint bans `unsafeCSS` and
   `styleMap` to close the CSS route at its source.
+- **`terminology`** (`scripts/terminology.mjs`, run by `pnpm test:scripts` inside the `hygiene` gate): matches the whole
+  word `feature` case-insensitively, line by line, in the source files of `packages/*/src` and in the mission
+  `quickstart.md`. The plural, other documents (README, changelogs, mission artifacts) and text assembled at run time
+  are not scanned.
 - **`hygiene`** (`scripts/hygiene/rules.mjs`): the token and path rules work line by line, so a token split across
   lines is not matched, and a quoted value containing an escaped quote is only read up to the quote. Token-shaped
   values are matched by prefix and length, so a differently shaped credential is not recognised.
+- **`hygiene` e-mail rule** (`scripts/hygiene/rules.mjs`): path scoped to `contracts/`, `packages/*/src/contract/`, and
+  `fixtures.ts`, `*.fixtures.ts` and `*.stories.ts` under `packages/*/src`; an address anywhere else is not reported.
+  `example.com`, `example.org`, `example.net` (and subdomains) and the `.invalid` top-level domain are allowed.
+- **`contract`** (`scripts/contract/check.mjs`): the username leg of C6 detects only the username of the account that
+  runs the gate (read at run time, skipped under 4 characters), not another person's login; the vendored YAML is not
+  scanned for it. C1 compares `PIN.json` with the files, so editing both together passes C1; the comparison with
+  upstream is `pnpm contract:verify-remote`, which needs the network and is not a CI gate. The producer's lane weights
+  are the one value copied from spec-kitty (`PRODUCER_LANE_WEIGHTS`); `contract:verify-remote` re-verifies them.
 - **CLI-record-path allow-list: two entries, three CLI record-path classes.** The spec-kitty CLI writes absolute paths into
   its own records, and operator policy keeps them un-scrubbed. Hygiene therefore exempts exactly three kinds of
   CLI-written path: the charter's `source_path:` line in `.kittify/charter/charter.yaml`, and, in
