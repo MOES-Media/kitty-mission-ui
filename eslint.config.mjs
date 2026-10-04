@@ -123,6 +123,10 @@ export default tseslint.config(
     rules: { 'no-restricted-syntax': ['error', ...withoutClassBan, classOnly(['sk-empty-state', 'sk-progress'])] },
   },
   {
+    files: ['packages/*/src/elements/sk-pipeline-screen/{sk-pipeline-screen,pipeline-parts}.ts'],
+    rules: { 'no-restricted-syntax': ['error', ...withoutClassBan, classOnly(['sk-breadcrumbs', 'sk-empty-state', 'sk-progress'])] },
+  },
+  {
     // Elements never import story-only helpers (research D-02): story-support is for stories and fixtures.
     files: ['packages/*/src/elements/**/*.ts'],
     ignores: ['**/*.stories.ts', '**/fixtures.ts'],

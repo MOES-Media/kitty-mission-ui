@@ -796,6 +796,151 @@
     },
     {
       "kind": "javascript-module",
+      "path": "src/elements/sk-pipeline-screen/pipeline-parts.ts",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/elements/sk-pipeline-screen/sk-pipeline-screen.ts",
+      "declarations": [
+        {
+          "kind": "class",
+          "description": "The Pipeline screen: header, phase bar, work package board and inspector for one Mission. No I/O, nothing stored.\nRenders inside the `sk-mission-shell` content slot. Not self-registering: `src/index.ts` defines the tag once.",
+          "name": "SkPipelineScreen",
+          "members": [
+            {
+              "kind": "field",
+              "name": "status",
+              "type": {
+                "text": "ViewState"
+              },
+              "default": "'loading'",
+              "description": "The view state; unknown values collapse to `empty`.",
+              "attribute": "status",
+              "reflects": true
+            },
+            {
+              "kind": "field",
+              "name": "mission",
+              "type": {
+                "text": "MissionDetailView | null"
+              },
+              "default": "null",
+              "description": "The Mission shown; null renders as `empty`."
+            },
+            {
+              "kind": "field",
+              "name": "laneGroups",
+              "type": {
+                "text": "LaneGroup[]"
+              },
+              "default": "[...DEFAULT_LANE_GROUPS]",
+              "description": "The board columns."
+            },
+            {
+              "kind": "field",
+              "name": "labels",
+              "type": {
+                "text": "LabelHooks | null"
+              },
+              "default": "null",
+              "description": "Phase, lane and state label hooks."
+            },
+            {
+              "kind": "field",
+              "name": "missionsHref",
+              "type": {
+                "text": "string"
+              },
+              "default": "'#/missions'",
+              "description": "The anchor target of the Missions crumb.",
+              "attribute": "missions-href"
+            },
+            {
+              "kind": "field",
+              "name": "errorMessage",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "description": "Overrides the default error body.",
+              "attribute": "error-message"
+            }
+          ],
+          "events": [
+            {
+              "name": "sk-open-missions",
+              "type": {
+                "text": "CustomEvent<SkOpenMissionsDetail>"
+              },
+              "description": "the Missions crumb was activated by an unmodified primary click or Enter"
+            },
+            {
+              "name": "sk-view-artifacts",
+              "type": {
+                "text": "CustomEvent<SkViewArtifactsDetail>"
+              },
+              "description": "View artifacts was activated"
+            },
+            {
+              "type": {
+                "text": "CustomEvent<SkSelectWorkPackageDetail>"
+              },
+              "description": "a card was activated (dispatched by the board, crosses the screen)",
+              "name": "sk-select-work-package"
+            }
+          ],
+          "attributes": [
+            {
+              "name": "status",
+              "type": {
+                "text": "ViewState"
+              },
+              "default": "'loading'",
+              "description": "The view state; unknown values collapse to `empty`.",
+              "fieldName": "status"
+            },
+            {
+              "name": "missions-href",
+              "type": {
+                "text": "string"
+              },
+              "default": "'#/missions'",
+              "description": "The anchor target of the Missions crumb.",
+              "fieldName": "missionsHref"
+            },
+            {
+              "name": "error-message",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "description": "Overrides the default error body.",
+              "fieldName": "errorMessage"
+            }
+          ],
+          "superclass": {
+            "name": "LitElement",
+            "package": "lit"
+          },
+          "tagName": "sk-pipeline-screen",
+          "customElement": true
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "SkPipelineScreen",
+          "declaration": {
+            "name": "SkPipelineScreen",
+            "module": "src/elements/sk-pipeline-screen/sk-pipeline-screen.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
       "path": "src/elements/sk-shell-nav-item/sk-shell-nav-item.ts",
       "declarations": [
         {

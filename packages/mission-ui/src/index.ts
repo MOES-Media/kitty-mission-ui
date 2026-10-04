@@ -5,6 +5,7 @@ import { SkMissionSample } from './elements/sk-mission-sample/sk-mission-sample.
 import { SkMissionShell } from './elements/sk-mission-shell/sk-mission-shell.js';
 import { SkMissionsScreen } from './elements/sk-missions-screen/sk-missions-screen.js';
 import { SkPhaseBar } from './elements/sk-phase-bar/sk-phase-bar.js';
+import { SkPipelineScreen } from './elements/sk-pipeline-screen/sk-pipeline-screen.js';
 import { SkShellNavItem } from './elements/sk-shell-nav-item/sk-shell-nav-item.js';
 import { SkShellTree } from './elements/sk-shell-tree/sk-shell-tree.js';
 import { SkWorkPackageBoard } from './elements/sk-work-package-board/sk-work-package-board.js';
@@ -24,6 +25,9 @@ if (!customElements.get('sk-shell-tree')) {
 if (!customElements.get('sk-missions-screen')) {
   customElements.define('sk-missions-screen', SkMissionsScreen);
 }
+if (!customElements.get('sk-pipeline-screen')) {
+  customElements.define('sk-pipeline-screen', SkPipelineScreen);
+}
 if (!customElements.get('sk-filter-toggle-group')) {
   customElements.define('sk-filter-toggle-group', SkFilterToggleGroup);
 }
@@ -40,12 +44,14 @@ export {
   SkMissionShell,
   SkMissionsScreen,
   SkPhaseBar,
+  SkPipelineScreen,
   SkShellNavItem,
   SkShellTree,
   SkWorkPackageBoard,
 };
 export type { SkFilterChangeDetail } from './elements/sk-filter-toggle-group/sk-filter-toggle-group.js';
 export type { SkLoadMoreDetail, SkOpenMissionDetail, SkSearchDetail } from './elements/sk-missions-screen/sk-missions-screen.js';
+export type { SkOpenMissionsDetail, SkViewArtifactsDetail } from './elements/sk-pipeline-screen/sk-pipeline-screen.js';
 export type { SkSelectWorkPackageDetail } from './elements/sk-work-package-board/sk-work-package-board.js';
 export type {
   BadgeTone,
