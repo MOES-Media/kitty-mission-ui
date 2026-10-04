@@ -1,0 +1,2 @@
+// expect: S3c.2
+export const c = `lane-${x}-for_review`;

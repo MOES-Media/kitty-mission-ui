@@ -1,0 +1,2 @@
+// expect: S9.1
+export const f = (phases: string[]) => phases.length > 3;

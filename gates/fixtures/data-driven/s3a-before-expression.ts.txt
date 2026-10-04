@@ -1,0 +1,2 @@
+// expect: S3a
+export const h = html`<button>Review${s}</button>`;

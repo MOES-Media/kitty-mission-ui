@@ -1,0 +1,2 @@
+// expect: S3b
+export const h = html`<sk-pill-tag status="planned">${x}</sk-pill-tag>`;

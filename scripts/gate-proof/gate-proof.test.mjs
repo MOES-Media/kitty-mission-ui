@@ -12,7 +12,7 @@ import { ALL_NEEDS_ENV, ALL_RUN, NON_GATE_JOBS, assemble, coverageProblems, inva
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const HOME_DIR = '/' + 'home' + '/';
 const AUTH = '_auth' + 'Token';
-const GATES = ['preflight', 'typecheck', 'eslint', 'stylelint', 'storybook-build', 'unit-tests', 'visual', 'manifest', 'no-io', 'hygiene', 'contract'];
+const GATES = ['preflight', 'typecheck', 'eslint', 'stylelint', 'storybook-build', 'unit-tests', 'visual', 'manifest', 'no-io', 'hygiene', 'contract', 'data-driven'];
 const ctx = { cwd: '/w/cwd', home: HOME_DIR + 'someone', repoRoot: '/w/main', user: '' };
 
 test('sanitiser replaces a home path, cwd and the repository root', () => {
@@ -89,14 +89,14 @@ test('assemble merges fragments into a schema-valid, hygiene-clean record', asyn
     assert.deepEqual(res.problems, []);
     const rec = JSON.parse(readFileSync(join(dir, 'out', 'proof-record.json'), 'utf8'));
     assert.equal(rec.verdict, 'pass');
-    assert.equal(rec.gates.length, 11);
+    assert.equal(rec.gates.length, 12);
     assert.match(readFileSync(join(dir, 'out', 'PROOF.md'), 'utf8'), /Verdict: \*\*pass\*\*/);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
 });
 
-// Exception X-1 widened the proof-record schema's gate enum and GATES by `contract`. The widening adds ids; it must not
+// Exception X-1 widened the proof-record schema's gate enum and GATES by `contract` and `data-driven`. The widening adds ids; it must not
 // let a registered id pass without a real proof entry, so each way of having no real entry is asserted to fail.
 test('a registered gate id without a real proof entry still fails: no fragment, a non-proof fragment, a phantom id', async () => {
   const dir = mkdtempSync(join(tmpdir(), 'gp-test-'));
@@ -107,7 +107,7 @@ test('a registered gate id without a real proof entry still fails: no fragment, 
     writeFragments(join(dir, 'real'));
     const real = await assembleFrom('real');
     assert.deepEqual(real.problems, []);
-    for (const id of ['contract']) {
+    for (const id of ['contract', 'data-driven']) {
       assert.equal(real.record.gates.some((g) => g.gate === id), true, id);
       // no entry for the newly registered id
       writeFragments(join(dir, `none-${id}`));

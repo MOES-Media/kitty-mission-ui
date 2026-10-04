@@ -9,6 +9,7 @@
 //    functions or other modules' exports, are not followed (no data-flow analysis).
 //  - Identifier-based rules assume no local shadowing of the banned names; shadowing is itself reported.
 //  - Only files under packages/*/src are linted; code outside it is out of scope.
+//  - Inline eslint-disable comments are ignored (noInlineConfig), so there is no in-source escape hatch.
 import tseslint from 'typescript-eslint';
 
 const GLOBAL_OBJECTS = '(window|globalThis|self)';
@@ -144,6 +145,8 @@ export default [
   {
     files: ['**/*.{ts,mts,cts,tsx,js,mjs,cjs,jsx}'],
     languageOptions: { parser: tseslint.parser, sourceType: 'module', parserOptions: { ecmaFeatures: { jsx: true } } },
+    // E-07 (P-10): an inline eslint-disable comment must not silence this gate (reproduced: it did).
+    linterOptions: { noInlineConfig: true },
     rules: {
       'no-restricted-globals': ['error', ...restrictedGlobals],
       'no-restricted-properties': ['error', ...restrictedProperties],

@@ -1,0 +1,2 @@
+// expect: S1
+export const a = ['plan', 'x'];

@@ -1,0 +1,4 @@
+// expect: S5b.3
+export interface I {
+  implement(): void;
+}

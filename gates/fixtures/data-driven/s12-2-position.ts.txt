@@ -1,0 +1,2 @@
+// expect: S12.2
+export const c = css`li:nth-child(5) { margin: 0; }`;

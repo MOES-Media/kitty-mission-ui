@@ -1,0 +1,9 @@
+// expect: S1
+export function f(l: string): number {
+  switch (l) {
+    case 'done':
+      return 1;
+    default:
+      return 0;
+  }
+}

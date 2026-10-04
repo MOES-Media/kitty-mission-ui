@@ -1,0 +1,2 @@
+// expect: S1
+export type L = 'review' | 'x';

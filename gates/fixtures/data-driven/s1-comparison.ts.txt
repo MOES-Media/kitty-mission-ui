@@ -1,0 +1,2 @@
+// expect: S1
+export const f = (l: string): boolean => l === 'blocked';

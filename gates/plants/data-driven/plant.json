@@ -1,0 +1,11 @@
+{
+  "gate": "data-driven",
+  "ciCommand": "pnpm lint:data-driven && pnpm test:data-driven",
+  "expectFailPattern": "plant-data-driven",
+  "overlays": [
+    {
+      "target": "packages/mission-ui/src/plant-data-driven.ts",
+      "source": "plant-data-driven.ts.plant"
+    }
+  ]
+}

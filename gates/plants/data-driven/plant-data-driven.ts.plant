@@ -1,0 +1,4 @@
+// plant: a hard-coded lane literal in element-scope source
+export function plantDataDriven(lane: string): boolean {
+  return lane === 'in_progress';
+}

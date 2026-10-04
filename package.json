@@ -13,6 +13,8 @@
     "lint:styles": "stylelint \"packages/*/src/**/*.{css,ts,mts,cts,tsx,js,mjs,cjs,jsx}\"",
     "lint:no-io": "eslint -c eslint.no-io.config.mjs packages/*/src",
     "test:no-io": "vitest run --config gates/vitest.config.ts gates/no-io.selftest.ts",
+    "lint:data-driven": "eslint -c eslint.data-driven.config.mjs packages/*/src",
+    "test:data-driven": "vitest run --config gates/vitest.config.ts gates/data-driven.selftest.ts",
     "manifest:generate": "pnpm --filter @spec-kitty/mission-ui manifest:generate",
     "manifest:check": "node scripts/check-manifest.mjs",
     "hygiene": "node scripts/check-hygiene.mjs",
