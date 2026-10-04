@@ -106,7 +106,10 @@ export class SkPipelineScreen extends LitElement {
   @property({ attribute: false })
   labels: LabelHooks | null = null;
 
-  /** The anchor target of the Missions crumb. */
+  /**
+   * The anchor target of the Missions crumb. Hosts set it to their own Missions route: the default is a guess at one host's
+   * hash scheme and only matters for a modified click (an unmodified click is turned into `sk-open-missions`).
+   */
   @property({ attribute: 'missions-href' })
   missionsHref = '#/missions';
 

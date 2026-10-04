@@ -853,7 +853,7 @@
                 "text": "string"
               },
               "default": "'#/missions'",
-              "description": "The anchor target of the Missions crumb.",
+              "description": "The anchor target of the Missions crumb. Hosts set it to their own Missions route: the default is a guess at one host's\nhash scheme and only matters for a modified click (an unmodified click is turned into `sk-open-missions`).",
               "attribute": "missions-href"
             },
             {
@@ -906,7 +906,7 @@
                 "text": "string"
               },
               "default": "'#/missions'",
-              "description": "The anchor target of the Missions crumb.",
+              "description": "The anchor target of the Missions crumb. Hosts set it to their own Missions route: the default is a guess at one host's\nhash scheme and only matters for a modified click (an unmodified click is turned into `sk-open-missions`).",
               "fieldName": "missionsHref"
             },
             {
