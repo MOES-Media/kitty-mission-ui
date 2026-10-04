@@ -220,8 +220,8 @@ export class SkMissionsScreen extends LitElement {
   @property({ reflect: true })
   filter = 'all';
 
-  /** The search text; semi-controlled. */
-  @property({ reflect: true })
+  /** The search text; semi-controlled. Read from the attribute, never written back to it (typed text stays out of the DOM). */
+  @property()
   query = '';
 
   /** The Load more row is busy and inert while true; host-owned. */

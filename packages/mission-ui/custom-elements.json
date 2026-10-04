@@ -569,9 +569,8 @@
                 "text": "string"
               },
               "default": "''",
-              "description": "The search text; semi-controlled.",
-              "attribute": "query",
-              "reflects": true
+              "description": "The search text; semi-controlled. Read from the attribute, never written back to it (typed text stays out of the DOM).",
+              "attribute": "query"
             },
             {
               "kind": "field",
@@ -685,7 +684,7 @@
                 "text": "string"
               },
               "default": "''",
-              "description": "The search text; semi-controlled.",
+              "description": "The search text; semi-controlled. Read from the attribute, never written back to it (typed text stays out of the DOM).",
               "fieldName": "query"
             },
             {

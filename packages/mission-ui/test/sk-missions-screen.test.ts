@@ -551,6 +551,23 @@ describe('search', () => {
   });
 });
 
+describe('the query is not reflected to an attribute (D-15)', () => {
+  it('typed text stays out of the light DOM; an initial query attribute is still read', async () => {
+    const el = await mount();
+    const input = one<HTMLElement>(sr(el), 'sk-form-input');
+    const inner = one<HTMLInputElement>(input.shadowRoot as ShadowRoot, 'input');
+    inner.value = 'alpha';
+    inner.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
+    await settle(el);
+    expect(el.query).toBe('alpha');
+    expect(el.hasAttribute('query')).toBe(false);
+    const fromAttribute = document.createElement('sk-missions-screen');
+    fromAttribute.setAttribute('query', 'beta');
+    document.body.append(fromAttribute);
+    expect(fromAttribute.query).toBe('beta');
+  });
+});
+
 describe('no match (MS-03)', () => {
   it('shows the panel, keeps search and filters, and offers Load more while pages remain', async () => {
     const el = await mount({ ...readyProps(), missions: fullMissions, pageInfo: fullMoreInfo });

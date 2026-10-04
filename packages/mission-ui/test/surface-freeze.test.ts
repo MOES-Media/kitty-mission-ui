@@ -151,7 +151,7 @@ describe('surface freeze', () => {
     ]);
   });
 
-  it('reflects status, value, filter and query to attributes (semi-controlled state is observable)', async () => {
+  it('reflects status to an attribute (filter too; the typed query is deliberately not reflected, D-15)', async () => {
     const screen = document.createElement('sk-missions-screen') as HTMLElement & { status: string };
     document.body.append(screen);
     screen.status = 'ready';
