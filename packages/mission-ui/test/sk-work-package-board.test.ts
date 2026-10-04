@@ -16,7 +16,7 @@ import {
 } from '../src/elements/sk-work-package-board/fixtures.js';
 import type { WorkPackageView } from '../src/contract/types.js';
 import type { LaneGroup } from '../src/logic/types.js';
-import { BOARD_LABEL, DEFAULT_LANE_GROUPS, LANE_COUNT_TEXT, NOT_STARTED_BADGE, STATE_BADGES } from '../src/defaults/index.js';
+import { BOARD_LABEL, DEFAULT_LANE_GROUPS, NOT_STARTED_BADGE, STATE_BADGES } from '../src/defaults/index.js';
 
 async function mount(workPackages: WorkPackageView[], extra: Partial<SkWorkPackageBoard> = {}, width?: number): Promise<SkWorkPackageBoard> {
   const el = document.createElement('sk-work-package-board');
@@ -34,6 +34,9 @@ async function mount(workPackages: WorkPackageView[], extra: Partial<SkWorkPacka
   await el.updateComplete;
   return el;
 }
+
+/** The spoken counts of the five columns of `fiveColumnsWps`: one card each. */
+const SPOKEN_FIVE_COLUMNS = ['1 Work Package', '1 Work Package', '1 Work Package', '1 Work Package', '1 Work Package'];
 
 const root = (el: SkWorkPackageBoard): ShadowRoot => {
   if (el.shadowRoot === null) throw new Error('no shadow root');
@@ -95,6 +98,7 @@ describe('sk-work-package-board columns and placement', () => {
   it('shows the card count of each column, equal to the rendered cards, and names it', async () => {
     const el = await mount(fiveColumnsWps);
     let ran = 0;
+    const spokenTexts: string[] = [];
     for (const lane of lanes(el)) {
       const count = laneCount(lane);
       expect(count?.textContent?.trim()).toBe(String(cardsOf(lane).length));
@@ -104,11 +108,13 @@ describe('sk-work-package-board columns and placement', () => {
       expect(count?.getAttribute('aria-hidden')).toBe('true');
       const spoken = count?.nextElementSibling as HTMLElement | null;
       expect(spoken?.hasAttribute('data-lane-count-text')).toBe(true);
-      expect(spoken?.textContent?.trim()).toBe(LANE_COUNT_TEXT(cardsOf(lane).length));
+      spokenTexts.push(spoken?.textContent?.trim() ?? '');
       expect(spoken?.getBoundingClientRect().width).toBeLessThanOrEqual(1);
       ran += 1;
     }
     expect(ran).toBe(5);
+    // Literals, not the helper: the words themselves are pinned (a count of one is singular, C-03).
+    expect(spokenTexts).toEqual(SPOKEN_FIVE_COLUMNS);
   });
 
   it('names each column section by its title', async () => {
@@ -181,7 +187,7 @@ describe('sk-work-package-board columns and placement', () => {
     const empty = lanes(el)[3] as HTMLElement;
     expect(laneTitle(empty)).toBe('Approved');
     expect(empty.querySelectorAll('ol > li').length).toBe(0);
-    expect(empty.textContent?.replace(/\s+/g, ' ').trim()).toBe(`Approved 0 ${LANE_COUNT_TEXT(0)}`);
+    expect(empty.textContent?.replace(/\s+/g, ' ').trim()).toBe('Approved 0 0 Work Packages');
   });
 
   it('renders a foreign vocabulary without any default label', async () => {

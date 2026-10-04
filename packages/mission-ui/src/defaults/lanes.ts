@@ -48,5 +48,5 @@ export const SUMMARY_SEPARATOR = ' · ';
 /** The accessible text of a card's subtask bar; the numbers are handed over as given (it holds the word `done`, which the data-driven gate keeps in this directory). */
 export const SUBTASK_PROGRESS_TEXT = (done: number, total: number): string => `Subtask progress, ${done} of ${total} done`;
 
-/** The spoken count of a board column: the number of cards it holds, handed over as rendered. */
-export const LANE_COUNT_TEXT = (count: number): string => `${count} work packages`;
+/** The spoken count of a board column: the number of cards it holds, handed over as rendered; singular for one, like `resultCountText`. */
+export const LANE_COUNT_TEXT = (count: number): string => (count === 1 ? '1 Work Package' : `${count} Work Packages`);

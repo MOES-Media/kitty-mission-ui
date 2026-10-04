@@ -20,6 +20,7 @@ import {
   PHASE_TONE,
   STALE_BADGE,
   STATE_BADGES,
+  LANE_COUNT_TEXT,
   SUMMARY_SEPARATOR,
   resultCountText,
   type PhaseState,
@@ -51,6 +52,13 @@ describe('defaults/lanes', () => {
       expect(LANE_LABELS[lane], lane).toBe(LANE_LABELS[lane]?.toLowerCase());
       expect(STATE_BADGES[lane]?.label.length, lane).toBeGreaterThan(0);
     }
+  });
+
+  it('the spoken lane count is singular for one and plural otherwise, pinned as literals (C-03, D-07)', () => {
+    expect(LANE_COUNT_TEXT(0)).toBe('0 Work Packages');
+    expect(LANE_COUNT_TEXT(1)).toBe('1 Work Package');
+    expect(LANE_COUNT_TEXT(2)).toBe('2 Work Packages');
+    expect(LANE_COUNT_TEXT(11)).toBe('11 Work Packages');
   });
 
   it('the card words of the prototype are kept', () => {
