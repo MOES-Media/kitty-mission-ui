@@ -127,21 +127,22 @@ describe('placeWorkPackages with other groups', () => {
     expect(plain[4]?.cards[0]?.badge).toBe(STATE_BADGES['done']);
   });
 
-  it('a lane no group holds shows its raw value in a neutral badge and never asks the state hook (F-02)', () => {
+  it('a lane no group holds asks the state hook first, then falls back to its raw value in a neutral badge (D-03)', () => {
     const mark: StateBadge = { label: 'custom', tone: 'attention' };
-    let asked = 0;
+    const asked: string[] = [];
     const hooks = {
-      state: () => {
-        asked += 1;
-        return mark;
+      state: (lane: string) => {
+        asked.push(lane);
+        return lane === 'mystery' ? mark : undefined;
       },
     };
-    const cols = placeWorkPackages([wp('W1', 'mystery')], DEFAULT_LANE_GROUPS, hooks, BOARD);
-    expect(cols[0]?.cards[0]?.badge).toEqual({ label: 'mystery', tone: 'neutral' });
-    expect(asked).toBe(0);
-    // positive control: a held lane does ask it
-    expect(placeWorkPackages([wp('W2', 'done')], DEFAULT_LANE_GROUPS, hooks, BOARD)[4]?.cards[0]?.badge).toBe(mark);
-    expect(asked).toBe(1);
+    const cols = placeWorkPackages([wp('W1', 'mystery'), wp('W2', 'other')], DEFAULT_LANE_GROUPS, hooks, BOARD);
+    expect(cols[0]?.cards[0]?.badge).toBe(mark);
+    expect(cols[0]?.cards[1]?.badge).toEqual({ label: 'other', tone: 'neutral' });
+    expect(asked).toEqual(['mystery', 'other']);
+    // positive control: a held lane asks it too
+    expect(placeWorkPackages([wp('W3', 'done')], DEFAULT_LANE_GROUPS, hooks, BOARD)[4]?.cards[0]?.badge).toEqual(STATE_BADGES['done']);
+    expect(asked).toEqual(['mystery', 'other', 'done']);
   });
 
   it('does not mutate its inputs', () => {

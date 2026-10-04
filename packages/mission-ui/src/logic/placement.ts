@@ -1,13 +1,13 @@
 import type { WorkPackageView } from '../contract/types.js';
 import { resolveStateBadge } from './labels.js';
-import type { LabelHooks, LaneGroup, PlacedColumn, StateBadge } from './types.js';
+import type { LabelHooks, LaneGroup, PlacedColumn } from './types.js';
 
 const SYNTHETIC_GROUP_ID = 'board';
 
 /**
  * Every work package goes into exactly one column, input order kept. A lane goes into the FIRST group that holds it;
- * a null lane goes into the first group (not started); a lane no group holds goes into the first group with its raw
- * value in a neutral badge. No groups: one synthetic column titled `boardLabel` that holds every lane.
+ * a null lane goes into the first group (not started); a lane no group holds goes into the first group, its badge
+ * resolved like any other (hook, default, then the raw value in a neutral badge). No groups: one synthetic column titled `boardLabel` that holds every lane.
  */
 export function placeWorkPackages(
   wps: readonly WorkPackageView[],
@@ -28,12 +28,8 @@ export function placeWorkPackages(
       continue;
     }
     const holder = columns.find((column) => column.group.lanes.includes(lane));
-    if (holder === undefined) {
-      const raw: StateBadge = { label: lane, tone: 'neutral' };
-      first.cards.push({ wp, badge: raw });
-    } else {
-      holder.cards.push({ wp, badge: resolveStateBadge(lane, hooks) });
-    }
+    // An unplaced lane goes into the first group; its badge is hook, then default, then the raw value (neutral).
+    (holder ?? first).cards.push({ wp, badge: resolveStateBadge(lane, hooks) });
   }
   return columns;
 }

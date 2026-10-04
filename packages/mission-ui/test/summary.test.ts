@@ -46,6 +46,12 @@ describe('laneSummary', () => {
     expect(laneSummary(counts, DEFAULT_LANE_GROUPS, { lane: () => undefined })).toBe(['2 done', '1 planned'].join(sep));
   });
 
+  it('a non-zero lane no group holds asks the lane hook, then shows the raw lane (D-03)', () => {
+    const counts = { ...zero, done: 1, on_hold: 2, awaiting: 3 };
+    const hooks = { lane: (lane: string) => (lane === 'on_hold' ? 'on hold' : undefined) };
+    expect(laneSummary(counts, DEFAULT_LANE_GROUPS, hooks)).toBe(['1 done', '2 on hold', '3 awaiting'].join(sep));
+  });
+
   it('custom groups: reverse group order and an unplaced lane appended', () => {
     const groups: LaneGroup[] = [
       { id: 'g1', label: 'One', lanes: ['todo'] },

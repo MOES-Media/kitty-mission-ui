@@ -4,8 +4,8 @@ import type { LabelHooks, LaneGroup } from './types.js';
 
 /**
  * The row's lane summary (FR-006): groups in REVERSE column order, each group's lanes in declared order, every
- * non-zero count as `<count> <label>`. A non-zero count whose lane no group holds is appended with the raw lane as its
- * label (never dropped). No counts are added together. Nothing to show gives an empty string.
+ * non-zero count as `<count> <label>`. A non-zero count whose lane no group holds is appended with its label resolved
+ * like any other (hook, default, then the raw lane; never dropped). No counts are added together. Nothing to show gives an empty string.
  */
 export function laneSummary(counts: Readonly<Record<string, number>>, groups: readonly LaneGroup[], hooks: LabelHooks | null): string {
   const segments: string[] = [];
@@ -27,7 +27,7 @@ export function laneSummary(counts: Readonly<Record<string, number>>, groups: re
   }
   const held = new Set(groups.flatMap((group) => group.lanes));
   for (const lane of Object.keys(counts)) {
-    if (!held.has(lane)) push(lane, lane);
+    if (!held.has(lane)) push(lane, resolveLaneLabel(lane, hooks));
   }
   return segments.join(SUMMARY_SEPARATOR);
 }
