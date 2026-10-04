@@ -15,10 +15,17 @@
 //  - Vocabulary in a .d.ts or JSON file, and code outside packages/*/src (tests), is not scanned.
 //  - An element that imports the vocabulary from defaults/ and then compares with a different literal it never
 //    imports is covered only by the behavioural test with a foreign vocabulary.
+import { readFileSync } from 'node:fs';
+import { parse } from 'yaml';
 import tseslint from 'typescript-eslint';
 
-export const PHASES = ['specify', 'plan', 'tasks', 'implement', 'review'];
-export const LANES = ['planned', 'claimed', 'in_progress', 'for_review', 'in_review', 'approved', 'done', 'blocked', 'canceled'];
+// The vocabulary is read from the vendored contract schemas (pinned and hash-checked by `contract:check`), so a contract
+// bump that adds a lane or a phase widens the gate with no edit here.
+const SCHEMAS = new URL('./contracts/spec-kitty/mission-status/schemas/', import.meta.url);
+const schema = (name) => parse(readFileSync(new URL(name, SCHEMAS), 'utf8'));
+
+export const PHASES = schema('MissionPhase.yaml').properties.name.enum;
+export const LANES = schema('StatusLane.yaml').enum;
 export const WORDS = [...PHASES, ...LANES];
 const LANE_ONLY = LANES.filter((w) => w !== 'done');
 // Words used in identifier positions; `plan`, `review` and `done` are ordinary identifiers and are left out.

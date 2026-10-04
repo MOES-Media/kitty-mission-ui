@@ -1,4 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import { parse } from 'yaml';
+import missionPhaseYaml from '../../../contracts/spec-kitty/mission-status/schemas/MissionPhase.yaml?raw';
+import statusLaneYaml from '../../../contracts/spec-kitty/mission-status/schemas/StatusLane.yaml?raw';
 import {
   BLOCKED_ROW_BADGE,
   CURRENT_STEP_PREFIX,
@@ -28,7 +31,35 @@ import {
 import * as copy from '../src/defaults/index.js';
 
 const STATES: PhaseState[] = Object.values(PHASE_STATE);
-const LANES = ['planned', 'claimed', 'in_progress', 'for_review', 'in_review', 'approved', 'done', 'blocked', 'canceled'];
+// The vocabulary the contract owns, read from the vendored schemas (pinned by `contract:check`), never typed by hand here.
+const STATUS_LANE_ENUM = (parse(statusLaneYaml) as { enum: string[] }).enum;
+const MISSION_PHASE = parse(missionPhaseYaml) as { properties: { name: { enum: string[] }; status: { enum: string[] } } };
+const PHASE_NAME_ENUM = MISSION_PHASE.properties.name.enum;
+const PHASE_STATUS_ENUM = MISSION_PHASE.properties.status.enum;
+const LANES = STATUS_LANE_ENUM;
+
+describe('defaults against the vendored contract enums (D-04)', () => {
+  it('the vendored enums are the ones this module was written against (a contract bump that adds a value fails here first)', () => {
+    expect(STATUS_LANE_ENUM).toHaveLength(9);
+    expect(PHASE_NAME_ENUM).toHaveLength(5);
+    expect(PHASE_STATUS_ENUM).toHaveLength(3);
+  });
+
+  it('every StatusLane value has a summary word, a card badge and exactly one place in the default groups, and nothing else does', () => {
+    expect(Object.keys(LANE_LABELS).sort()).toEqual([...STATUS_LANE_ENUM].sort());
+    expect(Object.keys(STATE_BADGES).sort()).toEqual([...STATUS_LANE_ENUM].sort());
+    expect(DEFAULT_LANE_GROUPS.flatMap((group) => group.lanes).sort()).toEqual([...STATUS_LANE_ENUM].sort());
+  });
+
+  it('every MissionPhase name has a default label, and every phase status a state, and nothing else does', () => {
+    expect(Object.keys(DEFAULT_PHASE_LABELS).sort()).toEqual([...PHASE_NAME_ENUM].sort());
+    expect(Object.keys(PHASE_STATE).sort()).toEqual([...PHASE_STATUS_ENUM].sort());
+  });
+
+  it('the default phase labels follow the contract phase order', () => {
+    expect(Object.keys(DEFAULT_PHASE_LABELS)).toEqual(PHASE_NAME_ENUM);
+  });
+});
 
 describe('defaults/lanes', () => {
   it('the five default groups, in the operator order, hold the nine lanes', () => {
