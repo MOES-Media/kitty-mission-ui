@@ -52,6 +52,12 @@ describe('matchesMission: the status filter', () => {
     expect(hits).toEqual(['all']);
   });
 
+  it('a stale draft is still under All only: a draft never appears under Stale or any other status (C-06, operator ruling)', () => {
+    const staleDraft = mission({ lifecycleStatus: 'draft', stale: true });
+    const hits = FILTERS.filter((f) => matchesMission(staleDraft, f.id, '')).map((f) => f.id);
+    expect(hits).toEqual(['all']);
+  });
+
   it('an unknown filter id behaves as All', () => {
     for (const id of ['', 'nonsense', 'constructor', '__proto__']) expect(matchesMission(draft, id, ''), id).toBe(true);
   });

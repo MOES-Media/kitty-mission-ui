@@ -7,7 +7,8 @@ export const FILTERS: readonly FilterDefinition[] = [
   { id: 'active', label: 'Active', matches: (m: MissionOverviewView) => m.lifecycleStatus === 'active' },
   { id: 'planned', label: 'Planned', matches: (m: MissionOverviewView) => m.lifecycleStatus === 'planned' },
   { id: 'done', label: 'Done', matches: (m: MissionOverviewView) => m.lifecycleStatus === 'done' },
-  { id: 'stale', label: 'Stale', matches: (m: MissionOverviewView) => m.stale === true },
+  // A draft appears only under All, even when it is stale (operator ruling on the PR #6 landing, C-06).
+  { id: 'stale', label: 'Stale', matches: (m: MissionOverviewView) => m.stale === true && m.lifecycleStatus !== 'draft' },
   { id: 'discarded', label: 'Discarded', matches: (m: MissionOverviewView) => m.lifecycleStatus === 'discarded' },
 ];
 
