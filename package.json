@@ -25,9 +25,16 @@
     "visual:update": "pnpm build-storybook && bash scripts/visual.sh --update",
     "gate-proof": "node scripts/gate-proof.mjs",
     "test:preflight": "node --test scripts/preflight.test.mjs",
-    "test:manifest-screen": "node --test scripts/manifest-screen.test.mjs"
+    "test:manifest-screen": "node --test scripts/manifest-screen.test.mjs",
+    "contract:generate": "node scripts/contract/generate.mjs",
+    "contract:check": "node scripts/contract/check.mjs",
+    "contract:update": "node scripts/contract/update.mjs",
+    "contract:verify-remote": "node scripts/contract/verify-remote.mjs",
+    "test:contract": "node --test scripts/contract/*.test.mjs",
+    "test:scripts": "node --test scripts/hygiene scripts/gate-proof scripts/preflight.test.mjs scripts/manifest-screen.test.mjs"
   },
   "devDependencies": {
+    "@apidevtools/json-schema-ref-parser": "16.0.3",
     "@custom-elements-manifest/analyzer": "0.11.0",
     "@eslint/js": "9.39.5",
     "@playwright/test": "1.62.1",
@@ -37,8 +44,10 @@
     "@vitest/browser": "4.1.11",
     "@vitest/browser-playwright": "4.1.11",
     "ajv": "8.20.0",
+    "ajv-formats": "3.0.1",
     "eslint": "9.39.5",
     "eslint-plugin-lit": "2.3.1",
+    "openapi-typescript": "7.13.0",
     "postcss-lit": "1.4.1",
     "storybook": "10.6.1",
     "stylelint": "16.26.1",

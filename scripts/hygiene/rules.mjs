@@ -34,6 +34,24 @@ export const ALLOW_LIST = [
   },
 ];
 
+// E-mail rule (NFR-007, research D-13). Path scoped: the vendored contract, the contract directory of a package, and
+// authored fixtures and stories. Elsewhere an address is legitimate (the CLI's own event log carries a noreply actor).
+const EMAIL_SCOPE = [
+  /^contracts\//,
+  /^packages\/[^/]+\/src\/contract\//,
+  /^packages\/[^/]+\/src\/(?:.*\/)?fixtures\.ts$/,
+  /^packages\/[^/]+\/src\/(?:.*\/)?[^/]+\.fixtures\.ts$/,
+  /^packages\/[^/]+\/src\/(?:.*\/)?[^/]+\.stories\.ts$/,
+];
+const EMAIL_ALLOWED = ['example.com', 'example.org', 'example.net'];
+// local part, an at sign, a dotted domain ending in letters: `lit@3.3.3` and `name@sha256:...` do not match.
+const EMAIL = new RegExp('[A-Za-z0-9._%+-]+' + '@' + '([A-Za-z0-9-]+(?:\\.[A-Za-z0-9-]+)*\\.[A-Za-z]{2,})', 'g');
+
+function emailAllowed(domain) {
+  const d = domain.toLowerCase();
+  return d.endsWith('.invalid') || EMAIL_ALLOWED.some((a) => d === a || d.endsWith('.' + a));
+}
+
 const finding = (rule, file, line, message) => ({ rule, file, line, message });
 
 function isPlaceholderName(seg) {
@@ -140,6 +158,11 @@ export function scanText(file, text, options = {}) {
     const b = BEARER.exec(lineText);
     if (b && !/^<[^<>\s]+>/.test(stripQuotes(b[1]))) {
       out.push(finding('bearer-literal', file, n, 'Authorization Bearer with a literal value'));
+    }
+    if (EMAIL_SCOPE.some((re) => re.test(file))) {
+      for (const m of lineText.matchAll(EMAIL)) {
+        if (!emailAllowed(m[1])) out.push(finding('email-address', file, n, 'e-mail address (value withheld)'));
+      }
     }
     if (!options.skipPaths) {
       for (const f of pathFindings(file, n, lineText, options.strictCi === true)) {

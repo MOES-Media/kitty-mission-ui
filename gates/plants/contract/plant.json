@@ -1,0 +1,50 @@
+[
+  {
+    "gate": "contract",
+    "ciCommand": "pnpm contract:check && pnpm test:contract",
+    "expectFailPattern": "violates contract",
+    "overlays": [
+      {
+        "target": "packages/mission-ui/src/contract/fixtures.generated.ts",
+        "edits": [
+          {
+            "find": "export const detailBothInProgress = {",
+            "replace": "export const detailBothInProgress = { plantExtraProperty: true,"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "gate": "contract",
+    "ciCommand": "pnpm contract:check && pnpm test:contract",
+    "expectFailPattern": "hash mismatch",
+    "overlays": [
+      {
+        "target": "contracts/spec-kitty/mission-status/schemas/StatusLane.yaml",
+        "edits": [
+          {
+            "find": "  - canceled",
+            "replace": "  - cancelled"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "gate": "contract",
+    "ciCommand": "pnpm contract:check && pnpm test:contract",
+    "expectFailPattern": "incoherent-planted",
+    "overlays": [
+      {
+        "target": "scripts/contract/check.mjs",
+        "edits": [
+          {
+            "find": "  incoherent: 'incoherent',",
+            "replace": "  incoherent: 'incoherent-planted',"
+          }
+        ]
+      }
+    ]
+  }
+]

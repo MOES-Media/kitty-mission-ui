@@ -31,6 +31,53 @@ test('token shapes with bodies are flagged', () => {
   assert.deepEqual(rules('a.txt', `t=github_pat_${'a1B2c3D4e5F6g7H8i9J0k1'}`), ['plant-hygiene-token']);
 });
 
+// E-mail rule: path scoped to the contract, fixtures and stories. Addresses are assembled at
+// run time so this file never carries one. The titles avoid the rule id: node:test prints titles in the clean output,
+// and the plant looks for the rule id in the planted output only.
+const at = '@';
+const mail = (local, domain) => `${local}${at}${domain}`;
+const SCOPED = [
+  'contracts/spec-kitty/mission-status/examples/a.yaml',
+  'packages/mission-ui/src/contract/fixtures.generated.ts',
+  'packages/mission-ui/src/elements/x/fixtures.ts',
+  'packages/mission-ui/src/elements/x/x.fixtures.ts',
+  'packages/mission-ui/src/elements/x/x.stories.ts',
+];
+
+test('an e-mail address is flagged in every scoped path, once per occurrence, without echoing it', () => {
+  let n = 0;
+  for (const file of SCOPED) {
+    const found = scanText(file, `owner: ${mail('person', 'corp.test')}`);
+    assert.deepEqual(found.map((f) => f.rule), ['email-address'], file);
+    assert.ok(!JSON.stringify(found).includes('person'), file);
+    n += 1;
+  }
+  assert.equal(n, 5);
+  assert.equal(scanText(SCOPED[0], `${mail('a', 'corp.test')} and ${mail('b', 'corp.test')}`).length, 2);
+});
+
+test('an e-mail address outside the scoped paths is left alone (the CLI event log carries a noreply actor)', () => {
+  const unscoped = ['kitty-specs/m/status.events.jsonl', 'README.md', 'packages/mission-ui/src/elements/x/x.ts', 'scripts/contract/a.mjs'];
+  for (const file of unscoped) assert.deepEqual(scanText(file, mail('person', 'users.noreply.github.com')), [], file);
+  assert.equal(unscoped.length, 4);
+  // positive control: the same text in a scoped path is flagged
+  assert.equal(scanText(SCOPED[0], mail('person', 'users.noreply.github.com')).length, 1);
+});
+
+test('example domains and the invalid TLD are allow-listed, look-alikes are not', () => {
+  for (const d of ['example.com', 'example.org', 'example.net', 'mail.example.com', 'host.invalid']) {
+    assert.deepEqual(scanText(SCOPED[0], mail('person', d)), [], d);
+  }
+  for (const d of ['example.com.evil.test', 'notexample.com', 'example.co', 'corp.test']) {
+    assert.equal(scanText(SCOPED[0], mail('person', d)).length, 1, d);
+  }
+});
+
+test('package specs and scoped npm names are not mistaken for addresses', () => {
+  const text = `import x from '${at}spec-kitty/elements'; lit${at}3.3.3 playwright:v1.62.1-noble${at}sha256:abc ${at}customElement('a-b')`;
+  assert.deepEqual(scanText(SCOPED[0], text), []);
+});
+
 test('token prefixes without bodies pass', () => {
   assert.deepEqual(rules('a.md', 'prefixes ghp_ gho_ github_pat_ and npm_ are named in prose'), []);
   assert.deepEqual(rules('a.md', `ghp_${'short'}`), []);
@@ -446,8 +493,12 @@ test('--record scans a gate-proof record', () => {
 test('the plant descriptor names the unique label and commits no token literal', () => {
   const plantPath = resolve(dirname(SCRIPT), '..', 'gates/plants/hygiene/plant.json');
   const text = readFileSync(plantPath, 'utf8');
-  assert.equal(JSON.parse(text).expectFailPattern, 'plant-hygiene-token');
+  const plants = JSON.parse(text);
+  assert.deepEqual(plants.map((p) => p.expectFailPattern), ['plant-hygiene-token', 'email-address', 'plant-hygiene-node-test']);
+  assert.equal(new Set(plants.map((p) => p.ciCommand)).size, 1);
   assert.deepEqual(rules('gates/plants/hygiene/plant.json', text), []);
+  // the descriptor commits neither a token body nor an address: both are assembled when the generator runs
+  assert.ok(!/[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+\.[A-Za-z]{2,}/.test(text.replaceAll("'@'", '')));
 });
 
 test('--list-allowed prints exactly the two CLI-record-path entries', () => {

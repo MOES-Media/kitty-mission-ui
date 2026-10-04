@@ -12,7 +12,7 @@ import { ALL_NEEDS_ENV, ALL_RUN, NON_GATE_JOBS, assemble, coverageProblems, inva
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const HOME_DIR = '/' + 'home' + '/';
 const AUTH = '_auth' + 'Token';
-const GATES = ['preflight', 'typecheck', 'eslint', 'stylelint', 'storybook-build', 'unit-tests', 'visual', 'manifest', 'no-io', 'hygiene'];
+const GATES = ['preflight', 'typecheck', 'eslint', 'stylelint', 'storybook-build', 'unit-tests', 'visual', 'manifest', 'no-io', 'hygiene', 'contract'];
 const ctx = { cwd: '/w/cwd', home: HOME_DIR + 'someone', repoRoot: '/w/main', user: '' };
 
 test('sanitiser replaces a home path, cwd and the repository root', () => {
@@ -89,8 +89,45 @@ test('assemble merges fragments into a schema-valid, hygiene-clean record', asyn
     assert.deepEqual(res.problems, []);
     const rec = JSON.parse(readFileSync(join(dir, 'out', 'proof-record.json'), 'utf8'));
     assert.equal(rec.verdict, 'pass');
-    assert.equal(rec.gates.length, 10);
+    assert.equal(rec.gates.length, 11);
     assert.match(readFileSync(join(dir, 'out', 'PROOF.md'), 'utf8'), /Verdict: \*\*pass\*\*/);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+// Exception X-1 widened the proof-record schema's gate enum and GATES by `contract`. The widening adds ids; it must not
+// let a registered id pass without a real proof entry, so each way of having no real entry is asserted to fail.
+test('a registered gate id without a real proof entry still fails: no fragment, a non-proof fragment, a phantom id', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'gp-test-'));
+  try {
+    const assembleFrom = (name) =>
+      assemble({ root: ROOT, fragmentsDir: join(dir, name), outDir: join(dir, `out-${name}`), snapshotOf: 'head' });
+    // positive control: with a real entry for every registered id, assemble passes
+    writeFragments(join(dir, 'real'));
+    const real = await assembleFrom('real');
+    assert.deepEqual(real.problems, []);
+    for (const id of ['contract']) {
+      assert.equal(real.record.gates.some((g) => g.gate === id), true, id);
+      // no entry for the newly registered id
+      writeFragments(join(dir, `none-${id}`));
+      rmSync(join(dir, `none-${id}`, `${id}.json`));
+      const none = await assembleFrom(`none-${id}`);
+      assert.equal(none.ok, false, id);
+      assert.ok(none.problems.some((p) => p.includes('coverage') && p.includes(id)), none.problems.join('\n'));
+      // an entry that proves nothing: the planted run exited 0 / the token never matched
+      for (const bad of [{ plantedExit: 0 }, { patternMatched: false }, { cleanExit: 1 }]) {
+        writeFragments(join(dir, `weak-${id}`), (g) => (g === id ? bad : {}));
+        const weak = await assembleFrom(`weak-${id}`);
+        assert.equal(weak.ok, false, `${id} ${JSON.stringify(bad)}`);
+      }
+    }
+    // an id the schema enum does not list and no job or plant backs
+    writeFragments(join(dir, 'phantom'));
+    writeFileSync(join(dir, 'phantom', 'phantom-gate.json'), JSON.stringify(fragmentFor('phantom-gate')));
+    const phantom = await assembleFrom('phantom');
+    assert.equal(phantom.ok, false);
+    assert.ok(phantom.problems.some((p) => p.includes('phantom-gate')), phantom.problems.join('\n'));
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

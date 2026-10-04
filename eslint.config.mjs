@@ -8,7 +8,15 @@ import skLocal, { elementSyntaxRestrictions } from './eslint-rules/index.mjs';
 export default tseslint.config(
   {
     // Plants are non-source overlays; nothing lintable lives there. No other broad ignores.
-    ignores: ['gates/plants/**', '**/storybook-static/**', '**/test-results/**', '.worktrees/**'],
+    ignores: [
+      'gates/plants/**',
+      '**/storybook-static/**',
+      '**/test-results/**',
+      '.worktrees/**',
+      // Exception E-05: openapi-typescript emits `unknown & unknown`, which the type rules reject; gate contract C2
+      // regenerates and byte-compares this one file, so it is ignored by exact path and nothing else.
+      'packages/mission-ui/src/contract/types.generated.ts',
+    ],
   },
   js.configs.recommended,
   {
@@ -28,6 +36,7 @@ export default tseslint.config(
         AbortSignal: 'readonly',
         setTimeout: 'readonly',
         clearTimeout: 'readonly',
+        structuredClone: 'readonly',
       },
     },
   },

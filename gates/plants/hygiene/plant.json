@@ -1,12 +1,42 @@
-{
-  "gate": "hygiene",
-  "ciCommand": "pnpm hygiene",
-  "expectFailPattern": "plant-hygiene-token",
-  "overlays": [
-    {
-      "target": "plant-hygiene.txt",
-      "generated": "a NEW UNTRACKED file at the repo root holding a run-time assembled, non-placeholder token-shaped string; proves untracked files are scanned and no token literal is committed",
-      "generator": "node -e \"require('fs').writeFileSync('plant-hygiene.txt','tok='+'ghp_'+'A1b2C3d4E5f6G7h8I9j0K1l2M3n4O5p6Q7r8')\""
-    }
-  ]
-}
+[
+  {
+    "gate": "hygiene",
+    "ciCommand": "pnpm hygiene && pnpm test:scripts",
+    "expectFailPattern": "plant-hygiene-token",
+    "overlays": [
+      {
+        "target": "plant-hygiene.txt",
+        "generated": "a NEW UNTRACKED file at the repo root holding a run-time assembled, non-placeholder token-shaped string; proves untracked files are scanned and no token literal is committed",
+        "generator": "node -e \"require('fs').writeFileSync('plant-hygiene.txt','tok='+'ghp_'+'A1b2C3d4E5f6G7h8I9j0K1l2M3n4O5p6Q7r8')\""
+      }
+    ]
+  },
+  {
+    "gate": "hygiene",
+    "ciCommand": "pnpm hygiene && pnpm test:scripts",
+    "expectFailPattern": "email-address",
+    "overlays": [
+      {
+        "target": "packages/mission-ui/src/plant-hygiene.fixtures.ts",
+        "generated": "a NEW UNTRACKED file on a fixture path holding a run-time assembled e-mail address outside the allow-list; proves the path-scoped e-mail rule fires and no address literal is committed",
+        "generator": "node -e \"require('fs').writeFileSync('packages/mission-ui/src/plant-hygiene.fixtures.ts','export const plantEmail = \\''+'person'+'@'+'corp.test'+'\\';\\n')\""
+      }
+    ]
+  },
+  {
+    "gate": "hygiene",
+    "ciCommand": "pnpm hygiene && pnpm test:scripts",
+    "expectFailPattern": "plant-hygiene-node-test",
+    "overlays": [
+      {
+        "target": "scripts/hygiene/hygiene.test.mjs",
+        "edits": [
+          {
+            "find": "test('token shapes with bodies are flagged', () => {",
+            "replace": "test('plant-hygiene-node-test', () => {\n  assert.fail('plant-hygiene-node-test');\n});\n\ntest('token shapes with bodies are flagged', () => {"
+          }
+        ]
+      }
+    ]
+  }
+]
