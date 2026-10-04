@@ -76,10 +76,13 @@ export class SkPhaseBar extends LitElement {
 
   protected override render(): TemplateResult {
     const last = this.phases.length - 1;
+    // One current step for assistive technology, the same one the inspector names (the first in array order, FR-019); a
+    // later in-progress phase keeps its own status text.
+    const current = this.phases.findIndex((phase) => PHASE_IS_CURRENT[phaseState(phase.status)]);
     return html`<ol aria-label=${this.label}>
       ${this.phases.map((phase, index) => {
         const state = phaseState(phase.status);
-        return html`<li aria-current=${PHASE_IS_CURRENT[state] ? 'step' : nothing}>
+        return html`<li aria-current=${index === current ? 'step' : nothing}>
           <sk-status-indicator tone=${PHASE_TONE[state]}>
             <span slot="marker">${PHASE_GLYPH[state]}</span>
             <span data-phase-label>${resolvePhaseLabel(phase.name, this.labels)}</span>

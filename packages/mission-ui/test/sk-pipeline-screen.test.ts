@@ -368,7 +368,8 @@ describe('ready content', () => {
     const el = await mount();
     const bar = one<HTMLElement>(root(el), 'sk-phase-bar');
     const current = [...root(bar).querySelectorAll('li[aria-current="step"]')];
-    expect(current.length).toBe(2);
+    expect(current.length).toBe(1);
+    expect(current[0]?.querySelector('[data-phase-label]')?.textContent?.trim()).toBe('Implement');
   });
 
   it('shows the work packages in service order, passing the board the Mission id', async () => {
@@ -393,6 +394,15 @@ describe('ready content', () => {
     const el = await mount({ mission: twoPhasesInProgress });
     expect(twoPhasesInProgress.phases.filter((p) => p.status === 'in_progress').length).toBe(2);
     expect(stepText(el)).toBe(`${CURRENT_STEP_PREFIX}Implement`);
+  });
+
+  it('exactly one phase is the current step for assistive technology and it is the one the inspector names (C-04)', async () => {
+    const el = await mount({ mission: twoPhasesInProgress });
+    const bar = one<HTMLElement>(root(el), 'sk-phase-bar');
+    const marked = [...root(bar).querySelectorAll('li[aria-current="step"]')];
+    expect(marked).toHaveLength(1);
+    const word = marked[0]?.querySelector('[data-phase-label]')?.textContent?.trim();
+    expect(stepText(el)).toBe(`${CURRENT_STEP_PREFIX}${word}`);
   });
 
   it('current step: "No step in progress" when no phase is current and there is no next action', async () => {

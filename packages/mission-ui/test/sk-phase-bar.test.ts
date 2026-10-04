@@ -156,7 +156,7 @@ describe('sk-phase-bar states', () => {
     }
   });
 
-  it('marks every in-progress phase current', async () => {
+  it('marks only the first in-progress phase current, as the inspector names it, and keeps every status text (C-04)', async () => {
     const el = await mount([
       { name: 'a', status: 'in_progress', basis: 'artifact' },
       { name: 'b', status: 'complete', basis: 'artifact' },
@@ -164,7 +164,8 @@ describe('sk-phase-bar states', () => {
     ] as PhaseView[]);
     const marked = items(el).map((li, index) => (li.getAttribute('aria-current') === 'step' ? index : -1)).filter((i) => i >= 0);
     expect(items(el)).toHaveLength(3);
-    expect(marked).toEqual([0, 2]);
+    expect(marked).toEqual([0]);
+    expect(items(el).map(statusOf)).toEqual(['in progress', 'complete', 'in progress']);
   });
 
   it('all pending: no item is current and every glyph is empty', async () => {
