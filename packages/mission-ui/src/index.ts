@@ -70,7 +70,7 @@ export type {
   Project,
   WorkPackageView,
 } from './contract/types.js';
-export type { SkMissionOpenDetail, SkMissionRetryDetail } from './elements/sk-mission-sample/sk-mission-sample.js';
+export type { SkMissionRetryDetail } from './elements/sk-mission-sample/sk-mission-sample.js';
 export type { MissionSummary, ViewState } from './view-state.js';
 export type {
   CurrentMark,

@@ -99,8 +99,8 @@ describe('sk-mission-sample status indicator label', () => {
 });
 
 describe('sk-mission-sample events', () => {
-  it('open click emits exactly one composed, bubbling sk-mission-open with the slug', async () => {
-    const seen = collect('sk-mission-open');
+  it('open click emits exactly one composed, bubbling sk-open-mission with the slug', async () => {
+    const seen = collect('sk-open-mission');
     const el = await mount('ready', { mission: exampleMission });
     el.shadowRoot?.querySelector<HTMLElement>('sk-button')?.click();
     expect(seen).toHaveLength(1);
@@ -114,7 +114,7 @@ describe('sk-mission-sample events', () => {
   it('the event map types the open detail without a cast', async () => {
     const el = await mount('ready', { mission: exampleMission });
     const slugs: string[] = [];
-    el.addEventListener('sk-mission-open', (event) => slugs.push(event.detail.slug));
+    el.addEventListener('sk-open-mission', (event) => slugs.push(event.detail.slug));
     el.shadowRoot?.querySelector<HTMLElement>('sk-button')?.click();
     expect(slugs).toEqual([exampleMission.slug]);
   });

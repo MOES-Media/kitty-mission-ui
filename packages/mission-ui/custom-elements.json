@@ -129,11 +129,11 @@
           ],
           "events": [
             {
-              "name": "sk-mission-open",
+              "name": "sk-open-mission",
               "type": {
-                "text": "CustomEvent<SkMissionOpenDetail>"
+                "text": "CustomEvent<SkOpenMissionDetail>"
               },
-              "description": "the ready-state open button was activated"
+              "description": "the ready-state open button was activated (the same event and detail type as the Missions screen's; the sample has no Mission id, so `missionId` is empty)"
             },
             {
               "name": "sk-mission-retry",

@@ -128,6 +128,17 @@ describe('surface freeze', () => {
     ]);
   });
 
+  it('names "open a Mission" once, verb first: no element declares sk-mission-open (D-01)', () => {
+    const declared: string[] = [];
+    for (const declaration of declarations.values()) for (const event of declaration.events ?? []) declared.push(event.name);
+    expect(declared.filter((name) => /open/.test(name) && /mission/.test(name)).sort()).toEqual([
+      'sk-open-mission',
+      'sk-open-mission',
+      'sk-open-missions',
+    ]);
+    expect(declared).not.toContain('sk-mission-open');
+  });
+
   it('marks the two screens with the required status property and no slots or parts anywhere', () => {
     for (const tag of NEW_TAGS) {
       const decl = declarations.get(tag);

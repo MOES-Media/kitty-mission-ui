@@ -71,11 +71,14 @@ design library are filed by the orchestrator at pull-request time, not from this
 ### Changed
 
 - `sk-mission-sample` no longer self-registers (`src/index.ts` defines the tag once), composes `sk-notice` and
-  `sk-section-header` through their slots, and exports `SkMissionOpenDetail` / `SkMissionRetryDetail` (typed events in
-  `HTMLElementEventMap` and the manifest).
+  `sk-section-header` through their slots, and exports `SkMissionRetryDetail` (typed events in
+  `HTMLElementEventMap` and the manifest). Its open event is `sk-open-mission`, the same name and detail type
+  (`SkOpenMissionDetail`) as the Missions screen's, so "open a Mission" has one event name (verb first, like
+  `sk-open-missions`, `sk-select-work-package`, `sk-view-artifacts`, `sk-load-more`). The shell's own events
+  (`sk-toggle-*`, `sk-tree-toggle`, `sk-mission-retry`, `sk-shell-retry`, `sk-navigate`) keep their names for now.
 
 ### Added
 
 - `sk-mission-sample`: template element encoding the screen contract (`status` view state, data in as
-  properties, `sk-mission-open` and `sk-mission-retry` events out, no I/O), with `Ready`, `Empty`, `Loading`
+  properties, `sk-open-mission` and `sk-mission-retry` events out, no I/O), with `Ready`, `Empty`, `Loading`
   and `Error` stories and Vitest browser-mode tests.
