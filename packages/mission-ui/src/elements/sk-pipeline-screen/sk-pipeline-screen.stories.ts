@@ -49,7 +49,7 @@ const meta: Meta<SkPipelineScreen> = {
         .laneGroups=${args.laneGroups}
         .labels=${args.labels}
       ></sk-pipeline-screen>`,
-      { layout: 'mission', mission: args.mission === null ? null : shellMissionOf(args.mission) },
+      { layout: 'mission', flush: true, mission: args.mission === null ? null : shellMissionOf(args.mission) },
     ),
 };
 

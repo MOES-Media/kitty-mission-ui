@@ -1,7 +1,7 @@
 // Private fragments of `sk-pipeline-screen`: the header, the inspector and the state panels. Exceptions E-03 (the
 // library's styles-only `breadcrumbs`, `empty-state` and `progress` families are written as classes), E-08 (the 260 px
 // inspector width) and E-12 (the flat inspector panel, the phase band rule, the metric rows, the eyebrow, the notice size, the folder
-// icon; sunset spec-kitty-design#509), E-15 (flush edges; sunset #512) and E-16 (the scrolling phase band's focus ring and edge fade; sunset #514) apply to this file. The screen does no arithmetic on contract values (C-004):
+// icon; sunset spec-kitty-design#509) and E-16 (the scrolling phase band's focus ring and edge fade; sunset #514) apply to this file. The screen does no arithmetic on contract values (C-004):
 // the only number it shows is the Mission progress, displayed through `formatWholePercent` (display rounding, DR-11).
 import { css, html, nothing } from 'lit';
 import type { TemplateResult } from 'lit';
@@ -119,34 +119,34 @@ export const pipelineStyles = css`
     border-inline-start: var(--sk-border-width-1) solid var(--sk-border-default);
     border-radius: 0;
   }
-  /* Item 5b (exception E-15, token-only calc, sunset spec-kitty-design#512, a flush-edge slot in the shell content cell): beside
-     the board the inspector runs flush to the bottom and right edges of the content column, like the rail and the sidebar.
-     The shell's main pads the content by space-6 on every side; a negative margin of the same token gives that padding back
-     to the panel. The shell's padding is unchanged for every other screen. Stacked (below), it is a contained panel instead. */
-  /* Review ruling (2026-10-04, exception E-15 extension): the phase band is flush to both edges of the column too, so it
-     spans edge to edge and its right edge is level with the inspector's; its own padding keeps the labels off the edge. */
-  @container not (max-width: 760px) {
-    [data-phases-frame] {
-      margin-inline: calc(-1 * var(--sk-space-6)) calc(-1 * var(--sk-space-6));
-    }
-    aside {
-      margin-block: 0 calc(-1 * var(--sk-space-6));
-      margin-inline: 0 calc(-1 * var(--sk-space-6));
+  /* 880 px = the board (60% basis, padding, inset) + gap + the 260 px inspector: the width at which they fit side by side in the full-width column of a flush shell. */
+  /* The screen runs inside a flush shell (sk-mission-shell with the flush attribute): it pads its own inset parts with the shell's public
+     content-padding property. Side by side (wide) the inspector and the phase band run flush to the edges of the content
+     column, like the rail and the sidebar; only the board keeps the inset. */
+  @container not (max-width: 880px) {
+    sk-work-package-board {
+      margin-inline: var(--sk-mission-shell-content-padding) 0;
     }
   }
-  /* Items 8 and 8b: at tablet and smaller the board and the inspector stack, the inspector spans the full width and reads
-     as a contained panel: top, bottom and end borders (the start border is the base rule) and a radius, token values
-     (exception E-12 extension). */
-  @container (max-width: 760px) {
+  /* Items 8 and 8b: at tablet and smaller the board and the inspector stack, everything is inset by the content padding, and
+     the inspector spans the full width and reads as a contained panel: top, bottom and end borders (the start border is
+     the base rule) and a radius, token values (exception E-12 extension). */
+  @container (max-width: 880px) {
+    [data-phases-frame] {
+      margin-inline: var(--sk-mission-shell-content-padding);
+    }
     [data-layout] {
       flex-direction: column;
       flex-wrap: nowrap;
     }
     sk-work-package-board {
       flex: none;
+      margin-inline: var(--sk-mission-shell-content-padding);
     }
     aside {
       flex: none;
+      margin-inline: var(--sk-mission-shell-content-padding);
+      margin-block: 0 var(--sk-mission-shell-content-padding);
       border-block-start: var(--sk-border-width-1) solid var(--sk-border-default);
       border-block-end: var(--sk-border-width-1) solid var(--sk-border-default);
       border-inline-end: var(--sk-border-width-1) solid var(--sk-border-default);

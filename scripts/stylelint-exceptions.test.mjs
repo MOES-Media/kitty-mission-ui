@@ -118,26 +118,6 @@ const CASES = [
     ],
   },
   {
-    id: 'E-15',
-    files: [`${EL}/sk-pipeline-screen/pipeline-parts.ts`],
-    allowed:
-      'margin-block: 0 calc(-1 * var(--sk-space-6)); margin-inline: 0 calc(-1 * var(--sk-space-6)); margin-inline: calc(-1 * var(--sk-space-6)) calc(-1 * var(--sk-space-6));',
-    stillFails: [
-      'margin-block: 0 calc(-1 * 24px);',
-      'margin-inline: 0 calc(-24px);',
-      'margin-block: 0 -24px;',
-      'margin-inline: 0 calc(1 * var(--sk-space-6));',
-      'margin-inline: 0 calc(-1 * var(--sk-space-6) + 4px);',
-      'padding: calc(-1 * 4px);',
-      // The calc is a margin-block / margin-inline value only (gates.md E-15): the token form on any other property is refused.
-      'padding: calc(-1 * var(--sk-space-6));',
-      'gap: calc(-1 * var(--sk-space-6));',
-      'width: calc(-1 * var(--sk-space-6));',
-      'margin: calc(-1 * var(--sk-space-6));',
-      'margin-inline-start: calc(-1 * var(--sk-space-6));',
-    ],
-  },
-  {
     id: 'E-16',
     files: [`${EL}/sk-pipeline-screen/pipeline-parts.ts`],
     allowed:

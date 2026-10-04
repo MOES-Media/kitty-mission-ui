@@ -52,6 +52,9 @@ export class SkPipelineScreen extends LitElement {
       }
       sk-page-header {
         flex: none;
+        box-sizing: border-box;
+        min-width: 0;
+        padding: var(--sk-mission-shell-content-padding) var(--sk-mission-shell-content-padding) 0;
       }
     `,
     pipelineStyles,
@@ -62,6 +65,7 @@ export class SkPipelineScreen extends LitElement {
       [data-state-panel] {
         display: block;
         margin-block: var(--sk-space-6);
+        margin-inline: var(--sk-mission-shell-content-padding);
       }
       /* The empty-state keeps the library's flex centring; only the notice, a custom element, needs a block box. */
       [data-state-panel] > sk-notice {

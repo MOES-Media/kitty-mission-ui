@@ -86,7 +86,7 @@ async function mount(args: Args = {}, width = 1280): Promise<SkPipelineScreen> {
 async function mountInShell(mission: MissionDetailView, width = 1280, extra: Args = {}): Promise<{ shell: SkMissionShell; screen: SkPipelineScreen }> {
   await setViewport(width);
   const shell = document.createElement('sk-mission-shell');
-  Object.assign(shell, missionArgs, { mission: shellMissionOf(mission) });
+  Object.assign(shell, missionArgs, { mission: shellMissionOf(mission), flush: true });
   shell.style.blockSize = '100vh';
   const before = document.createElement('a');
   before.href = '#before';
@@ -407,7 +407,7 @@ describe('ready content', () => {
 
   it('the stacked and the side-by-side tiers meet without a gap at fractional widths (C-02)', async () => {
     const seen: Array<[number, boolean, boolean, boolean]> = [];
-    for (const width of [760, 760.5, 760.99, 761]) {
+    for (const width of [880, 880.5, 880.99, 881]) {
       const el = await mount({}, 1280);
       const box = el.parentElement as HTMLElement;
       box.style.inlineSize = `${width}px`;
@@ -421,12 +421,12 @@ describe('ready content', () => {
       seen.push([width, stacked, contained, below]);
       document.body.replaceChildren();
     }
-    // stacked, contained and below the board always agree, and only 760 and below is stacked
+    // stacked, contained and below the board always agree, and only 880 and below is stacked
     expect(seen).toEqual([
-      [760, true, true, true],
-      [760.5, false, false, false],
-      [760.99, false, false, false],
-      [761, false, false, false],
+      [880, true, true, true],
+      [880.5, false, false, false],
+      [880.99, false, false, false],
+      [881, false, false, false],
     ]);
   });
 
@@ -1068,7 +1068,10 @@ describe('operator Storybook review: Pipeline layout (items 4 to 8)', () => {
       const b = boardOf(screen).getBoundingClientRect();
       const row = one<HTMLElement>(root(screen), '[data-layout]').getBoundingClientRect();
       expect(a.top, `${width} stacked`).toBeGreaterThanOrEqual(b.bottom - 1);
-      expect(Math.abs(a.width - row.width), `${width} width`).toBeLessThanOrEqual(1);
+      // full width of the row, inside the shell's content padding on both sides
+      const inset = parseFloat(getComputedStyle(aside(screen)).marginLeft);
+      expect(inset, `${width} inset`).toBeGreaterThan(0);
+      expect(Math.abs(a.width - (row.width - 2 * inset)), `${width} width`).toBeLessThanOrEqual(1);
     }
   });
 });

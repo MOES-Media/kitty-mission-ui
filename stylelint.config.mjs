@@ -152,16 +152,13 @@ const SHELL_FILES = [
 
 // Operator-approved exceptions E-04 and E-08 to E-16 (CP-1, 2026-10-03, and the Storybook review, 2026-10-04; contracts/gates.md):
 // scoped local overrides for the missions-and-pipeline-screens elements, token values only, each sunset on a spec-kitty-design
-// issue (E-04 library stepper G-04, issue pending; E-08 #505; E-09 #506; E-10 #507; E-11 #508; E-12 #509; E-14 #511; E-15 #512;
+// issue (E-04 library stepper G-04, issue pending; E-08 #505; E-09 #506; E-10 #507; E-11 #508; E-12 #509; E-14 #511;
 // E-16 #514). E-13 (#510, panel spacing) has one entry per screen file below. An override REPLACES a rule's options for a file, so
 // the exceptions are declared once here and merged per file below; no file gets more than its own exceptions.
 // Entry options: `properties` (allowed beyond layout), `strict` (made strict for the file), `unstrict` (taken OUT of the strict
 // list, so the pinned `values` entry is its only guard), `keywords` (extra non-token words, a map property -> words: a word is refused on every other property the file checks), `values` (the allowed values of a
 // property; the token form is added unless the property is `pinned`), `pxProperties` / `emProperties` (units allowed).
 const TOKEN_VALUE = '/^var\\(--sk-[a-z0-9-]+\\)$/';
-// One or two margin terms, each a token, 0, auto or the negative-token calc (E-15).
-const MARGIN_TERM = '(?:0|auto|var\\(--sk-[a-z0-9-]+\\)|calc\\(-1 \\* var\\(--sk-space-[0-9]+\\)\\))';
-const MARGIN_TERMS = `/^${MARGIN_TERM}(?: ${MARGIN_TERM})?$/`;
 const EXCEPTIONS = [
   {
     // Sunset: the library stepper with a connector (G-04); no design-library issue is filed yet (issue pending).
@@ -257,19 +254,6 @@ const EXCEPTIONS = [
     properties: ['background', 'border', 'border-radius', 'font-weight', 'font-family'],
     strict: ['font-weight', 'font-family'],
     keywords: { border: ['dashed', 'solid'] },
-  },
-  {
-    // E-15 (operator Storybook review, item 5b, 2026-10-04; sunset spec-kitty-design#512, a flush-edge slot in the shell content
-    // cell): the inspector and the phase band give the shell's content padding back to themselves with a negative margin of the
-    // SAME token. The only non-token value is `calc(-1 * var(--sk-space-N))`, and only on `margin-block` and `margin-inline`
-    // (one or two terms each): those two are taken out of the strict list and pinned by value, so the calc is refused on
-    // every other property, the `margin` shorthand included. Scope: pipeline-parts.ts only.
-    id: 'E-15',
-    files: ['sk-pipeline-screen/pipeline-parts.ts'],
-    properties: ['margin-block', 'margin-inline'],
-    unstrict: ['margin-block', 'margin-inline'],
-    pinned: ['margin-block', 'margin-inline'],
-    values: { 'margin-block': [MARGIN_TERMS], 'margin-inline': [MARGIN_TERMS] },
   },
   {
     // E-16 (operator Storybook review, phase band at 390, 2026-10-04; sunset spec-kitty-design#514, a focusable overflow

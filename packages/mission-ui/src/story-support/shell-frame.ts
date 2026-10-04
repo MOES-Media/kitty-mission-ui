@@ -21,6 +21,8 @@ export interface ShellFrameOptions {
   project?: ShellProject | null;
   /** `null` frames a screen that has no Mission to show (empty, loading, error): no Mission header and no progress footer. */
   mission?: ShellMission | null;
+  /** `sk-mission-shell flush`: the screen pads its own inset parts (the Pipeline screen). */
+  flush?: boolean;
 }
 
 // The prototype's gear icon, drawn locally: the library ships no icon set. The literal width/height/stroke-width are the
@@ -48,6 +50,7 @@ export function shellFrame(content: TemplateResult, options: ShellFrameOptions =
   const current = options.current ?? (layout === 'mission' ? 'nav-pipeline' : 'nav-missions');
   return html`<sk-mission-shell
     layout=${layout}
+    ?flush=${options.flush === true}
     current=${current}
     rail-current=${layout === 'mission' ? 'rail-missions' : ''}
     status="ready"
