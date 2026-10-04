@@ -11,6 +11,10 @@ afterEach(async () => {
   document.body.replaceChildren();
   document.documentElement.style.fontSize = '';
   vi.restoreAllMocks();
+  // The hover tests leave the pointer parked over a compact nav item. The next test lays out a shell under that spot, the
+  // browser then sends a late pointerenter (timing-dependent: under load it lands before the Escape), and the hovered item's
+  // label bubble owns that Escape (WCAG 1.4.13), so the flyout needed a second one. Park the pointer on empty page.
+  await userEvent.unhover(page.elementLocator(document.body));
   await page.viewport(414, 896);
 });
 

@@ -150,6 +150,164 @@ const SHELL_FILES = [
   '**/src/elements/sk-shell-tree/**',
 ];
 
+// Operator-approved exceptions E-04 and E-08 to E-16 (CP-1, 2026-10-03, and the Storybook review, 2026-10-04; contracts/gates.md):
+// scoped local overrides for the missions-and-pipeline-screens elements, token values only, each sunset on a spec-kitty-design
+// issue (E-04 library stepper G-04, issue pending; E-08 #505; E-09 #506; E-10 #507; E-11 #508; E-12 #509; E-14 #511; E-15 #512;
+// E-16 #514). E-13 (#510, panel spacing) has one entry per screen file below. An override REPLACES a rule's options for a file, so
+// the exceptions are declared once here and merged per file below; no file gets more than its own exceptions.
+// Entry options: `properties` (allowed beyond layout), `strict` (made strict for the file), `unstrict` (taken OUT of the strict
+// list, so the pinned `values` entry is its only guard), `keywords` (extra non-token words, a map property -> words: a word is refused on every other property the file checks), `values` (the allowed values of a
+// property; the token form is added unless the property is `pinned`), `pxProperties` / `emProperties` (units allowed).
+const TOKEN_VALUE = '/^var\\(--sk-[a-z0-9-]+\\)$/';
+const EXCEPTIONS = [
+  {
+    // Sunset: the library stepper with a connector (G-04); no design-library issue is filed yet (issue pending).
+    id: 'E-04',
+    files: ['sk-phase-bar/sk-phase-bar.ts'],
+    properties: ['background'],
+  },
+  {
+    id: 'E-09',
+    files: ['sk-work-package-board/sk-work-package-board.ts', 'sk-work-package-board/card-parts.ts'],
+    properties: ['background', 'border', 'border-radius', 'font-family', 'font-size', 'text-transform', 'letter-spacing', 'color'],
+    strict: ['font-family', 'letter-spacing'],
+    keywords: { border: ['solid'], 'text-transform': ['none'] },
+    values: { 'text-transform': ['uppercase', 'none'] },
+  },
+  {
+    // E-09 extension (operator ruling on the WP07 review; extended to the inspector eyebrow on the WP09 review, N-6): ONE
+    // pinned literal, sunset on #506 (tracking token). Stylelint cannot scope by selector, so the scope is the files:
+    // the board file and pipeline-parts.ts only.
+    id: 'E-09',
+    files: ['sk-work-package-board/sk-work-package-board.ts'],
+    properties: ['letter-spacing'],
+    strict: ['letter-spacing'],
+    keywords: { 'letter-spacing': ['0.08em'] },
+    values: { 'letter-spacing': ['0.08em'] },
+    emProperties: ['letter-spacing'],
+  },
+  {
+    id: 'E-10',
+    files: ['sk-work-package-board/sk-work-package-board.ts'],
+    properties: ['min-inline-size'],
+    values: { 'min-inline-size': ['90px'] },
+    pxProperties: ['min-inline-size'],
+  },
+  {
+    id: 'E-11',
+    files: ['sk-work-package-board/card-parts.ts'],
+    properties: ['white-space', 'overflow-wrap', 'word-break', 'hyphens', 'text-overflow'],
+    values: {
+      'white-space': ['normal', 'nowrap'],
+      'overflow-wrap': ['normal', 'break-word'],
+      'word-break': ['normal'],
+      hyphens: ['manual'],
+      'text-overflow': ['ellipsis'],
+    },
+  },
+  {
+    // E-11 extension (operator ruling Q2 on the WP09 review): the lane title wraps only between words and ellipsizes a
+    // single over-long word. The board file gets ONLY these four keyword properties, one value each.
+    id: 'E-11',
+    files: ['sk-work-package-board/sk-work-package-board.ts'],
+    properties: ['overflow-wrap', 'word-break', 'hyphens', 'text-overflow'],
+    values: { 'overflow-wrap': ['normal'], 'word-break': ['normal'], hyphens: ['manual'], 'text-overflow': ['ellipsis'] },
+  },
+  {
+    // E-14 (operator Storybook review, item 1, 2026-10-04; sunset spec-kitty-design#511, a joined segmented-choice variant):
+    // the filter group is ONE joined segmented control. Per-corner `border-radius` (a token or 0)
+    // and the shared inner border (`border-inline-start-width: 0`) on the library's segmented buttons. Scope: the filter
+    // group file only.
+    id: 'E-14',
+    files: ['sk-filter-toggle-group/sk-filter-toggle-group.ts'],
+    properties: ['border-radius', 'border-inline-start-width'],
+    values: { 'border-inline-start-width': ['0'] },
+    pinned: ['border-inline-start-width'],
+  },
+];
+
+function unique(list) {
+  return [...new Set(list)];
+}
+
+function exceptionOverrides() {
+  const byFile = new Map();
+  for (const exception of EXCEPTIONS) {
+    for (const file of exception.files) {
+      byFile.set(file, [...(byFile.get(file) ?? []), exception]);
+    }
+  }
+  return [...byFile].map(([file, list]) => {
+    const pick = (key) => unique(list.flatMap((exception) => exception[key] ?? []));
+    const values = {};
+    for (const exception of list) {
+      for (const [property, allowed] of Object.entries(exception.values ?? {})) {
+        values[property] = unique([...(values[property] ?? []), ...allowed]);
+      }
+    }
+    const pinned = pick('pinned');
+    // Keyword grants per property: the `keywords` maps plus the words a `values` entry pins (e.g. `text-transform: none`).
+    const grants = {};
+    for (const exception of list) {
+      for (const [property, words] of Object.entries(exception.keywords ?? {})) {
+        grants[property] = unique([...(grants[property] ?? []), ...words]);
+      }
+      for (const [property, allowed] of Object.entries(exception.values ?? {})) {
+        grants[property] = unique([...(grants[property] ?? []), ...allowed]);
+      }
+    }
+    const keywords = unique(list.flatMap((exception) => Object.values(exception.keywords ?? {}).flat()));
+    const pxProperties = pick('pxProperties');
+    const emProperties = pick('emProperties');
+    const ids = unique(list.map((exception) => exception.id)).join(', ');
+    const rules = {
+      'scale-unlimited/declaration-strict-value': [
+        unique([...STRICT_PROPERTIES, ...pick('strict')]).filter((property) => !pick('unstrict').includes(property)),
+        {
+          ignoreValues: unique([...TOKEN_ONLY, ...keywords]),
+          ignoreFunctions: false,
+          message: `Exception ${ids}: use var(--sk-*), 0, auto, inherit, currentColor or transparent (\${value} is a literal).`,
+        },
+      ],
+      'property-allowed-list': unique([...LAYOUT_PROPERTIES, ...pick('properties')]),
+    };
+    if (keywords.length > 0) {
+      // The strict rule's ignoreValues is file-wide, so each keyword is refused again on every property the file checks
+      // (strict or granted by an exception) unless a row grants it there. Layout properties (display, flex) stay as they are.
+      const escape = (word) => word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const checked = unique([...STRICT_PROPERTIES, ...pick('strict'), ...pick('properties')]).filter((property) => !pick('unstrict').includes(property));
+      const disallowed = {};
+      for (const property of checked) {
+        const refused = keywords.filter((word) => !(grants[property] ?? []).includes(word));
+        if (refused.length > 0) disallowed[property] = refused.map((word) => `/(?:^|\\s)${escape(word)}(?:\\s|$)/`);
+      }
+      rules['declaration-property-value-disallowed-list'] = disallowed;
+    }
+    if (Object.keys(values).length > 0) {
+      rules['declaration-property-value-allowed-list'] = Object.fromEntries(
+        Object.entries(values).map(([property, allowed]) => [
+          property,
+          pxProperties.includes(property) || pinned.includes(property) ? allowed : [TOKEN_VALUE, ...allowed],
+        ]),
+      );
+    }
+    if (pxProperties.length > 0 || emProperties.length > 0) {
+      // `px` / `em` are allowed, and only on the named properties (their values are pinned above).
+      // Stylelint applies the FIRST matching property key only, so the keys partition the properties:
+      // properties with no unit exception forbid both, the others forbid the units they do not own.
+      const named = unique([...pxProperties, ...emProperties]);
+      const exact = (names) => `/^(?:${names.join('|')})$/`;
+      rules['unit-allowed-list'] = ['%', 'fr', ...(pxProperties.length > 0 ? ['px'] : []), ...(emProperties.length > 0 ? ['em'] : [])];
+      rules['declaration-property-unit-disallowed-list'] = { [`/^(?!(?:${named.join('|')})$)/`]: ['px', 'em'] };
+      const pxOnly = pxProperties.filter((property) => !emProperties.includes(property));
+      const emOnly = emProperties.filter((property) => !pxProperties.includes(property));
+      if (pxOnly.length > 0) rules['declaration-property-unit-disallowed-list'][exact(pxOnly)] = ['em'];
+      if (emOnly.length > 0) rules['declaration-property-unit-disallowed-list'][exact(emOnly)] = ['px'];
+    }
+    return { files: [`**/src/elements/${file}`], rules };
+  });
+}
+
 export default {
   plugins: ['stylelint-declaration-strict-value'],
   overrides: [
@@ -176,6 +334,7 @@ export default {
         },
       },
     },
+    ...exceptionOverrides(),
   ],
   rules: {
     'scale-unlimited/declaration-strict-value': [

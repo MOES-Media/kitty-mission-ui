@@ -1,6 +1,7 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { expect, test } from '@playwright/test';
+import { settleNested } from './settle.mjs';
 
 interface IndexEntry {
   id: string;
@@ -10,6 +11,9 @@ interface IndexEntry {
 }
 
 const MIN_STORIES_PER_COMPONENT = 4;
+// R-05 bounds: 10 s per nested element (a hung element fails the story), 10 collect passes.
+const SETTLE_TIMEOUT_MS = 10_000;
+const SETTLE_MAX_PASSES = 10;
 // The web-components renderer mounts every story inside `#root-inner`, so the story's own first element is the first
 // child of that wrapper (whatever its tag): `#storybook-root > *:first-child` resolves to the wrapper, not the story.
 const STORY_ELEMENT = '#storybook-root > *:first-child > *:first-child';
@@ -64,14 +68,23 @@ for (const id of storyIds) {
     const element = page.locator(STORY_ELEMENT);
     await element.waitFor({ state: 'attached' });
     const tag = await element.evaluate((el) => el.localName);
-    await page.evaluate(async ([name, selector]) => {
+    await page.evaluate(async ([name]) => {
       await customElements.whenDefined(name as string);
-      const el = document.querySelector(selector as string) as
-        | (HTMLElement & { updateComplete?: Promise<unknown> })
-        | null;
-      await el?.updateComplete;
-      await document.fonts.ready;
-    }, [tag, STORY_ELEMENT]);
+    }, [tag]);
+    // R-05: every custom element nested in the story settles before the shot; bounded per element and per pass count
+    // (see settle.mjs), so a hung element fails this story with its name instead of stalling to the test timeout.
+    await page.evaluate(
+      async ([settle, selector, timeoutMs, maxPasses]) => {
+        const fn = new Function(`return (${settle as string})`)() as (r: unknown, o: unknown) => Promise<number>;
+        await fn(document.querySelector(selector as string), {
+          whenDefined: (n: string) => customElements.whenDefined(n),
+          timeoutMs,
+          maxPasses,
+        });
+        await document.fonts.ready;
+      },
+      [settleNested.toString(), STORY_ELEMENT, SETTLE_TIMEOUT_MS, SETTLE_MAX_PASSES] as const,
+    );
 
     // Anti-vacuity: the story rendered, fonts really loaded, and nothing errored.
     await expect(page.locator('.sb-errordisplay:visible')).toHaveCount(0);

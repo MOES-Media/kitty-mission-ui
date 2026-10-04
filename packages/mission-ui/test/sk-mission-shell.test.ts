@@ -566,6 +566,54 @@ describe('sidebar footer progress', () => {
   });
 });
 
+describe('sidebar footer percentage', () => {
+  const withProgress = (progress: { done: number; total: number; percentage?: number }): Args => ({
+    ...missionArgs,
+    mission: { ...missionArgs.mission, progress },
+  });
+  const meta = (el: SkMissionShell): string => one<HTMLElement>(root(el), '[data-footer] .sk-progress__meta').textContent?.trim() ?? '';
+
+  it('shows a given percentage rounded to a whole percent: bar value is the given figure, meta is whole', async () => {
+    const el = await mount(1280, withProgress({ done: 1, total: 6, percentage: 41.6667 }));
+    const bar = one<HTMLProgressElement>(root(el), '[data-footer] progress');
+    expect(bar.value).toBe(41.6667);
+    expect(bar.max).toBe(100);
+    expect(meta(el)).toBe('42%');
+    expect(bar.labels?.[0]?.textContent?.trim()).toBe('6 Work Packages');
+  });
+
+  it('without a percentage the footer is the existing rounded done over total (unchanged path)', async () => {
+    const el = await mount(1280, withProgress({ done: 1, total: 6 }));
+    const bar = one<HTMLProgressElement>(root(el), '[data-footer] progress');
+    expect(bar.value).toBe(1);
+    expect(bar.max).toBe(6);
+    expect(meta(el)).toBe('17%');
+  });
+
+  it('a percentage with total 0 still renders no footer, and a positive control with total 1 does', async () => {
+    const none = await mount(1280, withProgress({ done: 0, total: 0, percentage: 50 }));
+    expect(root(none).querySelector('[data-footer]')).toBeNull();
+    expect(root(none).querySelector('progress')).toBeNull();
+    document.body.replaceChildren();
+    const some = await mount(1280, withProgress({ done: 0, total: 1, percentage: 50 }));
+    expect(root(some).querySelector('[data-footer] progress')).not.toBeNull();
+  });
+
+  it('NaN and Infinity percentages fall back to the existing path (and a finite one does not)', async () => {
+    const seen: string[] = [];
+    for (const percentage of [Number.NaN, Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY]) {
+      const el = await mount(1280, withProgress({ done: 1, total: 4, percentage }));
+      const bar = one<HTMLProgressElement>(root(el), '[data-footer] progress');
+      expect([bar.value, bar.max]).toEqual([1, 4]);
+      seen.push(meta(el));
+      document.body.replaceChildren();
+    }
+    expect(seen).toEqual(['25%', '25%', '25%']);
+    const finite = await mount(1280, withProgress({ done: 1, total: 4, percentage: 0 }));
+    expect(meta(finite)).toBe('0%');
+  });
+});
+
 describe('sidebar footer without progress', () => {
   it('renders no footer or progress bar when the total is 0', async () => {
     const el = await mount(1280, { ...missionArgs, mission: { ...missionArgs.mission, progress: { done: 0, total: 0 } } });

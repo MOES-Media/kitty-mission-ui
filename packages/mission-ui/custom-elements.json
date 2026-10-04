@@ -4,6 +4,94 @@
   "modules": [
     {
       "kind": "javascript-module",
+      "path": "src/elements/sk-filter-toggle-group/sk-filter-toggle-group.ts",
+      "declarations": [
+        {
+          "kind": "class",
+          "description": "A generic single-choice toggle group: knows no vocabulary, receives options and a value. Pattern element (no screen\ncontract). Not self-registering: `src/index.ts` defines the tag once.",
+          "name": "SkFilterToggleGroup",
+          "members": [
+            {
+              "kind": "field",
+              "name": "options",
+              "type": {
+                "text": "FilterOption[]"
+              },
+              "default": "[]",
+              "description": "The options in render order."
+            },
+            {
+              "kind": "field",
+              "name": "value",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "description": "The id of the pressed option; reflected. An id that matches no option leaves none pressed.",
+              "attribute": "value",
+              "reflects": true
+            },
+            {
+              "kind": "field",
+              "name": "label",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "description": "The accessible name of the group.",
+              "attribute": "label"
+            }
+          ],
+          "events": [
+            {
+              "name": "sk-filter-change",
+              "type": {
+                "text": "CustomEvent<SkFilterChangeDetail>"
+              },
+              "description": "a button that is not the pressed one was activated"
+            }
+          ],
+          "attributes": [
+            {
+              "name": "value",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "description": "The id of the pressed option; reflected. An id that matches no option leaves none pressed.",
+              "fieldName": "value"
+            },
+            {
+              "name": "label",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "description": "The accessible name of the group.",
+              "fieldName": "label"
+            }
+          ],
+          "superclass": {
+            "name": "LitElement",
+            "package": "lit"
+          },
+          "tagName": "sk-filter-toggle-group",
+          "customElement": true
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "SkFilterToggleGroup",
+          "declaration": {
+            "name": "SkFilterToggleGroup",
+            "module": "src/elements/sk-filter-toggle-group/sk-filter-toggle-group.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
       "path": "src/elements/sk-mission-sample/sk-mission-sample.ts",
       "declarations": [
         {
@@ -392,6 +480,74 @@
     },
     {
       "kind": "javascript-module",
+      "path": "src/elements/sk-phase-bar/sk-phase-bar.ts",
+      "declarations": [
+        {
+          "kind": "class",
+          "description": "Renders the phases it receives, in array order and in whatever number. Pattern element (no screen contract). Not\nself-registering: `src/index.ts` defines the tag once.",
+          "name": "SkPhaseBar",
+          "members": [
+            {
+              "kind": "field",
+              "name": "phases",
+              "type": {
+                "text": "PhaseView[]"
+              },
+              "default": "[]",
+              "description": "The phases in display order; names are strings, not the contract enum."
+            },
+            {
+              "kind": "field",
+              "name": "labels",
+              "type": {
+                "text": "LabelHooks | null"
+              },
+              "default": "null",
+              "description": "Label hooks; only `phase` is read."
+            },
+            {
+              "kind": "field",
+              "name": "label",
+              "type": {
+                "text": "string"
+              },
+              "default": "PHASES_LABEL",
+              "description": "The accessible name of the list.",
+              "attribute": "label"
+            }
+          ],
+          "attributes": [
+            {
+              "name": "label",
+              "type": {
+                "text": "string"
+              },
+              "default": "PHASES_LABEL",
+              "description": "The accessible name of the list.",
+              "fieldName": "label"
+            }
+          ],
+          "superclass": {
+            "name": "LitElement",
+            "package": "lit"
+          },
+          "tagName": "sk-phase-bar",
+          "customElement": true
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "SkPhaseBar",
+          "declaration": {
+            "name": "SkPhaseBar",
+            "module": "src/elements/sk-phase-bar/sk-phase-bar.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
       "path": "src/elements/sk-shell-nav-item/sk-shell-nav-item.ts",
       "declarations": [
         {
@@ -630,6 +786,117 @@
           "declaration": {
             "name": "SkShellTree",
             "module": "src/elements/sk-shell-tree/sk-shell-tree.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/elements/sk-work-package-board/card-parts.ts",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/elements/sk-work-package-board/sk-work-package-board.ts",
+      "declarations": [
+        {
+          "kind": "class",
+          "description": "Places work packages into the columns it is given and emits the selection intent. Pattern element (no screen\ncontract). Not self-registering: `src/index.ts` defines the tag once.",
+          "name": "SkWorkPackageBoard",
+          "members": [
+            {
+              "kind": "field",
+              "name": "workPackages",
+              "type": {
+                "text": "WorkPackageView[]"
+              },
+              "default": "[]",
+              "description": "The work packages in service order; the board never sorts."
+            },
+            {
+              "kind": "field",
+              "name": "laneGroups",
+              "type": {
+                "text": "LaneGroup[]"
+              },
+              "default": "[...DEFAULT_LANE_GROUPS]",
+              "description": "The columns. An empty array makes one synthetic column titled by `label`."
+            },
+            {
+              "kind": "field",
+              "name": "missionId",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "description": "Echoed in the event payload.",
+              "attribute": "mission-id"
+            },
+            {
+              "kind": "field",
+              "name": "labels",
+              "type": {
+                "text": "LabelHooks | null"
+              },
+              "default": "null",
+              "description": "Label hooks; only `state` is read."
+            },
+            {
+              "kind": "field",
+              "name": "label",
+              "type": {
+                "text": "string"
+              },
+              "default": "BOARD_LABEL",
+              "description": "The board heading and the name of the scroll region.",
+              "attribute": "label"
+            }
+          ],
+          "events": [
+            {
+              "name": "sk-select-work-package",
+              "type": {
+                "text": "CustomEvent<SkSelectWorkPackageDetail>"
+              },
+              "description": "a card was activated; the library's own `sk-action-row-activate` is stopped here"
+            }
+          ],
+          "attributes": [
+            {
+              "name": "mission-id",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "description": "Echoed in the event payload.",
+              "fieldName": "missionId"
+            },
+            {
+              "name": "label",
+              "type": {
+                "text": "string"
+              },
+              "default": "BOARD_LABEL",
+              "description": "The board heading and the name of the scroll region.",
+              "fieldName": "label"
+            }
+          ],
+          "superclass": {
+            "name": "LitElement",
+            "package": "lit"
+          },
+          "tagName": "sk-work-package-board",
+          "customElement": true
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "SkWorkPackageBoard",
+          "declaration": {
+            "name": "SkWorkPackageBoard",
+            "module": "src/elements/sk-work-package-board/sk-work-package-board.ts"
           }
         }
       ]

@@ -334,8 +334,11 @@ export class SkMissionShell extends LitElement {
       padding-inline: var(--sk-space-4);
       padding-block: var(--sk-space-3) 0;
     }
+    /* The content cell is a column all the way to the slotted screen, which may grow to fill it (a screen's side panel then
+       runs the full height of the content area). */
     main {
-      display: block;
+      display: flex;
+      flex-direction: column;
       flex-grow: 1;
       min-width: 0;
       padding: var(--sk-space-6);
@@ -344,6 +347,9 @@ export class SkMissionShell extends LitElement {
       padding: var(--sk-space-4);
     }
     [data-focus-target] {
+      display: flex;
+      flex-direction: column;
+      flex-grow: 1;
       min-width: 0;
     }
   `,

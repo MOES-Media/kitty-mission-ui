@@ -8,6 +8,7 @@ import { ifDefined } from 'lit/directives/if-defined.js';
 import '@spec-kitty/elements';
 import '../sk-shell-nav-item/sk-shell-nav-item.js';
 import { renderBrandMark, renderIcon } from '../../shell-icons.js';
+import { formatWholePercent } from '../../logic/percent.js';
 import type {
   CurrentMark,
   ShellLayout,
@@ -156,11 +157,15 @@ export function renderFooter(ctx: SidebarContext): TemplateResult | typeof nothi
   if (ctx.layout === 'mission') {
     const progress = ctx.mission?.progress;
     if (!progress || progress.total <= 0) return nothing;
-    const percent = Math.round((progress.done / progress.total) * 100);
+    const given = progress.percentage;
+    const hasGiven = typeof given === 'number' && Number.isFinite(given);
+    const percent = hasGiven ? formatWholePercent(given) : Math.round((progress.done / progress.total) * 100);
+    const value = hasGiven ? given : progress.done;
+    const max = hasGiven ? 100 : progress.total;
     return html`<div slot="footer" data-footer>
       <div class="sk-progress sk-progress--narrow" data-footer-progress>
         <label class="sk-progress__label" for=${FOOTER_PROGRESS_ID}>${progress.total} Work Packages</label>
-        <progress class="sk-progress__bar" id=${FOOTER_PROGRESS_ID} value=${progress.done} max=${progress.total}></progress>
+        <progress class="sk-progress__bar" id=${FOOTER_PROGRESS_ID} value=${value} max=${max}></progress>
         <span class="sk-progress__meta">${percent}%</span>
       </div>
     </div>`;

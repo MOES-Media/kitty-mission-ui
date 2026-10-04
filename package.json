@@ -27,13 +27,13 @@
     "visual:update": "pnpm build-storybook && bash scripts/visual.sh --update",
     "gate-proof": "node scripts/gate-proof.mjs",
     "test:preflight": "node --test scripts/preflight.test.mjs",
-    "test:manifest-screen": "node --test scripts/manifest-screen.test.mjs",
+    "test:manifest-screen": "node --test scripts/manifest-screen.test.mjs scripts/settle.test.mjs",
     "contract:generate": "node scripts/contract/generate.mjs",
     "contract:check": "node scripts/contract/check.mjs",
     "contract:update": "node scripts/contract/update.mjs",
     "contract:verify-remote": "node scripts/contract/verify-remote.mjs",
     "test:contract": "node --test scripts/contract/*.test.mjs",
-    "test:scripts": "node --test scripts/hygiene scripts/gate-proof scripts/preflight.test.mjs scripts/manifest-screen.test.mjs"
+    "test:scripts": "node --test scripts/hygiene scripts/gate-proof scripts/preflight.test.mjs scripts/manifest-screen.test.mjs scripts/settle.test.mjs"
   },
   "devDependencies": {
     "@apidevtools/json-schema-ref-parser": "16.0.3",
