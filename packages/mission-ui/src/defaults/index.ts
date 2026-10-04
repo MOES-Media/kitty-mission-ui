@@ -3,3 +3,4 @@ export * from './lanes.js';
 export * from './phases.js';
 export * from './lifecycle.js';
 export * from './pipeline-copy.js';
+export * from './missions-copy.js';

@@ -17,12 +17,17 @@ import {
   ERROR_HEADING,
   FILTERS,
   FILTER_GROUP_LABEL,
+  HEADER_EYEBROW,
+  HEADER_SEPARATOR,
+  HEADER_TITLE,
   LOADING_BODY,
   LOADING_LABEL,
   LOAD_MORE_TEXT,
   NO_MATCH_BODY,
   NO_MATCH_HEADING,
   SEARCH_LABEL,
+  SEARCH_PLACEHOLDER,
+  missionCountText,
   resultCountText,
 } from '../../defaults/index.js';
 import { emptyStateSheet } from '../../library-sheets.js';
@@ -48,14 +53,6 @@ export interface SkSearchDetail {
 export interface SkLoadMoreDetail {
   cursor: string;
 }
-
-const HEADER_EYEBROW = 'Project';
-const HEADER_TITLE = 'Missions';
-const HEADER_SEPARATOR = ' · ';
-const SEARCH_PLACEHOLDER = `${SEARCH_LABEL}…`;
-
-/** "<n> Mission(s)" for the header; the count is the contract's `missionCount`, equality only. */
-const missionCountText = (count: number): string => (count === 1 ? '1 Mission' : `${count} Missions`);
 
 /**
  * The Missions screen: header, toolbar, list. No I/O, nothing stored; the host owns loading, paging, routing and the

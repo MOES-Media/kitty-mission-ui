@@ -1,6 +1,7 @@
 // Pipeline screen copy that is not vocabulary (provisional until CP-1). Wording from the prototype where it has any.
 export const PIPELINE_TITLE = 'Pipeline';
 export const MISSIONS_CRUMB = 'Missions';
+export const BREADCRUMB_LABEL = 'Breadcrumb';
 export const PHASES_LABEL = 'Mission phases';
 // The name of the phase band while it scrolls (a keyboard region); the list inside keeps PHASES_LABEL.
 export const PHASES_SCROLL_LABEL = 'Mission phases, scrollable';

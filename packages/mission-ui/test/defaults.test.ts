@@ -179,6 +179,20 @@ describe('defaults/lifecycle', () => {
   });
 });
 
+describe('defaults/missions-copy', () => {
+  it('holds the Missions screen header, search placeholder and count words, and the Pipeline breadcrumb name (D-06)', () => {
+    expect(copy.HEADER_EYEBROW).toBe('Project');
+    expect(copy.HEADER_TITLE).toBe('Missions');
+    expect(copy.HEADER_TITLE).toBe(copy.MISSIONS_CRUMB);
+    expect(copy.HEADER_SEPARATOR).toBe(SUMMARY_SEPARATOR);
+    expect(copy.SEARCH_PLACEHOLDER).toBe('Search Missions…');
+    expect(copy.missionCountText(1)).toBe('1 Mission');
+    expect(copy.missionCountText(0)).toBe('0 Missions');
+    expect(copy.missionCountText(3)).toBe('3 Missions');
+    expect(copy.BREADCRUMB_LABEL).toBe('Breadcrumb');
+  });
+});
+
 describe('defaults/pipeline-copy', () => {
   it('the screen copy of the prototype', () => {
     expect(copy.PIPELINE_TITLE).toBe('Pipeline');

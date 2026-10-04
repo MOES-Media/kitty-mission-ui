@@ -7,6 +7,7 @@ import { css, html, nothing } from 'lit';
 import type { TemplateResult } from 'lit';
 import {
   BLOCKERS_LABEL,
+  BREADCRUMB_LABEL,
   INSPECTOR_LABEL,
   MISSIONS_CRUMB,
   PIPELINE_EMPTY_BODY,
@@ -252,7 +253,7 @@ export interface HeaderContext {
 export function renderHeader(ctx: HeaderContext): TemplateResult {
   const mission = ctx.mission;
   return html`<sk-page-header>
-    <nav slot="eyebrow" class="sk-breadcrumbs" aria-label="Breadcrumb">
+    <nav slot="eyebrow" class="sk-breadcrumbs" aria-label=${BREADCRUMB_LABEL}>
       <ol class="sk-breadcrumbs__list">
         <li class="sk-breadcrumbs__item">
           <a class="sk-breadcrumbs__link" href=${ctx.missionsHref} @click=${ctx.onCrumb}>${MISSIONS_CRUMB}</a>
