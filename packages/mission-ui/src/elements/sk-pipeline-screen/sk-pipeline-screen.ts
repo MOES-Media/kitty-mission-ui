@@ -3,10 +3,11 @@
 import { LitElement, css, html } from 'lit';
 import type { TemplateResult } from 'lit';
 import { nothing } from 'lit';
-import { property, state } from 'lit/decorators.js';
+import { property } from 'lit/decorators.js';
 import '@spec-kitty/elements';
 import { DEFAULT_LANE_GROUPS, PHASES_SCROLL_LABEL } from '../../defaults/index.js';
 import { breadcrumbsSheet, emptyStateSheet } from '../../library-sheets.js';
+import { OverflowRegion } from '../../overflow-region.js';
 import { progressSheet } from '../../progress-sheet.js';
 import type { LabelHooks, LaneGroup } from '../../logic/index.js';
 import type { MissionDetailView } from '../../contract/types.js';
@@ -116,69 +117,14 @@ export class SkPipelineScreen extends LitElement {
   // The phase band scrolls when its phases are wider than the cell (a narrow screen or a large root font). While it does it
   // is a labelled, focusable region (the arrow keys then scroll it natively) and shows an edge fade on each side that has
   // phases off-screen. Measured on scroll and on every size change of the band or the bar inside it.
-  @state()
-  private bandScrolls = false;
-
-  @state()
-  private bandBefore = false;
-
-  @state()
-  private bandAfter = false;
-
-  private bandObserver: ResizeObserver | null = null;
-
-  private observedBand: Element | null = null;
-
-  // Lit schedules no update when an element is moved: forget the observed band and ask for one, so `updated` observes it again.
-  override connectedCallback(): void {
-    super.connectedCallback();
-    this.observedBand = null;
-    if (this.hasUpdated) this.requestUpdate();
-  }
-
-  override disconnectedCallback(): void {
-    this.bandObserver?.disconnect();
-    this.bandObserver = null;
-    this.observedBand = null;
-    super.disconnectedCallback();
-  }
-
-  protected override updated(): void {
-    const band = this.renderRoot.querySelector('[data-phases]');
-    if (band !== this.observedBand) {
-      this.bandObserver?.disconnect();
-      this.observedBand = band;
-      if (band !== null) {
-        this.bandObserver ??= new ResizeObserver(() => this.measureBand());
-        this.bandObserver.observe(band);
-        const bar = band.querySelector('sk-phase-bar');
-        if (bar !== null) this.bandObserver.observe(bar);
-        this.measureAfterLayout(bar);
-      }
-    }
-    this.measureBand();
-  }
-
-  /**
-   * The first measurement of a band: the bar renders its phases in its own update and the labels take their final width when the
-   * fonts are ready, so the measurement made inside `updated` can see a band that does not yet overflow. Measure again once the
-   * bar has rendered, the fonts are ready and a frame has laid everything out; a size observer alone is not relied on.
-   */
-  private measureAfterLayout(bar: Element | null): void {
-    const rendered = (bar as { updateComplete?: Promise<unknown> } | null)?.updateComplete ?? Promise.resolve();
-    void Promise.all([rendered, document.fonts?.ready]).then(() => requestAnimationFrame(() => this.measureBand()));
-  }
-
-  private measureBand = (): void => {
-    const band = this.observedBand;
-    const scrolls = band !== null && band.scrollWidth > band.clientWidth;
-    const travelled = band === null ? 0 : Math.abs(band.scrollLeft);
-    const before = scrolls && travelled > 1;
-    const after = scrolls && band !== null && travelled + band.clientWidth < band.scrollWidth - 1;
-    if (scrolls !== this.bandScrolls) this.bandScrolls = scrolls;
-    if (before !== this.bandBefore) this.bandBefore = before;
-    if (after !== this.bandAfter) this.bandAfter = after;
-  };
+  private readonly band = new OverflowRegion(this, {
+    target: () => this.renderRoot.querySelector('[data-phases]'),
+    also: () => {
+      const bar = this.renderRoot.querySelector('[data-phases] sk-phase-bar');
+      return bar === null ? [] : [bar];
+    },
+    edges: true,
+  });
 
   private onCrumb(event: MouseEvent): void {
     if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
@@ -197,15 +143,15 @@ export class SkPipelineScreen extends LitElement {
       <div data-phases-frame>
         <div
           data-phases
-          role=${this.bandScrolls ? 'region' : nothing}
-          aria-label=${this.bandScrolls ? PHASES_SCROLL_LABEL : nothing}
-          tabindex=${this.bandScrolls ? '0' : nothing}
-          @scroll=${this.measureBand}
+          role=${this.band.overflowing ? 'region' : nothing}
+          aria-label=${this.band.overflowing ? PHASES_SCROLL_LABEL : nothing}
+          tabindex=${this.band.overflowing ? '0' : nothing}
+          @scroll=${this.band.measure}
         >
           <sk-phase-bar .phases=${mission.phases} .labels=${this.labels}></sk-phase-bar>
         </div>
-        ${this.bandBefore ? html`<span data-phase-fade="start" aria-hidden="true"></span>` : nothing}
-        ${this.bandAfter ? html`<span data-phase-fade="end" aria-hidden="true"></span>` : nothing}
+        ${this.band.before ? html`<span data-phase-fade="start" aria-hidden="true"></span>` : nothing}
+        ${this.band.after ? html`<span data-phase-fade="end" aria-hidden="true"></span>` : nothing}
       </div>
       <div data-layout>
         <sk-work-package-board

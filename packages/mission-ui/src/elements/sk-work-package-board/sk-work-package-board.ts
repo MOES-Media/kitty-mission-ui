@@ -3,10 +3,11 @@
 // `sk-action-row`; the board places and emits, it does no arithmetic and holds no lane word (C-004, C-007).
 import { LitElement, css, html } from 'lit';
 import type { TemplateResult } from 'lit';
-import { property, state } from 'lit/decorators.js';
+import { property } from 'lit/decorators.js';
 import { nothing } from 'lit';
 import '@spec-kitty/elements';
 import { BOARD_LABEL, DEFAULT_LANE_GROUPS, LANE_COUNT_TEXT } from '../../defaults/index.js';
+import { OverflowRegion } from '../../overflow-region.js';
 import { progressSheet } from '../../progress-sheet.js';
 import { visuallyHidden } from '../../visually-hidden.js';
 import { workflowBoardSheet, workflowLaneSheet } from '../../library-sheets.js';
@@ -94,10 +95,8 @@ export class SkWorkPackageBoard extends LitElement {
     cardStyles,
   ];
 
-  @state()
-  private overflowing = false;
-
-  private observer: ResizeObserver | null = null;
+  /** The scroller is a labelled, focusable region only while it really overflows horizontally (library contract). */
+  private readonly region = new OverflowRegion(this, { target: () => this.renderRoot.querySelector('.sk-workflow-board__scroller') });
 
   /** The work packages in service order; the board never sorts. */
   @property({ attribute: false })
@@ -125,44 +124,6 @@ export class SkWorkPackageBoard extends LitElement {
     this.dispatchEvent(new CustomEvent<SkSelectWorkPackageDetail>('sk-select-work-package', { detail, bubbles: true, composed: true }));
   }
 
-  // The observer lives from connection to disconnection (Lit does not run `firstUpdated` again when an element is moved), so a
-  // board a host re-parents keeps measuring.
-  override connectedCallback(): void {
-    super.connectedCallback();
-    if (this.hasUpdated) this.observe();
-  }
-
-  override disconnectedCallback(): void {
-    this.observer?.disconnect();
-    this.observer = null;
-    super.disconnectedCallback();
-  }
-
-  protected override firstUpdated(): void {
-    this.observe();
-  }
-
-  private observe(): void {
-    const scroller = this.renderRoot.querySelector('.sk-workflow-board__scroller');
-    if (scroller === null) return;
-    this.observer?.disconnect();
-    this.observer = new ResizeObserver(() => this.measure());
-    this.observer.observe(scroller);
-    this.measure();
-  }
-
-  protected override updated(): void {
-    this.measure();
-  }
-
-  /** The scroller is a labelled, focusable region only while it really overflows horizontally (library contract). */
-  private measure(): void {
-    const scroller = this.renderRoot.querySelector('.sk-workflow-board__scroller');
-    if (scroller === null) return;
-    const overflowing = scroller.scrollWidth > scroller.clientWidth;
-    if (overflowing !== this.overflowing) this.overflowing = overflowing;
-  }
-
   protected override render(): TemplateResult {
     const columns = placeWorkPackages(this.workPackages, this.laneGroups, this.labels, this.label);
     const options = { onActivate: (event: Event, wpId: string) => this.onActivate(event, wpId) };
@@ -170,9 +131,9 @@ export class SkWorkPackageBoard extends LitElement {
       <h2 id="board-heading">${this.label}</h2>
       <div
         class="sk-workflow-board__scroller"
-        role=${this.overflowing ? 'region' : nothing}
-        aria-labelledby=${this.overflowing ? 'board-heading' : nothing}
-        tabindex=${this.overflowing ? '0' : nothing}
+        role=${this.region.overflowing ? 'region' : nothing}
+        aria-labelledby=${this.region.overflowing ? 'board-heading' : nothing}
+        tabindex=${this.region.overflowing ? '0' : nothing}
       >
         ${columns.map(
           (column, index) => html`<section class="sk-workflow-lane" aria-labelledby=${`lane-title-${index}`}>

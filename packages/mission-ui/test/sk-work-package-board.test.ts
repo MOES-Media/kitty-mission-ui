@@ -688,3 +688,41 @@ describe('sk-work-package-board reconnect (squad fix round)', () => {
     expect(scroller().getAttribute('role'), 'no region after growing').toBeNull();
   });
 });
+
+describe('sk-work-package-board font wait (D-08)', () => {
+  it('waits for the fonts before it trusts its first measurement, and measures again when they are ready', async () => {
+    let release: () => void = () => undefined;
+    let asked = 0;
+    const ready = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    Object.defineProperty(document, 'fonts', {
+      configurable: true,
+      get: () => ({
+        get ready() {
+          asked += 1;
+          return ready;
+        },
+      }),
+    });
+    try {
+      const el = await mount(fiveColumnsWps, {}, 1000);
+      const frames = (): Promise<void> => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())));
+      await frames();
+      expect(asked, 'the board waits on document.fonts.ready').toBeGreaterThan(0);
+      const scroller = root(el).querySelector<HTMLElement>('.sk-workflow-board__scroller') as HTMLElement;
+      // Labels that take their final width late: a scrollWidth read says the content grew; layout is untouched.
+      let late = false;
+      const real = scroller.scrollWidth;
+      Object.defineProperty(scroller, 'scrollWidth', { configurable: true, get: () => (late ? real + 500 : real) });
+      late = true;
+      release();
+      await ready;
+      await frames();
+      await el.updateComplete;
+      expect(scroller.getAttribute('role'), 'region once the fonts are ready').toBe('region');
+    } finally {
+      Reflect.deleteProperty(document, 'fonts');
+    }
+  });
+});
