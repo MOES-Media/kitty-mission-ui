@@ -11,6 +11,7 @@ import {
   NOW,
   bulkMissions,
   duplicateNames,
+  exhaustedMissions,
   firstMissions,
   firstPageInfo,
   fullMissions,
@@ -570,6 +571,16 @@ describe('no match (MS-03)', () => {
     expect(visibleNames(el)).toEqual([]);
     expect(one(sr(el), '.sk-empty-state h2').textContent).toBe('No Missions match');
     expect(loadMoreItem(el)).toBeNull();
+  });
+
+  it('a ready list with no Missions at all shows the panel too, and Load more while pages remain (C-01)', async () => {
+    const el = await mount({ ...readyProps(), missions: exhaustedMissions, pageInfo: lastPageInfo(25) });
+    expect(one(sr(el), '.sk-empty-state h2').textContent).toBe('No Missions match');
+    expect(loadMoreItem(el)).toBeNull();
+    el.pageInfo = firstPageInfo;
+    await settle(el);
+    expect(sr(el).querySelectorAll('.sk-empty-state').length).toBe(1);
+    expect(loadMoreItem(el)).not.toBeNull();
   });
 
   it('the panel is gone as soon as one row matches', async () => {

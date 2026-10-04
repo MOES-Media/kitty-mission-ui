@@ -328,7 +328,7 @@ export class SkMissionsScreen extends LitElement {
   private renderReady(): TemplateResult {
     const filter = FILTERS.some((candidate) => candidate.id === this.filter) ? this.filter : DEFAULT_FILTER_ID;
     const matches = this.missions.map((mission) => matchesMission(mission, this.filter, this.query));
-    const noneShown = matches.length > 0 && !matches.includes(true);
+    const noneShown = !matches.includes(true);
     return html`
       <div data-toolbar>
         <sk-form-input type="search" label=${SEARCH_LABEL} placeholder=${SEARCH_PLACEHOLDER} .value=${this.query} @input=${this.onSearchInput}></sk-form-input>
