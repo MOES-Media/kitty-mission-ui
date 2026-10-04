@@ -631,6 +631,32 @@ describe('paging', () => {
     expect(events.length).toBe(1);
   });
 
+  it('a second activation before the host answers emits nothing; loadingMore or the next page re-arms it (C-09)', async () => {
+    const el = await mount({ ...readyProps(), missions: firstMissions, pageInfo: firstPageInfo });
+    const events = collect<{ cursor: string }>(el, 'sk-load-more');
+    loadMoreButton(el).click();
+    loadMoreButton(el).click();
+    await settle(el);
+    expect(events.map((e) => e.detail.cursor)).toEqual(['cGFnZS0y']);
+    // the host answers with loadingMore, then drops it (a failed load): the same cursor may be asked again
+    el.loadingMore = true;
+    await settle(el);
+    el.loadingMore = false;
+    await settle(el);
+    loadMoreButton(el).click();
+    loadMoreButton(el).click();
+    await settle(el);
+    expect(events.map((e) => e.detail.cursor)).toEqual(['cGFnZS0y', 'cGFnZS0y']);
+    // the next page arrives with a new cursor: one more
+    el.missions = [...firstMissions, ...mixedMissions.slice(0, 1).map((m) => ({ ...m, missionId: 'NEXT-1' }))];
+    el.pageInfo = { hasNextPage: true, nextPageCursor: 'cGFnZS0z', pageSize: 2 };
+    await settle(el);
+    loadMoreButton(el).click();
+    loadMoreButton(el).click();
+    await settle(el);
+    expect(events.map((e) => e.detail.cursor)).toEqual(['cGFnZS0y', 'cGFnZS0y', 'cGFnZS0z']);
+  });
+
   it('a next page without a cursor offers no Load more row', async () => {
     const broken: PageInfo = { hasNextPage: true, nextPageCursor: null, pageSize: 2 };
     const el = await mount({ ...readyProps(), missions: firstMissions, pageInfo: broken });

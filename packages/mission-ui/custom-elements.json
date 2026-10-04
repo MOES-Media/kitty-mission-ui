@@ -632,7 +632,7 @@
               "type": {
                 "text": "CustomEvent<SkLoadMoreDetail>"
               },
-              "description": "Load more was activated while a next page exists and `loadingMore` is false"
+              "description": "Load more was activated while a next page exists and `loadingMore` is false; once per cursor until `loadingMore`, `missions` or `pageInfo` changes"
             },
             {
               "type": {

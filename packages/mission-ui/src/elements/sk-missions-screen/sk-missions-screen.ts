@@ -68,7 +68,7 @@ const missionCountText = (count: number): string => (count === 1 ? '1 Mission' :
  * @fires {CustomEvent<SkOpenMissionDetail>} sk-open-mission - a row was activated; the screen never navigates
  * @fires {CustomEvent<SkFilterChangeDetail>} sk-filter-change - a different filter was pressed (dispatched by the filter group, crosses the screen)
  * @fires {CustomEvent<SkSearchDetail>} sk-search - the trimmed query changed through user input
- * @fires {CustomEvent<SkLoadMoreDetail>} sk-load-more - Load more was activated while a next page exists and `loadingMore` is false
+ * @fires {CustomEvent<SkLoadMoreDetail>} sk-load-more - Load more was activated while a next page exists and `loadingMore` is false; once per cursor until `loadingMore`, `missions` or `pageInfo` changes
  */
 export class SkMissionsScreen extends LitElement {
   static override styles = [
@@ -269,7 +269,12 @@ export class SkMissionsScreen extends LitElement {
     this.announcementSeq += 1;
   }
 
+  /** The cursor of the Load more request already emitted and not yet answered (C-09). */
+  private requestedCursor: string | null = null;
+
   protected override willUpdate(changed: PropertyValues<this>): void {
+    // The host answered (`loadingMore` moved, a page arrived or `pageInfo` was replaced): Load more may ask again.
+    if (changed.has('loadingMore') || changed.has('missions') || changed.has('pageInfo')) this.requestedCursor = null;
     // A load-more page arrived: the list grew. Never on first render and never when the host swaps the list for a
     // shorter or equal one.
     const before = changed.get('missions');
@@ -301,7 +306,8 @@ export class SkMissionsScreen extends LitElement {
 
   private onLoadMore(): void {
     const cursor = this.pageInfo?.nextPageCursor ?? null;
-    if (this.loadingMore || cursor === null) return;
+    if (this.loadingMore || cursor === null || cursor === this.requestedCursor) return;
+    this.requestedCursor = cursor;
     const detail: SkLoadMoreDetail = { cursor };
     this.dispatchEvent(new CustomEvent<SkLoadMoreDetail>('sk-load-more', { detail, bubbles: true, composed: true }));
   }
