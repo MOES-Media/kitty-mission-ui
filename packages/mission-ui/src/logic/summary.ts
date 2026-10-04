@@ -9,6 +9,9 @@ import type { LabelHooks, LaneGroup } from './types.js';
  */
 export function laneSummary(counts: Readonly<Record<string, number>>, groups: readonly LaneGroup[], hooks: LabelHooks | null): string {
   const segments: string[] = [];
+  // The board gives a lane to the FIRST group that holds it; the summary walks the columns in reverse but keeps that owner.
+  const owner = new Map<string, LaneGroup>();
+  for (const group of groups) for (const lane of group.lanes) if (!owner.has(lane)) owner.set(lane, group);
   const seen = new Set<string>();
   const push = (lane: string, label: string): void => {
     const count = Object.hasOwn(counts, lane) ? counts[lane] : undefined;
@@ -17,7 +20,7 @@ export function laneSummary(counts: Readonly<Record<string, number>>, groups: re
 
   for (const group of [...groups].reverse()) {
     for (const lane of group.lanes) {
-      if (seen.has(lane)) continue;
+      if (owner.get(lane) !== group || seen.has(lane)) continue;
       seen.add(lane);
       push(lane, resolveLaneLabel(lane, hooks));
     }

@@ -62,6 +62,16 @@ describe('laneSummary', () => {
     expect(laneSummary({ x: 2 }, groups, null)).toBe('2 x');
   });
 
+  it('a lane listed by two groups is ordered by the group that holds its cards on the board, the first one (C-08)', () => {
+    const groups: LaneGroup[] = [
+      { id: 'a', label: 'A', lanes: ['blocked', 'planned'] },
+      { id: 'b', label: 'B', lanes: ['done'] },
+      { id: 'z', label: 'Z', lanes: ['blocked'] },
+    ];
+    // The board puts blocked cards in column A (first group wins), so the reverse walk meets it with A, the last segment group.
+    expect(laneSummary({ blocked: 2, planned: 1, done: 3 }, groups, null)).toBe(['3 done', '2 blocked', '1 planned'].join(sep));
+  });
+
   it('with no groups every non-zero count is appended raw', () => {
     expect(laneSummary({ ...zero, done: 1 }, [], null)).toBe('1 done');
   });
