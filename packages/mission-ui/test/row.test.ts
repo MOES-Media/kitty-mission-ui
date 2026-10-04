@@ -35,6 +35,13 @@ describe('buildRowView', () => {
     });
   });
 
+  it('a blank mission type is no type, like null, so the row shows no empty pill (C-05)', () => {
+    for (const blank of ['', '   ', '\t']) {
+      expect(buildRowView(base({ missionType: blank }), DEFAULT_LANE_GROUPS, null, NOW).type, JSON.stringify(blank)).toBeNull();
+    }
+    expect(buildRowView(base({ missionType: 'research' }), DEFAULT_LANE_GROUPS, null, NOW).type).toBe('research');
+  });
+
   it('blockedBadge is present exactly when blockedCount is above 0, with the count as given', () => {
     expect(buildRowView(base({ blockedCount: 0 }), DEFAULT_LANE_GROUPS, null, NOW).blockedBadge).toBeNull();
     const row = buildRowView(base({ blockedCount: 3 }), DEFAULT_LANE_GROUPS, null, NOW);

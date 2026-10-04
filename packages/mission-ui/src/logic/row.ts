@@ -11,7 +11,7 @@ export function buildRowView(mission: MissionOverviewView, groups: readonly Lane
     missionId: mission.missionId,
     slug: mission.slug,
     name: mission.friendlyName,
-    type: mission.missionType,
+    type: mission.missionType === null || mission.missionType.trim() === '' ? null : mission.missionType,
     topology: mission.topology,
     blockedBadge: mission.blockedCount > 0 ? BLOCKED_ROW_BADGE(mission.blockedCount) : null,
     stale: mission.stale === true,
