@@ -405,6 +405,31 @@ describe('ready content', () => {
     expect(stepText(el)).toBe(`${CURRENT_STEP_PREFIX}${word}`);
   });
 
+  it('the stacked and the side-by-side tiers meet without a gap at fractional widths (C-02)', async () => {
+    const seen: Array<[number, boolean, boolean, boolean]> = [];
+    for (const width of [760, 760.5, 760.99, 761]) {
+      const el = await mount({}, 1280);
+      const box = el.parentElement as HTMLElement;
+      box.style.inlineSize = `${width}px`;
+      await settle(el);
+      const layout = one<HTMLElement>(root(el), '[data-layout]');
+      const aside = one<HTMLElement>(root(el), 'aside');
+      const stacked = getComputedStyle(layout).flexDirection === 'column';
+      const contained = getComputedStyle(aside).borderTopLeftRadius !== '0px';
+      const board = one<HTMLElement>(root(el), 'sk-work-package-board');
+      const below = aside.getBoundingClientRect().top >= board.getBoundingClientRect().bottom - 1;
+      seen.push([width, stacked, contained, below]);
+      document.body.replaceChildren();
+    }
+    // stacked, contained and below the board always agree, and only 760 and below is stacked
+    expect(seen).toEqual([
+      [760, true, true, true],
+      [760.5, false, false, false],
+      [760.99, false, false, false],
+      [761, false, false, false],
+    ]);
+  });
+
   it('current step: "No step in progress" when no phase is current and there is no next action', async () => {
     const el = await mount({ mission: allPending });
     expect(stepText(el)).toBe(NO_STEP_TEXT);

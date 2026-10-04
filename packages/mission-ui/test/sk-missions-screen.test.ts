@@ -1039,6 +1039,40 @@ describe('operator Storybook review: no-match gap and full-width state panels (i
   });
 });
 
+describe('container queries leave no gap at fractional widths (C-02)', () => {
+  const triggerAreas = (el: SkMissionsScreen): string => {
+    const row = one<HTMLElement>(sr(el), 'sk-action-row');
+    const trigger = one<HTMLElement>(row.shadowRoot as ShadowRoot, '[part="trigger"]');
+    return getComputedStyle(trigger).gridTemplateAreas;
+  };
+
+  it('every width is either the library narrow layout (up to 400px) or the screen layout (above it), 400.5 included', async () => {
+    const seen: Array<[string, string]> = [];
+    for (const width of [399, 400, 400.5, 400.99, 401, 402]) {
+      await page.viewport(900, 900);
+      const box = document.createElement('div');
+      box.style.inlineSize = `${width}px`;
+      const el = document.createElement('sk-missions-screen');
+      Object.assign(el, { ...readyProps(), missions: [mixedMissions[0] as MissionOverviewView] });
+      box.append(el);
+      document.body.append(box);
+      await settle(el);
+      seen.push([String(width), triggerAreas(el).replace(/\s+/g, ' ')]);
+      document.body.replaceChildren();
+    }
+    // the screen layout puts the slug on the title line; the library wide default does not
+    const screenLayout = (areas: string): boolean => areas.includes('"marker title reference metadata"');
+    expect(seen.map(([width, areas]) => [width, screenLayout(areas)])).toEqual([
+      ['399', false],
+      ['400', false],
+      ['400.5', true],
+      ['400.99', true],
+      ['401', true],
+      ['402', true],
+    ]);
+  });
+});
+
 describe('operator Storybook review item 9: one gap above the list and above Load more', () => {
   const firstVisible = (el: SkMissionsScreen): HTMLLIElement => missionItems(el).find((li) => !li.hidden) as HTMLLIElement;
   const lastVisible = (el: SkMissionsScreen): HTMLLIElement => missionItems(el).filter((li) => !li.hidden).pop() as HTMLLIElement;

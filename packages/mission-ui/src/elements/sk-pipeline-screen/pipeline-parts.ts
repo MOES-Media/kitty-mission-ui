@@ -124,7 +124,7 @@ export const pipelineStyles = css`
      to the panel. The shell's padding is unchanged for every other screen. Stacked (below), it is a contained panel instead. */
   /* Review ruling (2026-10-04, exception E-15 extension): the phase band is flush to both edges of the column too, so it
      spans edge to edge and its right edge is level with the inspector's; its own padding keeps the labels off the edge. */
-  @container (min-width: 761px) {
+  @container not (max-width: 760px) {
     [data-phases-frame] {
       margin-inline: calc(-1 * var(--sk-space-6)) calc(-1 * var(--sk-space-6));
     }

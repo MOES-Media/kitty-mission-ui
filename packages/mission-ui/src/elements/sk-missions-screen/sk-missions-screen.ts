@@ -132,7 +132,7 @@ export class SkMissionsScreen extends LitElement {
       }
       /* Title and slug on one line, as in the prototype (layout only). The library reflows below 400px of row width, so the
          override applies above it and the library's own narrow layout is left alone. */
-      @container (min-width: 401px) {
+      @container not (max-width: 400px) {
         sk-action-row::part(trigger) {
           grid-template-areas:
             'marker title reference metadata'
@@ -196,7 +196,7 @@ export class SkMissionsScreen extends LitElement {
       }
       /* End-aligned only where the library keeps the metadata in its own column (above 400px of row width); stacked, the
          badge starts at the content edge with the title, the tags and the activity line (review, item 10). */
-      @container (min-width: 401px) {
+      @container not (max-width: 400px) {
         [slot='metadata'] {
           justify-items: end;
         }
