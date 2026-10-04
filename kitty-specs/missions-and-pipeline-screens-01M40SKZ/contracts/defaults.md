@@ -25,7 +25,7 @@ All lookups are `Readonly<Record<string, T>>` read through `lookup(table, key)` 
 | `PHASE_STATUS_TEXT` | `Readonly<Record<PhaseState, string>>` | assistive text keyed by PhaseState, like the other three tables (no string-keyed hole): done `complete`, current `in progress`, pending `pending`. Lookup chain contract status -> PhaseState -> text: `PHASE_STATUS_TEXT[phaseState(status)]`; an unknown status already falls back to `DEFAULT_PHASE_STATE` in `phaseState`, so the text of an unknown status is the pending text. A `defaults` unit test asserts that every PhaseState (`done`, `current`, `pending`) has a non-empty entry in all four tables |
 | `PHASE_TONE` | `Readonly<Record<PhaseState, 'success' \| 'info' \| 'neutral'>>` | done success, current info, pending neutral |
 | `PHASE_GLYPH` | `Readonly<Record<PhaseState, string>>` | the `marker` slot text of the phase bar: done a check mark (U+2713), current a bullet (U+2022), pending the empty string (the dot geometry itself is S2/E-04 paint, not a glyph) |
-| `PHASE_IS_CURRENT` | `Readonly<Record<PhaseState, boolean>>` | true for current only: the answer behind `aria-current="step"` and the current-step line, so no code compares a state with `'current'` |
+| `PHASE_IS_CURRENT` | `Readonly<Record<PhaseState, boolean>>` | true for current only: the answer behind `aria-current="step"` (first current phase only) and the current-step line, so no code compares a state with `'current'` |
 | `NO_STEP_TEXT` | `string` | `No step in progress` |
 | `CURRENT_STEP_PREFIX` | `string` | `Current step: ` |
 

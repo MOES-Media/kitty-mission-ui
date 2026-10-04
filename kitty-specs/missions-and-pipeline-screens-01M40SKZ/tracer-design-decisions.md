@@ -237,3 +237,14 @@ Operator rulings on the fix round (2026-10-04):
 - **Pill words at the narrowest lanes:** accepted. The pill never overflows the card; at 90px lanes only the longest state words (approved, canceled, not started) end in an ellipsis, with the full word in the tooltip.
 - **Narrow-lane card and pill padding** one token step tighter (narrow lanes only; wide lanes unchanged): accepted.
 - **Keyword allowances:** the non-token keywords an exception row grants (`solid`, `dashed`, `none`) are accepted only on the properties that row grants, in that row's file, not file-wide; this is part of PR-EXC-001. Layout properties the base layout-only rule already allows (`display`, `flex`, and their `none`) are outside the exceptions and unchanged.
+
+## Landing pass on PR #6: operator rulings (2026-10-04)
+
+A fresh second-opinion squad (correctness and design lenses) reviewed the integrated diff during the landing pass. Every MINOR and every foldable NOTE was folded as its own `(landing)` commit. Operator rulings on the forks:
+
+- **Event naming:** verb-noun. The sample's `sk-mission-open` is renamed to `sk-open-mission`, so one name means "open a Mission". The shell's older events (`sk-toggle-*`, `sk-tree-toggle`, `sk-mission-retry`, `sk-shell-retry`, `sk-navigate`) are left for a separate pass.
+- **Draft and stale:** a draft Mission appears only under All, never under Stale or another status filter, even when it is stale.
+- **Shell flush slot:** `sk-mission-shell` gains a `flush` content option and a public `--sk-mission-shell-content-padding` property. The Pipeline screen uses them, and E-15 with its negative margins is removed. spec-kitty-design#512 stays as the long-term library ask.
+- **Pipeline side-by-side tier:** the board and the current-step sidebar sit side by side from 881 container px. At 880 px and below, the current step stacks under the board with the tablet border and radius. This replaces the 760 px boundary of items 8 and 8b.
+
+Deliberate behaviour, stated rather than changed: an unknown phase status shows as pending (data model), and 99.5 displays as 100% under the DR-11 whole-percent ruling.

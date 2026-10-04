@@ -1,6 +1,6 @@
 # Contract: `sk-pipeline-screen`
 
-Screen contract (`@screen`), file `src/elements/sk-pipeline-screen/sk-pipeline-screen.ts` with `fixtures.ts`, `pipeline-parts.ts` (private fragments: header, inspector, state panels) and stories. No I/O, nothing stored. Renders inside the `sk-mission-shell` content slot in the mission layout. Composes `sk-phase-bar` and `sk-work-package-board`.
+Screen contract (`@screen`), file `src/elements/sk-pipeline-screen/sk-pipeline-screen.ts` with `fixtures.ts`, `pipeline-parts.ts` (private fragments: header, inspector, state panels) and stories. No I/O, nothing stored. Renders inside the `sk-mission-shell` content slot in the mission layout, with the shell's `flush` attribute set (the shell then drops the `main` padding; the screen pads its header, state panels, board and stacked parts with the shell's public `--sk-mission-shell-content-padding` property, and the inspector and phase band run flush to the column edges at the wide tier; no negative margins, exception E-15 removed). The side-by-side tier starts above 880 px of container width. The shell's content slot is a flex column that a slotted screen may grow to fill. Composes `sk-phase-bar` and `sk-work-package-board`.
 
 ## Properties
 

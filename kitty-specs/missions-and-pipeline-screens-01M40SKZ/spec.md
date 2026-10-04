@@ -250,7 +250,7 @@ matrix lists no Pipeline `empty` row.
 |----|-------|------------|----------|--------|----------|-----------------|
 | FR-001 | Missions header | As a user, I want a page header with the project, the branch and the Mission count, so that I know which project I am looking at. The project name and Mission count come from the project data; the branch is a host-passed value (the project has no branch; each Mission carries its own target branch). | High | Open | [build] | no |
 | FR-002 | Search | As a user, I want a labelled search box ("Search Missions") that filters the rows, so that I can find a Mission by name, slug, Mission type or topology. | High | Open | [build] | no |
-| FR-003 | Six status filters as a toggle group | As a user, I want the filters All, Active, Planned, Done, Stale and Discarded as a keyboard-operable toggle group with exactly one pressed, so that I can narrow the list. Each maps one-to-one onto the lifecycle status of the same name; Stale maps onto the optional host `stale` boolean of a Mission (absent means not stale). | High | Open | [build] | no |
+| FR-003 | Six status filters as a toggle group | As a user, I want the filters All, Active, Planned, Done, Stale and Discarded as a keyboard-operable toggle group with exactly one pressed, so that I can narrow the list. Each maps one-to-one onto the lifecycle status of the same name; Stale maps onto the optional host `stale` boolean of a Mission (absent means not stale); a draft Mission appears only under All, even when it is stale (operator ruling, landing fold C-06). | High | Open | [build] | no |
 | FR-004 | Mission rows | As a user, I want each row to show the Mission name, slug, Mission type, topology, a work-package lane summary, the lifecycle status and the last activity, so that I can recognise the Mission at a glance. | High | Open | [build] | no |
 | FR-005 | Row badges | As a user, I want a draft badge on draft Missions (shown only under All), a blocked badge with the count when `blockedCount` is above 0, a stale badge on stale Missions, and the lifecycle label "Discarded" (not "Abandoned") on discarded Missions, so that exceptional states are visible. | High | Open | [build] | no |
 | FR-006 | Lane summary and label mapping | As a user, I want the row's lane summary formatted from the status-lane counts through the same lane-group and label mapping the board uses, with no arithmetic (no summing across lanes), so that the list and the board speak the same words. | Medium | Open | [build] | no |
@@ -376,7 +376,7 @@ Where the issue body and the comments differ, the comments win.
 
 1. **Issue body and both operator-decision comments** (spec-kitty/spec-kitty-mission-ui#4).
    - Filters: six, **All, Active, Planned, Done, Stale, Discarded**. Each maps one-to-one onto `lifecycleStatus`;
-     Stale onto the optional host `stale` boolean (absent = not stale). "Abandoned" in the prototype becomes
+     Stale onto the optional host `stale` boolean (absent = not stale; a draft never appears under Stale). "Abandoned" in the prototype becomes
      "Discarded" (approved drift).
    - Board: five columns, **Planned, In progress, Review, Approved, Done**, with blocked, reviewing and canceled badges.
      Planned = `planned` plus `blocked` (blocked badge). In progress = `claimed`, `in_progress`. Review = `for_review`
