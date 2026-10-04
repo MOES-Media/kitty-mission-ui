@@ -58,8 +58,6 @@ export type {
   FilterOption,
   LabelHooks,
   LaneGroup,
-  PlacedCard,
-  PlacedColumn,
   StateBadge,
 } from './logic/types.js';
 export type {
