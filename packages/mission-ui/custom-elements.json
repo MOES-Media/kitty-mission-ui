@@ -480,6 +480,254 @@
     },
     {
       "kind": "javascript-module",
+      "path": "src/elements/sk-missions-screen/mission-row-parts.ts",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/elements/sk-missions-screen/sk-missions-screen.ts",
+      "declarations": [
+        {
+          "kind": "class",
+          "description": "The Missions screen: header, toolbar, list. No I/O, nothing stored; the host owns loading, paging, routing and the\nclock. Renders inside the `sk-mission-shell` content slot. Not self-registering: `src/index.ts` defines the tag once.",
+          "name": "SkMissionsScreen",
+          "members": [
+            {
+              "kind": "field",
+              "name": "status",
+              "type": {
+                "text": "ViewState"
+              },
+              "default": "'loading'",
+              "description": "The view state; unknown values collapse to `empty`.",
+              "attribute": "status",
+              "reflects": true
+            },
+            {
+              "kind": "field",
+              "name": "project",
+              "type": {
+                "text": "Project | null"
+              },
+              "default": "null",
+              "description": "The project (header name and Mission count)."
+            },
+            {
+              "kind": "field",
+              "name": "branch",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "description": "Host value shown in the header; empty omits it.",
+              "attribute": "branch"
+            },
+            {
+              "kind": "field",
+              "name": "missions",
+              "type": {
+                "text": "MissionOverviewView[]"
+              },
+              "default": "[]",
+              "description": "The loaded Missions in service order."
+            },
+            {
+              "kind": "field",
+              "name": "pageInfo",
+              "type": {
+                "text": "PageInfo | null"
+              },
+              "default": "null",
+              "description": "Pagination state of the last loaded page."
+            },
+            {
+              "kind": "field",
+              "name": "now",
+              "type": {
+                "text": "string | null"
+              },
+              "default": "null",
+              "description": "ISO instant for relative times; null shows the ISO timestamp as given.",
+              "attribute": "now"
+            },
+            {
+              "kind": "field",
+              "name": "filter",
+              "type": {
+                "text": "string"
+              },
+              "default": "'all'",
+              "description": "The pressed status filter id; semi-controlled. An unknown id behaves as All.",
+              "attribute": "filter",
+              "reflects": true
+            },
+            {
+              "kind": "field",
+              "name": "query",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "description": "The search text; semi-controlled.",
+              "attribute": "query",
+              "reflects": true
+            },
+            {
+              "kind": "field",
+              "name": "loadingMore",
+              "type": {
+                "text": "boolean"
+              },
+              "default": "false",
+              "description": "The Load more row is busy and inert while true; host-owned.",
+              "attribute": "loading-more"
+            },
+            {
+              "kind": "field",
+              "name": "laneGroups",
+              "type": {
+                "text": "LaneGroup[]"
+              },
+              "default": "[...DEFAULT_LANE_GROUPS]",
+              "description": "The columns whose lanes drive the lane summary."
+            },
+            {
+              "kind": "field",
+              "name": "labels",
+              "type": {
+                "text": "LabelHooks | null"
+              },
+              "default": "null",
+              "description": "Label and time hooks."
+            },
+            {
+              "kind": "field",
+              "name": "errorMessage",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "description": "Overrides the default error body.",
+              "attribute": "error-message"
+            }
+          ],
+          "events": [
+            {
+              "name": "sk-open-mission",
+              "type": {
+                "text": "CustomEvent<SkOpenMissionDetail>"
+              },
+              "description": "a row was activated; the screen never navigates"
+            },
+            {
+              "name": "sk-search",
+              "type": {
+                "text": "CustomEvent<SkSearchDetail>"
+              },
+              "description": "the trimmed query changed through user input"
+            },
+            {
+              "name": "sk-load-more",
+              "type": {
+                "text": "CustomEvent<SkLoadMoreDetail>"
+              },
+              "description": "Load more was activated while a next page exists and `loadingMore` is false"
+            },
+            {
+              "type": {
+                "text": "CustomEvent<SkFilterChangeDetail>"
+              },
+              "description": "a different filter was pressed (dispatched by the filter group, crosses the screen)",
+              "name": "sk-filter-change"
+            }
+          ],
+          "attributes": [
+            {
+              "name": "status",
+              "type": {
+                "text": "ViewState"
+              },
+              "default": "'loading'",
+              "description": "The view state; unknown values collapse to `empty`.",
+              "fieldName": "status"
+            },
+            {
+              "name": "branch",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "description": "Host value shown in the header; empty omits it.",
+              "fieldName": "branch"
+            },
+            {
+              "name": "now",
+              "type": {
+                "text": "string | null"
+              },
+              "default": "null",
+              "description": "ISO instant for relative times; null shows the ISO timestamp as given.",
+              "fieldName": "now"
+            },
+            {
+              "name": "filter",
+              "type": {
+                "text": "string"
+              },
+              "default": "'all'",
+              "description": "The pressed status filter id; semi-controlled. An unknown id behaves as All.",
+              "fieldName": "filter"
+            },
+            {
+              "name": "query",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "description": "The search text; semi-controlled.",
+              "fieldName": "query"
+            },
+            {
+              "name": "loading-more",
+              "type": {
+                "text": "boolean"
+              },
+              "default": "false",
+              "description": "The Load more row is busy and inert while true; host-owned.",
+              "fieldName": "loadingMore"
+            },
+            {
+              "name": "error-message",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "description": "Overrides the default error body.",
+              "fieldName": "errorMessage"
+            }
+          ],
+          "superclass": {
+            "name": "LitElement",
+            "package": "lit"
+          },
+          "tagName": "sk-missions-screen",
+          "customElement": true
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "SkMissionsScreen",
+          "declaration": {
+            "name": "SkMissionsScreen",
+            "module": "src/elements/sk-missions-screen/sk-missions-screen.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
       "path": "src/elements/sk-phase-bar/sk-phase-bar.ts",
       "declarations": [
         {

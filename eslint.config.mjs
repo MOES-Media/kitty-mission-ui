@@ -118,6 +118,11 @@ export default tseslint.config(
     rules: { 'no-restricted-syntax': ['error', ...withoutClassBan, classOnly(['sk-workflow-board', 'sk-workflow-lane', 'sk-progress'])] },
   },
   {
+    // Exception E-03 (gaps G-03, G-05, G-06, sunset: library `sk-breadcrumbs`/`sk-empty-state`/`sk-progress`).
+    files: ['packages/*/src/elements/sk-missions-screen/{sk-missions-screen,mission-row-parts}.ts'],
+    rules: { 'no-restricted-syntax': ['error', ...withoutClassBan, classOnly(['sk-empty-state', 'sk-progress'])] },
+  },
+  {
     // Elements never import story-only helpers (research D-02): story-support is for stories and fixtures.
     files: ['packages/*/src/elements/**/*.ts'],
     ignores: ['**/*.stories.ts', '**/fixtures.ts'],

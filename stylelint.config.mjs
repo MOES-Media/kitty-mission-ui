@@ -214,6 +214,17 @@ const EXCEPTIONS = [
     values: { 'overflow-wrap': ['normal'], 'word-break': ['normal'], hyphens: ['manual'], 'text-overflow': ['ellipsis'] },
   },
   {
+    // E-13, the Missions screen's half (N-7, DR-9; operator ruling on the WP08 review, 2026-10-03; sunset #510): the
+    // loading, empty and no-match panels take the prototype's spacing, card chrome and display face. Token values only;
+    // `dashed` (empty and no-match panels) and `solid` (loading panel) are the only non-token words. Scope: the Missions
+    // screen file only; the Pipeline screen's half is the entry above.
+    id: 'E-13',
+    files: ['sk-missions-screen/sk-missions-screen.ts'],
+    properties: ['background', 'border', 'border-radius', 'font-weight', 'font-family'],
+    strict: ['font-weight', 'font-family'],
+    keywords: { border: ['dashed', 'solid'] },
+  },
+  {
     // E-14 (operator Storybook review, item 1, 2026-10-04; sunset spec-kitty-design#511, a joined segmented-choice variant):
     // the filter group is ONE joined segmented control. Per-corner `border-radius` (a token or 0)
     // and the shared inner border (`border-inline-start-width: 0`) on the library's segmented buttons. Scope: the filter
