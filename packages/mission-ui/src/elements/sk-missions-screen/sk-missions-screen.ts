@@ -36,6 +36,7 @@ import { buildRowView, matchesMission } from '../../logic/index.js';
 import type { LabelHooks, LaneGroup } from '../../logic/index.js';
 import type { MissionOverviewView, PageInfo, Project } from '../../contract/types.js';
 import { normaliseViewState } from '../../view-state.js';
+import { visuallyHidden } from '../../visually-hidden.js';
 import type { ViewState } from '../../view-state.js';
 import type { SkFilterChangeDetail } from '../sk-filter-toggle-group/sk-filter-toggle-group.js';
 import { renderMissionRow } from './mission-row-parts.js';
@@ -90,21 +91,11 @@ export class SkMissionsScreen extends LitElement {
       }
       /* The search label is named for assistive technology and takes no layout space. */
       sk-form-input::part(label) {
-        position: absolute;
-        width: 0;
-        height: 0;
-        margin: 0;
-        padding: 0;
-        overflow: hidden;
+        ${visuallyHidden}
       }
       /* The result-count live region: same mechanism, a status region that is not a control. */
       [data-live] {
-        position: absolute;
-        width: 0;
-        height: 0;
-        margin: 0;
-        padding: 0;
-        overflow: hidden;
+        ${visuallyHidden}
       }
       ul {
         display: grid;

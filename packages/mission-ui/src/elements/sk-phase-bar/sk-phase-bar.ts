@@ -10,6 +10,7 @@ import { PHASES_LABEL, PHASE_GLYPH, PHASE_IS_CURRENT, PHASE_STATUS_TEXT, PHASE_T
 import { phaseState, resolvePhaseLabel } from '../../logic/index.js';
 import type { LabelHooks } from '../../logic/index.js';
 import type { PhaseView } from '../../contract/types.js';
+import { visuallyHidden } from '../../visually-hidden.js';
 
 /**
  * Renders the phases it receives, in array order and in whatever number. Pattern element (no screen contract). Not
@@ -55,10 +56,7 @@ export class SkPhaseBar extends LitElement {
     }
     /* Read by assistive technology, takes no room. */
     [data-phase-status] {
-      position: absolute;
-      inline-size: 0;
-      block-size: 0;
-      overflow: hidden;
+      ${visuallyHidden}
     }
   `;
 

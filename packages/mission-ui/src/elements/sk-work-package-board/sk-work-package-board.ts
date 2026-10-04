@@ -8,6 +8,7 @@ import { nothing } from 'lit';
 import '@spec-kitty/elements';
 import { BOARD_LABEL, DEFAULT_LANE_GROUPS, LANE_COUNT_TEXT } from '../../defaults/index.js';
 import { progressSheet } from '../../progress-sheet.js';
+import { visuallyHidden } from '../../visually-hidden.js';
 import { workflowBoardSheet, workflowLaneSheet } from '../../library-sheets.js';
 import { placeWorkPackages } from '../../logic/index.js';
 import type { LabelHooks, LaneGroup } from '../../logic/index.js';
@@ -42,11 +43,7 @@ export class SkWorkPackageBoard extends LitElement {
       }
       /* The prototype shows no board heading; it names the board and the scroll region for assistive technology. */
       h2 {
-        position: absolute;
-        inline-size: 0;
-        block-size: 0;
-        margin: 0;
-        overflow: hidden;
+        ${visuallyHidden}
       }
       /* Flat lanes with a small uppercase mono title and no nested card (N-4; exceptions E-09 and E-10, sunset
          spec-kitty-design#506 and #507): the library lane card paint is removed, the lane keeps a minimum width. */
@@ -66,10 +63,7 @@ export class SkWorkPackageBoard extends LitElement {
       }
       /* Read by assistive technology (the spoken count of the column), takes no room. */
       [data-lane-count-text] {
-        position: absolute;
-        inline-size: 0;
-        block-size: 0;
-        overflow: hidden;
+        ${visuallyHidden}
       }
       .sk-workflow-lane__title {
         color: var(--sk-fg-subtle);
