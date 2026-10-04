@@ -1,0 +1,158 @@
+schema: review-findings/v1
+complete: true
+phase: plan
+round: 2
+findings:
+- id: PLAN-FIT-005
+  lens: Architecture and charter (gate design)
+  severity: 3
+  title: Phase bar needs a glyph per phase state, but no glyph table exists in `defaults/` and any comparison with 'done' trips S1
+  evidence:
+  - artifact: "contracts/sk-phase-bar.md \xA7 Semantics ('check mark for done, a dot for current, empty for pending'); contracts/defaults.md \xA7 defaults/phases.ts (exports DEFAULT_PHASE_LABELS, PHASE_STATE,\
+      \ PHASE_STATUS_TEXT, PHASE_TONE, NO_STEP_TEXT, CURRENT_STEP_PREFIX; no glyph table); data-model.md (`PhaseState = 'done' | 'current' | 'pending'`, file not stated)"
+  - artifact: contracts/gates.md S1 `Literal[value=/^(WORDS)$/i]` with `done` in WORDS
+  - code: 'verified with esquery 1.7.0 over a typescript-eslint AST: `type PhaseState = ''done'' | ''current'' | ''pending''` and `state === ''done'' ? x : y` each produce 1 S1 hit'
+  claim: An implementer choosing the glyph by comparing the state to 'done' gets a data-driven failure; the PhaseState type itself contains the literal 'done' and is only legal in `defaults/` or `contract/`,
+    which the plan never says. The surface is under-specified in exactly the file the gate protects.
+  remediation: 'Add `PHASE_GLYPH: Readonly<Record<PhaseState, string>>` (and any marker text) to `defaults/phases.ts`, read through `lookup`, and state that `PhaseState` is declared in `defaults/phases.ts`.
+    The element must contain no comparison against a PhaseState value. Add a negative selftest for the glyph lookup.'
+  refuter_reason: 'sk-phase-bar.md requires a check/dot/empty glyph per state but defaults.md lists no glyph table and data-model.md does not say which file declares PhaseState, and the S1 selector flags
+    the literal ''done'' in a type or comparison outside defaults/contract (esquery check: 1 hit).'
+  verifier_note: PHASE_GLYPH, PHASE_TONE and PHASE_IS_CURRENT tables are added and verified silent under the gate, but `phaseState` is specified in the scanned `src/logic/` as 'unknown is pending' with
+    no exported default in defaults/phases.ts, so its fallback needs the literal 'pending' and trips S1b (which I reproduced) in the plan's own code; add a `DEFAULT_PHASE_STATE` to defaults/phases.ts or
+    declare phaseState in defaults (severity 2).
+- id: PLAN-FIT-008
+  lens: Spec fidelity
+  severity: 3
+  title: Plan-introduced drift DR-1..DR-11 is left for the operator at PR time, while C-006/NFR-008 make unapproved drift a REJECT for every WP reviewer
+  evidence:
+  - artifact: "plan.md \xA7 Charter Check ('visual regression ... pass with approved drift AD-1 to AD-3 and DR-1 to DR-11, each to be confirmed by the operator') and \xA7 Deviations (P-6 confirm at PR)"
+  - artifact: spec.md C-006 ('Any other drift is a defect and a visual review REJECT'), NFR-008, FR-032
+  claim: The per-WP reviewer agent must REJECT each baseline that shows an unapproved difference (card state words, progress bar on every card, full-precision percentage, phase connector). With the approvals
+    deferred to PR review the WPs either all bounce or the reviewers silently waive the rule, which the charter forbids.
+  remediation: 'Make P-6 a pre-tasks decision: the orchestrator asks the operator to confirm or amend DR-1..DR-11 (and the copy defaults) now and records the outcome in spec.md Clarifications; WP briefs
+    then cite the approved list as the only allowed drift. Anything not confirmed is removed from the plan before tasks.'
+  refuter_reason: plan.md lines 34, 54, 323 and 333 leave DR-1 to DR-11 awaiting operator confirmation at PR time while spec C-006 says any drift beyond AD-1 to AD-3 is a visual review REJECT, so WP reviewers
+    have no approved list to review baselines against.
+  verifier_note: CP-1 before any lane starts correctly replaces the PR-time deferral, but the binding procedure in research.md D-35 (steps 1 and 3, lines 305) still says 'DR-1 to DR-11' while the register,
+    plan.md and P-6 have DR-1 to DR-12, so the authoritative text omits DR-12 (PL-01) from the confirmation set (severity 2).
+- id: PLAN-FRESH-001
+  lens: contract-fidelity
+  severity: 3
+  title: Declared weightedPercentage values in contract-pin.md contradict the producer's lane weights for six fixtures
+  evidence:
+  - artifact: 'contracts/contract-pin.md, ''Declared derived values'' table (column W): detailImplement 41.6667, detailBlockers 15, detailBadges 35, detailSubtasks 50, detailUnknownLane 20, detailAllComplete
+      100'
+  - artifact: 'research.md D-11 and gates.md C5 rule e: ''the contract carries no lane weights, so it cannot be recomputed'' (true of the contract text, not of its producer)'
+  - code: '<spec-kitty>@9f41e48 src/specify_cli/status/progress.py:34-46 (DEFAULT_LANE_WEIGHTS: planned 0, claimed 0.05, in_progress 0.3, for_review 0.6, in_review 0.7, approved 0.8, done 1.0, blocked 0,
+      canceled 0) and :166-195 (every snapshot WP, canceled included, is in the denominator)'
+  - code: contracts/mission-status/schemas/MissionProgress.yaml names compute_weighted_progress as x-source of weightedPercentage
+  claim: 'Recomputing with the producer''s weights (checked: MissionDetail.populated gives 3.9/6 = 65, matching the example) the declared values are wrong. detailImplement = 0.65/6 = 10.8333; detailBlockers
+    = 0.3/3 = 10; detailBadges = 1.0/4 = 25; detailSubtasks = 3.45/9 = 38.3333; detailUnknownLane = 0.3/2 = 15; detailAllComplete = 3/4 = 75 (the canceled WP counts in the denominator, so 100 is unreachable
+    while donePercentage is 75). These fixtures are documents the producer cannot emit, which is exactly the class the revision says is ''not a fixture'' (P-8), and the figure is the one the Pipeline inspector
+    and the shell footer display and DR-11 / R-07 / the sk-pipeline-screen test list (''41.6667'') quote. C5 rule e (finite, 0..100) cannot catch it, so the gate is vacuous for the one value the screens
+    show.'
+  remediation: 'Replace the six W values (and the overview items'' declared values) with the recomputed ones, cite the weight table and commit in contract-pin.md, and make C5 rule e a real check: pin the
+    nine weights as a constant in check.mjs with the source citation (and raise the missing weights as a contract gap on the existing upstream issue, not a mission change) so weightedPercentage is recomputed
+    within 0.00005 like donePercentage. Update the ''41.6667'' / ''65, 41.6667'' mentions in research.md (D-35 DR-11, R-07), sk-pipeline-screen.md and the stories accordingly.'
+- id: PLAN-FRESH-002
+  lens: sequencing
+  severity: 3
+  title: Wrap-up invariant 'tree after compaction equals T0 (recorded at accept)' contradicts the sequence that changes the tree after accept
+  evidence:
+  - artifact: 'plan.md ''ONE pull request'' section: order is accept, then dev-assist test cleanup, then aggregate review squad, then compaction, then rebase, then full gate re-run'
+  - artifact: 'plan.md ''Integrity of the wrap-up'' (a)/(b) and research.md D-36 (a)/(b): T0 = tree at accept; after compaction ''git diff --stat T0 HEAD'' must be empty'
+  claim: The test cleanup and every squad fold-in are commits after accept, so the compacted head cannot equal T0 unless those steps change nothing. The check as written either fails on the first legitimate
+    fold or is waived, and (e) 're-verified against the accepted head sha' cites a sha that compaction and rebase have just rewritten.
+  remediation: Record T0 at the last tree-changing step (after cleanup and squad folds, immediately before compaction) and keep the accepted head/tree separately as the accept-record reference; say that
+    compaction must be tree-neutral against that later T0, and drop or reword (e) so it compares trees, not shas.
+- id: PLAN-FRESH-003
+  lens: repo-fact
+  severity: 3
+  title: Planned registry.mjs uses structuredClone, which the repository's ESLint config does not grant; pnpm lint fails
+  evidence:
+  - artifact: 'contracts/contract-pin.md ''Named relaxations'': registry.mjs clones with structuredClone; research.md D-12; contracts/gates.md eslint row: new .mjs scripts ''use only the globals eslint.config.mjs
+      already grants (process, console, URL, Buffer, fetch, AbortSignal, setTimeout, clearTimeout)'''
+  - code: eslint.config.mjs:19-31 (mjs globals list) with js.configs.recommended (no-undef) at :13
+  - artifact: 'scratch run: printf ''const a = structuredClone({x:1});'' | eslint --stdin --stdin-filename scripts/contract/x.mjs  -> error ''structuredClone'' is not defined no-undef (same for performance)'
+  claim: 'The plan''s own two statements cannot both hold: the relaxation design needs structuredClone, and the ESLint gate rejects it in any .mjs. The first IC-01 lint run goes red; the plan lists eslint.config.mjs
+    edits for IC-01 only as E-05 (ignore of types.generated.ts).'
+  remediation: Either add structuredClone (and any other global the tooling uses) to the mjs globals block as part of IC-01's eslint.config.mjs edit and list it as part of E-05 or a sibling exception, or
+    clone with a JSON round trip / explicit copy. Add the exit check 'pnpm lint on the new scripts' so it is caught in the work package.
+- id: PLAN-FRESH-004
+  lens: cross-reference
+  severity: 2
+  title: research.md D-35 procedure still says DR-1 to DR-11 after the register grew to DR-12
+  evidence:
+  - artifact: 'research.md D-35 opening paragraph: ''leaving DR-1 to DR-11 for the PR ...'' and ''confirmation, amendment or rejection of DR-1 to DR-11'''
+  - artifact: plan.md Charter Check, drift register paragraph, P-6, IC-03 step (3) and tracer-design-decisions.md all say DR-1 to DR-12; research.md D-35 lists DR-12
+  claim: The binding confirmation procedure in the decision record omits DR-12, the item that changes a spec-bound story (PL-01), so a reader following D-35 alone confirms eleven items and an unconfirmed
+    DR-12 is outside the REJECT rule.
+  remediation: Change both occurrences to DR-1 to DR-12 and grep the mission directory for any other 'DR-1 to DR-11'.
+- id: PLAN-FRESH-005
+  lens: sequencing
+  severity: 2
+  title: IC-03 contains an operator checkpoint in the middle of one work package; the split is optional
+  evidence:
+  - artifact: 'plan.md IC-03 ''Internal order (binding)'': steps 1-2, then CP-1 operator confirmation, then steps 4-5; ''The tasks phase may split IC-03 into IC-03a and IC-03b'''
+  - artifact: 'plan.md dependency graph: IC03 --> CP1 --> IC05/IC04; ''IC-03 is not approved, and no lane starts, before CP-1 completes'''
+  claim: 'A work-package agent cannot wait for the operator, and a WP that is unapproved while steps 4-5 (skeletons, manifest freeze) still follow the checkpoint has no clean lane-state: either the agent
+    stops after step 3 (then someone re-dispatches the same WP, which the tooling does not model) or it runs on and freezes the surface before CP-1. ''May split'' leaves this to the tasks phase.'
+  remediation: 'Make the split mandatory in the plan: IC-03a (steps 1-3, ends with the spike report and approval), CP-1 owned by the orchestrator between the two, IC-03b (skeletons, ESLint overrides, single
+    manifest regeneration) depending on CP-1; update the graph, the IC list and the story/baseline ownership accordingly.'
+- id: PLAN-FRESH-006
+  lens: sequencing
+  severity: 2
+  title: Lane-mechanics procedure lists IC-04..IC-08 as dependent allocations but omits IC-02 and IC-03, and is inconsistent with 'lane A/B' being single lanes
+  evidence:
+  - artifact: 'plan.md ''Lane mechanics'' item 2: ''IC-04 and IC-05 (off IC-03), IC-06 (off IC-05), IC-07 (off IC-04) and IC-08 (off IC-06) are all dependent-lane allocations'''
+  - artifact: 'plan.md Sequencing: IC-02 depends on IC-01, IC-03 on IC-02; plan.md prose calls lane A (IC-05, IC-06, IC-08) and lane B (IC-04, IC-07) one lane each'
+  - artifact: meta.json topology 'lanes' (no coordination branch); the orchestrator's tooling ledger, a spec-kitty tooling issue describes every WP that depends on an approved WP
+  claim: IC-02 and IC-03 depend on an approved WP exactly as IC-06 does, so they hit the same dependent-lane allocation defect if lanes are per-WP, and if sequential WPs share a lane (as 'lane A' implies) then IC-06 and IC-08
+    are not separate allocations. The procedure is stated for a subset of the same case and the orchestrator cannot tell which WPs it applies to.
+  remediation: State the rule once ('for every WP with depends_on whose allocation creates a new lane, pre-create from the approved parent tip'), list IC-02 and IC-03 explicitly, and either define which
+    WPs share a lane or drop the 'lane A / lane B' wording.
+- id: PLAN-FRESH-007
+  lens: gate-vacuity
+  severity: 2
+  title: Data-driven self-test proves one fixture per entry, but several entries hold two or more alternative selectors, so a broken half is undetected
+  evidence:
+  - artifact: 'contracts/gates.md selector table: S1b (Literal ... , TemplateElement ...), S3c (Literal ..., TemplateElement ...), S7b (:matches over two object forms) are single entries with multiple alternatives;
+      self-test item 1: ''every other selector one'' fixture; item 2 count guard counts entries vs distinct selector ids'
+  claim: The multiset check proves that some alternative of the entry fires, not that each does. Deleting or mistyping the TemplateElement half of S1b or S3c, or one object form of S7b, leaves the fixture,
+    the id multiset and the count guard unchanged, yet reopens a bypass (an exact-template status word, an underscored lane inside a template). The revision's stated aim is a self-test that cannot pass
+    vacuously.
+  remediation: Require one positive fixture per alternative (S1b-literal, S1b-template, S3c-literal, S3c-template, S7b for statusLaneCounts and for laneCounts, object.name and object.property.name forms)
+    and raise the fixture count and the guard accordingly, or split the alternatives into separate entries with their own ids.
+- id: PLAN-FRESH-008
+  lens: gate-timing
+  severity: 2
+  title: Timeouts for the new contract gate (job 5, proof leg 8) have no measurement or derivation, unlike every other changed timeout
+  evidence:
+  - artifact: 'contracts/gates.md gate table: contract proof-matrix 8 / job 5; the ''Timeouts and timing record'' derives only visual and unit-tests'
+  - artifact: 'gates gates.md ''Negative node tests'': about 38 cases, each mutating a temporary copy of the 98-file vendored set and running the real check (dereference, openapi-typescript, Ajv over 22
+      fixtures); proof leg runs the clean suite and plant 3 runs it again'
+  claim: The cost of one full check on the vendored contract is unmeasured, and the suite multiplies it by about 38 and then by two legs inside the matrix timeout. Eight minutes may hold, but the plan states
+    it as a fact and the same revision insists on scaling every other timeout from a recorded run; a too-tight value shows up only on the first PR run.
+  remediation: 'Add to the IC-01 exit checks: record the wall-clock of pnpm contract:check, pnpm test:contract and ''gate-proof local --only contract'', and set both contract timeouts from them with a stated
+    margin (or state the check is cached per test so the 38 cases do not each recompute the dereference).'
+- id: PLAN-FRESH-009
+  lens: cross-reference
+  severity: 2
+  title: Plan and tracers cite the orchestrator's tooling ledger and SK-nnn entries as authority, but the file is not in this repository
+  evidence:
+  - artifact: plan.md 'Lane mechanics' and 'Integrity of the wrap-up'; tracer-tooling-friction.md; research.md
+  - artifact: 'find of the repository for the tooling ledger: no hit (the ledger lives in the operator''s separate workspace)'
+  claim: The implementer, reviewers and the PR reader of this private repo cannot resolve these ids, yet the mechanics (what is broken, why git merge -X ours is acceptable for status.json, why no rebaseline
+    exists) are justified only by them.
+  remediation: Either say once where the ledger lives and copy the minimal defect statements (symptom, workaround, verification) into tracer-tooling-friction.md, or cite the upstream issue/commit for each
+    defect instead of the local ledger id.
+- id: PLAN-FRESH-010
+  lens: terminology
+  severity: 1
+  title: quickstart.md heading uses 'feature' for a Mission-level concept
+  evidence:
+  - artifact: 'quickstart.md: ''## Add a vocabulary-dependent feature without breaking the data-driven gate'''
+  claim: C-009 and the project vocabulary reserve 'feature' for nothing in this product (Mission is the term); the heading is a docs line, so the planned scripts/terminology test does not see it, which
+    is how it survives.
+  remediation: Reword to 'Add a vocabulary-dependent change ...' (or 'screen behaviour') and consider extending the terminology scan to the mission docs.

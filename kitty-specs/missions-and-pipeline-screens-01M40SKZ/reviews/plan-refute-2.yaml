@@ -1,0 +1,29 @@
+schema: review-refute/v1
+complete: true
+phase: plan
+batch: 2
+verdicts:
+  - id: PLAN-FIT-009
+    verdict: confirmed
+    reason: plan.md line 131 states a lane cannot have two parents and IC-09 depends on IC-07 and IC-08, yet no section gives a merge procedure, while recorded spec-kitty tooling issues describe dependent-lane allocation failing.
+  - id: PLAN-FIT-010
+    verdict: confirmed
+    reason: contract-pin.md defines detailAllPending with wpTotal 0 (PL-02) and renderFooter returns nothing for total <= 0, so the claim that every Pipeline story shows agreeing footer and inspector fails; D-28 also says "IC-08 gate" while plan IC-03 owns the proof, and typeof number admits NaN.
+  - id: PLAN-FIT-011
+    verdict: confirmed
+    reason: missionsHref and errorMessage appear in research.md and contracts but not in spec.md and not in P-1..P-6, and the "elements may not import story-support" rule has no stated enforcing mechanism in plan, research or gates.md.
+  - id: PLAN-FIT-012
+    verdict: confirmed
+    reason: plan.md says about 170 tests while gates.md says about 130 browser-mode tests, and gates.md line 3 claims coverage and checkWorkflow enforce a README row and changelog line although grep of scripts/ finds no README or CHANGELOG check.
+  - id: PLAN-SEQ-001
+    verdict: confirmed
+    reason: gh run 36880654992 shows Gate visual 15:00:21-15:04:34 (about 253 s job) and proof (visual) about 658 s for 290 executions, contradicting D-31's "no measurement exists" and 1.5-2 s per screenshot, so the proposed 30 and 60 minute timeouts are far looser than scaled data implies.
+  - id: PLAN-SEQ-002
+    verdict: confirmed
+    reason: gates.md line 23, quickstart.md lines 69-71 and D-31 require IC-09 to record the first pull-request run durations, but plan.md opens the PR only after IC-09 and the wrap-up sequence, so no such run exists at that point.
+  - id: PLAN-SEQ-004
+    verdict: confirmed
+    reason: The shared-files table in plan.md lists no row for src/defaults, src/logic, src/contract fixtures, scripts/contract overlays or registry, or the append-only tracer files, though both lanes consume them and the contract gate C3 makes fixtures.generated.ts freshness a gate.
+  - id: PLAN-SEQ-005
+    verdict: confirmed
+    reason: plan.md IC-03 Purpose lists skeletons, one manifest regeneration and spikes S1-S4 with no internal order, while its Risks line asserts without proof that spike outcomes cannot change the frozen public surface.

@@ -1,0 +1,28 @@
+schema: review-verify/v1
+complete: true
+phase: plan
+verdicts:
+  - id: PLAN-FRESH2-001
+    status: resolved
+    note: PHASE_STATUS_TEXT is now Record<PhaseState,string> in defaults.md, sk-phase-bar.md uses PHASE_STATUS_TEXT[state], no string-keyed or lookup(PHASE_STATUS_TEXT, status) leftover anywhere, and a four-table unit test is specified.
+  - id: PLAN-FRESH2-002
+    status: resolved
+    note: research.md D-02 now says IC-03b, and no bare IC-03 remains in any non-review artifact.
+  - id: PLAN-FRESH2-003
+    status: resolved
+    note: plan.md shared-files table has a gates.md row (IC-01, IC-02, IC-09, post-PR fixup) and IC-01, IC-02 and IC-09 list gates.md in Affected surfaces.
+  - id: PLAN-FRESH2-004
+    status: unresolved
+    note: gates.md, plan.md, R-06 and IC-09 are fixed with the re-record step, but tracer-approach.md:11 still says the CI timeouts are "written once in IC-09", which is false for the contract and data-driven gates (severity 1).
+  - id: PLAN-FRESH2-005
+    status: resolved
+    note: IC-03b depends-on now carries a file precondition (dated CP-1 confirmed entry in tracer-design-decisions.md), as first brief step, first exit check and reviewer REJECT condition, and the CP-1 paragraph names the entry.
+  - id: PLAN-FRESH2-006
+    status: resolved
+    note: The unreachable-materialiser sentence is gone; detailUnknownLane is declared a deliberate non-producible relaxed document, and the producer weights at pin 9f41e48 match (lane weights 0/.05/.3/.6/.7/.8/1/0/0, denominator counts every WP); detailBadges W=25 follows the tally rule (producer would give 20 with the null-lane WP, and 25 only without it), as the new text and gates.md rule e state.
+  - id: PLAN-FRESH2-007
+    status: unresolved
+    note: Shared-files table and compaction names were renamed, but research.md:305 ("IC-03b and every lane after it") and contract-pin.md:69 ("a lane that needs another fixture") still use lane for a work package, and tracer-approach.md:9 says "two disjoint lanes" (severity 1).
+  - id: PLAN-FRESH2-008
+    status: resolved
+    note: contract-pin.md now says "previous section, Producer lane weights", which matches the heading at line 96 above.

@@ -1,0 +1,29 @@
+schema: review-refute/v1
+complete: true
+phase: plan
+batch: 3
+verdicts:
+  - id: PLAN-SEQ-006
+    verdict: confirmed
+    reason: "plan.md and gates.md claim coverage/checkWorkflow enforce README and CHANGELOG, but grep of scripts finds no README or CHANGELOG reference, and plan.md:152 gives CHANGELOGs to IC-09 while gates.md Files lists them for the gates."
+  - id: PLAN-SEQ-007
+    verdict: confirmed
+    reason: "research.md D-28 says IC-08 gate while plan puts the shell change and the 58-baseline proof in IC-03."
+  - id: PLAN-SEQ-008
+    verdict: confirmed
+    reason: "research.md line 136 anchors on missionDetailPopulated while gates.md and contract-pin.md use detailBothInProgress."
+  - id: PLAN-SEQ-009
+    verdict: confirmed
+    reason: "plan.md PR shape and D-36 list accept, compaction, rebase with no tree-equality check or post-rebase gate run, and a spec-kitty tooling issue exists in the ledger."
+  - id: PLAN-SEQ-010
+    verdict: confirmed
+    reason: "plan.md says 3 default modules while Project Structure lists lanes, phases, lifecycle, pipeline-copy, and gates.md says about 130 browser tests versus plan's 170."
+  - id: PLAN-VERIFY-001
+    verdict: confirmed
+    reason: "gate-proof-record.schema.json gate enum lists only the ten ids and lib.mjs validateRecord compiles it, and gate-proof.test.mjs hard-codes ten gates, none of which the plan lists for edit."
+  - id: PLAN-VERIFY-003
+    verdict: confirmed
+    reason: "gates.md specifies no linterOptions or disable-comment fixture and the template eslint.no-io config lacks linterOptions, so inline disables are an unclosed hole."
+  - id: PLAN-VERIFY-004
+    verdict: confirmed
+    reason: "gates.md S7 is limited to counts objects and S5 excludes plan/review/done, so STATE_BADGES.blocked style access is unmatched by the specified selectors."

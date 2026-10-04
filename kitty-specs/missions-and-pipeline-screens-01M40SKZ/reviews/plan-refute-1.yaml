@@ -1,0 +1,29 @@
+schema: review-refute/v1
+complete: true
+phase: plan
+batch: 1
+verdicts:
+  - id: PLAN-FIT-001
+    verdict: confirmed
+    reason: "contract-pin.md line 44 defines test:contract as `node --test scripts/contract/` with no index.js planned, and on Node v22.22.2 in a scratch dir that command reported 1 fail, 0 pass while the repo's hygiene and gate-proof dirs need an index.js for the same reason."
+  - id: PLAN-FIT-002
+    verdict: confirmed
+    reason: "contract-pin.md line 77 sets review pending next to for_review/approved/done WPs, while MissionDetail.yaml says review is pending only when no WP is for_review, in_review, approved or done, and C4/C5 as specified check neither."
+  - id: PLAN-FIT-003
+    verdict: confirmed
+    reason: "D-11 does not actually list progress among recomputed fields (the claim's wording is slightly off), but nothing in the plan sets progress, doneCount, donePercentage or lifecycleStatus per overlay or checks them in C5, so all-complete and all-pending fixtures inherit the base example's 65 percent, which contradicts the plan's \"no fixture contradicts the contract\"."
+  - id: PLAN-FIT-004
+    verdict: confirmed
+    reason: "data-model.md line 43 declares RowView with key `blocked` built by buildRowView, and running the S5 selector with esquery 1.7.0 over a typescript-estree AST matched both `{ blocked: badge }` and `{ blocked }` (1 hit each), while src/logic is scanned."
+  - id: PLAN-FIT-005
+    verdict: confirmed
+    reason: "sk-phase-bar.md requires a check/dot/empty glyph per state but defaults.md lists no glyph table and data-model.md does not say which file declares PhaseState, and the S1 selector flags the literal 'done' in a type or comparison outside defaults/contract (esquery check: 1 hit)."
+  - id: PLAN-FIT-006
+    verdict: refuted
+    reason: "stylelint.config.mjs LAYOUT_PROPERTIES allows position, overflow, margin, inline-size and block-size and TOKEN_ONLY allows the value 0, so a zero-size absolutely positioned overflow-hidden box passes the gate (as the finding's own remediation shows) and plan G-07 plus spike S3 already cover verifying this, so the claim that no technique passes is false."
+  - id: PLAN-FIT-007
+    verdict: refuted
+    reason: "The plan does not specify any node:test titles or output containing the plant tokens; the claim that tests will echo `hash mismatch` or `violates contract` into the clean run is a prediction about unwritten code, not something the cited artifacts say."
+  - id: PLAN-FIT-008
+    verdict: confirmed
+    reason: "plan.md lines 34, 54, 323 and 333 leave DR-1 to DR-11 awaiting operator confirmation at PR time while spec C-006 says any drift beyond AD-1 to AD-3 is a visual review REJECT, so WP reviewers have no approved list to review baselines against."

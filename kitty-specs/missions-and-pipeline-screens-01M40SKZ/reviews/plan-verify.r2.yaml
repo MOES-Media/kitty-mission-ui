@@ -1,0 +1,40 @@
+schema: review-verify/v1
+complete: true
+phase: plan
+verdicts:
+  - id: PLAN-FIT-005
+    status: resolved
+    note: PhaseState declared in defaults/phases.ts with PHASE_GLYPH, PHASE_TONE, PHASE_IS_CURRENT and DEFAULT_PHASE_STATE tables, phaseState falls back through the imported constant, negative fixtures and the element no-comparison rule are in gates.md and sk-phase-bar.md.
+  - id: PLAN-FIT-008
+    status: resolved
+    note: CP-1 operator confirmation of DR-1..DR-12 is now a pre-IC-03b checkpoint recorded in tracer-design-decisions and spec Clarifications; D-35 procedure says DR-12 and no stale DR-1..DR-11 remains outside reviews.
+  - id: PLAN-FRESH-001
+    status: resolved
+    note: I re-derived from DEFAULT_LANE_WEIGHTS at 9f41e48 (detailImplement 0.65/6=10.8333, detailBlockers 10, detailBadges 25, detailSubtasks 3.45/9=38.3333, detailUnknownLane 15, detailAllComplete 75, overview blocked 15 and stale 30) and all declared values match; C5 rule e now recomputes with a pinned weights constant verified at re-pin, and 41.6667 mentions were updated.
+  - id: PLAN-FRESH-002
+    status: resolved
+    note: plan.md wrap-up now records TA at accept and T0 at the last tree-changing step before compaction, requires tree-neutral compaction against T0, and compares trees rather than shas.
+  - id: PLAN-FRESH-003
+    status: resolved
+    note: structuredClone is added to the mjs globals block as part of E-05 in IC-01 (plan.md and gates.md) with a pnpm lint exit check on the new scripts; eslint.config.mjs currently lacks it, which the plan correctly describes as a planned edit.
+  - id: PLAN-FRESH-004
+    status: resolved
+    note: Both D-35 occurrences now read DR-1 to DR-12 and a grep of the mission directory finds no remaining DR-1 to DR-11.
+  - id: PLAN-FRESH-005
+    status: resolved
+    note: IC-03 is split mandatorily into IC-03a and IC-03b with CP-1 owned by the orchestrator between them, and the dependency graph, ownership tables and compaction slices use the new ids.
+  - id: PLAN-FRESH-006
+    status: resolved
+    note: Lane mechanics item 2 states one rule for every dependent WP, lists IC-02, IC-03a, IC-03b, IC-04..IC-08 explicitly, covers the shared-lane case, and the lane A/B wording was replaced by chains A and B.
+  - id: PLAN-FRESH-007
+    status: resolved
+    note: Multi-alternative selectors are split into 31 separate entries with own ids (S1b.1/.2, S3c.1/.2, S7b.1-.4 and others), the table count matches 31 and the self-test lists one fixture per alternative.
+  - id: PLAN-FRESH-008
+    status: resolved
+    note: gates.md now labels the contract and data-driven timeouts as estimates and gives a derivation rule (2xC+S, 2xL+S) that IC-01 and IC-02 apply from recorded local wall-clocks, plus the module-level validator cache note.
+  - id: PLAN-FRESH-009
+    status: resolved
+    note: plan.md Lane mechanics and tracer-tooling-friction.md now state that the ledger lives outside the repo, give each defect's fact inline and mark ids as cross-references only.
+  - id: PLAN-FRESH-010
+    status: resolved
+    note: quickstart.md heading now reads 'Add a vocabulary-dependent change ...' and no 'feature' remains in it.
