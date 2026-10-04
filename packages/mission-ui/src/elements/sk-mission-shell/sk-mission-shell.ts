@@ -50,6 +50,11 @@ const COLLAPSED_QUERY = '(min-width: 720px)';
  * @fires {CustomEvent<ToggleFlyoutDetail>} sk-toggle-flyout - the collapsed-tier flyout asks to open or close (cancelable)
  * @fires {CustomEvent<ShellRetryDetail>} sk-shell-retry - the error-state retry button was activated
  *
+ * The content slot is a flex column (the slotted screen may `flex-grow` to fill it; inline children are blockified).
+ * `main` pads the content by `--sk-mission-shell-content-padding` (24px, 16px at the mobile tier); that property is
+ * public: a slotted screen that sets the `flush` attribute on the shell pads its own inset parts with it. `flush` removes
+ * the padding, so a screen can run to the edges of the content column (the Pipeline screen's inspector and phase band).
+ *
  * @slot - the page content, inside the main landmark
  * @slot brand - the product name beside the mark (falls back to "kitty desktop")
  * @slot top-bar-actions - host actions on the right of the top bar
@@ -341,10 +346,15 @@ export class SkMissionShell extends LitElement {
       flex-direction: column;
       flex-grow: 1;
       min-width: 0;
-      padding: var(--sk-space-6);
+      --sk-mission-shell-content-padding: var(--sk-space-6);
+      padding: var(--sk-mission-shell-content-padding);
     }
     [data-body][data-tier='mobile'] main {
-      padding: var(--sk-space-4);
+      --sk-mission-shell-content-padding: var(--sk-space-4);
+    }
+    /* Flush content: no padding; the property above stays, so a screen can pad its own inset parts with it. */
+    :host([flush]) main {
+      padding: 0;
     }
     [data-focus-target] {
       display: flex;
@@ -354,6 +364,10 @@ export class SkMissionShell extends LitElement {
     }
   `,
   ];
+
+  /** The content runs to the edges of the content column: `main` drops its padding (a screen pads its inset parts itself). */
+  @property({ type: Boolean, reflect: true })
+  flush = false;
 
   /** Which regions render; unknown values fall back to `project`. */
   @property({ reflect: true })

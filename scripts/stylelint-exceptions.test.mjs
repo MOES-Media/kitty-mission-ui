@@ -308,6 +308,16 @@ describe('cross-scope leaks between neighbouring exceptions', () => {
       assert.deepEqual(await problems(file, 'display: none; flex: none;'), [], file);
     }
   });
+  test('the shell content-padding property takes one space token, in the shell files only (D-05)', async () => {
+    const shell = `${EL}/sk-mission-shell/sk-mission-shell.ts`;
+    assert.deepEqual(await problems(shell, '--sk-mission-shell-content-padding: var(--sk-space-6);'), []);
+    for (const css of ['--sk-mission-shell-content-padding: 24px;', '--sk-mission-shell-content-padding: var(--sk-fg-subtle);', '--sk-mission-shell-content-padding: calc(1px + 1px);']) {
+      assert.ok((await problems(shell, css)).length >= 1, css);
+    }
+    for (const file of [`${EL}/sk-pipeline-screen/sk-pipeline-screen.ts`, `${EL}/sk-pipeline-screen/pipeline-parts.ts`, OTHER]) {
+      assert.ok((await problems(file, '--sk-mission-shell-content-padding: var(--sk-space-6);')).length >= 1, file);
+    }
+  });
   test('global rules still hold: a plain px padding fails everywhere', async () => {
     assert.ok((await problems(`${EL}/sk-phase-bar/sk-phase-bar.ts`, 'padding: var(--sk-space-1) 4px;')).length >= 1);
   });

@@ -349,6 +349,46 @@ describe('frame and landmarks (FR-001, FR-002, FR-004, FR-008)', () => {
   });
 });
 
+describe('flush content (D-05)', () => {
+  const padding = (el: SkMissionShell): string => getComputedStyle(one<HTMLElement>(root(el), 'main')).padding;
+
+  it('is off by default: main pads the content, 24 px, and 16 px at the mobile tier', async () => {
+    for (const [width, expected] of [[1280, '24px'], [1024, '24px'], [390, '16px']] as const) {
+      const el = await mount(width);
+      expect(el.flush, `${width} default`).toBe(false);
+      expect(el.hasAttribute('flush')).toBe(false);
+      expect(padding(el), `${width}`).toBe(expected);
+      document.body.replaceChildren();
+    }
+  });
+
+  it('flush removes the content padding at every tier and reflects to the attribute', async () => {
+    for (const width of [1280, 1024, 390]) {
+      const el = await mount(width, { ...projectArgs, flush: true });
+      expect(el.hasAttribute('flush'), `${width} reflected`).toBe(true);
+      expect(padding(el), `${width}`).toBe('0px');
+      const main = one<HTMLElement>(root(el), 'main');
+      const content = one<HTMLElement>(el, '[data-content]');
+      // the slotted content reaches the left and right edges of the main landmark
+      expect(content.getBoundingClientRect().left, `${width} left`).toBeCloseTo(main.getBoundingClientRect().left, 1);
+      expect(content.getBoundingClientRect().right, `${width} right`).toBeCloseTo(main.getBoundingClientRect().right, 1);
+      document.body.replaceChildren();
+    }
+  });
+
+  it('exposes the tier padding to the slotted content as --sk-mission-shell-content-padding, flush or not', async () => {
+    for (const flush of [false, true]) {
+      for (const [width, expected] of [[1280, '24px'], [390, '16px']] as const) {
+        const el = await mount(width, { ...projectArgs, flush });
+        const probe = one<HTMLElement>(el, '[data-content]');
+        probe.style.paddingInlineStart = 'var(--sk-mission-shell-content-padding)';
+        expect(getComputedStyle(probe).paddingInlineStart, `flush ${flush} at ${width}`).toBe(expected);
+        document.body.replaceChildren();
+      }
+    }
+  });
+});
+
 describe('status (FR-010, D-04)', () => {
   const statuses: ViewState[] = ['loading', 'error', 'empty', 'ready'];
 

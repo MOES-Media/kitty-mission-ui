@@ -142,7 +142,7 @@ const SHELL_PAINT_PROPERTIES = [
 
 // Keyword-only typography behaviour needed to truncate or wrap chrome text (no colour, length or font value).
 // `--shell-band` is the one shell-private custom property: the shared block-size of the bottom band (token calc).
-const SHELL_KEYWORD_PROPERTIES = ['text-overflow', 'white-space', 'overflow-wrap', '--shell-band'];
+const SHELL_KEYWORD_PROPERTIES = ['text-overflow', 'white-space', 'overflow-wrap', '--shell-band', '--sk-mission-shell-content-padding'];
 
 const SHELL_FILES = [
   '**/src/elements/sk-mission-shell/**',
@@ -408,6 +408,8 @@ export default {
         // The shell-private band property takes a calc of two library tokens, nothing else.
         'declaration-property-value-allowed-list': {
           '--shell-band': ['/^calc\\(var\\(--sk-[a-z0-9-]+\\) [+-] var\\(--sk-[a-z0-9-]+\\)\\)$/'],
+          // The public content-padding property of the shell: one library space token, nothing else.
+          '--sk-mission-shell-content-padding': ['/^var\\(--sk-space-[0-9]+\\)$/'],
         },
       },
     },
