@@ -1,5 +1,4 @@
 {
-  "accept_commit": "53338a6f5c5f48a21a5bdd940da3f25ba03dbdf7",
   "acceptance_history": [
     {
       "accept_commit": "53338a6f5c5f48a21a5bdd940da3f25ba03dbdf7",
@@ -7,12 +6,18 @@
       "accepted_at": "2026-10-04T17:36:41.551577+00:00",
       "accepted_by": "<user>",
       "accepted_from_commit": "8afea60d2877e0fb333588ba53288d064a1ef085"
+    },
+    {
+      "acceptance_mode": "pr",
+      "accepted_at": "2026-10-04T19:30:23.387133+00:00",
+      "accepted_by": "claude",
+      "accepted_from_commit": "de5fd7e745bdc63db71b65ddcf488a61a1171a80"
     }
   ],
   "acceptance_mode": "pr",
-  "accepted_at": "2026-10-04T17:36:41.551577+00:00",
-  "accepted_by": "<user>",
-  "accepted_from_commit": "8afea60d2877e0fb333588ba53288d064a1ef085",
+  "accepted_at": "2026-10-04T19:30:23.387133+00:00",
+  "accepted_by": "claude",
+  "accepted_from_commit": "de5fd7e745bdc63db71b65ddcf488a61a1171a80",
   "created_at": "2026-10-03T11:50:32.165795+00:00",
   "flattened": false,
   "friendly_name": "missions and pipeline screens",
