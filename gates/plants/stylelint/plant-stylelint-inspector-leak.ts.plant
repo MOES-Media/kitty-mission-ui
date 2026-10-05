@@ -1,0 +1,13 @@
+import { css } from 'lit';
+
+// The E-12 inspector paint and the pinned E-09 tracking, token-only, in a sibling file that no exception names
+// (pipeline-parts.ts is the only Pipeline file that may carry them): must still fail.
+export const plantStylelintInspectorLeak = css`
+  .plant-stylelint-inspector-leak {
+    background: var(--sk-surface-hero);
+    border-inline-start: var(--sk-border-width-1) solid var(--sk-border-default);
+    border-block-end: var(--sk-border-width-1) solid var(--sk-border-default);
+    border-radius: 0;
+    letter-spacing: 0.08em;
+  }
+`;

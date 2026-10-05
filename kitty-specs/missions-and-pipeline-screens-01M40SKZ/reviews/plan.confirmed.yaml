@@ -1,0 +1,568 @@
+schema: review-findings/v1
+complete: true
+phase: plan
+findings:
+- id: PLAN-FIT-001
+  lens: Contract consumption integrity
+  severity: 4
+  title: test:contract as written (`node --test scripts/contract/`) fails on the pinned Node 22.22.2, so gate `contract` cannot go green
+  evidence:
+  - artifact: "contracts/gates.md \xA7 Gate table and \xA7 Gate `contract` Command: `pnpm contract:check && pnpm test:contract`; contracts/contract-pin.md \xA7 Commands: `test:contract` = `node --test scripts/contract/`"
+  - code: 'package.json:23 (`test:preflight` = `node --test scripts/preflight.test.mjs`, explicit file); verified in scratch dir with node v22.22.2: `node --test scripts/contract/` exits 1 (ERR_TEST_FAILURE,
+      1 fail, 0 pass) while `node --test scripts/contract/*.test.mjs` passes'
+  - artifact: "contracts/contract-pin.md \xA7 Commands: test:contract is 'node --test scripts/contract/'; contracts/gates.md gate table and Command"
+  - code: 'scripts/hygiene/index.js and scripts/gate-proof/index.js: comment ''Node 22 treats a directory argument to node --test as a module to load; this entry point makes node --test scripts/<dir>/ run
+      the suite'' (the repo already hit this)'
+  claim: 'From Node 21 a directory argument is no longer searched recursively, it is run as a file. The plan''s only definition of the test command therefore fails on the repo''s pinned Node, in CI and
+    in the proof leg. Every existing node:test script in the repo lists explicit files.
+
+    [Merged duplicate PLAN-VERIFY-002]: Reproduced on the pinned Node v22.22.2 in a scratch dir with scripts/contract/a.test.mjs and no index.js: ''node --test scripts/contract/'' prints ''Cannot find module
+    .../scripts/contract'' and reports 1 failed test. The plan lists scripts/contract/*.test.mjs but no index.js. The clean run of the gate (and therefore the proof leg''s clean run, which must exit 0)
+    fails; ''node --test scripts/contract/*.test.mjs'' passes.'
+  remediation: 'Define `test:contract` as `node --test scripts/contract/*.test.mjs` (or an explicit file list), in contract-pin.md, gates.md and the plan''s gate table. IC-01 acceptance: run it in the clean
+    worktree and require at least one test executed (pass count above 0).
+
+    [From PLAN-VERIFY-002]: Change test:contract to ''node --test scripts/contract/*.test.mjs'' (shell glob, as pnpm runs sh) or add scripts/contract/index.js that dynamically imports the test files, as
+    the two existing directories do. The gate''s ciCommand, the CI step and the plants must carry the identical string. Make IC-01''s exit check ''pnpm test:contract'' print a passing test count above zero.'
+  merged_from:
+  - PLAN-VERIFY-002
+  refuter_reason: contract-pin.md line 44 defines test:contract as `node --test scripts/contract/` with no index.js planned, and on Node v22.22.2 in a scratch dir that command reported 1 fail, 0 pass while
+    the repo's hygiene and gate-proof dirs need an index.js for the same reason.
+- id: PLAN-FIT-002
+  lens: Contract consumption integrity
+  severity: 4
+  title: Fixture `detailImplement` (PL-01) is a state the pinned contract cannot produce, and neither C4 nor C5 would notice
+  evidence:
+  - artifact: "contracts/contract-pin.md \xA7 Fixture inventory, row `detailImplement`: 'phases overlaid so implement is in_progress and review pending; WPs spread over planned, claimed, in_progress, for_review,\
+      \ approved, done'"
+  - artifact: data-model.md I-09 and research.md D-11 ('so no fixture contradicts the contract it claims to follow'); spec.md PL-01 (implement in progress, review pending, cards in all five columns)
+  - code: 'contracts/mission-status/schemas/MissionDetail.yaml, field phases (rule: review is pending ONLY when no work package is for_review, in_review, approved or done; otherwise in_progress). The contract''s
+      own populated example shows exactly that: implement and review both in_progress.'
+  claim: Work packages in for_review, approved or done force review to in_progress under the contract's derivation. The planned fixture sets review to pending next to such work packages, so PL-01 (and its
+    baseline, the screen's flagship story) shows contract-incoherent data. C4 only checks the JSON schema (the rule is prose and x-derived, not schema), and C5 only checks lane counts, so the gate passes
+    it. The gate cannot back the claim that fixtures follow the contract.
+  remediation: 'Extend C5 to verify the phases implement and review of every MissionDetail fixture against the rule quoted in MissionDetail.yaml (a ten-line pure function of statusLaneCounts and wpTotal).
+    Then resolve PL-01 explicitly, as an orchestrator/operator decision recorded in the plan: either (a) amend PL-01 to the contract-true bar (done, done, done, current, current), which is drift from the
+    prototype to register as a DR, or (b) keep review pending and restrict the work packages to planned, claimed and in_progress (Review, Approved and Done columns then show count 0, which weakens the screenshot),
+    or (c) register a named relaxation `phase-status-open` with the same reverted-must-fail proof. Do not ship a silent exception.'
+  refuter_reason: contract-pin.md line 77 sets review pending next to for_review/approved/done WPs, while MissionDetail.yaml says review is pending only when no WP is for_review, in_review, approved or
+    done, and C4/C5 as specified check neither.
+- id: PLAN-FIT-003
+  lens: Contract consumption integrity
+  severity: 3
+  title: Overlays claim to recompute derived fields, but `progress` cannot be recomputed from the contract and is not checked
+  evidence:
+  - artifact: research.md D-11 (overlays recompute statusLaneCounts, wpTotal, blockedCount, lifecycleStatus, phase statuses); contracts/contract-pin.md (derived fields recomputed from the work packages
+      the overlay sets); contracts/gates.md C5 (counts, wpTotal, blockedCount only)
+  - code: contracts/mission-status/schemas/MissionProgress.yaml (weightedPercentage cites only `compute_weighted_progress`, no weights are in the contract; doneCount, donePercentage derivable) and MissionHead.yaml
+      lifecycleStatus (deterministic rule from counts, discardedAt, acceptedAt)
+  claim: An overlay cannot compute weightedPercentage because the lane weights are not part of the vendored contract. As written the all-complete, all-pending, blockers and subtask fixtures inherit the
+    base example's progress (65 weighted, 50 done, doneCount 3), so PL-03 would show 65% next to every phase complete and every card done, and PL-02 a non-zero figure with no work packages. C5 also leaves
+    doneCount, donePercentage and lifecycleStatus unchecked although the contract defines them.
+  remediation: 'State in contract-pin.md that overlays SET progress explicitly per fixture (an overlay parameter, 0 for no work packages, 100 when all done) and that weightedPercentage is only range-checked
+    (0..100, 0 when wpTotal is 0). Add to C5: doneCount equals statusLaneCounts.done, donePercentage equals round-to-4-decimals of done over wpTotal (0 when wpTotal is 0), lifecycleStatus equals the rule
+    order in MissionHead.yaml, semantics constant. Fix the D-11 sentence so it does not promise recomputation of progress.'
+  refuter_reason: D-11 does not actually list progress among recomputed fields (the claim's wording is slightly off), but nothing in the plan sets progress, doneCount, donePercentage or lifecycleStatus
+    per overlay or checks them in C5, so all-complete and all-pending fixtures inherit the base example's 65 percent, which contradicts the plan's "no fixture contradicts the contract".
+- id: PLAN-FIT-004
+  lens: Architecture and charter (gate design)
+  severity: 4
+  title: The planned `RowView.blocked` key trips gate `data-driven` selector S5 in `src/logic/row.ts`
+  evidence:
+  - artifact: "data-model.md \xA7 Screen and element types: `RowView = { ...; blocked: StateBadge | null; stale ...}` produced by `buildRowView` in `src/logic/row.ts`"
+  - artifact: contracts/gates.md S5 `Property[computed=false] > Identifier.key[name=/^(LANE_ONLY|specify|implement|tasks)$/]`; scope scans `src/logic/**` (not allow-listed)
+  - code: 'verified by running the S5 selector with esquery 1.7.0 (node_modules/.pnpm/esquery@1.7.0) over a typescript-eslint AST: `{ blocked: badge }` and the shorthand `{ blocked }` both match (1 hit
+      each); `{ done: 1, total: 2 }` does not'
+  - artifact: 'data-model.md RowView ({ ...; blocked: StateBadge | null; ... }) and PhaseState (''done'' | ''current'' | ''pending''); defaults.md buildRowView lives in src/logic/ (scanned); gates.md Scope'
+  - code: 'scratch run: ''{ blocked: badge, stale: false }'' reports S5; ''type PhaseState = "done" | "current" | "pending"'' reports S1'
+  claim: '`blocked` is one of the lane words in LANE_ONLY. The object literal that builds a RowView in the scanned logic module is flagged, so the mission''s own code fails its own new gate (or an implementer
+    silences it with a disable comment, defeating the gate). Reading `row.blocked` in the element is fine; the construction is not.
+
+    [Merged duplicate PLAN-VERIFY-008]: buildRowView returns an object literal with an identifier key ''blocked'' (a lane name in LANE_ONLY) from src/logic/, which the gate scans, so IC-02 or IC-07 would
+    fail the gate on the plan''s own data shape. The type PhaseState holds the literal ''done''; the plan does not say which module declares it, and every module except defaults/ and contract/ is scanned.
+    Rework inside a WP, not a design error, but two WPs (IC-02 logic, IC-05 phase bar) would each rediscover it.'
+  remediation: 'Rename the field (`blockedBadge`) in data-model.md, contracts/defaults.md and the missions-screen contract. Add a rule to gates.md: no plan type may use a key from WORDS as an object-literal
+    key outside `defaults/` and `contract/`, and add a selftest fixture for the shorthand form `{ blocked }`. Scan the other planned object shapes (PlacedCard, PlacedColumn, LaneGroup, StateBadge, FilterDefinition)
+    for the same collision.
+
+    [From PLAN-VERIFY-008]: Rename RowView.blocked to blockedBadge and state in data-model.md that PhaseState is declared in src/defaults/phases.ts (or contract/types.ts) and only imported elsewhere. Add
+    a gates.md sentence listing ''field names equal to a lane value are forbidden in view types''.'
+  merged_from:
+  - PLAN-VERIFY-008
+  refuter_reason: 'data-model.md line 43 declares RowView with key `blocked` built by buildRowView, and running the S5 selector with esquery 1.7.0 over a typescript-estree AST matched both `{ blocked: badge
+    }` and `{ blocked }` (1 hit each), while src/logic is scanned.'
+- id: PLAN-FIT-005
+  lens: Architecture and charter (gate design)
+  severity: 3
+  title: Phase bar needs a glyph per phase state, but no glyph table exists in `defaults/` and any comparison with 'done' trips S1
+  evidence:
+  - artifact: "contracts/sk-phase-bar.md \xA7 Semantics ('check mark for done, a dot for current, empty for pending'); contracts/defaults.md \xA7 defaults/phases.ts (exports DEFAULT_PHASE_LABELS, PHASE_STATE,\
+      \ PHASE_STATUS_TEXT, PHASE_TONE, NO_STEP_TEXT, CURRENT_STEP_PREFIX; no glyph table); data-model.md (`PhaseState = 'done' | 'current' | 'pending'`, file not stated)"
+  - artifact: contracts/gates.md S1 `Literal[value=/^(WORDS)$/i]` with `done` in WORDS
+  - code: 'verified with esquery 1.7.0 over a typescript-eslint AST: `type PhaseState = ''done'' | ''current'' | ''pending''` and `state === ''done'' ? x : y` each produce 1 S1 hit'
+  claim: An implementer choosing the glyph by comparing the state to 'done' gets a data-driven failure; the PhaseState type itself contains the literal 'done' and is only legal in `defaults/` or `contract/`,
+    which the plan never says. The surface is under-specified in exactly the file the gate protects.
+  remediation: 'Add `PHASE_GLYPH: Readonly<Record<PhaseState, string>>` (and any marker text) to `defaults/phases.ts`, read through `lookup`, and state that `PhaseState` is declared in `defaults/phases.ts`.
+    The element must contain no comparison against a PhaseState value. Add a negative selftest for the glyph lookup.'
+  refuter_reason: 'sk-phase-bar.md requires a check/dot/empty glyph per state but defaults.md lists no glyph table and data-model.md does not say which file declares PhaseState, and the S1 selector flags
+    the literal ''done'' in a type or comparison outside defaults/contract (esquery check: 1 hit).'
+- id: PLAN-FIT-008
+  lens: Spec fidelity
+  severity: 3
+  title: Plan-introduced drift DR-1..DR-11 is left for the operator at PR time, while C-006/NFR-008 make unapproved drift a REJECT for every WP reviewer
+  evidence:
+  - artifact: "plan.md \xA7 Charter Check ('visual regression ... pass with approved drift AD-1 to AD-3 and DR-1 to DR-11, each to be confirmed by the operator') and \xA7 Deviations (P-6 confirm at PR)"
+  - artifact: spec.md C-006 ('Any other drift is a defect and a visual review REJECT'), NFR-008, FR-032
+  claim: The per-WP reviewer agent must REJECT each baseline that shows an unapproved difference (card state words, progress bar on every card, full-precision percentage, phase connector). With the approvals
+    deferred to PR review the WPs either all bounce or the reviewers silently waive the rule, which the charter forbids.
+  remediation: 'Make P-6 a pre-tasks decision: the orchestrator asks the operator to confirm or amend DR-1..DR-11 (and the copy defaults) now and records the outcome in spec.md Clarifications; WP briefs
+    then cite the approved list as the only allowed drift. Anything not confirmed is removed from the plan before tasks.'
+  refuter_reason: plan.md lines 34, 54, 323 and 333 leave DR-1 to DR-11 awaiting operator confirmation at PR time while spec C-006 says any drift beyond AD-1 to AD-3 is a visual review REJECT, so WP reviewers
+    have no approved list to review baselines against.
+- id: PLAN-FIT-009
+  lens: Architecture and charter (sequencing)
+  severity: 3
+  title: IC-09 depends on two lanes, but the plan states that a lane cannot have two parents and gives no procedure
+  evidence:
+  - artifact: "plan.md \xA7 Implementation Concern Map (lanes A and B; 'spec-kitty cannot parent a lane on two lanes'; IC-09 depends on IC-07 and IC-08) and IC-09 Purpose 'merge both lanes'"
+  - code: the orchestrator's tooling ledger, a spec-kitty tooling issue (dependent lane allocated from a stale commit; workaround is a manual `git merge --no-ff` of the approved parent into the lane worktree) and a spec-kitty tooling issue (lanes
+      parent off a stale mission branch)
+  - artifact: plan.md Implementation Concern Map intro and IC-09 Sequencing (IC-07 and IC-08, one in lane B, one in lane A); IC-04 and IC-05 both depend on IC-03
+  - artifact: 'the orchestrator's tooling ledger, a spec-kitty tooling issue (dependent lane allocated from a stale coordination commit; workaround: git merge --no-ff the approved parent lane, or pre-create lane branches from the approved
+      parent lane) and a spec-kitty tooling issue (fresh dependent-lane allocation refuses a derived status.json conflict; operator workaround merge -X ours and verify the snapshot against the log)'
+  - artifact: 'the orchestrator's tooling ledger: claim failing with ''ancestry could not be established'' for a WP depending on two approved lanes'
+  claim: 'IC-09 needs both lanes'' code to run the five clean visual runs, host-composition test and gate-proof, yet the tool can attach it to one parent only. Without a stated procedure the IC-09 agent
+    will improvise merges (the failure mode already recorded twice in the ledger) inside a work package that owns shared files.
+
+    [Merged duplicate PLAN-SEQ-003]: The plan states that a lane that depends on another is created from its parent''s branch and that spec-kitty cannot parent a lane on two lanes, then makes IC-09 depend
+    on IC-07 (lane B) and IC-08 (lane A) without saying where IC-09 runs or how it obtains both lanes'' code. IC-09 needs both (118 stories, host-composition test, five clean visual runs). The ledger records
+    that allocating a dependent lane from an approved parent already fails without orchestrator intervention, and IC-04 and IC-05 are two such allocations off IC-03. The plan has no note
+    of any of this, so the orchestrator would rediscover it mid-mission.'
+  remediation: 'State in the plan: IC-09 is parented on IC-08; the orchestrator (not the WP agent) merges the approved IC-07 lane into the IC-09 lane worktree before dispatch, resolving `custom-elements.json`
+    by regeneration, and verifies both lanes'' stories are present. Alternatively serialise IC-07 after IC-08 and drop lane B parallelism. Add the check to the IC-09 brief.
+
+    [From PLAN-SEQ-003]: Add a "Lane mechanics" paragraph to the Concern Map: (1) before dispatching IC-04 and IC-05 the orchestrator pre-creates both lane branches from the approved IC-03 lane tip (dependent-lane allocation
+    workaround); (2) before claiming IC-09 the orchestrator merges the approved lane-B tip into the lane-A workspace (or the reverse) with `git merge --no-ff`, resolves custom-elements.json by `pnpm manifest:generate`
+    only, and verifies status.json against the event log; (3) IC-09''s first step is a green full gate run on that merged tree. Alternatively serialise IC-07 after IC-08 and drop the "two lanes"
+    claim; record the trade-off (lane B is 2 WPs, 28 stories).'
+  merged_from:
+  - PLAN-SEQ-003
+  refuter_reason: plan.md line 131 states a lane cannot have two parents and IC-09 depends on IC-07 and IC-08, yet no section gives a merge procedure, while recorded spec-kitty tooling issues describe dependent-lane
+    allocation failing.
+- id: PLAN-FIT-010
+  lens: Shell interaction scope
+  severity: 2
+  title: Additive shell change is minimal and keeps baselines and manifest untouched, but the footer/inspector agreement claim has gaps
+  evidence:
+  - artifact: research.md D-28 ('early return for total <= 0 stays'; 'IC-08 gate'; 'typeof progress.percentage === number'); plan.md IC-03 (shell change is in IC-03) and contracts/sk-pipeline-screen.md
+      (every Pipeline story shows footer and inspector agreeing; composition test asserts equal texts)
+  - code: 'packages/mission-ui/src/elements/sk-mission-shell/shell-parts.ts:157-167 renderFooter (`if (!progress || progress.total <= 0) return nothing;` then rounded done/total, `value=${progress.done}
+      max=${progress.total}`); src/shell-types.ts:55 `progress?: { done: number; total: number }`; test/sk-mission-shell.test.ts:559-565 asserts value=done, max=total'
+  - code: packages/mission-ui/custom-elements.json contains no `progress`/ShellMission type text for the footer (verified by grep), so the manifest is unaffected; apps/storybook/tests/visual/__snapshots__
+      holds exactly 58 PNGs and no shell fixture sets `percentage`
+  claim: 'I verified the core claim: one optional field and one branch in renderFooter leave the existing 58 baselines, the existing footer tests and the manifest unchanged. Remaining gaps: (1) AllPending
+    and any wpTotal 0 story has no footer (total <= 0 returns early) while the inspector shows a figure, so the composition test ''footer text equals inspector text'' cannot hold for those stories; (2)
+    `typeof percentage === ''number''` accepts NaN and Infinity, producing an invalid `<progress value>`; (3) D-28 cites an ''IC-08 gate'' for the proof, but the plan places the change and its proof in
+    IC-03.'
+  remediation: Scope the agreement test to wpTotal above 0 and say so in the contract; use `Number.isFinite(progress.percentage)` in the branch and add a test for NaN falling back to the existing path;
+    correct the D-28 reference to IC-03.
+  refuter_reason: contract-pin.md defines detailAllPending with wpTotal 0 (PL-02) and renderFooter returns nothing for total <= 0, so the claim that every Pipeline story shows agreeing footer and inspector
+    fails; D-28 also says "IC-08 gate" while plan IC-03 owns the proof, and typeof number admits NaN.
+- id: PLAN-FIT-011
+  lens: Spec fidelity
+  severity: 2
+  title: Public surface beyond the spec is not in the flagged amendment list (missions-href, error-message, label)
+  evidence:
+  - artifact: "contracts/sk-pipeline-screen.md properties `missionsHref`, `errorMessage`; contracts/sk-missions-screen.md `errorMessage`; contracts/sk-phase-bar.md and sk-work-package-board.md `label`;\
+      \ plan.md \xA7 Spec amendment proposals P-1..P-6 (none covers them)"
+  - artifact: spec.md FR-026 (every public property declared) and C-012 (no intent beyond the issue)
+  claim: Each is a reasonable host-facing property, but they are neither in the spec nor in P-1..P-6, so the 'nothing invented beyond the spec unless flagged' rule is not met and the frozen manifest surface
+    (IC-03) will carry unreviewed API.
+  remediation: Add P-7 listing these properties and their defaults for operator confirmation, or drop `errorMessage` and `missionsHref` and use defaults only. Also state that `story-support/` is not importable
+    from elements and name the mechanism that enforces it (an ESLint `no-restricted-imports` override), otherwise it is a rule with no gate.
+  refuter_reason: missionsHref and errorMessage appear in research.md and contracts but not in spec.md and not in P-1..P-6, and the "elements may not import story-support" rule has no stated enforcing mechanism
+    in plan, research or gates.md.
+- id: PLAN-FIT-012
+  lens: Spec fidelity
+  severity: 1
+  title: Small inconsistencies between plan files
+  evidence:
+  - artifact: plan.md Technical Context 'about 170 tests' vs contracts/gates.md unit-tests row 'about 130 browser-mode tests'; contracts/gates.md first paragraph says gate-proof coverage and checkWorkflow
+      fail when 'a row in the README gates table and a changelog line' are missing
+  - code: 'scripts/hygiene/rules.mjs:323-396 checkWorkflow and scripts/gate-proof/lib.mjs enforce job, matrix, plant-directory and `all` wiring only; no README or CHANGELOG check exists (grep README|CHANGELOG
+      in scripts/: no hit)'
+  claim: The test counts differ between files (130 vs 170; fine if 40 are node:test, but unstated), and the README row and CHANGELOG line are review items, not mechanically enforced as the sentence implies.
+  remediation: Reconcile the counts (split browser-mode and node:test) and reword the gates.md sentence so only the job, matrix, plant and `all` wiring are described as enforced.
+  refuter_reason: plan.md says about 170 tests while gates.md says about 130 browser-mode tests, and gates.md line 3 claims coverage and checkWorkflow enforce a README row and changelog line although grep
+    of scripts/ finds no README or CHANGELOG check.
+- id: PLAN-SEQ-001
+  lens: Visual baseline and CI economics
+  severity: 3
+  title: CI timeout estimates rest on "no measurement exists", but real run timings exist and show the proposed timeouts are 2-4x too loose
+  evidence:
+  - artifact: research.md D-31 ("1.5 to 2 seconds per screenshot (inference, no measurement exists) ... 15 to 20 minutes"); research.md 'Not verified' ("The CI time of 590 screenshots (estimate)"); contracts/gates.md
+      gate table (visual job 30 / proof 60; unit-tests job 10 / proof 12)
+  - code: .github/workflows/ci.yml:396 (visual job timeout-minutes 10), :482 (proof-leg visual matrix timeout 15), :355 (unit-tests 6)
+  - code: 'gh run view 36880654992 (CI on feat/app-shell, 290 executions): ''visual'' step 15:01:32-15:04:29 = 177 s, job 247 s; ''Gate: proof (visual)'' job 677 s; ''Gate: unit-tests'' 95 s (test step
+      15 s). Run 36882394060 on main: proof (visual) 677 s, visual 247 s, unit-tests 95 s.'
+  claim: 'The existing visual step costs 177 s for 290 test executions, about 0.61 s each, not 1.5-2 s. Scaling linearly by 590/290 gives about 6 min for the visual step (about 7.5 min job) and about 23
+    min for the proof leg (677 s x 2.03, because the leg runs the command clean and planted, each with its own storybook build). The plan proposes visual job 30 and proof 60: 4x and 2.6x the scaled figures,
+    which weakens the hang guard and burns runner minutes on a stuck job. The unit-tests job (95 s today, 15 s of it the test step) does not need 10 either. Also "590 screenshots" is really 590 test executions,
+    each taking two captures (root.screenshot for the colour check plus toHaveScreenshot) and a fresh page.goto, so the per-screenshot framing is wrong. The only number that must rise is the proof-leg visual
+    matrix timeout (15 min now, about 23 min expected).'
+  remediation: 'Replace the D-31 inference with the recorded run data (cite run ids or the figures above) and set: visual job 10 -> 15, proof-leg visual matrix 15 -> 35, unit-tests job 6 -> 8 and matrix
+    8 -> 10 (new tests are browser-mode, 130 on top of a 15 s step), unless the IC-01 baseline timing (see PLAN-SEQ-002) says otherwise. Drop "no measurement exists" from D-31 and the Not-verified list,
+    and say "executions" not "screenshots" for the 590 figure.'
+  refuter_reason: gh run 36880654992 shows Gate visual 15:00:21-15:04:34 (about 253 s job) and proof (visual) about 658 s for 290 executions, contradicting D-31's "no measurement exists" and 1.5-2 s per
+    screenshot, so the proposed 30 and 60 minute timeouts are far looser than scaled data implies.
+- id: PLAN-SEQ-002
+  lens: Phasing
+  severity: 3
+  title: IC-09 sets CI timeouts "from measured values" of the first PR run, but the PR is opened only after IC-09 and the wrap-up, so the sequence is circular
+  evidence:
+  - artifact: plan.md IC-09 Purpose ("CI timeouts from measured values") and PR shape section (PR opened only after accept, test cleanup, squad, compaction, rebase)
+  - artifact: contracts/gates.md line 23 and quickstart.md 'Timing record (IC-09)' ("measured wall-clock durations of the first pull-request run")
+  - artifact: research.md D-31 ("IC-09 replaces the estimates with the first PR run's measured durations in the PR description"), R-06
+  claim: No pull-request run can exist while IC-09 executes, so IC-09 cannot take measured PR-run values. The PR description is also written at PR-open time, before any run. If timeouts are corrected after
+    the first run, that is a commit after the history was compacted and the PR opened, which the wrap-up sequence does not allow for. As written, IC-09 either ships the estimates (and the "measured" claim
+    is false) or invents numbers.
+  remediation: Make IC-01 record the baseline wall-clock of `pnpm visual` (it already runs it; 58 PNGs x5 not needed, one run is enough) and of `pnpm test`, and derive the new timeouts at IC-09 from those
+    local figures plus the run history in PLAN-SEQ-001 with a stated margin. State the PR description reports "timeouts derived from run <ids> and local measurement; actual first-run durations will be added
+    as a PR comment". If a post-PR timeout fixup is accepted, say so explicitly as the one allowed commit after the draft PR opens.
+  refuter_reason: gates.md line 23, quickstart.md lines 69-71 and D-31 require IC-09 to record the first pull-request run durations, but plan.md opens the PR only after IC-09 and the wrap-up sequence, so
+    no such run exists at that point.
+- id: PLAN-SEQ-004
+  lens: Write scopes and shared files
+  severity: 3
+  title: The shared-files table omits files both lanes are likely to touch (defaults, logic, fixture overlays and registry, tracer files, manifest), so the "lanes disjoint" claim is not complete
+  evidence:
+  - artifact: 'plan.md ''Shared files: who may write them'' table (rows: index.ts and manifest, eslint, stylelint, ci/package/README, visual spec, shell, CHANGELOG/README prose, baselines)'
+  - artifact: 'plan.md Project Structure: src/defaults/{lanes,phases,lifecycle,pipeline-copy,index}.ts and src/logic/* (IC-02), src/contract/fixtures.generated.ts and scripts/contract/overlays.mjs + registry.mjs
+      (IC-01), tracer-*.md'
+  - artifact: contracts/gates.md gate `contract` C3 (fixtures.generated.ts must equal a fresh generation) and tracer-design-decisions.md ('Spike outcomes are appended by the work packages')
+  - code: 'packages/mission-ui/custom-elements-manifest.config.mjs globs src/elements/**/*.ts: any JSDoc or public-member change in a lane diffs custom-elements.json (scripts/check-manifest.mjs compares
+      bytes)'
+  claim: Lane A (IC-05, 06, 08) and lane B (IC-04, 07) both read src/defaults, src/logic and the generated fixtures, and will find gaps (a missing label, a missing fixture for a story, a changed card word
+    after spike S3). Editing them from two lanes produces conflicts in defaults/index.ts, fixtures.generated.ts (a generated file whose freshness is a gate) and custom-elements.json, none of which the table
+    assigns. The tracer files are append-only shared files written by every WP. "Merge conflicts in the manifest are resolved by regeneration" covers only one of these.
+  remediation: 'Add rows: `src/defaults/**`, `src/logic/**` and their tests: IC-02 only; a lane that needs a change files a change request to the orchestrator, who applies it on the shared base before the
+    lane forks, or the lane adds only a NEW file inside its own element directory. `scripts/contract/{overlays,registry}.mjs`, `src/contract/**`: IC-01 only, with every fixture the 60 stories need listed
+    up front (contract-pin.md already lists them; state that the list is complete and frozen). Tracer files: written by the orchestrator from WP reports only. Manifest: lanes must not change the public
+    surface frozen in IC-03; a lane whose change is unavoidable reports it and IC-09 regenerates once.'
+  refuter_reason: The shared-files table in plan.md lists no row for src/defaults, src/logic, src/contract fixtures, scripts/contract overlays or registry, or the append-only tracer files, though both lanes
+    consume them and the contract gate C3 makes fixtures.generated.ts freshness a gate.
+- id: PLAN-SEQ-005
+  lens: Phasing
+  severity: 3
+  title: IC-03 freezes the public surface (manifest) and runs the spikes that may change it in the same work package, with no internal order
+  evidence:
+  - artifact: plan.md IC-03 Purpose (skeletons carrying the FULL public surface, manifest regenerated once, spikes S1 to S4) and Risks ("spike outcomes can change an element's internals (phase bar E-04),
+      not its public surface")
+  - artifact: research.md spike table S1 to S4 (S1 segmented-choice sheet in a shadow root, S3 hidden search label and hidden li, S4 native progress without a label); research.md D-17 (phase bar candidate
+      C may differ structurally)
+  claim: 'The assertion that spikes cannot change the public surface is unproven: the public surface includes @csspart, @slot and properties, and S1 (sheet in shadow root), S2 (candidate C) and S3 (search
+    label, action-row part override G-08) can plausibly add a part or slot or drop a property. IC-03 is also the largest and riskiest package (five skeletons, shell change touching accepted code, visual-spec
+    change, ESLint overrides, library-sheets, story-support, four spikes). If the freeze precedes the spikes, a changed surface is a manifest diff in a lane, which feeds PLAN-SEQ-004.'
+  remediation: 'State the order inside IC-03: (1) visual-spec change plus shell change, with the 58 baselines proven identical; (2) spikes S1 to S4 with outcomes appended to the tracer; (3) only then the
+    skeletons, ESLint overrides and the single manifest regeneration. Alternatively split IC-03 into IC-03a (visual spec, shell change, spikes, story-support) and IC-03b (skeletons, overrides, manifest
+    freeze); the chain stays serial and nothing else changes. Note that an ESLint override E-01 to E-03 should be written after the spike that selects it.'
+  refuter_reason: plan.md IC-03 Purpose lists skeletons, one manifest regeneration and spikes S1-S4 with no internal order, while its Risks line asserts without proof that spike outcomes cannot change the
+    frozen public surface.
+- id: PLAN-SEQ-006
+  lens: Phasing
+  severity: 2
+  title: The plan claims gate-proof coverage and hygiene checkWorkflow fail without a README row and CHANGELOG line, which they do not check, and CHANGELOG ownership is stated two ways
+  evidence:
+  - artifact: plan.md '## Gates' ("each ... a README gates-table row and a root and package CHANGELOG line (`scripts/gate-proof.mjs coverage` and hygiene `checkWorkflow` fail otherwise)"); contracts/gates.md
+      intro ("a gate cannot be half-wired")
+  - artifact: 'plan.md shared-files table ("both CHANGELOG.md, README prose: IC-09") versus IC-01 and IC-02 purposes, which add README rows but no CHANGELOG line'
+  - code: scripts/gate-proof/lib.mjs coverageProblems (checks job ids, matrix.gate, gates/plants dirs, fragments, all.needs, ciCommand equals the id:gate step run); scripts/hygiene/rules.mjs checkWorkflow:323
+      (same sets, images, pins). No README or CHANGELOG reference in scripts/check-hygiene.mjs, rules.mjs or lib.mjs (grep).
+  claim: What is enforced is job, matrix entry, plant directory, `all.needs`, and ciCommand equality. README and CHANGELOG are not enforced, so the two new gates can land with a stale README table and nothing
+    fails; and if IC-09 owns the CHANGELOGs, IC-01 and IC-02 cannot meet the "each gate has a CHANGELOG line" rule the plan states. The matter is not blocking, but the stated safety net is overstated, and
+    an IC landing "consistently" is by convention only.
+  remediation: 'Reword both places to list exactly what coverage enforces (job, matrix, plant dir, all.needs, ciCommand) and say README and CHANGELOG rows are review-checked. Pick one owner: IC-01 and IC-02
+    add their gate''s README row and a CHANGELOG line, IC-09 only reconciles and adds the mission summary line; fix the shared-files table to match.'
+  refuter_reason: plan.md and gates.md claim coverage/checkWorkflow enforce README and CHANGELOG, but grep of scripts finds no README or CHANGELOG reference, and plan.md:152 gives CHANGELOGs to IC-09 while
+    gates.md Files lists them for the gates.
+- id: PLAN-SEQ-007
+  lens: Phasing
+  severity: 2
+  title: research.md D-28 assigns the shell-baseline proof to "IC-08" while the plan puts the shell change and its proof in IC-03
+  evidence:
+  - artifact: research.md D-28 ('... the 58 existing baselines must compare byte-identical (`pnpm visual` in the pinned image before and after; IC-08 gate)')
+  - artifact: plan.md IC-03 Purpose (the additive shell change with its three tests and proof that the 58 existing baselines compare identical) and IC-08 (Pipeline screen, no shell work)
+  claim: Two files name different work packages for the same gate. A WP author following research would defer the proof to IC-08, after the Pipeline stories exist, which is too late to attribute a baseline
+    drift to the shell change.
+  remediation: Change research.md D-28 to 'IC-03 gate' (and re-run IC-09's full run as the second check).
+  refuter_reason: research.md D-28 says IC-08 gate while plan puts the shell change and the 58-baseline proof in IC-03.
+- id: PLAN-SEQ-008
+  lens: Visual baseline and CI economics
+  severity: 2
+  title: Plant 1 of gate `contract` names a different fixture export in research.md and gates.md; the research name does not exist in contract-pin.md
+  evidence:
+  - artifact: research.md line 136 (anchored edit adding a property to `missionDetailPopulated`)
+  - artifact: contracts/gates.md 'Plants' item 1 (`find` is `export const detailBothInProgress = {`)
+  - artifact: 'contracts/contract-pin.md fixture table: `detailBothInProgress | MissionDetail | valid`; no `missionDetailPopulated` export is listed'
+  - code: 'scripts/gate-proof/lib.mjs applyEdit: the anchor must occur exactly once or the leg throws'
+  claim: An implementer reading research.md writes a plant whose anchor does not exist, and the leg fails with 'plant target/anchor' errors. gates.md and contract-pin.md agree with each other; research.md
+    is the stale one.
+  remediation: Edit research.md line 136 to `detailBothInProgress` and to the gates.md replacement text; keep one authoritative statement of the plant (gates.md) and reference it from research.
+  refuter_reason: research.md line 136 anchors on missionDetailPopulated while gates.md and contract-pin.md use detailBothInProgress.
+- id: PLAN-SEQ-009
+  lens: Phasing
+  severity: 3
+  title: The wrap-up sequence compacts history after accept and then rebases, with no step to re-verify the tree or re-run gates and no mention of the known post-accept rewrite problem
+  evidence:
+  - artifact: plan.md '## PR shape and wrap-up' and research.md D-36 (accept, dev-assist test cleanup, aggregate squad, compaction, rebase onto main, draft PR)
+  - artifact: the orchestrator's tooling ledger, a spec-kitty tooling issue (a rebase of the target after lane consolidation invalidates the recorded baseline; no supported rebaseline path)
+  claim: Accept records commit shas and the mission baseline; compaction and rebase rewrite them. The sequence has no tree-equality check between the accepted head and the compacted head, no full gate run
+    after the rebase onto a moved main, and no statement of what happens to the accept record. The visual baselines (PNGs) and package.json/lockfile/ci.yml are the files most likely to conflict on rebase
+    if main moved.
+  remediation: 'Add to D-36 and the plan: record `git rev-parse HEAD^{tree}` at accept; after compaction assert the same tree hash; after the rebase run the full gate set (including `pnpm visual` in the
+    pinned container and `pnpm gate-proof`) before pushing; note the accept-record rebaseline issue and that the accept record is re-verified rather than re-created. Compaction slices are named in advance (for example contract tooling
+    and gates, defaults and logic, shell and spikes, the two lanes, docs) so the squad reviews the same slices the PR shows.'
+  refuter_reason: plan.md PR shape and D-36 list accept, compaction, rebase with no tree-equality check or post-rebase gate run, and a spec-kitty tooling issue exists in the ledger.
+- id: PLAN-SEQ-010
+  lens: Phasing
+  severity: 1
+  title: Small count and list mismatches between plan sections and data-model/contracts
+  evidence:
+  - artifact: plan.md Technical Context Scale/Scope ('3 default modules') versus Project Structure and contracts/defaults.md (lanes, phases, lifecycle, pipeline-copy = 4 modules plus index)
+  - artifact: 'plan.md IC-02 Purpose (logic list: placement, summary, search, time, labels, step, row) versus Project Structure src/logic (adds lookup.ts)'
+  - artifact: plan.md '170 tests' versus contracts/gates.md unit-tests row ('about 130 browser-mode tests') (consistent only if 40 are node tests; say so)
+  claim: Counts and module lists differ between sections; no effect on the build but a reviewer will question them. Verified OK - 58 existing PNGs (apps/storybook/tests/visual/__snapshots__), 24+22+14=60
+    stories (24 and 22 recomputed from the matrix), 118 total, 590 = 118x5, 98 vendored files, ten existing gates.
+  remediation: Change '3 default modules' to 4 (plus index), add lookup to IC-02's list, and split the 170 tests as about 130 browser plus about 40 node (data-driven selftest, contract tests).
+  refuter_reason: plan.md says 3 default modules while Project Structure lists lanes, phases, lifecycle, pipeline-copy, and gates.md says about 130 browser tests versus plan's 170.
+- id: PLAN-VERIFY-001
+  lens: Gates (proof harness mechanics)
+  severity: 4
+  title: The gate-proof record schema enumerates exactly the ten existing gate ids, so adding data-driven and contract turns Gate proof red
+  evidence:
+  - artifact: "contracts/gates.md header and plan.md \xA7 Gates (the wiring list: job, plant, matrix, all, README, changelog; the record schema is in no file list)"
+  - code: scripts/gate-proof/lib.mjs:14 SCHEMA_PATH and :441 validateRecord compile kitty-specs/storybook-scaffold-01M3SYDA/contracts/gate-proof-record.schema.json; that schema's properties.gates.items.properties.gate.enum
+      lists only preflight, typecheck, eslint, stylelint, storybook-build, unit-tests, visual, manifest, no-io, hygiene
+  - code: 'scripts/gate-proof/gate-proof.test.mjs: const GATES = [10 ids] and assert.equal(rec.gates.length, 10) run assemble() against the real ROOT, whose coverage check will then report fragments lacking
+      data-driven and contract'
+  claim: 'I validated an 11/12-gate record against the real schema with Ajv 2020 in a scratch dir: 10 ids pass, 12 ids fail with ''/gates/10/gate must be equal to one of the allowed values''. assemble()
+    runs validateRecord and fails closed, so the CI job ''Gate: proof'' (and the local ''pnpm gate-proof'' final step) goes red the moment IC-01 adds the contract leg. The plan''s claim that coverage plus
+    the listed wiring makes a gate ''not half-wired'' is false: this third coupling is not listed, so the mission as planned cannot reach green CI. The local node:test file also hard-codes ten gates.'
+  remediation: 'Add to IC-01 (and to contracts/gates.md Files for both gates) an edit of kitty-specs/storybook-scaffold-01M3SYDA/contracts/gate-proof-record.schema.json: add ''contract'' (IC-01) and ''data-driven''
+    (IC-02) to the gate enum (minItems may stay 10 or be raised to the new count). Update scripts/gate-proof/gate-proof.test.mjs (GATES, rec.gates.length and the ''all'' fixtures) in the same WPs. Add to
+    the IC-01 and IC-02 exit checks: ''node scripts/gate-proof.mjs coverage'' and an ''assemble'' dry run over fragments from ''gate-proof local --only <id>'' for all gates must pass, not only the single-gate
+    leg.'
+  refuter_reason: gate-proof-record.schema.json gate enum lists only the ten ids and lib.mjs validateRecord compiles it, and gate-proof.test.mjs hard-codes ten gates, none of which the plan lists for edit.
+- id: PLAN-VERIFY-003
+  lens: Gate 1 data-driven soundness (bypass)
+  severity: 4
+  title: An inline eslint-disable comment silences the data-driven gate completely; the planned config and self-test do not close it
+  evidence:
+  - artifact: "contracts/gates.md \xA7 Gate data-driven, Mechanism and Self-test (no linterOptions, no disable-comment fixture)"
+  - code: eslint.no-io.config.mjs (the template the plan copies) has no linterOptions either, so the same hole exists today
+  claim: 'With a config shaped exactly like the plan''s (eslint 9.39.5, flat config, no-restricted-syntax with the S1 selector), a file containing ''// eslint-disable-next-line no-restricted-syntax'' above
+    ''lane === \''in_progress\'''' and a ''/* eslint-disable */'' block above ''lane === \''blocked\'''' reports zero problems. Adding linterOptions: { noInlineConfig: true } makes both report. The operator''s
+    binding constraint is a gate that fails when an element hard-codes the literals; one comment defeats it and no planned fixture would notice.'
+  remediation: 'Put linterOptions: { noInlineConfig: true } in eslint.data-driven.config.mjs (and note it for eslint.no-io.config.mjs as a one-line fold). Add a self-test fixture ''disable-comment'' (both
+    a line and a block directive above a violating literal) asserting the data-driven message is still reported. Note the same fixture proves reportUnusedDisableDirectives is not what saves it.'
+  refuter_reason: gates.md specifies no linterOptions or disable-comment fixture and the template eslint.no-io config lacks linterOptions, so inline disables are an unclosed hole.
+- id: PLAN-VERIFY-004
+  lens: Gate 1 data-driven soundness (identifier access to a default table)
+  severity: 3
+  title: Reading a lane or phase through a property name on any object other than a counts object is invisible to S1 to S11
+  evidence:
+  - artifact: contracts/gates.md selector table S5 (keys, with plan, review and done excluded), S7 (only statusLaneCounts or laneCounts objects), S11
+  - code: 'scratch run with the planned selectors: ''STATE_BADGES.blocked'', ''LANE_LABELS.in_progress'', ''row.blocked'', ''({ review: 1 })'', ''phases.slice(0, 5)'' and ''phases.at(-1)'' produce no message'
+  claim: 'defaults.md exports Record tables keyed by lane. An element that imports STATE_BADGES (or LANE_LABELS, PHASE_STATE) and writes STATE_BADGES.blocked or LANE_LABELS.in_progress hard-codes a lane
+    through an identifier property access: S7 only looks at counts objects, S1 only sees string literals. Object literals keyed plan, review or done also slip S5 (the exclusions). plan.md and gates.md state
+    elements ''branch on neither vocabulary'', but the only backstop for this shape is the behavioural foreign-vocabulary test, which exists for three of the five elements only (not the Missions screen
+    or filter group).'
+  remediation: 'Add selector S7x: MemberExpression[computed=false][property.name=/^(LANE_ONLY)$/] on ANY object (keep the counts-object form for ''done'' only; I ran it: it flags STATE_BADGES.blocked, LANE_LABELS.in_progress
+    and row.blocked and stays silent for progress.done and wp.subtaskProgress.done). A lone object key ''plan'', ''review'' or ''done'' stays an accepted blind spot (those words are ordinary identifiers
+    and ''done'' collides with SubtaskProgress); list it, and the legitimate phases.at(-1), in README Known limitations. Add a behavioural foreign-vocabulary test for sk-missions-screen filters as well.'
+  refuter_reason: gates.md S7 is limited to counts objects and S5 excludes plan/review/done, so STATE_BADGES.blocked style access is unmatched by the specified selectors.
+- id: PLAN-VERIFY-005
+  lens: Gate 1 data-driven soundness (template text)
+  severity: 3
+  title: S3 only matches a word between '>' and '<' inside one template segment; text after or before a ${} expression slips
+  evidence:
+  - artifact: 'contracts/gates.md S3: TemplateElement[value.cooked=/>\s*(WORDS)\s*</i]'
+  - code: 'scratch run: html`<p>${n} blocked</p>`, html`<span class=${c}>${x}</span> done` and html`<button>${label}Review</button>` produce no message (a TemplateElement is split at every ${})'
+  claim: Lit templates are split into quasis at each expression, so the text node 'blocked' that follows an expression has no '>' in its quasi (and a word followed by an expression has no '<'). Typical
+    visible copy such as '${count} blocked' or 'Review${suffix}' is exactly the shape an implementer writes for a badge. The same hole exists for the substring form 'in_progress' in partial literals ('lane.startsWith(\'in_\')'
+    is accepted blind spot, but '`lane-in_progress`' style class names are plausible).
+  remediation: 'Add a quasi-anchored selector: TemplateElement[value.cooked=/(^|>|\s)(WORDS)\s*(<|$)/i] (I ran it: it flags the three samples and the legitimate case html`<sk-pill-tag status="info">${label}</sk-pill-tag>`
+    stays silent). Add a substring selector for the three underscored lane values only (Literal and TemplateElement matching /in_progress|for_review|in_review/i): they have no legitimate collision outside
+    defaults/. Add one self-test fixture each and keep the negative fixtures.'
+  refuter_reason: S3 regexes need '>' before and '<' after the word inside one TemplateElement, and quasis split at every ${}, so '${n} blocked</p>' and 'Review${x}' slip through as gates.md S3 is written.
+- id: PLAN-VERIFY-006
+  lens: Gate 1 data-driven soundness (phase count in CSS and slicing)
+  severity: 2
+  title: Count hard-codes in css templates (repeat(5, 1fr), nth-child) and phases.slice(0, 5) are not detected, though C-007 forbids a hard-coded count
+  evidence:
+  - artifact: spec.md C-007 and FR-013 ('never hard-codes the five names, their count or their order'); contracts/gates.md S8, S9 (index access and .length comparison only)
+  claim: 'A phase bar written with ''grid-template-columns: repeat(5, 1fr)'' or '':nth-child(5)'' in its css template, or capped with phases.slice(0, 5), hard-codes the count and passes every selector.
+    Stylelint allows ''%'' and ''fr'' units, so it passes there too. The 3 and 7 phase stories would show the defect only to a human reading the baseline.'
+  remediation: Add a TemplateElement selector for /repeat\(\s*\d+\s*,|nth-(last-)?(child|of-type)\(\s*[0-9]/ in the data-driven scan scope and a CallExpression selector for slice/splice/with on phases with
+    Literal arguments; add the 7-phase behavioural test assertion that the rendered phase count equals 7 and every phase is inside the bar's own box (no clipping) so the layout is exercised, not only the
+    DOM count.
+  refuter_reason: C-007 forbids a hard-coded phase count but S8 and S9 only match literal index access and .length comparisons, so repeat(5,1fr), nth-child(5) and slice(0,5) match no selector.
+- id: PLAN-VERIFY-007
+  lens: Gate 1 data-driven soundness (claim versus vocabulary)
+  severity: 3
+  title: I-02, D-08 and defaults.md claim the gate covers phase statuses and lifecycle values, but WORDS holds only 14 values, and a gates.md sentence about S5 is false
+  evidence:
+  - artifact: data-model.md I-02 ('no phase name, lane value, lifecycle value or phase status literal ... Enforced by gate data-driven'); defaults.md intro; research.md D-08 ('three phase statuses, five
+      lifecycle statuses live only in src/defaults/'); gates.md Vocabulary (WORDS = five phases and nine lanes)
+  - code: 'scratch run: m.lifecycleStatus === ''discarded'', ph.status === ''complete'' and { done: 1, total: 2 } produce no message'
+  claim: '''pending'', ''complete'', ''active'', ''draft'' and ''discarded'' are not in WORDS, so a hard-coded lifecycle or phase-status comparison passes the gate while three documents say it is enforced.
+    Separately gates.md states ''A construction { done, total } of a SubtaskProgress in scanned code would be flagged by S5 (fail safe)'': S5 excludes done, so it is silent (verified). Either the claim
+    or the gate is wrong.'
+  remediation: Either narrow I-02, D-08 and defaults.md to 'the five phase names and nine lanes (and in_progress/planned/done as they occur in both vocabularies)', or add 'pending|complete|draft|discarded'
+    to a second Literal selector (none of these four collide with SubtaskProgress or any contract property) and decide 'active' separately. Delete or correct the S5 sentence about { done, total }.
+  refuter_reason: I-02, D-08 and defaults.md claim lifecycle and phase-status literals are enforced but WORDS holds only phases and lanes, and S5 uses LANE_ONLY (no done) so the gates.md sentence that {
+    done, total } is flagged by S5 is false.
+- id: PLAN-VERIFY-009
+  lens: Test strategy (self-test for the data-driven gate)
+  severity: 3
+  title: The self-test's 'zero messages' for allow-listed filenames cannot hold with the Linter API, and the fixture list is not guarded against vacuity
+  evidence:
+  - artifact: 'contracts/gates.md Self-test: ''Allow-list fixtures run the same violating code with filenames ... (zero messages)''; ''about 14'' fixtures versus 16 shapes listed'
+  - code: 'gates/no-io.selftest.ts (the pattern copied) and a scratch Linter run: verify() of a violating file named .../defaults/lanes.ts under a config whose ignores match returns one message of severity
+      1, ''No matching configuration found for ...'', not zero messages'
+  claim: A naive messages.length === 0 assertion fails; an implementer who then filters 'severity === 2' makes the allow-list tests pass for a file that matched NO configuration at all, which would also
+    pass if the ignores pattern were broken in the opposite way (config never applied). Also no assertion pins that the violating fixture really is reported in the non-allow-listed filename within the same
+    test, or that each shape fixture yields exactly one expected message (a fixture that trips S1 instead of its own shape passes).
+  remediation: 'Specify: for allow-list cases assert the single message is the ''No matching configuration found'' notice (proves the ignore matched), and run the identical code under .../elements/x/x.ts
+    in the same test asserting the data-driven message (positive control). For shape fixtures assert the exact rule message id (S-number in the message text) and a count equal to the number of violations
+    in the fixture. Add a count guard (expected fixture count equals the number of selectors, fail when the fixtures directory has fewer files than shapes). Fix the 14 versus 16 count.'
+  refuter_reason: I ran Linter.verify on a file matching the ignores and got one severity-1 'No matching configuration found' message rather than zero, so the specified zero-messages assertion cannot hold,
+    and the plan specifies no positive control or count guard.
+- id: PLAN-VERIFY-010
+  lens: Gate 2 contract soundness (can C1..C7 fail)
+  severity: 3
+  title: Only C1 and C3/C4 have a plant; the node tests that must prove C2, C5, C6, C7, the relaxations and the file-set check are not specified and cannot run in a planted run
+  evidence:
+  - artifact: "contracts/gates.md \xA7 Gate contract: Plants (two) and Files (scripts/contract/*.test.mjs unspecified); contract-pin.md Commands"
+  - code: 'scripts/gate-proof/lib.mjs runLeg: the planted run executes ciCommand ''pnpm contract:check && pnpm test:contract''; the && stops after contract:check fails, so test:contract is never exercised
+      by a plant'
+  claim: 'The data-driven gate has an explicit self-test list; the contract gate has none. Nothing requires a test that feeds a mutated input to each of C2 (stale types), C5 (counts incoherent), C6 (path/username/e-mail
+    in a contract file), C7 (identifier outside src/contract), ''file set'' (extra and missing file), ''pin metadata'', ''relaxation'' (stale entry, passes strict, error path outside the pattern) and ''unregistered
+    fixture''. Vacuity is also open: C4 and C5 loop over fixtures and C1 over files, and nothing asserts the counts (98 files, the 22 inventory fixtures, every registry name present in the module), so an
+    import that yields zero exports passes C4 and C5.'
+  remediation: 'Add to gates.md the required scripts/contract/check.test.mjs cases, one failing mutation per check token (C1 three tokens, C2, C3, C4 three tokens, C5, C6, C7), each asserting the exact
+    token and that clean input yields none. Add count guards to check.mjs: file count equals the PIN.files key count and 98, exported fixture names equal the registry keys exactly (both directions) and
+    the contract-pin.md inventory count, C7 scans at least the known element files (assert scanned-file count above zero).'
+  refuter_reason: gates.md and contract-pin.md name only two plants and leave scripts/contract/*.test.mjs unspecified, and the planted run of the && ciCommand stops at contract:check so test:contract is
+    never exercised by a plant.
+- id: PLAN-VERIFY-011
+  lens: Gate 2 contract soundness (relaxation)
+  severity: 3
+  title: phases-open deletes the name-conditioned allOf, which lets a known-name phase with a wrong basis hide behind the relaxation; patching in place is also unguarded
+  evidence:
+  - artifact: "contracts/contract-pin.md \xA7 Named relaxations (phases-open: 'its name-conditioned allOf is removed'; allowed paths '/phases/<n>/basis')"
+  - code: 'contract at pin: schemas/MissionPhase.yaml allOf is two if/then blocks keyed on name enum; scratch Ajv 2020 run with json-schema-ref-parser dereference of MissionDetail.yaml'
+  claim: 'I verified the base claim: a 3-phase and a 7-phase fixture with unknown names fail strict (errors at /phases and /phases/<n>/name) and pass the relaxed schema, and an extra property still fails
+    the relaxed schema. But the relaxed schema without the allOf also accepts a phase named ''implement'' with basis ''artifact'' (strict error path /phases/3/basis, inside the allowed pattern), a second
+    defect hiding behind the relaxation, contradicting the stated ''a second, unrelated defect cannot hide''. The allOf is not needed at all: with unknown names both ''if'' conditions are false (verified:
+    the 3-phase fixture still passes with the allOf kept, and the wrong-basis known-name case fails).'
+  remediation: 'Keep the allOf in phases-open: patch only minItems, maxItems and the name type; drop ''/phases/<n>/basis'' from the allowed pattern (the strict ''if'' failure for a defect is ''/phases/<n>''
+    and stays outside it). Require registry.mjs to structuredClone the dereferenced schema per relaxation and compile the strict validator from the pristine copy, and add a test with the known-name wrong-basis
+    fixture that must fail the relaxed run.'
+  refuter_reason: contract-pin.md removes MissionPhase's name-conditioned allOf and allows /phases/<n>/basis, so a known-name phase with the wrong basis (strict error at that path) would pass the relaxed
+    schema and hide behind the relaxation.
+- id: PLAN-VERIFY-012
+  lens: Gate 2 contract soundness (coherence check C5)
+  severity: 3
+  title: C5 checks only lane counts, wpTotal and blockedCount; phases, lifecycleStatus and progress derivations are specified by the contract but unchecked, and the unknown-lane fixture has no C5 rule
+  evidence:
+  - artifact: data-model.md I-09 and research.md D-11 ('overlays recompute ... lifecycleStatus, phase statuses'), D-12 C5 (counts only); contract-pin.md detailAllPending, detailAllComplete, detailImplement,
+      detailUnknownLane
+  - code: 'contract at pin: schemas/MissionDetail.yaml phases description and x-derived rule (implement and review derived from statusLaneCounts and wpTotal), schemas/MissionHead.yaml lifecycleStatus x-derived
+      rule; schemas/StatusLaneCounts.yaml is closed with nine required keys'
+  claim: 'The contract writes the derivation of implement/review status and lifecycleStatus exactly; an overlay that sets work packages but gets one of those wrong still validates under the closed schema
+    and passes C5, so a story could show a Mission whose phase bar contradicts its board while every gate is green (the plan says no fixture contradicts the contract). For detailUnknownLane the closed nine-key
+    StatusLaneCounts cannot hold ''on_hold'', so ''counts equal the tally'' is undefined: is the unknown WP in wpTotal, and does the tally skip it?'
+  remediation: 'Extend C5 with the two stated derivation rules (implement, review, lifecycleStatus from counts, wpTotal, acceptedAt and discardedAt), skipped only for fixtures with kind relaxed ''phases-open''
+    for the phases leg. State the unknown-lane rule: tally covers only the nine known lanes, wpTotal counts known-lane WPs only (as null-lane WPs are uncounted), and add that to the registry''s relaxation
+    text.'
+  refuter_reason: C5 as written checks only lane counts, wpTotal and blockedCount, while the contract's x-derived rules for implement/review phase status and lifecycleStatus go unchecked, and the lane-open
+    on_hold fixture has no stated tally rule against the closed nine-key counts.
+- id: PLAN-VERIFY-013
+  lens: Gate 2 contract soundness (typed fixtures)
+  severity: 3
+  title: Host-kind page fixtures carry stale on items but no view type exists for a page, and satisfies rejects excess properties
+  evidence:
+  - artifact: contract-pin.md fixture inventory (pageMixed, pageFull, pageLast kind host with stale) and research.md D-11 ('every export ending satisfies <view type>'); data-model.md lists MissionOverviewView
+      but no page view type
+  - code: 'scratch tsc 5.9 --strict: ''{ items: [{ a: 1, stale: true }] } satisfies { items: Item[] }'' fails with TS2353 ''stale does not exist in type Item'''
+  claim: With satisfies MissionOverviewPage the fixture file would not typecheck (typecheck gate red in IC-01), and the file is the gate's own input. The Missions screen takes missions and pageInfo as separate
+    properties, so the page-wrapper type is only a fixture concern, but the plan names none.
+  remediation: 'Add MissionOverviewPageView = Omit<MissionOverviewPage, ''items''> & { items: MissionOverviewView[] } to data-model.md view types and to contract/types.ts, and name it as the satisfies target
+    of pageMixed, pageFull, pageLast, pageLong. List each fixture''s satisfies target in the inventory table.'
+  refuter_reason: research D-11 requires every fixture export to end satisfies a view type, but data-model.md defines no page view type (only MissionOverviewView), so host-kind pageMixed/pageFull/pageLast
+    carrying stale would fail satisfies MissionOverviewPage with excess-property TS2353.
+- id: PLAN-VERIFY-014
+  lens: NFR-007 treatment
+  severity: 3
+  title: The hygiene extension adds an e-mail rule but nothing detects an OS username in a fixture value, though NFR-007 and P-2 say the hygiene gate checks it
+  evidence:
+  - artifact: spec.md NFR-007 ('absolute filesystem path, an OS username or a real e-mail address, checked by the repository hygiene gate'); research.md D-13; plan.md P-2
+  - code: 'scripts/hygiene/rules.mjs scanText: user-path findings only for the home-directory, the macOS Users and Windows Users paths; no bare-username rule exists (the sanitiser in scripts/gate-proof/lib.mjs
+      reads the OS user at run time, hygiene does not)'
+  claim: 'I confirmed hygiene has no e-mail rule today (the plan is right) and the e-mail rule closes that leg. A free-text fixture value such as an actor string or a title containing a real login name
+    passes: the path rule needs a leading ''/home/''. The plan''s overlays write actor strings (detailBadges), so this is a real path for a leak; the charter lists usernames as a risk boundary.'
+  remediation: Add to C6 a registry-owned list of the only actor and free-text strings overlays may write (SYNTHETIC_ACTORS constant in overlays.mjs; C4 fails on any actor not in it) and state in P-2 that
+    the username leg of NFR-007 is covered by the path rule plus this allow-list, not by a username detector; or amend NFR-007 text. Add the matching negative test.
+  refuter_reason: rules.mjs has only /Users and Windows Users path patterns and no bare-username rule, yet gates.md C6 lists "usernames" as scanned, so a free-text actor string passes.
+- id: PLAN-VERIFY-015
+  lens: Test strategy (NFR-006)
+  severity: 3
+  title: The 500-Mission timing test is not shown to fail when the 'hidden on li' design is reverted
+  evidence:
+  - artifact: research.md D-23 (measure performance.now() around await el.updateComplete, assert <= 200 ms, initial render not measured); D-34; plan.md NFR-006 row
+  claim: A re-render of the filtered subset (the rejected design) over 500 rows may complete in under 200 ms on a developer or CI machine, so the threshold alone does not prove the design; the test also
+    does not require that the toggle actually hides rows (a filter matching all 500 rows measures nothing) or that a real keystroke path (typing into the search field, not setting a property) is the measured
+    action, although NFR-006 names a search keystroke.
+  remediation: 'Require in the test: 500 li exist before and after; the same li node references (identity) survive the toggle (no re-creation); at least one and not all li are hidden after the action; the
+    search case drives input events on the search field; the timing assertion is the budget, the structural assertions are the proof. State that a failing timing on shared runners is investigated, not loosened.'
+  refuter_reason: D-23 asserts only the timing budget and says initial render is not measured, with no structural proof (node identity, partial hide) that the hidden-li design is what is under test.
+- id: PLAN-VERIFY-016
+  lens: Test strategy (anti-vacuity rules)
+  severity: 3
+  title: D-34 lists what to test but sets no rule that makes a test fail when the behaviour is reverted or pass vacuously
+  evidence:
+  - artifact: 'research.md D-34; plan.md traceability table (Proof column: ''structure tests per element'', ''Tab-walks'', IC-09 ''terminology grep'')'
+  claim: 'The charter wants every emitted event and payload asserted; the plan has no requirement for: a positive control in each no-event test (a listener on the wrong target or a misspelt name makes ''emits
+    nothing'' pass), exactly one event per activation (a library click bubbling beside the screen''s own would double-fire), bubbles and composed asserted, payload deep-equality (not toMatchObject), counts
+    asserted with equality (3 and 7 phases, 5 columns, 60 stories against 60 baselines) rather than ''at least'', loops over fixtures with a count guard, and a revert check per changed behaviour. C-009
+    is a one-time grep in IC-09 that passes when the pattern is wrong.'
+  remediation: 'Add a ''Test quality rules'' block to D-34 and to every WP brief: positive control per no-event test; events.length equals 1 and detail deep-equal with bubbles and composed true; equality
+    counts; each fixture loop asserts the loop ran N times; the WP report lists, per test file, one deliberate revert of the behaviour and the failing test name; reviewers re-run two of them. Turn the C-009
+    grep into a node test with a known-positive sample so it can fail.'
+  refuter_reason: D-34 lists test topics only; the charter requires every event and payload asserted, and no positive-control, exactly-once, equality-count or revert rule exists, with C-009 proven by a
+    one-time IC-09 grep.
+- id: PLAN-VERIFY-017
+  lens: Gates (wiring completeness, claim accuracy)
+  severity: 2
+  title: gates.md omits image '' in the new proof matrix includes and overstates what C1 proves
+  evidence:
+  - artifact: contracts/gates.md header ('an entry in the proof-leg matrix') and Purpose of the contract gate ('the vendored files are untampered'); contract-pin.md Re-pin step 7
+  - code: '.github/workflows/ci.yml proof-leg: every matrix include has ''timeout'' and ''image'' and the job uses ''container: ${{ matrix.image }}'' and SK_VISUAL_IMAGE: ${{ matrix.image }}; scripts/gate-proof/lib.mjs
+      coverageProblems does not check include entries'
+  claim: 'Coverage checks only the gate list, so an include entry without timeout or image passes coverage and misbehaves on the first PR run (timeout-minutes from an undefined matrix value). C1 detects
+    a mismatch between PIN.json and the files, not tampering: editing both passes, and verify-remote is outside CI. Timings ''was 8/15'' for the proof matrix and 6/10 for the jobs match the real ci.yml.'
+  remediation: 'State in gates.md that each new include is {gate, timeout, image: ''''} exactly like no-io. Reword the Purpose to ''the vendored files match the pin record'' and require IC-01 to run contract:verify-remote
+    on the initial vendoring and record its output in the PR description (not only after a re-pin).'
+  refuter_reason: ci.yml proof-leg uses matrix.image and matrix.timeout, gates.md says only "matrix entry and timeout" with no image, and C1 compares PIN.json to the files, which cannot detect an edit to
+    both.
+- id: PLAN-VERIFY-018
+  lens: Consistency between plan files
+  severity: 1
+  title: Stale details disagree between research.md and gates.md
+  evidence:
+  - artifact: research.md D-12 plant (1) names missionDetailPopulated while gates.md and contract-pin.md use detailBothInProgress; D-08 says 'ten AST shapes' while gates.md lists S1 to S11 with S8 split
+      in two; gates.md self-test says about 14 fixtures for 16 listed shapes
+  claim: Three counts and one export name differ; a WP implementer following D-12 would anchor the plant on a name that does not exist.
+  remediation: Align D-12 to detailBothInProgress, D-08 to eleven selectors, and the self-test count to the listed fixtures.
+  refuter_reason: research.md D-12 names missionDetailPopulated (others use detailBothInProgress), D-08 says ten shapes against S1 to S11, and gates.md says about 14 fixtures while listing 16.

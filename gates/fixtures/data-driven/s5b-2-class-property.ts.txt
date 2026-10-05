@@ -1,0 +1,4 @@
+// expect: S5b.2
+export class C {
+  claimed = 1;
+}

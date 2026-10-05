@@ -1,0 +1,2 @@
+// expect: S1b.1
+export const s = 'pending';

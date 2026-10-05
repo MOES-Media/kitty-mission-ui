@@ -1,0 +1,122 @@
+schema: review-findings/v1
+complete: true
+phase: plan
+lens_group: seq
+mission: missions-and-pipeline-screens-01M40SKZ
+findings:
+  - id: PLAN-SEQ-001
+    lens: Visual baseline and CI economics
+    severity: 3
+    title: CI timeout estimates rest on "no measurement exists", but real run timings exist and show the proposed timeouts are 2-4x too loose
+    evidence:
+      - artifact: "research.md D-31 (\"1.5 to 2 seconds per screenshot (inference, no measurement exists) ... 15 to 20 minutes\"); research.md 'Not verified' (\"The CI time of 590 screenshots (estimate)\"); contracts/gates.md gate table (visual job 30 / proof 60; unit-tests job 10 / proof 12)"
+      - code: ".github/workflows/ci.yml:396 (visual job timeout-minutes 10), :482 (proof-leg visual matrix timeout 15), :355 (unit-tests 6)"
+      - code: "gh run view 36880654992 (CI on feat/app-shell, 290 executions): 'visual' step 15:01:32-15:04:29 = 177 s, job 247 s; 'Gate: proof (visual)' job 677 s; 'Gate: unit-tests' 95 s (test step 15 s). Run 36882394060 on main: proof (visual) 677 s, visual 247 s, unit-tests 95 s."
+    claim: >-
+      The existing visual step costs 177 s for 290 test executions, about 0.61 s each, not 1.5-2 s. Scaling linearly by 590/290 gives about 6 min for the visual step (about 7.5 min job) and about 23 min for the proof leg (677 s x 2.03, because the leg runs the command clean and planted, each with its own storybook build). The plan proposes visual job 30 and proof 60: 4x and 2.6x the scaled figures, which weakens the hang guard and burns runner minutes on a stuck job. The unit-tests job (95 s today, 15 s of it the test step) does not need 10 either. Also "590 screenshots" is really 590 test executions, each taking two captures (root.screenshot for the colour check plus toHaveScreenshot) and a fresh page.goto, so the per-screenshot framing is wrong. The only number that must rise is the proof-leg visual matrix timeout (15 min now, about 23 min expected).
+    remediation: >-
+      Replace the D-31 inference with the recorded run data (cite run ids or the figures above) and set: visual job 10 -> 15, proof-leg visual matrix 15 -> 35, unit-tests job 6 -> 8 and matrix 8 -> 10 (new tests are browser-mode, 130 on top of a 15 s step), unless the IC-01 baseline timing (see PLAN-SEQ-002) says otherwise. Drop "no measurement exists" from D-31 and the Not-verified list, and say "executions" not "screenshots" for the 590 figure.
+  - id: PLAN-SEQ-002
+    lens: Phasing
+    severity: 3
+    title: IC-09 sets CI timeouts "from measured values" of the first PR run, but the PR is opened only after IC-09 and the wrap-up, so the sequence is circular
+    evidence:
+      - artifact: "plan.md IC-09 Purpose (\"CI timeouts from measured values\") and PR shape section (PR opened only after accept, test cleanup, squad, compaction, rebase)"
+      - artifact: "contracts/gates.md line 23 and quickstart.md 'Timing record (IC-09)' (\"measured wall-clock durations of the first pull-request run\")"
+      - artifact: "research.md D-31 (\"IC-09 replaces the estimates with the first PR run's measured durations in the PR description\"), R-06"
+    claim: >-
+      No pull-request run can exist while IC-09 executes, so IC-09 cannot take measured PR-run values. The PR description is also written at PR-open time, before any run. If timeouts are corrected after the first run, that is a commit after the history was compacted and the PR opened, which the wrap-up sequence does not allow for. As written, IC-09 either ships the estimates (and the "measured" claim is false) or invents numbers.
+    remediation: >-
+      Make IC-01 record the baseline wall-clock of `pnpm visual` (it already runs it; 58 PNGs x5 not needed, one run is enough) and of `pnpm test`, and derive the new timeouts at IC-09 from those local figures plus the run history in PLAN-SEQ-001 with a stated margin. State the PR description reports "timeouts derived from run <ids> and local measurement; actual first-run durations will be added as a PR comment". If a post-PR timeout fixup is accepted, say so explicitly as the one allowed commit after the draft PR opens.
+  - id: PLAN-SEQ-003
+    lens: Write scopes and shared files
+    severity: 3
+    title: IC-09 depends on two lanes with no stated mechanism, and the plan's own "cannot parent a lane on two lanes" is not reconciled with the allocator's known dependent-lane failures
+    evidence:
+      - artifact: "plan.md Implementation Concern Map intro and IC-09 Sequencing (IC-07 and IC-08, one in lane B, one in lane A); IC-04 and IC-05 both depend on IC-03"
+      - artifact: "the orchestrator's tooling ledger, a spec-kitty tooling issue (dependent lane allocated from a stale coordination commit; workaround: git merge --no-ff the approved parent lane, or pre-create lane branches from the approved parent lane) and a spec-kitty tooling issue (fresh dependent-lane allocation refuses a derived status.json conflict; operator workaround merge -X ours and verify the snapshot against the log)"
+      - artifact: "the orchestrator's tooling ledger: claim failing with 'ancestry could not be established' for a WP depending on two approved lanes"
+    claim: >-
+      The plan states that a lane that depends on another is created from its parent's branch and that spec-kitty cannot parent a lane on two lanes, then makes IC-09 depend on IC-07 (lane B) and IC-08 (lane A) without saying where IC-09 runs or how it obtains both lanes' code. IC-09 needs both (118 stories, host-composition test, five clean visual runs). The ledger records that allocating a dependent lane from an approved parent already fails without orchestrator intervention, and IC-04 and IC-05 are two such allocations off IC-03. The plan has no note of any of this, so the orchestrator would rediscover it mid-mission.
+    remediation: >-
+      Add a "Lane mechanics" paragraph to the Concern Map: (1) before dispatching IC-04 and IC-05 the orchestrator pre-creates both lane branches from the approved IC-03 lane tip (dependent-lane allocation workaround); (2) before claiming IC-09 the orchestrator merges the approved lane-B tip into the lane-A workspace (or the reverse) with `git merge --no-ff`, resolves custom-elements.json by `pnpm manifest:generate` only, and verifies status.json against the event log; (3) IC-09's first step is a green full gate run on that merged tree. Alternatively serialise IC-07 after IC-08 and drop the "two lanes" claim; record the trade-off (lane B is 2 WPs, 28 stories).
+  - id: PLAN-SEQ-004
+    lens: Write scopes and shared files
+    severity: 3
+    title: The shared-files table omits files both lanes are likely to touch (defaults, logic, fixture overlays and registry, tracer files, manifest), so the "lanes disjoint" claim is not complete
+    evidence:
+      - artifact: "plan.md 'Shared files: who may write them' table (rows: index.ts and manifest, eslint, stylelint, ci/package/README, visual spec, shell, CHANGELOG/README prose, baselines)"
+      - artifact: "plan.md Project Structure: src/defaults/{lanes,phases,lifecycle,pipeline-copy,index}.ts and src/logic/* (IC-02), src/contract/fixtures.generated.ts and scripts/contract/overlays.mjs + registry.mjs (IC-01), tracer-*.md"
+      - artifact: "contracts/gates.md gate `contract` C3 (fixtures.generated.ts must equal a fresh generation) and tracer-design-decisions.md ('Spike outcomes are appended by the work packages')"
+      - code: "packages/mission-ui/custom-elements-manifest.config.mjs globs src/elements/**/*.ts: any JSDoc or public-member change in a lane diffs custom-elements.json (scripts/check-manifest.mjs compares bytes)"
+    claim: >-
+      Lane A (IC-05, 06, 08) and lane B (IC-04, 07) both read src/defaults, src/logic and the generated fixtures, and will find gaps (a missing label, a missing fixture for a story, a changed card word after spike S3). Editing them from two lanes produces conflicts in defaults/index.ts, fixtures.generated.ts (a generated file whose freshness is a gate) and custom-elements.json, none of which the table assigns. The tracer files are append-only shared files written by every WP. "Merge conflicts in the manifest are resolved by regeneration" covers only one of these.
+    remediation: >-
+      Add rows: `src/defaults/**`, `src/logic/**` and their tests: IC-02 only; a lane that needs a change files a change request to the orchestrator, who applies it on the shared base before the lane forks, or the lane adds only a NEW file inside its own element directory. `scripts/contract/{overlays,registry}.mjs`, `src/contract/**`: IC-01 only, with every fixture the 60 stories need listed up front (contract-pin.md already lists them; state that the list is complete and frozen). Tracer files: written by the orchestrator from WP reports only. Manifest: lanes must not change the public surface frozen in IC-03; a lane whose change is unavoidable reports it and IC-09 regenerates once.
+  - id: PLAN-SEQ-005
+    lens: Phasing
+    severity: 3
+    title: IC-03 freezes the public surface (manifest) and runs the spikes that may change it in the same work package, with no internal order
+    evidence:
+      - artifact: "plan.md IC-03 Purpose (skeletons carrying the FULL public surface, manifest regenerated once, spikes S1 to S4) and Risks (\"spike outcomes can change an element's internals (phase bar E-04), not its public surface\")"
+      - artifact: "research.md spike table S1 to S4 (S1 segmented-choice sheet in a shadow root, S3 hidden search label and hidden li, S4 native progress without a label); research.md D-17 (phase bar candidate C may differ structurally)"
+    claim: >-
+      The assertion that spikes cannot change the public surface is unproven: the public surface includes @csspart, @slot and properties, and S1 (sheet in shadow root), S2 (candidate C) and S3 (search label, action-row part override G-08) can plausibly add a part or slot or drop a property. IC-03 is also the largest and riskiest package (five skeletons, shell change touching accepted code, visual-spec change, ESLint overrides, library-sheets, story-support, four spikes). If the freeze precedes the spikes, a changed surface is a manifest diff in a lane, which feeds PLAN-SEQ-004.
+    remediation: >-
+      State the order inside IC-03: (1) visual-spec change plus shell change, with the 58 baselines proven identical; (2) spikes S1 to S4 with outcomes appended to the tracer; (3) only then the skeletons, ESLint overrides and the single manifest regeneration. Alternatively split IC-03 into IC-03a (visual spec, shell change, spikes, story-support) and IC-03b (skeletons, overrides, manifest freeze); the chain stays serial and nothing else changes. Note that an ESLint override E-01 to E-03 should be written after the spike that selects it.
+  - id: PLAN-SEQ-006
+    lens: Phasing
+    severity: 2
+    title: The plan claims gate-proof coverage and hygiene checkWorkflow fail without a README row and CHANGELOG line, which they do not check, and CHANGELOG ownership is stated two ways
+    evidence:
+      - artifact: "plan.md '## Gates' (\"each ... a README gates-table row and a root and package CHANGELOG line (`scripts/gate-proof.mjs coverage` and hygiene `checkWorkflow` fail otherwise)\"); contracts/gates.md intro (\"a gate cannot be half-wired\")"
+      - artifact: "plan.md shared-files table (\"both CHANGELOG.md, README prose: IC-09\") versus IC-01 and IC-02 purposes, which add README rows but no CHANGELOG line"
+      - code: "scripts/gate-proof/lib.mjs coverageProblems (checks job ids, matrix.gate, gates/plants dirs, fragments, all.needs, ciCommand equals the id:gate step run); scripts/hygiene/rules.mjs checkWorkflow:323 (same sets, images, pins). No README or CHANGELOG reference in scripts/check-hygiene.mjs, rules.mjs or lib.mjs (grep)."
+    claim: >-
+      What is enforced is job, matrix entry, plant directory, `all.needs`, and ciCommand equality. README and CHANGELOG are not enforced, so the two new gates can land with a stale README table and nothing fails; and if IC-09 owns the CHANGELOGs, IC-01 and IC-02 cannot meet the "each gate has a CHANGELOG line" rule the plan states. The matter is not blocking, but the stated safety net is overstated, and an IC landing "consistently" is by convention only.
+    remediation: >-
+      Reword both places to list exactly what coverage enforces (job, matrix, plant dir, all.needs, ciCommand) and say README and CHANGELOG rows are review-checked. Pick one owner: IC-01 and IC-02 add their gate's README row and a CHANGELOG line, IC-09 only reconciles and adds the mission summary line; fix the shared-files table to match.
+  - id: PLAN-SEQ-007
+    lens: Phasing
+    severity: 2
+    title: research.md D-28 assigns the shell-baseline proof to "IC-08" while the plan puts the shell change and its proof in IC-03
+    evidence:
+      - artifact: "research.md D-28 ('... the 58 existing baselines must compare byte-identical (`pnpm visual` in the pinned image before and after; IC-08 gate)')"
+      - artifact: "plan.md IC-03 Purpose (the additive shell change with its three tests and proof that the 58 existing baselines compare identical) and IC-08 (Pipeline screen, no shell work)"
+    claim: >-
+      Two files name different work packages for the same gate. A WP author following research would defer the proof to IC-08, after the Pipeline stories exist, which is too late to attribute a baseline drift to the shell change.
+    remediation: "Change research.md D-28 to 'IC-03 gate' (and re-run IC-09's full run as the second check)."
+  - id: PLAN-SEQ-008
+    lens: Visual baseline and CI economics
+    severity: 2
+    title: Plant 1 of gate `contract` names a different fixture export in research.md and gates.md; the research name does not exist in contract-pin.md
+    evidence:
+      - artifact: "research.md line 136 (anchored edit adding a property to `missionDetailPopulated`)"
+      - artifact: "contracts/gates.md 'Plants' item 1 (`find` is `export const detailBothInProgress = {`)"
+      - artifact: "contracts/contract-pin.md fixture table: `detailBothInProgress | MissionDetail | valid`; no `missionDetailPopulated` export is listed"
+      - code: "scripts/gate-proof/lib.mjs applyEdit: the anchor must occur exactly once or the leg throws"
+    claim: >-
+      An implementer reading research.md writes a plant whose anchor does not exist, and the leg fails with 'plant target/anchor' errors. gates.md and contract-pin.md agree with each other; research.md is the stale one.
+    remediation: "Edit research.md line 136 to `detailBothInProgress` and to the gates.md replacement text; keep one authoritative statement of the plant (gates.md) and reference it from research."
+  - id: PLAN-SEQ-009
+    lens: Phasing
+    severity: 3
+    title: The wrap-up sequence compacts history after accept and then rebases, with no step to re-verify the tree or re-run gates and no mention of the known post-accept rewrite problem
+    evidence:
+      - artifact: "plan.md '## PR shape and wrap-up' and research.md D-36 (accept, dev-assist test cleanup, aggregate squad, compaction, rebase onto main, draft PR)"
+      - artifact: "the orchestrator's tooling ledger, a spec-kitty tooling issue (a rebase of the target after lane consolidation invalidates the recorded baseline; no supported rebaseline path)"
+    claim: >-
+      Accept records commit shas and the mission baseline; compaction and rebase rewrite them. The sequence has no tree-equality check between the accepted head and the compacted head, no full gate run after the rebase onto a moved main, and no statement of what happens to the accept record. The visual baselines (PNGs) and package.json/lockfile/ci.yml are the files most likely to conflict on rebase if main moved.
+    remediation: >-
+      Add to D-36 and the plan: record `git rev-parse HEAD^{tree}` at accept; after compaction assert the same tree hash; after the rebase run the full gate set (including `pnpm visual` in the pinned container and `pnpm gate-proof`) before pushing; note the accept-record rebaseline issue and that the accept record is re-verified rather than re-created. Compaction slices are named in advance (for example contract tooling and gates, defaults and logic, shell and spikes, the two lanes, docs) so the squad reviews the same slices the PR shows.
+  - id: PLAN-SEQ-010
+    lens: Phasing
+    severity: 1
+    title: Small count and list mismatches between plan sections and data-model/contracts
+    evidence:
+      - artifact: "plan.md Technical Context Scale/Scope ('3 default modules') versus Project Structure and contracts/defaults.md (lanes, phases, lifecycle, pipeline-copy = 4 modules plus index)"
+      - artifact: "plan.md IC-02 Purpose (logic list: placement, summary, search, time, labels, step, row) versus Project Structure src/logic (adds lookup.ts)"
+      - artifact: "plan.md '170 tests' versus contracts/gates.md unit-tests row ('about 130 browser-mode tests') (consistent only if 40 are node tests; say so)"
+    claim: >-
+      Counts and module lists differ between sections; no effect on the build but a reviewer will question them. Verified OK - 58 existing PNGs (apps/storybook/tests/visual/__snapshots__), 24+22+14=60 stories (24 and 22 recomputed from the matrix), 118 total, 590 = 118x5, 98 vendored files, ten existing gates.
+    remediation: "Change '3 default modules' to 4 (plus index), add lookup to IC-02's list, and split the 170 tests as about 130 browser plus about 40 node (data-driven selftest, contract tests)."

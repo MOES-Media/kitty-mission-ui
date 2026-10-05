@@ -1,0 +1,2 @@
+// expect: S10
+export const r = /blocked/i;

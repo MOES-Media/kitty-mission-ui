@@ -1,0 +1,26 @@
+# Tracer: tooling friction
+
+Running record of friction with the tooling found while running this mission. Newest entries last. No absolute paths, usernames or tokens.
+
+## 2026-10-03 specify and plan
+
+- **The global spec-kitty CLI crashes (orchestrator ledger, outside this repo)** (`spec-kitty` installed in the user's local bin). It is not used and not fixed by this mission; every command ran with the rc5 CLI from the virtual environment of the orchestrator's checkout (`spec-kitty` 4.0.0rc5).
+- **`specify` left `spec.md` untracked.** After the specify phase and the scaffold, `kitty-specs/missions-and-pipeline-screens-01M40SKZ/spec.md` was not tracked by git: the spec had to be committed by hand afterwards (commit 2027fc7, with the later progress-bar update in e59da7d).
+- **`spec-kitty plan` modified a tracked status record.** Running the plan command appended `SpecifyCompleted` and `PlanStarted` events to the tracked `status.events.jsonl`, leaving the file modified in the working tree; the plan author must not edit it, and the commit of the plan phase has to include it deliberately.
+- **`spec-kitty plan` reports a scaffold as not substantive.** The command's JSON says `plan_substantive: false, scaffold_only: true` until `plan.md` is filled in; a plan that still holds the template placeholders is therefore not counted as planned.
+
+## 2026-10-03 plan review fix round
+
+- **`node --test <directory>` fails on Node 22.22.2.** The directory is loaded as a module (ERR_TEST_FAILURE). `scripts/hygiene/` and `scripts/gate-proof/` carry an `index.js` shim for this; the new `scripts/contract/` tests are run through an explicit glob instead.
+- **A new gate needs three couplings, one of them unlisted anywhere.** Besides the job, plant, matrix entry and `all` need that `gate-proof coverage` and hygiene `checkWorkflow` enforce, the proof record schema of the storybook-scaffold mission (`gate` enum) and `scripts/gate-proof/gate-proof.test.mjs` (`GATES`, a count of ten) must change, or `Gate: proof` goes red.
+- **Dependent-lane allocation will hit three recorded tool defects** (orchestrator ledger, outside this repo; its ids are cross-references only, the fact is stated here): a spec-kitty tooling issue: lanes parent off the local `kitty/mission-<slug>` branch, created once at the first claim and never refreshed (workaround: fast-forward it to the target branch before each claim); a spec-kitty tooling issue: allocating a lane for a work package that depends on an approved one starts from a stale coordination commit and fails merging the planning commit (workaround: pre-create the lane branch from the approved parent's tip); a spec-kitty tooling issue: allocation refuses on a conflict in the derived `status.json` (workaround: confirm with `git merge-tree` that it is the only conflicting path, `git merge -X ours <parent lane>`, verify the snapshot against the event log). The plan states the orchestrator's procedure instead of waiting to rediscover it.
+- **No supported way to rebaseline an accept record (orchestrator ledger, outside this repo).** Compaction and rebase rewrite the shas and baseline the accept record stores; the wrap-up therefore compares trees and cites the accept record rather than re-creating it (`plan.md`, Integrity of the wrap-up).
+
+## 2026-10-03 WP01 (IC-01, contract tooling and gate)
+
+- **Implementation-branch guard warns on every planned out-of-map edit.** A plain `git commit` of the proof-record schema (exception X-1) and of the `gates.md` row prints `[spec-kitty guard] WARNING: Protected path: kitty-specs/... implementation branches must not modify kitty-specs/`. The commit succeeds; the warning is expected for the two out-of-map edits the WP permits.
+- **`agent action implement` reports the resolved identity as `tool: unknown`, `model: unknown-model`** although `--agent claude` was given (profile `implementer-ivan` resolved correctly). Cosmetic; recorded so a reviewer does not read it as a missing assignment.
+- **Plant tokens and `node:test` titles interact (plan finding, not a tool defect).** The spec reporter prints test titles in the clean output, and the gate-proof harness rejects a plant whose token appears in the clean output. The planned tokens `violates contract` and `hash mismatch` therefore cannot appear in any `test:contract` title, and the new hygiene plant token `email-address` cannot appear in a hygiene test title; titles were worded around them.
+- **Plant 3 needs literal tokens in the tests (plan finding).** A test that imports the token table from `check.mjs` also sees the renamed token and passes under the planted run; `check.test.mjs` therefore keeps its own literal token table.
+- **The hygiene gate's own plant test assumed a single-object `plant.json`.** Turning `gates/plants/hygiene/plant.json` into an array (three plants) broke `the plant descriptor names the unique label...` in `hygiene.test.mjs`; the test was updated. It surfaced only because `test:scripts` now runs in the hygiene gate (E-06 doing its job).
+- **`pnpm add -w -D` re-suffixed unrelated lockfile entries** (typescript-eslint packages gained a `supports-color` peer suffix): about 20 lines of churn in `pnpm-lock.yaml` besides the three new packages.

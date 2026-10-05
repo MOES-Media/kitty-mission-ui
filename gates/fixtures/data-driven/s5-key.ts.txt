@@ -1,0 +1,2 @@
+// expect: S5
+export const m = { blocked: 1 };

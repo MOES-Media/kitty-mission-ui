@@ -1,0 +1,5 @@
+// expect: S5 S11
+export const f = (p) => {
+  const { blocked } = p;
+  return blocked;
+};

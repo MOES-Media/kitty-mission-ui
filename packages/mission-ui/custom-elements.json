@@ -4,6 +4,94 @@
   "modules": [
     {
       "kind": "javascript-module",
+      "path": "src/elements/sk-filter-toggle-group/sk-filter-toggle-group.ts",
+      "declarations": [
+        {
+          "kind": "class",
+          "description": "A generic single-choice toggle group: knows no vocabulary, receives options and a value. Pattern element (no screen\ncontract). Not self-registering: `src/index.ts` defines the tag once.",
+          "name": "SkFilterToggleGroup",
+          "members": [
+            {
+              "kind": "field",
+              "name": "options",
+              "type": {
+                "text": "FilterOption[]"
+              },
+              "default": "[]",
+              "description": "The options in render order."
+            },
+            {
+              "kind": "field",
+              "name": "value",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "description": "The id of the pressed option; reflected. An id that matches no option leaves none pressed.",
+              "attribute": "value",
+              "reflects": true
+            },
+            {
+              "kind": "field",
+              "name": "label",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "description": "The accessible name of the group.",
+              "attribute": "label"
+            }
+          ],
+          "events": [
+            {
+              "name": "sk-filter-change",
+              "type": {
+                "text": "CustomEvent<SkFilterChangeDetail>"
+              },
+              "description": "a button that is not the pressed one was activated"
+            }
+          ],
+          "attributes": [
+            {
+              "name": "value",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "description": "The id of the pressed option; reflected. An id that matches no option leaves none pressed.",
+              "fieldName": "value"
+            },
+            {
+              "name": "label",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "description": "The accessible name of the group.",
+              "fieldName": "label"
+            }
+          ],
+          "superclass": {
+            "name": "LitElement",
+            "package": "lit"
+          },
+          "tagName": "sk-filter-toggle-group",
+          "customElement": true
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "SkFilterToggleGroup",
+          "declaration": {
+            "name": "SkFilterToggleGroup",
+            "module": "src/elements/sk-filter-toggle-group/sk-filter-toggle-group.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
       "path": "src/elements/sk-mission-sample/sk-mission-sample.ts",
       "declarations": [
         {
@@ -41,11 +129,11 @@
           ],
           "events": [
             {
-              "name": "sk-mission-open",
+              "name": "sk-open-mission",
               "type": {
-                "text": "CustomEvent<SkMissionOpenDetail>"
+                "text": "CustomEvent<SkOpenMissionDetail>"
               },
-              "description": "the ready-state open button was activated"
+              "description": "the ready-state open button was activated (the same event and detail type as the Missions screen's; the sample has no Mission id, so `missionId` is empty)"
             },
             {
               "name": "sk-mission-retry",
@@ -135,6 +223,17 @@
             }
           ],
           "members": [
+            {
+              "kind": "field",
+              "name": "flush",
+              "type": {
+                "text": "boolean"
+              },
+              "default": "false",
+              "description": "The content runs to the edges of the content column: `main` drops its padding (a screen pads its inset parts itself).",
+              "attribute": "flush",
+              "reflects": true
+            },
             {
               "kind": "field",
               "name": "layout",
@@ -295,10 +394,19 @@
               "type": {
                 "text": "CustomEvent<ShellRetryDetail>"
               },
-              "description": "the error-state retry button was activated"
+              "description": "the error-state retry button was activated The content slot is a flex column (the slotted screen may `flex-grow` to fill it; inline children are blockified). `main` pads the content by `--sk-mission-shell-content-padding` (24px, 16px at the mobile tier); that property is public: a slotted screen that sets the `flush` attribute on the shell pads its own inset parts with it. `flush` removes the padding, so a screen can run to the edges of the content column (the Pipeline screen's inspector and phase band)."
             }
           ],
           "attributes": [
+            {
+              "name": "flush",
+              "type": {
+                "text": "boolean"
+              },
+              "default": "false",
+              "description": "The content runs to the edges of the content column: `main` drops its padding (a screen pads its inset parts itself).",
+              "fieldName": "flush"
+            },
             {
               "name": "layout",
               "type": {
@@ -386,6 +494,466 @@
           "declaration": {
             "name": "SkMissionShell",
             "module": "src/elements/sk-mission-shell/sk-mission-shell.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/elements/sk-missions-screen/mission-row-parts.ts",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/elements/sk-missions-screen/sk-missions-screen.ts",
+      "declarations": [
+        {
+          "kind": "class",
+          "description": "The Missions screen: header, toolbar, list. No I/O, nothing stored; the host owns loading, paging, routing and the\nclock. Renders inside the `sk-mission-shell` content slot. Not self-registering: `src/index.ts` defines the tag once.",
+          "name": "SkMissionsScreen",
+          "members": [
+            {
+              "kind": "field",
+              "name": "status",
+              "type": {
+                "text": "ViewState"
+              },
+              "default": "'loading'",
+              "description": "The view state; unknown values collapse to `empty`.",
+              "attribute": "status",
+              "reflects": true
+            },
+            {
+              "kind": "field",
+              "name": "project",
+              "type": {
+                "text": "Project | null"
+              },
+              "default": "null",
+              "description": "The project (header name and Mission count)."
+            },
+            {
+              "kind": "field",
+              "name": "branch",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "description": "Host value shown in the header; empty omits it.",
+              "attribute": "branch"
+            },
+            {
+              "kind": "field",
+              "name": "missions",
+              "type": {
+                "text": "MissionOverviewView[]"
+              },
+              "default": "[]",
+              "description": "The loaded Missions in service order."
+            },
+            {
+              "kind": "field",
+              "name": "pageInfo",
+              "type": {
+                "text": "PageInfo | null"
+              },
+              "default": "null",
+              "description": "Pagination state of the last loaded page."
+            },
+            {
+              "kind": "field",
+              "name": "now",
+              "type": {
+                "text": "string | null"
+              },
+              "default": "null",
+              "description": "ISO instant for relative times; null shows the ISO timestamp as given.",
+              "attribute": "now"
+            },
+            {
+              "kind": "field",
+              "name": "filter",
+              "type": {
+                "text": "string"
+              },
+              "default": "'all'",
+              "description": "The pressed status filter id; semi-controlled. An unknown id behaves as All.",
+              "attribute": "filter",
+              "reflects": true
+            },
+            {
+              "kind": "field",
+              "name": "query",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "description": "The search text; semi-controlled. Read from the attribute, never written back to it (typed text stays out of the DOM).",
+              "attribute": "query"
+            },
+            {
+              "kind": "field",
+              "name": "loadingMore",
+              "type": {
+                "text": "boolean"
+              },
+              "default": "false",
+              "description": "The Load more row is busy and inert while true; host-owned.",
+              "attribute": "loading-more"
+            },
+            {
+              "kind": "field",
+              "name": "laneGroups",
+              "type": {
+                "text": "LaneGroup[]"
+              },
+              "default": "[...DEFAULT_LANE_GROUPS]",
+              "description": "The columns whose lanes drive the lane summary."
+            },
+            {
+              "kind": "field",
+              "name": "labels",
+              "type": {
+                "text": "LabelHooks | null"
+              },
+              "default": "null",
+              "description": "Label and time hooks."
+            },
+            {
+              "kind": "field",
+              "name": "errorMessage",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "description": "Overrides the default error body.",
+              "attribute": "error-message"
+            }
+          ],
+          "events": [
+            {
+              "name": "sk-open-mission",
+              "type": {
+                "text": "CustomEvent<SkOpenMissionDetail>"
+              },
+              "description": "a row was activated; the screen never navigates"
+            },
+            {
+              "name": "sk-search",
+              "type": {
+                "text": "CustomEvent<SkSearchDetail>"
+              },
+              "description": "the trimmed query changed through user input"
+            },
+            {
+              "name": "sk-load-more",
+              "type": {
+                "text": "CustomEvent<SkLoadMoreDetail>"
+              },
+              "description": "Load more was activated while a next page exists and `loadingMore` is false; once per cursor until `loadingMore`, `missions` or `pageInfo` changes"
+            },
+            {
+              "type": {
+                "text": "CustomEvent<SkFilterChangeDetail>"
+              },
+              "description": "a different filter was pressed (dispatched by the filter group, crosses the screen)",
+              "name": "sk-filter-change"
+            }
+          ],
+          "attributes": [
+            {
+              "name": "status",
+              "type": {
+                "text": "ViewState"
+              },
+              "default": "'loading'",
+              "description": "The view state; unknown values collapse to `empty`.",
+              "fieldName": "status"
+            },
+            {
+              "name": "branch",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "description": "Host value shown in the header; empty omits it.",
+              "fieldName": "branch"
+            },
+            {
+              "name": "now",
+              "type": {
+                "text": "string | null"
+              },
+              "default": "null",
+              "description": "ISO instant for relative times; null shows the ISO timestamp as given.",
+              "fieldName": "now"
+            },
+            {
+              "name": "filter",
+              "type": {
+                "text": "string"
+              },
+              "default": "'all'",
+              "description": "The pressed status filter id; semi-controlled. An unknown id behaves as All.",
+              "fieldName": "filter"
+            },
+            {
+              "name": "query",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "description": "The search text; semi-controlled. Read from the attribute, never written back to it (typed text stays out of the DOM).",
+              "fieldName": "query"
+            },
+            {
+              "name": "loading-more",
+              "type": {
+                "text": "boolean"
+              },
+              "default": "false",
+              "description": "The Load more row is busy and inert while true; host-owned.",
+              "fieldName": "loadingMore"
+            },
+            {
+              "name": "error-message",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "description": "Overrides the default error body.",
+              "fieldName": "errorMessage"
+            }
+          ],
+          "superclass": {
+            "name": "LitElement",
+            "package": "lit"
+          },
+          "tagName": "sk-missions-screen",
+          "customElement": true
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "SkMissionsScreen",
+          "declaration": {
+            "name": "SkMissionsScreen",
+            "module": "src/elements/sk-missions-screen/sk-missions-screen.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/elements/sk-phase-bar/sk-phase-bar.ts",
+      "declarations": [
+        {
+          "kind": "class",
+          "description": "Renders the phases it receives, in array order and in whatever number. Pattern element (no screen contract). Not\nself-registering: `src/index.ts` defines the tag once.",
+          "name": "SkPhaseBar",
+          "members": [
+            {
+              "kind": "field",
+              "name": "phases",
+              "type": {
+                "text": "PhaseView[]"
+              },
+              "default": "[]",
+              "description": "The phases in display order; names are strings, not the contract enum."
+            },
+            {
+              "kind": "field",
+              "name": "labels",
+              "type": {
+                "text": "LabelHooks | null"
+              },
+              "default": "null",
+              "description": "Label hooks; only `phase` is read."
+            },
+            {
+              "kind": "field",
+              "name": "label",
+              "type": {
+                "text": "string"
+              },
+              "default": "PHASES_LABEL",
+              "description": "The accessible name of the list.",
+              "attribute": "label"
+            }
+          ],
+          "attributes": [
+            {
+              "name": "label",
+              "type": {
+                "text": "string"
+              },
+              "default": "PHASES_LABEL",
+              "description": "The accessible name of the list.",
+              "fieldName": "label"
+            }
+          ],
+          "superclass": {
+            "name": "LitElement",
+            "package": "lit"
+          },
+          "tagName": "sk-phase-bar",
+          "customElement": true
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "SkPhaseBar",
+          "declaration": {
+            "name": "SkPhaseBar",
+            "module": "src/elements/sk-phase-bar/sk-phase-bar.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/elements/sk-pipeline-screen/pipeline-parts.ts",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/elements/sk-pipeline-screen/sk-pipeline-screen.ts",
+      "declarations": [
+        {
+          "kind": "class",
+          "description": "The Pipeline screen: header, phase bar, work package board and inspector for one Mission. No I/O, nothing stored.\nRenders inside the `sk-mission-shell` content slot. Not self-registering: `src/index.ts` defines the tag once.",
+          "name": "SkPipelineScreen",
+          "members": [
+            {
+              "kind": "field",
+              "name": "status",
+              "type": {
+                "text": "ViewState"
+              },
+              "default": "'loading'",
+              "description": "The view state; unknown values collapse to `empty`.",
+              "attribute": "status",
+              "reflects": true
+            },
+            {
+              "kind": "field",
+              "name": "mission",
+              "type": {
+                "text": "MissionDetailView | null"
+              },
+              "default": "null",
+              "description": "The Mission shown; null renders as `empty`."
+            },
+            {
+              "kind": "field",
+              "name": "laneGroups",
+              "type": {
+                "text": "LaneGroup[]"
+              },
+              "default": "[...DEFAULT_LANE_GROUPS]",
+              "description": "The board columns."
+            },
+            {
+              "kind": "field",
+              "name": "labels",
+              "type": {
+                "text": "LabelHooks | null"
+              },
+              "default": "null",
+              "description": "Phase, lane and state label hooks."
+            },
+            {
+              "kind": "field",
+              "name": "missionsHref",
+              "type": {
+                "text": "string"
+              },
+              "default": "'#/missions'",
+              "description": "The anchor target of the Missions crumb. Hosts set it to their own Missions route: the default is a guess at one host's\nhash scheme and only matters for a modified click (an unmodified click is turned into `sk-open-missions`).",
+              "attribute": "missions-href"
+            },
+            {
+              "kind": "field",
+              "name": "errorMessage",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "description": "Overrides the default error body.",
+              "attribute": "error-message"
+            }
+          ],
+          "events": [
+            {
+              "name": "sk-open-missions",
+              "type": {
+                "text": "CustomEvent<SkOpenMissionsDetail>"
+              },
+              "description": "the Missions crumb was activated by an unmodified primary click or Enter"
+            },
+            {
+              "name": "sk-view-artifacts",
+              "type": {
+                "text": "CustomEvent<SkViewArtifactsDetail>"
+              },
+              "description": "View artifacts was activated"
+            },
+            {
+              "type": {
+                "text": "CustomEvent<SkSelectWorkPackageDetail>"
+              },
+              "description": "a card was activated (dispatched by the board, crosses the screen)",
+              "name": "sk-select-work-package"
+            }
+          ],
+          "attributes": [
+            {
+              "name": "status",
+              "type": {
+                "text": "ViewState"
+              },
+              "default": "'loading'",
+              "description": "The view state; unknown values collapse to `empty`.",
+              "fieldName": "status"
+            },
+            {
+              "name": "missions-href",
+              "type": {
+                "text": "string"
+              },
+              "default": "'#/missions'",
+              "description": "The anchor target of the Missions crumb. Hosts set it to their own Missions route: the default is a guess at one host's\nhash scheme and only matters for a modified click (an unmodified click is turned into `sk-open-missions`).",
+              "fieldName": "missionsHref"
+            },
+            {
+              "name": "error-message",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "description": "Overrides the default error body.",
+              "fieldName": "errorMessage"
+            }
+          ],
+          "superclass": {
+            "name": "LitElement",
+            "package": "lit"
+          },
+          "tagName": "sk-pipeline-screen",
+          "customElement": true
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "SkPipelineScreen",
+          "declaration": {
+            "name": "SkPipelineScreen",
+            "module": "src/elements/sk-pipeline-screen/sk-pipeline-screen.ts"
           }
         }
       ]
@@ -630,6 +1198,117 @@
           "declaration": {
             "name": "SkShellTree",
             "module": "src/elements/sk-shell-tree/sk-shell-tree.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/elements/sk-work-package-board/card-parts.ts",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/elements/sk-work-package-board/sk-work-package-board.ts",
+      "declarations": [
+        {
+          "kind": "class",
+          "description": "Places work packages into the columns it is given and emits the selection intent. Pattern element (no screen\ncontract). Not self-registering: `src/index.ts` defines the tag once.",
+          "name": "SkWorkPackageBoard",
+          "members": [
+            {
+              "kind": "field",
+              "name": "workPackages",
+              "type": {
+                "text": "WorkPackageView[]"
+              },
+              "default": "[]",
+              "description": "The work packages in service order; the board never sorts."
+            },
+            {
+              "kind": "field",
+              "name": "laneGroups",
+              "type": {
+                "text": "LaneGroup[]"
+              },
+              "default": "[...DEFAULT_LANE_GROUPS]",
+              "description": "The columns. An empty array makes one synthetic column titled by `label`."
+            },
+            {
+              "kind": "field",
+              "name": "missionId",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "description": "Echoed in the event payload.",
+              "attribute": "mission-id"
+            },
+            {
+              "kind": "field",
+              "name": "labels",
+              "type": {
+                "text": "LabelHooks | null"
+              },
+              "default": "null",
+              "description": "Label hooks; only `state` is read."
+            },
+            {
+              "kind": "field",
+              "name": "label",
+              "type": {
+                "text": "string"
+              },
+              "default": "BOARD_LABEL",
+              "description": "The board heading and the name of the scroll region.",
+              "attribute": "label"
+            }
+          ],
+          "events": [
+            {
+              "name": "sk-select-work-package",
+              "type": {
+                "text": "CustomEvent<SkSelectWorkPackageDetail>"
+              },
+              "description": "a card was activated; the library's own `sk-action-row-activate` is stopped here"
+            }
+          ],
+          "attributes": [
+            {
+              "name": "mission-id",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "description": "Echoed in the event payload.",
+              "fieldName": "missionId"
+            },
+            {
+              "name": "label",
+              "type": {
+                "text": "string"
+              },
+              "default": "BOARD_LABEL",
+              "description": "The board heading and the name of the scroll region.",
+              "fieldName": "label"
+            }
+          ],
+          "superclass": {
+            "name": "LitElement",
+            "package": "lit"
+          },
+          "tagName": "sk-work-package-board",
+          "customElement": true
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "SkWorkPackageBoard",
+          "declaration": {
+            "name": "SkWorkPackageBoard",
+            "module": "src/elements/sk-work-package-board/sk-work-package-board.ts"
           }
         }
       ]

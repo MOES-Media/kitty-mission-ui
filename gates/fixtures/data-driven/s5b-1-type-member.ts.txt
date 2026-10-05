@@ -1,0 +1,4 @@
+// expect: S5b.1
+export interface V {
+  blocked: number;
+}

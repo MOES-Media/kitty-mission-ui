@@ -1,0 +1,2 @@
+// expect: S4
+export const c = css`[data-lane="blocked"] { color: red; }`;

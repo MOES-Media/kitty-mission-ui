@@ -1,0 +1,2 @@
+// expect: S8a.2
+export const f = (m: { phases: string[] }) => m.phases[2];

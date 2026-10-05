@@ -4,12 +4,7 @@ import { property } from 'lit/decorators.js';
 import '@spec-kitty/elements';
 import { normaliseViewState } from '../../view-state.js';
 import type { MissionSummary, ViewState } from '../../view-state.js';
-
-/** Payload of `sk-mission-open`. */
-export interface SkMissionOpenDetail {
-  /** Slug of the mission the open button was activated for (empty when no mission is set). */
-  slug: string;
-}
+import type { SkOpenMissionDetail } from '../sk-missions-screen/sk-missions-screen.js';
 
 /** Payload of `sk-mission-retry`: always an empty object. */
 export type SkMissionRetryDetail = Record<string, never>;
@@ -27,7 +22,7 @@ const GENERIC_ERROR = 'Something went wrong while loading the mission.';
  * @element sk-mission-sample
  * @tagname sk-mission-sample
  *
- * @fires {CustomEvent<SkMissionOpenDetail>} sk-mission-open - the ready-state open button was activated
+ * @fires {CustomEvent<SkOpenMissionDetail>} sk-open-mission - the ready-state open button was activated (the same event and detail type as the Missions screen's; the sample has no Mission id, so `missionId` is empty)
  * @fires {CustomEvent<SkMissionRetryDetail>} sk-mission-retry - the error-state retry button was activated
  */
 export class SkMissionSample extends LitElement {
@@ -60,8 +55,8 @@ export class SkMissionSample extends LitElement {
 
   private onOpen(): void {
     const slug = this.mission?.slug ?? '';
-    const detail: SkMissionOpenDetail = { slug };
-    this.dispatchEvent(new CustomEvent<SkMissionOpenDetail>('sk-mission-open', { detail, bubbles: true, composed: true }));
+    const detail: SkOpenMissionDetail = { missionId: '', slug };
+    this.dispatchEvent(new CustomEvent<SkOpenMissionDetail>('sk-open-mission', { detail, bubbles: true, composed: true }));
   }
 
   private onRetry(): void {
@@ -118,7 +113,6 @@ export class SkMissionSample extends LitElement {
 
 declare global {
   interface HTMLElementEventMap {
-    'sk-mission-open': CustomEvent<SkMissionOpenDetail>;
     'sk-mission-retry': CustomEvent<SkMissionRetryDetail>;
   }
   interface HTMLElementTagNameMap {

@@ -1,0 +1,138 @@
+schema: review-verify/v1
+complete: true
+phase: plan
+verdicts:
+- id: PLAN-FIT-001
+  status: resolved
+  note: test:contract is now `node --test scripts/contract/*.test.mjs` identically in gates.md, contract-pin.md, plan.md and quickstart.md, with an IC-01 exit check requiring pass count above 0; the bare-directory
+    failure matches the repo's own index.js shims.
+- id: PLAN-FIT-002
+  status: resolved
+  note: C5 rules f and h recompute implement/review and lifecycleStatus from the counts (checked against MissionDetail.yaml and MissionHead.yaml at 9f41e48), and PL-01 is rebuilt from contract-consistent
+    work packages with the trade-off recorded as P-8/DR-12 for CP-1.
+- id: PLAN-FIT-003
+  status: resolved
+  note: contract-pin.md now states that overlays DECLARE progress, lifecycle and phase statuses per fixture (declared-values table verified consistent with the contract rules), C5 rules d/e check doneCount,
+    donePercentage, lifecycleStatus and range-check weightedPercentage, and D-11 no longer promises recomputation.
+- id: PLAN-FIT-004
+  status: resolved
+  note: RowView.blocked is renamed blockedBadge in data-model, defaults, plan and gates; I ran the S5/S7 selectors in a scratch ESLint and both flag the old shapes (including shorthand) and stay silent
+    on blockedBadge, and the other planned shapes have no word-named member.
+- id: PLAN-FIT-005
+  status: unresolved
+  note: PHASE_GLYPH, PHASE_TONE and PHASE_IS_CURRENT tables are added and verified silent under the gate, but `phaseState` is specified in the scanned `src/logic/` as 'unknown is pending' with no exported
+    default in defaults/phases.ts, so its fallback needs the literal 'pending' and trips S1b (which I reproduced) in the plan's own code; add a `DEFAULT_PHASE_STATE` to defaults/phases.ts or declare phaseState
+    in defaults (severity 2).
+- id: PLAN-FIT-008
+  status: unresolved
+  note: CP-1 before any lane starts correctly replaces the PR-time deferral, but the binding procedure in research.md D-35 (steps 1 and 3, lines 305) still says 'DR-1 to DR-11' while the register, plan.md
+    and P-6 have DR-1 to DR-12, so the authoritative text omits DR-12 (PL-01) from the confirmation set (severity 2).
+- id: PLAN-FIT-009
+  status: resolved
+  note: plan.md Lane mechanics item 3 parents IC-09 on IC-08, has the orchestrator merge IC-07 with manifest regeneration and the status.json rule, verifies 118 stories, and gives the serialising fallback;
+    The cited spec-kitty tooling issues exist in the ledger and say what the plan cites.
+- id: PLAN-FIT-010
+  status: resolved
+  note: D-28 now uses Number.isFinite with a NaN/Infinity test, scopes footer/inspector agreement to wpTotal above 0, references IC-03, and matches the real renderFooter (early return on total <= 0, rounded
+    done/total path).
+- id: PLAN-FIT-011
+  status: resolved
+  note: P-7 lists missionsHref, errorMessage, label and the plan-named properties for operator confirmation, and the story-support ban is a concrete no-restricted-imports block that I reproduced catching
+    relative imports from elements while ignoring stories and fixtures.
+- id: PLAN-FIT-012
+  status: resolved
+  note: Test counts are reconciled (about 130 browser, 42 vitest node, 38 node:test = 210) consistently in plan, research and gates, and the README/CHANGELOG rows are described as reviewer-checked rather
+    than enforced.
+- id: PLAN-SEQ-001
+  status: resolved
+  note: 'D-31 and gates.md now cite runs 36880654992/36882394060 and derive visual 15, proof-leg visual 35, unit-tests 8/10 from figures I re-read from the run via gh (visual step 177 s, proof visual 658
+    s, unit-tests 94 s); nit: the same run has a measured 129 s for proof (unit-tests) although gates.md says no measured figure exists.'
+- id: PLAN-SEQ-002
+  status: resolved
+  note: 'The circularity is gone: IC-01 records local baselines, IC-09 writes timeouts from the recorded-run table before the PR exists, the PR description states the derivation, and one timeout-only fixup
+    commit after the draft PR is explicitly allowed.'
+- id: PLAN-SEQ-004
+  status: resolved
+  note: 'The shared-files table now assigns defaults/logic (IC-02), contract tooling and fixtures with a frozen 22-fixture list (IC-01), tracer files (orchestrator), manifest/index (IC-03), ci.yml, package.json
+    and the READMEs/CHANGELOGs, with a change-request rule; nit: src/library-sheets.ts and src/story-support/** have no row (implicitly IC-03).'
+- id: PLAN-SEQ-005
+  status: resolved
+  note: IC-03 now has a binding internal order (visual-spec and shell change, spikes, CP-1, skeletons and ESLint overrides, single manifest regeneration) with an optional IC-03a/IC-03b split, repeated in
+    research D-31/spikes.
+- id: PLAN-SEQ-006
+  status: resolved
+  note: plan.md and gates.md now list exactly what coverage and checkWorkflow enforce (verified against coverageProblems and checkWorkflow) and mark matrix timeout/image, README and CHANGELOG as reviewer-checked,
+    with one CHANGELOG/README owner rule.
+- id: PLAN-SEQ-007
+  status: resolved
+  note: research.md D-28 now names the IC-03 gate for the shell-baseline proof, matching the plan.
+- id: PLAN-SEQ-008
+  status: resolved
+  note: research.md D-12 plant 1 now uses detailBothInProgress and refers to gates.md as the single authoritative statement; the export exists in the contract-pin inventory.
+- id: PLAN-SEQ-009
+  status: resolved
+  note: plan.md Integrity of the wrap-up and research D-36 add T0 tree-hash recording, tree equality after compaction, rebase diff comparison, full gate re-run including visual and gate-proof before push,
+    accept-record rebaseline handling, and named compaction slices.
+- id: PLAN-SEQ-010
+  status: resolved
+  note: Module count is 4 plus index, lookup is in IC-02's list, and the 210-test split is stated; I re-counted 24+22+14=60 stories and 58 existing PNGs.
+- id: PLAN-VERIFY-001
+  status: resolved
+  note: The schema enum and the hard-coded GATES/length-10 in gate-proof.test.mjs are now in IC-01/IC-02 scope as exception X-1 with exit checks (coverage, node --test scripts/gate-proof/, assemble dry
+    run), matching the real schema enum and test file.
+- id: PLAN-VERIFY-003
+  status: resolved
+  note: eslint.data-driven.config.mjs specifies linterOptions.noInlineConfig with a disable-comment fixture; I reproduced that with noInlineConfig a line and a block disable directive leave the S1 error
+    in place (plus severity-1 notices with null rule id that the negative-case rule ignores).
+- id: PLAN-VERIFY-004
+  status: resolved
+  note: S7 (any-object read of an IDENT_WORDS member) and S7b are added, I confirmed S7 flags STATE_BADGES.blocked and row?.blocked and is silent on progress.done, the lone-key blind spot is listed, and
+    a missions-screen foreign-vocabulary test is specified.
+- id: PLAN-VERIFY-005
+  status: resolved
+  note: S3a (quasi-anchored text) and S3c (underscored substring) are added and I confirmed they flag '${n} blocked', 'Review${s}' and 'lane-in_progress' while html`<sk-pill-tag status="info">${label}</sk-pill-tag>`
+    stays silent.
+- id: PLAN-VERIFY-006
+  status: resolved
+  note: S12 (repeat(N,...)/nth-child(N)) and S8b (slice/at/splice/with with a literal on phases) are added and I confirmed they fire and stay silent on repeat(${n}, 1fr), plus the 7-phase bounding-box layout
+    assertion.
+- id: PLAN-VERIFY-007
+  status: resolved
+  note: STATUS_WORDS (pending, complete, draft, discarded) get selector S1b, I-02/D-08/defaults.md are narrowed to exactly the gated words with `active` listed as a blind spot, and the false `{ done, total
+    }` S5 sentence is corrected (verified silent).
+- id: PLAN-VERIFY-009
+  status: resolved
+  note: The self-test spec now asserts the 'No matching configuration found' notice for allow-listed names (reproduced exactly) with a same-test positive control, exact S-id multisets per fixture, and an
+    entry/fixture count guard; counts are consistent at 19 entries and 24 fixtures.
+- id: PLAN-VERIFY-010
+  status: resolved
+  note: gates.md now requires check.test.mjs with one failing mutation per check token (C1 to C7, relaxations, unregistered fixture, file set), a clean-input positive control, count guards in check.mjs,
+    and explains why plant 3 exercises the tests.
+- id: PLAN-VERIFY-011
+  status: resolved
+  note: phases-open now keeps the MissionPhase allOf (verified it adds no error for unknown names), drops /basis from the allowed paths, clones per relaxation with a pristine strict validator, and requires
+    the known-name wrong-basis test.
+- id: PLAN-VERIFY-012
+  status: resolved
+  note: C5 rules f and h recompute lifecycleStatus and implement/review (matching the pinned contract text), skipped only for phases-open fixtures, and the unknown-lane tally rule is defined in gates.md
+    and the lane-open registry entry.
+- id: PLAN-VERIFY-013
+  status: resolved
+  note: MissionOverviewPageView is defined in data-model.md and contract-pin.md, and every fixture's `satisfies` target is listed in the inventory table.
+- id: PLAN-VERIFY-014
+  status: resolved
+  note: SYNTHETIC_ACTORS allow-list (C4), a C6 scan for the executing account's username, and P-2 wording that states the real reach of NFR-007's username leg are in place, with matching negative tests.
+- id: PLAN-VERIFY-015
+  status: resolved
+  note: D-23, IC-07 and the traceability row require 500 li before and after, identical node identities, a strict-subset hidden, real button and keystroke paths, and 'investigate, not loosen'.
+- id: PLAN-VERIFY-016
+  status: resolved
+  note: research.md D-34 now has binding Test quality rules (positive control per no-event test, exactly-one-event with deep equality, equality counts, per-file revert checks re-run by reviewers, C-009
+    as a node test with a known-positive sample) copied into every WP brief per plan.md.
+- id: PLAN-VERIFY-017
+  status: resolved
+  note: 'gates.md states each include is {gate, timeout, image: ''''} like no-io (matches ci.yml), rewords C1 to ''vendored files match the pin record'', and requires contract:verify-remote output on the
+    initial vendoring.'
+- id: PLAN-VERIFY-018
+  status: resolved
+  note: D-12 uses detailBothInProgress, D-08 and the tracer cite 19 entries / S1 to S12, and the self-test count matches the 24 listed fixtures.

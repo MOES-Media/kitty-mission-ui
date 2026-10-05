@@ -1,0 +1,13 @@
+import { css } from 'lit';
+
+// Exception E-13 allows panel paint (`background`, `border`, `border-radius`, `font-family`, `font-weight`) in the Missions screen file only; the same declaration in a sibling file of the
+// same directory must still fail (no leak).
+export const plantStylelintWeight = css`
+  .plant-stylelint-weight {
+    font-weight: var(--sk-weight-bold);
+    font-family: var(--sk-font-display);
+    background: var(--sk-surface-card);
+    border: var(--sk-border-width-1) dashed var(--sk-border-control);
+    border-radius: var(--sk-radius-lg);
+  }
+`;

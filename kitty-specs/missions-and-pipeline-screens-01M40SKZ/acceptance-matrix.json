@@ -1,0 +1,349 @@
+{
+  "mission_slug": "missions-and-pipeline-screens-01M40SKZ",
+  "mission_number": "",
+  "mission_type": "software-dev",
+  "overall_verdict": "pass",
+  "criteria": [
+    {
+      "criterion_id": "FR-001",
+      "description": "Verify FR-001 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": ".worktrees/missions-and-pipeline-screens-01M40SKZ-lane-j/packages/mission-ui/test/sk-missions-screen.test.ts::view states (FR-011) ready: header; the header states what is present; pnpm test 561/561 pass",
+      "pass_fail": "pass",
+      "verified_by": "claude:sonnet",
+      "verified_at": "2026-10-04T17:35:41.683826+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-002",
+      "description": "Verify FR-002 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": ".worktrees/missions-and-pipeline-screens-01M40SKZ-lane-j/packages/mission-ui/test/sk-missions-screen.test.ts::search (FR-002, EV-3) 'the search is named Search Missions', 'matches name, slug, type and topology'",
+      "pass_fail": "pass",
+      "verified_by": "claude:sonnet",
+      "verified_at": "2026-10-04T17:35:43.380301+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-003",
+      "description": "Verify FR-003 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": ".worktrees/missions-and-pipeline-screens-01M40SKZ-lane-j/packages/mission-ui/test/sk-missions-screen.test.ts::filters (FR-003, EV-2) 'each filter shows exactly its Missions'; .worktrees/missions-and-pipeline-screens-01M40SKZ-lane-j/packages/mission-ui/test/sk-filter-toggle-group.test.ts::structure,keyboard",
+      "pass_fail": "pass",
+      "verified_by": "claude:sonnet",
+      "verified_at": "2026-10-04T17:35:44.926526+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-004",
+      "description": "Verify FR-004 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": ".worktrees/missions-and-pipeline-screens-01M40SKZ-lane-j/packages/mission-ui/test/sk-missions-screen.test.ts::rows 'shows name, slug, type, topology, lane summary, lifecycle badge and activity'",
+      "pass_fail": "pass",
+      "verified_by": "claude:sonnet",
+      "verified_at": "2026-10-04T17:35:47.688047+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-005",
+      "description": "Verify FR-005 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": ".worktrees/missions-and-pipeline-screens-01M40SKZ-lane-j/packages/mission-ui/test/sk-missions-screen.test.ts::rows 'the blocked badge shows only above 0', 'stale and active shows both badges (DR-4)', 'lifecycle word of a discarded'; filters 'drafts only under All'",
+      "pass_fail": "pass",
+      "verified_by": "claude:sonnet",
+      "verified_at": "2026-10-04T17:35:49.249442+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-006",
+      "description": "Verify FR-006 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": ".worktrees/missions-and-pipeline-screens-01M40SKZ-lane-j/packages/mission-ui/test/summary.test.ts and .worktrees/missions-and-pipeline-screens-01M40SKZ-lane-j/packages/mission-ui/test/labels.test.ts (lane summary via lane-group mapping, no arithmetic); gate lint:data-driven 0 violations",
+      "pass_fail": "pass",
+      "verified_by": "claude:sonnet",
+      "verified_at": "2026-10-04T17:35:50.818221+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-007",
+      "description": "Verify FR-007 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": ".worktrees/missions-and-pipeline-screens-01M40SKZ-lane-j/packages/mission-ui/test/sk-missions-screen.test.ts::open Mission (EV-1) pointer/Enter/Space emit exactly one sk-open-mission with exact payload; screen never navigates",
+      "pass_fail": "pass",
+      "verified_by": "claude:sonnet",
+      "verified_at": "2026-10-04T17:35:52.380530+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-008",
+      "description": "Verify FR-008 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": ".worktrees/missions-and-pipeline-screens-01M40SKZ-lane-j/packages/mission-ui/test/sk-missions-screen.test.ts::paging (FR-008, EV-4) Load more last li, one sk-load-more with cursor, no scroll listener",
+      "pass_fail": "pass",
+      "verified_by": "claude:sonnet",
+      "verified_at": "2026-10-04T17:35:53.915556+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-009",
+      "description": "Verify FR-009 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": ".worktrees/missions-and-pipeline-screens-01M40SKZ-lane-j/packages/mission-ui/test/sk-missions-screen.test.ts::filters EV-2, search EV-3, no match (MS-03) 'offers Load more while pages remain'",
+      "pass_fail": "pass",
+      "verified_by": "claude:sonnet",
+      "verified_at": "2026-10-04T17:35:55.495536+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-010",
+      "description": "Verify FR-010 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": ".worktrees/missions-and-pipeline-screens-01M40SKZ-lane-j/packages/mission-ui/test/time.test.ts and .worktrees/missions-and-pipeline-screens-01M40SKZ-lane-j/packages/mission-ui/test/sk-missions-screen.test.ts::rows 'relative time: the time hook wins, no now shows the ISO timestamp'",
+      "pass_fail": "pass",
+      "verified_by": "claude:sonnet",
+      "verified_at": "2026-10-04T17:35:57.060309+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-011",
+      "description": "Verify FR-011 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": ".worktrees/missions-and-pipeline-screens-01M40SKZ-lane-j/packages/mission-ui/test/sk-missions-screen.test.ts::view states (FR-011) loading/error/empty/ready, unknown status collapses to empty",
+      "pass_fail": "pass",
+      "verified_by": "claude:sonnet",
+      "verified_at": "2026-10-04T17:35:58.627743+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-012",
+      "description": "Verify FR-012 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": ".worktrees/missions-and-pipeline-screens-01M40SKZ-lane-j/packages/mission-ui/test/sk-pipeline-screen.test.ts::events EV-7 crumb emits sk-open-missions once; long breadcrumb (F7)",
+      "pass_fail": "pass",
+      "verified_by": "claude:sonnet",
+      "verified_at": "2026-10-04T17:36:03.063036+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-013",
+      "description": "Verify FR-013 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": ".worktrees/missions-and-pipeline-screens-01M40SKZ-lane-j/packages/mission-ui/test/sk-phase-bar.test.ts::data-driven rendering exactly 3 and 7 unknown phases in order; gate lint:data-driven + test:data-driven pass",
+      "pass_fail": "pass",
+      "verified_by": "claude:sonnet",
+      "verified_at": "2026-10-04T17:36:04.629505+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-014",
+      "description": "Verify FR-014 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": ".worktrees/missions-and-pipeline-screens-01M40SKZ-lane-j/packages/mission-ui/test/sk-phase-bar.test.ts::sk-phase-bar labels (one hook, raw-name fallback); lint:data-driven 0 violations",
+      "pass_fail": "pass",
+      "verified_by": "claude:sonnet",
+      "verified_at": "2026-10-04T17:36:06.182564+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-015",
+      "description": "Verify FR-015 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": ".worktrees/missions-and-pipeline-screens-01M40SKZ-lane-j/packages/mission-ui/test/sk-pipeline-screen.test.ts::data-driven behaviour (FR-013, FR-014, FR-015); .worktrees/missions-and-pipeline-screens-01M40SKZ-lane-j/packages/mission-ui/test/sk-work-package-board.test.ts::columns and placement; placement.test.ts",
+      "pass_fail": "pass",
+      "verified_by": "claude:sonnet",
+      "verified_at": "2026-10-04T17:36:07.752382+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-016",
+      "description": "Verify FR-016 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": ".worktrees/missions-and-pipeline-screens-01M40SKZ-lane-j/packages/mission-ui/test/sk-work-package-board.test.ts::cards (blocked, reviewing, canceled, not started badges); .worktrees/missions-and-pipeline-screens-01M40SKZ-lane-j/packages/mission-ui/test/sk-pipeline-screen.test.ts PL-04/PL-09/PL-11 placement",
+      "pass_fail": "pass",
+      "verified_by": "claude:sonnet",
+      "verified_at": "2026-10-04T17:36:09.292968+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-017",
+      "description": "Verify FR-017 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": ".worktrees/missions-and-pipeline-screens-01M40SKZ-lane-j/packages/mission-ui/test/sk-work-package-board.test.ts::cards, subtask progress (DR-1)",
+      "pass_fail": "pass",
+      "verified_by": "claude:sonnet",
+      "verified_at": "2026-10-04T17:36:10.872400+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-018",
+      "description": "Verify FR-018 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": ".worktrees/missions-and-pipeline-screens-01M40SKZ-lane-j/packages/mission-ui/test/sk-pipeline-screen.test.ts::EV-5 every card emits sk-select-work-package once with own id; .worktrees/missions-and-pipeline-screens-01M40SKZ-lane-j/packages/mission-ui/test/sk-work-package-board.test.ts::events (EV-5)",
+      "pass_fail": "pass",
+      "verified_by": "claude:sonnet",
+      "verified_at": "2026-10-04T17:36:12.545237+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-019",
+      "description": "Verify FR-019 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": ".worktrees/missions-and-pipeline-screens-01M40SKZ-lane-j/packages/mission-ui/test/step.test.ts; .worktrees/missions-and-pipeline-screens-01M40SKZ-lane-j/packages/mission-ui/test/sk-pipeline-screen.test.ts::current step verbatim nextAction / Current step: <phase> / No step in progress (PL-01..03)",
+      "pass_fail": "pass",
+      "verified_by": "claude:sonnet",
+      "verified_at": "2026-10-04T17:36:14.085134+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-020",
+      "description": "Verify FR-020 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": ".worktrees/missions-and-pipeline-screens-01M40SKZ-lane-j/packages/mission-ui/test/sk-pipeline-screen.test.ts::footer and inspector agree (D-28), zero work packages blockers 0 progress as given; percent.test.ts",
+      "pass_fail": "pass",
+      "verified_by": "claude:sonnet",
+      "verified_at": "2026-10-04T17:36:15.610988+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-021",
+      "description": "Verify FR-021 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": ".worktrees/missions-and-pipeline-screens-01M40SKZ-lane-j/packages/mission-ui/test/sk-pipeline-screen.test.ts::EV-6 View artifacts emits sk-view-artifacts once with Mission id",
+      "pass_fail": "pass",
+      "verified_by": "claude:sonnet",
+      "verified_at": "2026-10-04T17:36:17.142560+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-022",
+      "description": "Verify FR-022 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": ".worktrees/missions-and-pipeline-screens-01M40SKZ-lane-j/packages/mission-ui/test/sk-pipeline-screen.test.ts::view states (PL-05, PL-06, PL-10) loading/error/empty/ready, frame unchanged",
+      "pass_fail": "pass",
+      "verified_by": "claude:sonnet",
+      "verified_at": "2026-10-04T17:36:18.673576+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-023",
+      "description": "Verify FR-023 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": ".worktrees/missions-and-pipeline-screens-01M40SKZ-lane-j/packages/mission-ui/test/sk-missions-screen.test.ts::Tab order per tier (NFR-003) and large text (NFR-004); .worktrees/missions-and-pipeline-screens-01M40SKZ-lane-j/packages/mission-ui/test/sk-pipeline-screen.test.ts::wrap-up every lane reachable at 1024 collapsed tier; shell owns tier (sk-mission-shell.test.ts tier)",
+      "pass_fail": "pass",
+      "verified_by": "claude:sonnet",
+      "verified_at": "2026-10-04T17:36:20.260929+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-024",
+      "description": "Verify FR-024 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": ".worktrees/missions-and-pipeline-screens-01M40SKZ-lane-j/packages/mission-ui/test/sk-missions-screen.test.ts::Tab order per tier; .worktrees/missions-and-pipeline-screens-01M40SKZ-lane-j/packages/mission-ui/test/sk-pipeline-screen.test.ts::keyboard (NFR-004, SC-003), band keyboard region; sk-filter-toggle-group keyboard",
+      "pass_fail": "pass",
+      "verified_by": "claude:sonnet",
+      "verified_at": "2026-10-04T17:36:21.790420+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-025",
+      "description": "Verify FR-025 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": ".worktrees/missions-and-pipeline-screens-01M40SKZ-lane-j/packages/mission-ui/test/sk-phase-bar.test.ts::accessible names; .worktrees/missions-and-pipeline-screens-01M40SKZ-lane-j/packages/mission-ui/test/sk-missions-screen.test.ts view states (busy, alert), filters pressed; .worktrees/missions-and-pipeline-screens-01M40SKZ-lane-j/packages/mission-ui/test/sk-work-package-board.test.ts subtask progress labelled",
+      "pass_fail": "pass",
+      "verified_by": "claude:sonnet",
+      "verified_at": "2026-10-04T17:36:23.343316+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-026",
+      "description": "Verify FR-026 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "gate manifest:check pass (0 findings); .worktrees/missions-and-pipeline-screens-01M40SKZ-lane-j/packages/mission-ui/test/surface-freeze.test.ts::surface freeze (IC-03b); gate-proof manifest planted exit 1",
+      "pass_fail": "pass",
+      "verified_by": "claude:sonnet",
+      "verified_at": "2026-10-04T17:36:24.871006+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-027",
+      "description": "Verify FR-027 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "gates typecheck, lint, lint:styles, lint:no-io, lint:data-driven, manifest:check, hygiene, contract:check all exit 0; test 561/561; test:scripts 274/274; gate-proof planted legs ok for 12 of 13 (visual leg clean-run font-timeout under my concurrent load; clean 595/595 x5 rerun)",
+      "pass_fail": "pass",
+      "verified_by": "claude:sonnet",
+      "verified_at": "2026-10-04T17:36:26.401063+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-028",
+      "description": "Verify FR-028 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": ".worktrees/missions-and-pipeline-screens-01M40SKZ-lane-j/packages/mission-ui/test/sk-missions-screen.test.ts EV-1..EV-4 + 'no event' controls; .worktrees/missions-and-pipeline-screens-01M40SKZ-lane-j/packages/mission-ui/test/sk-pipeline-screen.test.ts EV-5,EV-6,EV-7; host-composition.test.ts; pnpm test 561 pass",
+      "pass_fail": "pass",
+      "verified_by": "claude:sonnet",
+      "verified_at": "2026-10-04T17:36:27.922247+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-029",
+      "description": "Verify FR-029 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "pnpm visual: 119 passed (baseline parity test: count equals story count, 1:1 to stories); bash scripts/visual.sh -- --repeat-each=5: 595 passed",
+      "pass_fail": "pass",
+      "verified_by": "claude:sonnet",
+      "verified_at": "2026-10-04T17:36:29.474504+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-030",
+      "description": "Verify FR-030 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "gate contract:check exit 0 (C1-C7), test:contract pass; gate hygiene exit 0 (fixtures free of paths/usernames)",
+      "pass_fail": "pass",
+      "verified_by": "claude:sonnet",
+      "verified_at": "2026-10-04T17:36:31.024952+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-031",
+      "description": "Verify FR-031 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "gates lint:styles + test:scripts (stylelint-exceptions, E-01..E-15 recorded in contracts/gates.md) pass; library elements per tracer-design-decisions D-15 and approved exceptions E-06,E-07",
+      "pass_fail": "pass",
+      "verified_by": "claude:sonnet",
+      "verified_at": "2026-10-04T17:36:32.602519+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-032",
+      "description": "Verify FR-032 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "Visual gate 119/119 against approved baselines; superseded by operator rulings: CP-1 confirmed 2026-10-03 (tracer-design-decisions.md 'CP-1 confirmed') and operator Storybook review fix round (ui4-op-review2.md Renata APPROVED, wrapup review 2026-10-04)",
+      "pass_fail": "pass",
+      "verified_by": "claude:sonnet",
+      "verified_at": "2026-10-04T17:36:34.193058+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-033",
+      "description": "Verify FR-033 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": ".worktrees/missions-and-pipeline-screens-01M40SKZ-lane-j/packages/mission-ui/test/sk-mission-shell.test.ts::sidebar footer percentage (FR-033, D-28); .worktrees/missions-and-pipeline-screens-01M40SKZ-lane-j/packages/mission-ui/test/sk-pipeline-screen.test.ts::footer and inspector agree; visual baselines of shell unchanged (119 pass)",
+      "pass_fail": "pass",
+      "verified_by": "claude:sonnet",
+      "verified_at": "2026-10-04T17:36:35.778340+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-034",
+      "description": "Verify FR-034 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": ".worktrees/missions-and-pipeline-screens-01M40SKZ-lane-j/packages/mission-ui/test/sk-missions-screen.test.ts::result-count live region (FR-034) polite status, visually hidden, announces after filter/search/load more",
+      "pass_fail": "pass",
+      "verified_by": "claude:sonnet",
+      "verified_at": "2026-10-04T17:36:37.338554+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    }
+  ],
+  "negative_invariants": []
+}

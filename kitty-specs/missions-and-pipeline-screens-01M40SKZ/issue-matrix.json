@@ -1,0 +1,29 @@
+{
+  "rows": {
+    "#498": {
+      "evidence_ref": "spec-kitty/spec-kitty-design#498: design-library component gap cited as context; tracked in the design library, not resolved by this mission",
+      "fr": null,
+      "nfr": null,
+      "repo": null,
+      "sc": null,
+      "scope": null,
+      "source_file": null,
+      "title": null,
+      "verdict": "not-applicable",
+      "wp": null
+    },
+    "#501": {
+      "evidence_ref": "spec-kitty/spec-kitty-design#501: design-library component gap cited as context; tracked in the design library, not resolved by this mission",
+      "fr": null,
+      "nfr": null,
+      "repo": null,
+      "sc": null,
+      "scope": null,
+      "source_file": null,
+      "title": null,
+      "verdict": "not-applicable",
+      "wp": null
+    }
+  },
+  "schema_version": 1
+}

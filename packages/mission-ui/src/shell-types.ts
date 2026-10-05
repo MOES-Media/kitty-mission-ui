@@ -52,7 +52,8 @@ export interface ShellMission {
   id: string;
   tags: ShellTag[];
   backItem?: ShellNavItem;
-  progress?: { done: number; total: number };
+  /** `percentage` is shown verbatim when finite (FR-033); otherwise the footer derives its figure from done and total. */
+  progress?: { done: number; total: number; percentage?: number };
 }
 
 /** Folders have `children` and no `href`. */

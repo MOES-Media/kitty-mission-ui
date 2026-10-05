@@ -1,0 +1,2 @@
+// expect: S1b.2
+export const s = `complete`;

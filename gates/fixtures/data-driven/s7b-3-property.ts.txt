@@ -1,0 +1,2 @@
+// expect: S7b.3
+export const f = (m: { statusLaneCounts: Record<string, number> }) => m.statusLaneCounts.done;

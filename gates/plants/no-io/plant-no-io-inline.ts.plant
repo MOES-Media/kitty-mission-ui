@@ -1,0 +1,3 @@
+// plant: an inline disable comment above a violating call must not silence the no-io gate (ruling P-10, exception E-07)
+// eslint-disable-next-line no-restricted-globals
+export const plantNoIoInline = (): Promise<Response> => fetch('/plant');

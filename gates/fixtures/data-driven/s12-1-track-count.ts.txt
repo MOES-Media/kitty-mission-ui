@@ -1,0 +1,2 @@
+// expect: S12.1
+export const c = css`.g { grid-template-columns: repeat(5, 1fr); }`;

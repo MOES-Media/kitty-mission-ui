@@ -72,7 +72,9 @@
               "visual",
               "manifest",
               "no-io",
-              "hygiene"
+              "hygiene",
+              "contract",
+              "data-driven"
             ]
           },
           "plantedExit": {

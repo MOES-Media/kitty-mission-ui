@@ -1,0 +1,5 @@
+// expect: S8c.1
+export const f = (phases: string[]) => {
+  const [first] = phases;
+  return first;
+};

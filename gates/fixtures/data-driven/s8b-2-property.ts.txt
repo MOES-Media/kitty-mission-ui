@@ -1,0 +1,2 @@
+// expect: S8b.2
+export const f = (m: { phases: string[] }) => m.phases.slice(1);

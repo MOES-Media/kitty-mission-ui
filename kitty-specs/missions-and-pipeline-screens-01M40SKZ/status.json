@@ -1,0 +1,366 @@
+{
+  "event_count": 81,
+  "last_event_id": "01M42XHET8EZR30BVK3YVB06C7",
+  "materialized_at": "2026-10-04T07:37:32.232984+00:00",
+  "mission_number": "",
+  "mission_slug": "missions-and-pipeline-screens-01M40SKZ",
+  "mission_type": "software-dev",
+  "schema_version": 2,
+  "summary": {
+    "approved": 10,
+    "blocked": 0,
+    "canceled": 0,
+    "claimed": 0,
+    "done": 0,
+    "for_review": 0,
+    "in_progress": 0,
+    "in_review": 0,
+    "planned": 0
+  },
+  "work_packages": {
+    "WP01": {
+      "actor": "claude",
+      "agent": "claude",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
+      "force_count": 0,
+      "implementer_of_record": "claude",
+      "lane": "approved",
+      "last_event_id": "01M415DDTZVNKVC233S3CXKS1B",
+      "last_transition_at": "2026-10-03T15:16:39.903355+00:00",
+      "model": "__resolved_model_absent__",
+      "notes": [
+        "All 9 subtasks committed; every gate green incl. full gate-proof (11 gates); planning edits moved to the target branch",
+        "Review passed: 98/98 pinned files byte-equal; 11 gate rules revert-proven; all gates green; sev-1 nits only"
+      ],
+      "provider": "__resolved_provider_absent__",
+      "review_result": {
+        "reference": "review-cycle://missions-and-pipeline-screens-01M40SKZ/WP01-contract-tooling-and-gate/review-cycle-1.md",
+        "reviewer": "claude",
+        "verdict": "approved"
+      },
+      "role": "reviewer",
+      "shell_pid": 1294892,
+      "shell_pid_created_at": "1791037341.63",
+      "subtasks": {
+        "T001": "done",
+        "T002": "done",
+        "T003": "done",
+        "T004": "done",
+        "T005": "done",
+        "T006": "done",
+        "T007": "done",
+        "T008": "done",
+        "T009": "done"
+      }
+    },
+    "WP02": {
+      "actor": "claude",
+      "agent": "claude",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
+      "force_count": 0,
+      "implementer_of_record": "claude",
+      "lane": "approved",
+      "last_event_id": "01M418Q2W7TVF9NYSQ242NWZPP",
+      "last_transition_at": "2026-10-03T16:14:22.087364+00:00",
+      "model": "__resolved_model_absent__",
+      "notes": [
+        "Gate data-driven (31 selectors, 36 fixtures, 72 self-tests, plant), E-07 noInlineConfig on no-io with plant, defaults + logic + 9 unit test files (301 tests). All gates green; full gate-proof red only on hygiene leg because the X-1 schema enum edit lives in kitty-specs (orchestrator patch).",
+        "Review passed: 20+ gate experiments red; E-07 plant proven; proof legs green; sev-2 gaps F-01/F-02 queued for the wrap-up fold"
+      ],
+      "provider": "__resolved_provider_absent__",
+      "review_result": {
+        "reference": "review-cycle://missions-and-pipeline-screens-01M40SKZ/WP02-data-driven-gate-defaults-logic/review-cycle-1.md",
+        "reviewer": "claude",
+        "verdict": "approved"
+      },
+      "role": "reviewer",
+      "shell_pid": 2195312,
+      "shell_pid_created_at": "1791040630.18",
+      "subtasks": {
+        "T010": "done",
+        "T011": "done",
+        "T012": "done",
+        "T013": "done",
+        "T014": "done",
+        "T015": "done",
+        "T016": "done"
+      }
+    },
+    "WP03": {
+      "actor": "claude",
+      "agent": "claude",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
+      "force_count": 1,
+      "implementer_of_record": "claude",
+      "lane": "approved",
+      "last_event_id": "01M41C18DXVT22ZN56GWCSBK56",
+      "last_transition_at": "2026-10-03T17:12:21.181593+00:00",
+      "model": "__resolved_model_absent__",
+      "notes": [
+        "Shell percentage (FR-033), visual spec nested await, library-sheets + shell-frame; spikes S1-S4 run (not committed); CP-1 evidence in scratchpad cp1/index.md; all gates green, visual 59 pass 0 diffs, gate-proof pass.",
+        "Rework: F1/F2 S2 re-shot, distinct labelled A/B/C (pixel diffs 386/772/772), pass rule + rings/dots line in index, E-04 needed for B (operator fork B+E-04 vs C+drift); F3 settle bounded + tests (742b803); F4 shell-frame convention documented; F5 a11y names from aria snapshot",
+        "Re-review passed: S2 evidence distinct (A-B 386px, B-C 772px), settle bound revert-proven, all 14 gates green"
+      ],
+      "provider": "__resolved_provider_absent__",
+      "review": null,
+      "review_result": {
+        "reference": "review-cycle://missions-and-pipeline-screens-01M40SKZ/WP03-shell-change-and-spikes/review-cycle-2.md",
+        "reviewer": "claude",
+        "verdict": "approved"
+      },
+      "role": "reviewer",
+      "shell_pid": null,
+      "shell_pid_created_at": null,
+      "subtasks": {
+        "T017": "done",
+        "T018": "done",
+        "T019": "done",
+        "T020": "done",
+        "T021": "done",
+        "T022": "done"
+      }
+    },
+    "WP04": {
+      "actor": "claude",
+      "agent": "claude",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
+      "force_count": 0,
+      "implementer_of_record": "claude",
+      "lane": "approved",
+      "last_event_id": "01M41ERR3B25GYSH0B5HAQ50S5",
+      "last_transition_at": "2026-10-03T18:00:08.043642+00:00",
+      "model": "__resolved_model_absent__",
+      "notes": [
+        "Five skeletons with the full surface, E-01..E-03 overrides + story-support ban, manifest regenerated once, surface-freeze test. All gates and gate-proof green. CP-1 consequences need CR-1..CR-4 (see hand-off).",
+        "Review passed: manifest matches contracts; CP-1 rejections implementable on the frozen surface; sev-2 F1-F3 routed"
+      ],
+      "provider": "__resolved_provider_absent__",
+      "review_result": {
+        "reference": "review-cycle://missions-and-pipeline-screens-01M40SKZ/WP04-skeletons-and-surface-freeze/review-cycle-1.md",
+        "reviewer": "claude",
+        "verdict": "approved"
+      },
+      "role": "reviewer",
+      "shell_pid": 753769,
+      "shell_pid_created_at": "1791048502.24",
+      "subtasks": {
+        "T023": "done",
+        "T024": "done",
+        "T025": "done",
+        "T026": "done",
+        "T027": "done"
+      }
+    },
+    "WP05": {
+      "actor": "claude",
+      "agent": "claude",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
+      "force_count": 0,
+      "implementer_of_record": "claude",
+      "lane": "approved",
+      "last_event_id": "01M41FYP0NN7CAFNDZ9787DM3B",
+      "last_transition_at": "2026-10-03T18:20:51.093471+00:00",
+      "model": "__resolved_model_absent__",
+      "notes": [
+        "WP05: filter toggle group tests, fixtures, 4 stories, 4 baselines; all gates green",
+        "Review passed: 13/14 revert experiments red; visual matches prototype except AD-3; F-1 sev2 to fold list"
+      ],
+      "provider": "__resolved_provider_absent__",
+      "review_result": {
+        "reference": "review-cycle://missions-and-pipeline-screens-01M40SKZ/WP05-filter-toggle-group-element/review-cycle-1.md",
+        "reviewer": "claude",
+        "verdict": "approved"
+      },
+      "role": "reviewer",
+      "shell_pid": 1000274,
+      "shell_pid_created_at": "1791050484.53",
+      "subtasks": {
+        "T028": "done",
+        "T029": "done",
+        "T030": "done",
+        "T031": "done",
+        "T032": "done"
+      }
+    },
+    "WP06": {
+      "actor": "claude",
+      "agent": "claude",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
+      "force_count": 0,
+      "implementer_of_record": "claude",
+      "lane": "approved",
+      "last_event_id": "01M41GMK9D6HDWG4SRC077320D",
+      "last_transition_at": "2026-10-03T18:32:49.197678+00:00",
+      "model": "__resolved_model_absent__",
+      "notes": [
+        "sk-phase-bar data-driven, candidate B connector, stylelint E-04/E-08..E-12 with proofs, 4 baselines, F1 manifest",
+        "Review passed: 9 own revert experiments red; label styling covered by DR-8; unknown status = pending text"
+      ],
+      "provider": "__resolved_provider_absent__",
+      "review_result": {
+        "reference": "review-cycle://missions-and-pipeline-screens-01M40SKZ/WP06-phase-bar-element/review-cycle-1.md",
+        "reviewer": "claude",
+        "verdict": "approved"
+      },
+      "role": "reviewer",
+      "shell_pid": 1000621,
+      "shell_pid_created_at": "1791050488.58",
+      "subtasks": {
+        "T033": "done",
+        "T034": "done",
+        "T035": "done",
+        "T036": "done",
+        "T037": "done"
+      }
+    },
+    "WP07": {
+      "actor": "claude",
+      "agent": "claude",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
+      "force_count": 1,
+      "implementer_of_record": "claude",
+      "lane": "approved",
+      "last_event_id": "01M41N9YDW8Q23W5DPQN2RGK7J",
+      "last_transition_at": "2026-10-03T19:54:23.036929+00:00",
+      "model": "__resolved_model_absent__",
+      "notes": [
+        "sk-work-package-board: columns from laneGroups, cards with badges/progress (DR-1 showsProgress)/actor+deps+arrow, event, scroll region; 44 tests, 6 baselines, all gates green",
+        "Fix cycle 1: E-09 pinned letter-spacing 0.08em on board lane title (F-1/F-2); 6 board baselines re-taken",
+        "Re-review passed: tracking resolved, no stylelint regression, 0 new findings"
+      ],
+      "provider": "__resolved_provider_absent__",
+      "review": null,
+      "review_result": {
+        "reference": "review-cycle://missions-and-pipeline-screens-01M40SKZ/WP07-work-package-board-element/review-cycle-2.md",
+        "reviewer": "claude",
+        "verdict": "approved"
+      },
+      "role": "reviewer",
+      "shell_pid": null,
+      "shell_pid_created_at": null,
+      "subtasks": {
+        "T038": "done",
+        "T039": "done",
+        "T040": "done",
+        "T041": "done",
+        "T042": "done",
+        "T043": "done"
+      }
+    },
+    "WP08": {
+      "actor": "claude",
+      "agent": "claude",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
+      "force_count": 3,
+      "implementer_of_record": "claude",
+      "lane": "approved",
+      "last_event_id": "01M41SK0PPXZ41SQJW61C0Y48M",
+      "last_transition_at": "2026-10-03T21:09:14.582237+00:00",
+      "model": "__resolved_model_absent__",
+      "notes": [
+        "Missions screen, row fragment, 24 stories and baselines, 59 behaviour tests incl. NFR-006 and FR-034; E-13 stylelint block with no-leak plant; all gates green, gate-proof pass",
+        "Review cycle 1 fixes: F1/F4 panel chrome + display face via extended E-13 (scoped, proven); F2 title+slug inline via ::part(trigger); F3 live-region shrink/from-empty tests; 21 Missions baselines re-shot",
+        "Rework 2: N1 fixed (fit-content(60%) title track; bounded-height test red-first), N2 redundant background removed, long-names re-baselined, all mission-missions PNGs viewed",
+        "Cycle-3 review passed: N1 resolved (revert -> 2384px red), all 24 baselines checked, F1-F4 hold"
+      ],
+      "provider": "__resolved_provider_absent__",
+      "review": null,
+      "review_result": {
+        "reference": "review-cycle://missions-and-pipeline-screens-01M40SKZ/WP08-missions-screen/review-cycle-3.md",
+        "reviewer": "claude",
+        "verdict": "approved"
+      },
+      "role": "reviewer",
+      "shell_pid": null,
+      "shell_pid_created_at": null,
+      "subtasks": {
+        "T044": "done",
+        "T045": "done",
+        "T046": "done",
+        "T047": "done",
+        "T048": "done",
+        "T049": "done",
+        "T050": "done",
+        "T051": "done"
+      }
+    },
+    "WP09": {
+      "actor": "claude",
+      "agent": "claude",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
+      "force_count": 1,
+      "implementer_of_record": "claude",
+      "lane": "approved",
+      "last_event_id": "01M41XDW9E7YHSJ8GNE67FSQWX",
+      "last_transition_at": "2026-10-03T22:16:20.527006+00:00",
+      "model": "__resolved_model_absent__",
+      "notes": [
+        "WP09 sk-pipeline-screen: header, states, inspector, composition, 22 stories/baselines, 42 tests; formatWholePercent (screen + shell footer), detailImplement review WP, E-13 Pipeline half (approved). All gates green, visual 91/91, gate-proof pass.",
+        "Review cycle 1 rework: F1/Q1 flat inspector and phase band (E-12 ext), F2 eyebrow 0.08em (E-09 ext), F3 secondary outlined button, F4 14px notice, F5/Q2 whole-word wrapping + ellipsis + title tooltip (E-11 ext), F6, F7; F8 left. Gates, visual, gate-proof green.",
+        "Re-review passed: ~17 own reverts red, 21 PNGs vs prototype ok, exceptions scoped, no sev>=3"
+      ],
+      "provider": "__resolved_provider_absent__",
+      "review": null,
+      "review_result": {
+        "reference": "review-cycle://missions-and-pipeline-screens-01M40SKZ/WP09-pipeline-screen/review-cycle-2.md",
+        "reviewer": "claude",
+        "verdict": "approved"
+      },
+      "role": "reviewer",
+      "shell_pid": null,
+      "shell_pid_created_at": null,
+      "subtasks": {
+        "T052": "done",
+        "T053": "done",
+        "T054": "done",
+        "T055": "done",
+        "T056": "done",
+        "T057": "done",
+        "T058": "done"
+      }
+    },
+    "WP10": {
+      "actor": "claude",
+      "agent": "claude",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
+      "force_count": 0,
+      "implementer_of_record": "claude",
+      "lane": "approved",
+      "last_event_id": "01M42XHET8EZR30BVK3YVB06C7",
+      "last_transition_at": "2026-10-04T07:37:32.232984+00:00",
+      "model": "__resolved_model_absent__",
+      "notes": [
+        "WP10: chain B merged and reconciled; full gate set and gate-proof green on merged tree (118 stories, 118 baselines); 5 consecutive visual runs 0 failures; ci.yml visual/unit-tests timeouts written; host-composition and terminology tests; docs reconciled; patch ui4-wp10-kitty-specs.patch",
+        "Review passed: merge loses nothing, 118/118 stories, 6 revert experiments red, timeouts re-derived; two sev-2 operator questions"
+      ],
+      "provider": "__resolved_provider_absent__",
+      "review_result": {
+        "reference": "review-cycle://missions-and-pipeline-screens-01M40SKZ/WP10-integration-baselines-timing-docs/review-cycle-1.md",
+        "reviewer": "claude",
+        "verdict": "approved"
+      },
+      "role": "reviewer",
+      "shell_pid": 166206,
+      "shell_pid_created_at": "1791065822.38",
+      "subtasks": {
+        "T059": "done",
+        "T060": "done",
+        "T061": "done",
+        "T062": "done",
+        "T063": "done",
+        "T064": "done",
+        "T065": "done"
+      }
+    }
+  }
+}

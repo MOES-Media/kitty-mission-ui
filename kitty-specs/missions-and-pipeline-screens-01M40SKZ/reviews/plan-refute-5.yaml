@@ -1,0 +1,20 @@
+schema: review-refute/v1
+complete: true
+phase: plan
+batch: 5
+verdicts:
+  - id: PLAN-VERIFY-014
+    verdict: confirmed
+    reason: rules.mjs has only /Users and Windows Users path patterns and no bare-username rule, yet gates.md C6 lists "usernames" as scanned, so a free-text actor string passes.
+  - id: PLAN-VERIFY-015
+    verdict: confirmed
+    reason: D-23 asserts only the timing budget and says initial render is not measured, with no structural proof (node identity, partial hide) that the hidden-li design is what is under test.
+  - id: PLAN-VERIFY-016
+    verdict: confirmed
+    reason: D-34 lists test topics only; the charter requires every event and payload asserted, and no positive-control, exactly-once, equality-count or revert rule exists, with C-009 proven by a one-time IC-09 grep.
+  - id: PLAN-VERIFY-017
+    verdict: confirmed
+    reason: ci.yml proof-leg uses matrix.image and matrix.timeout, gates.md says only "matrix entry and timeout" with no image, and C1 compares PIN.json to the files, which cannot detect an edit to both.
+  - id: PLAN-VERIFY-018
+    verdict: confirmed
+    reason: research.md D-12 names missionDetailPopulated (others use detailBothInProgress), D-08 says ten shapes against S1 to S11, and gates.md says about 14 fixtures while listing 16.

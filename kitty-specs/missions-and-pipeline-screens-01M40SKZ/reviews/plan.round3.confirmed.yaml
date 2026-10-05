@@ -1,0 +1,95 @@
+schema: review-findings/v1
+complete: true
+phase: plan
+round: 3
+findings:
+- id: PLAN-FRESH2-001
+  lens: cross-file-contradiction
+  severity: 3
+  title: PHASE_STATUS_TEXT is keyed by phase status in defaults.md but indexed by PhaseState everywhere else
+  evidence:
+  - artifact: 'contracts/defaults.md:25: PHASE_STATUS_TEXT is Readonly<Record<string,string>> with keys pending, in_progress, complete'
+  - artifact: data-model.md (Phase state and current step) and contracts/gates.md:144 call PHASE_STATUS_TEXT a Record<PhaseState, ...> table indexed by phaseState(status), whose values are done, current,
+      pending
+  - artifact: 'contracts/defaults.md:26-29: PHASE_TONE, PHASE_GLYPH, PHASE_IS_CURRENT are keyed done/current/pending, so the sibling table has a different key space'
+  claim: The phase bar is specified to read status text as PHASE_STATUS_TEXT[phaseState(status)]. With the keys declared in defaults.md, PhaseState done and current find no entry (the keys are complete
+    and in_progress), so the assistive text is undefined for two of the three states. The type Record<string,string> also hides this from tsc. The round 2 edit to the phaseState row touched this area and
+    left the contradiction in place.
+  remediation: Declare PHASE_STATUS_TEXT as Readonly<Record<PhaseState, string>> keyed done (complete), current (in progress), pending (pending), as the other three tables are, and add a defaults unit test
+    that every PhaseState has a non-empty entry.
+- id: PLAN-FRESH2-002
+  lens: stale-reference
+  severity: 2
+  title: research.md D-02 still places the story-support import ban in IC-03
+  evidence:
+  - artifact: 'research.md:54: ''written in IC-03 and proven there once by a temporary violating import'''
+  - artifact: 'plan.md IC-03b Purpose and gates.md eslint row: the story-support import ban and its proof are IC-03b'
+  claim: The IC-03 split left one un-renamed reference, the only bare IC-03 in the non-review artifacts. IC-03a has no eslint.config.mjs in its surfaces, so a WP brief built from research.md would send
+    the ban to the wrong package, where it cannot be written.
+  remediation: Change to IC-03b in research.md D-02.
+- id: PLAN-FRESH2-003
+  lens: write-scope
+  severity: 2
+  title: gates.md is edited by IC-01, IC-02 and IC-09 and by the post-PR fixup, but is not in the shared-files writer table
+  evidence:
+  - artifact: 'gates.md Timeouts: IC-01 and IC-02 ''write the derived value into its ci.yml entry and this table'''
+  - artifact: 'plan.md wrap-up: ''the one allowed commit after the draft PR opens is the timeout-only fixup of gates.md''; gates.md says the fixup changes only the timeouts, which live in ci.yml'
+  - artifact: 'plan.md ''Shared files: who may write them'' lists ci.yml (IC-01, IC-02, IC-09) but no row for kitty-specs/.../contracts/gates.md'
+  claim: The plan claims every file has one writer, yet three WPs are told to edit a planning artifact that is outside every WP's Affected surfaces and is a file the orchestrator otherwise owns (tracer
+    files). The fixup commit is described as touching gates.md while the real change is in ci.yml, so the one allowed post-PR commit is under-specified.
+  remediation: Add a gates.md row (writers IC-01, IC-02 for their own gate rows only, IC-09 for the visual and unit-tests rows), list it in those WPs' Affected surfaces, and word the fixup as 'ci.yml (and
+    the matching gates.md figures)'.
+- id: PLAN-FRESH2-004
+  lens: gate-cannot-fail
+  severity: 2
+  title: New-gate timeouts are measured once on a partial tree and never re-measured, while the plan still says timeouts are written once in IC-09
+  evidence:
+  - artifact: 'gates.md derivation: C and L are measured by IC-01 and IC-02 ''in the clean worktree''; IC-09''s exit work re-runs only the visual and unit-tests figures'
+  - artifact: 'plan.md Complexity table: ''Raised CI timeouts ... written once in IC-09''; research.md D-31 ''set in IC-09'''
+  - code: packages/mission-ui/src currently holds 12 scanned files; IC-04 to IC-08 add the five elements, stories excluded, that lint:data-driven scans with 31 selectors
+  claim: data-driven's command lints packages/*/src, which grows after IC-02 measured it, and contract tests run against fixtures later stories depend on. The formula (2 x C + 120 s, floor 5 and 6) is generous,
+    but its input is a measurement of a smaller tree, and nothing in IC-09 re-checks it. The 'written once in IC-09' statements are now false for the two new gates (IC-01 and IC-02 write theirs).
+  remediation: 'Add to IC-09: re-record C and L for contract and data-driven on the integrated tree and confirm the written timeouts still satisfy the rule (raise if not); correct the ''written once in
+    IC-09'' wording to cover only visual and unit-tests.'
+- id: PLAN-FRESH2-005
+  lens: gate-cannot-fail
+  severity: 2
+  title: CP-1 is a precondition no mechanism checks
+  evidence:
+  - artifact: plan.md IC-03b 'depends on IC-03a, and CP-1 completed'; Lane mechanics treats dispatch as orchestrator-owned
+  - artifact: spec-kitty depends_on can express only IC-03a; CP-1 is not a WP
+  claim: Once IC-03a is approved the tool will treat IC-03b as dispatchable. If the orchestrator dispatches it, or it is picked up from next, before the operator confirms DR-1 to DR-12, the freeze and every
+    later WP start on an unconfirmed list, which is the failure the split was introduced to prevent. Nothing in the IC-03b brief or exit checks can fail in that case.
+  remediation: 'Make the first step of the IC-03b brief and its reviewer checklist a file precondition: tracer-design-decisions.md contains a dated CP-1 entry naming the confirmed or amended DR list and
+    the S2 outcome; the reviewer rejects otherwise.'
+- id: PLAN-FRESH2-006
+  lens: false-rationale
+  severity: 2
+  title: detailUnknownLane declares a weightedPercentage the producer cannot emit, against the plan's own stated rule
+  evidence:
+  - artifact: 'contract-pin.md Declared derived values: detailUnknownLane planned 1, in_progress 1 with two uncounted WPs -> 15 (0.3/2); the producer, counting every WP in the denominator, would give 7.5'
+  - artifact: 'gates.md rule e rationale: ''a declared value that the producer could never emit is a fixture that is not a contract document (P-8)'''
+  - artifact: 'contract-pin.md: ''the producer''s materialiser cannot reach'' an unknown-lane WP (asserted, not shown)'
+  claim: The new justification for rule e (fixtures must be producible) is waived for exactly the fixture whose lane is outside the contract, on an unverified claim about the materialiser. Only the contract
+    reading (wpTotal excludes unknown lanes) supports 15, and the contract's own examples never exercise it. The fixture is registry-relaxed so the gate passes, but the plan's explanation is internally
+    inconsistent.
+  remediation: State plainly that detailUnknownLane is a deliberate non-producible document (a relaxation) and exempt from the producer-equality argument, or drop the 'cannot reach' sentence; keep the figure
+    15 because it follows the contract's tally rule.
+- id: PLAN-FRESH2-007
+  lens: terminology-drift
+  severity: 1
+  title: The word lane still names a work-package chain in the shared-files section after the rename to chain
+  evidence:
+  - artifact: 'plan.md Shared files: ''Disjoint write scopes are the lane guarantee, so every file either lane could touch'', ''a lane must not change the public surface'', ''a lane that finds a gap'';
+      also research.md ''never by a lane'', ''the Missions lane'''
+  claim: Round 2 renamed lane A and B to chain A and B because 'lane' is the tool's allocation unit and may not map one-to-one to a chain, but the write-scope table still says lane. A reader cannot tell
+    whether a worktree or a chain is meant.
+  remediation: Replace with 'chain' (or 'work package') in those sentences and in the compaction slice names.
+- id: PLAN-FRESH2-008
+  lens: cross-file-contradiction
+  severity: 1
+  title: contract-pin.md points to the producer weights as 'next section' but the section is above
+  evidence:
+  - artifact: contract-pin.md:106-108 'recomputed ... from the producer's lane weights (next section)' while '### Producer lane weights' is at line 96, before '### Declared derived values'
+  claim: Wrong direction cross-reference introduced by the insert.
+  remediation: Write 'previous section' or name the heading.

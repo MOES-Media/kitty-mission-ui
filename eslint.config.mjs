@@ -5,10 +5,31 @@ import tseslint from 'typescript-eslint';
 import lit from 'eslint-plugin-lit';
 import skLocal, { elementSyntaxRestrictions } from './eslint-rules/index.mjs';
 
+
+// Per-file `class=` exceptions E-01 to E-03 (missions-and-pipeline-screens). The library ships these families as
+// styles-only sheets whose markup contract is class-based (gaps G-01 to G-06), so a file that adopts one may write the
+// classes of that family and nothing else: every class= value must be static and made only of the listed prefixes.
+const classOnly = (prefixes) => {
+  const alternatives = prefixes.join('|');
+  return {
+    selector: String.raw`TaggedTemplateExpression:matches([tag.name=/^(html|svg)$/], [tag.property.name=/^(html|svg)$/]) > TemplateLiteral > TemplateElement[value.raw=/\sclass\s*=\s*(?!"(${alternatives})[a-z0-9_-]*(\s+(${alternatives})[a-z0-9_-]*)*")/i]`,
+    message: `class= is only allowed for the library classes ${prefixes.join(', ')} in this file.`,
+  };
+};
+const withoutClassBan = elementSyntaxRestrictions.filter((entry) => !entry.message.startsWith('class= is forbidden'));
+
 export default tseslint.config(
   {
     // Plants are non-source overlays; nothing lintable lives there. No other broad ignores.
-    ignores: ['gates/plants/**', '**/storybook-static/**', '**/test-results/**', '.worktrees/**'],
+    ignores: [
+      'gates/plants/**',
+      '**/storybook-static/**',
+      '**/test-results/**',
+      '.worktrees/**',
+      // Exception E-05: openapi-typescript emits `unknown & unknown`, which the type rules reject; gate contract C2
+      // regenerates and byte-compares this one file, so it is ignored by exact path and nothing else.
+      'packages/mission-ui/src/contract/types.generated.ts',
+    ],
   },
   js.configs.recommended,
   {
@@ -28,6 +49,7 @@ export default tseslint.config(
         AbortSignal: 'readonly',
         setTimeout: 'readonly',
         clearTimeout: 'readonly',
+        structuredClone: 'readonly',
       },
     },
   },
@@ -67,6 +89,51 @@ export default tseslint.config(
             String.raw`TaggedTemplateExpression:matches([tag.name=/^(html|svg)$/], [tag.property.name=/^(html|svg)$/]) > TemplateLiteral > TemplateElement[value.raw=/\sclass\s*=\s*(?!"sk-progress[a-z_-]*(\s+sk-progress[a-z_-]*)*")/i]`,
           message: 'class= is only allowed for the library sk-progress classes in this file.',
         },
+      ],
+    },
+  },
+  {
+    // Exception E-01 (gap G-01, sunset: a library toggle group or `sk-button` ARIA passthrough, design-library #501):
+    // the filter group is the one file with a raw `<button>`, and only `<button type="button"
+    // class="sk-segmented-choice__item" ...>`; its classes are the segmented-choice family.
+    files: ['packages/*/src/elements/sk-filter-toggle-group/sk-filter-toggle-group.ts'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        ...withoutClassBan.map((entry) =>
+          entry.message.startsWith('Raw <button>')
+            ? {
+                selector: String.raw`TaggedTemplateExpression:matches([tag.name=/^(html|svg)$/], [tag.property.name=/^(html|svg)$/]) > TemplateLiteral > TemplateElement[value.raw=/<(input|select|textarea)\b|<button\b(?!\s+type="button"\s+class="sk-segmented-choice__item")/i]`,
+                message: 'Only <button type="button" class="sk-segmented-choice__item"> is allowed raw in this file; other raw controls are forbidden.',
+              }
+            : entry,
+        ),
+        classOnly(['sk-segmented-choice']),
+      ],
+    },
+  },
+  {
+    // Exception E-02 (gaps G-02, G-03, sunset: library `sk-workflow-board`/`sk-workflow-lane`/`sk-progress`).
+    files: ['packages/*/src/elements/sk-work-package-board/{sk-work-package-board,card-parts}.ts'],
+    rules: { 'no-restricted-syntax': ['error', ...withoutClassBan, classOnly(['sk-workflow-board', 'sk-workflow-lane', 'sk-progress'])] },
+  },
+  {
+    // Exception E-03 (gaps G-03, G-05, G-06, sunset: library `sk-breadcrumbs`/`sk-empty-state`/`sk-progress`).
+    files: ['packages/*/src/elements/sk-missions-screen/{sk-missions-screen,mission-row-parts}.ts'],
+    rules: { 'no-restricted-syntax': ['error', ...withoutClassBan, classOnly(['sk-empty-state', 'sk-progress'])] },
+  },
+  {
+    files: ['packages/*/src/elements/sk-pipeline-screen/{sk-pipeline-screen,pipeline-parts}.ts'],
+    rules: { 'no-restricted-syntax': ['error', ...withoutClassBan, classOnly(['sk-breadcrumbs', 'sk-empty-state', 'sk-progress'])] },
+  },
+  {
+    // Elements never import story-only helpers (research D-02): story-support is for stories and fixtures.
+    files: ['packages/*/src/elements/**/*.ts'],
+    ignores: ['**/*.stories.ts', '**/fixtures.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        { patterns: [{ group: ['**/story-support/**'], message: 'Elements must not import story-support: it is for stories and fixtures only.' }] },
       ],
     },
   },

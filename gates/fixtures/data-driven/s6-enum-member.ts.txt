@@ -1,0 +1,4 @@
+// expect: S6
+export enum E {
+  Blocked = 1,
+}

@@ -349,6 +349,46 @@ describe('frame and landmarks (FR-001, FR-002, FR-004, FR-008)', () => {
   });
 });
 
+describe('flush content (D-05)', () => {
+  const padding = (el: SkMissionShell): string => getComputedStyle(one<HTMLElement>(root(el), 'main')).padding;
+
+  it('is off by default: main pads the content, 24 px, and 16 px at the mobile tier', async () => {
+    for (const [width, expected] of [[1280, '24px'], [1024, '24px'], [390, '16px']] as const) {
+      const el = await mount(width);
+      expect(el.flush, `${width} default`).toBe(false);
+      expect(el.hasAttribute('flush')).toBe(false);
+      expect(padding(el), `${width}`).toBe(expected);
+      document.body.replaceChildren();
+    }
+  });
+
+  it('flush removes the content padding at every tier and reflects to the attribute', async () => {
+    for (const width of [1280, 1024, 390]) {
+      const el = await mount(width, { ...projectArgs, flush: true });
+      expect(el.hasAttribute('flush'), `${width} reflected`).toBe(true);
+      expect(padding(el), `${width}`).toBe('0px');
+      const main = one<HTMLElement>(root(el), 'main');
+      const content = one<HTMLElement>(el, '[data-content]');
+      // the slotted content reaches the left and right edges of the main landmark
+      expect(content.getBoundingClientRect().left, `${width} left`).toBeCloseTo(main.getBoundingClientRect().left, 1);
+      expect(content.getBoundingClientRect().right, `${width} right`).toBeCloseTo(main.getBoundingClientRect().right, 1);
+      document.body.replaceChildren();
+    }
+  });
+
+  it('exposes the tier padding to the slotted content as --sk-mission-shell-content-padding, flush or not', async () => {
+    for (const flush of [false, true]) {
+      for (const [width, expected] of [[1280, '24px'], [390, '16px']] as const) {
+        const el = await mount(width, { ...projectArgs, flush });
+        const probe = one<HTMLElement>(el, '[data-content]');
+        probe.style.paddingInlineStart = 'var(--sk-mission-shell-content-padding)';
+        expect(getComputedStyle(probe).paddingInlineStart, `flush ${flush} at ${width}`).toBe(expected);
+        document.body.replaceChildren();
+      }
+    }
+  });
+});
+
 describe('status (FR-010, D-04)', () => {
   const statuses: ViewState[] = ['loading', 'error', 'empty', 'ready'];
 
@@ -563,6 +603,54 @@ describe('sidebar footer progress', () => {
     expect(bar.value).toBe(missionArgs.mission.progress?.done);
     expect(bar.max).toBe(missionArgs.mission.progress?.total);
     expect(bar.labels?.[0]?.textContent?.trim()).toBe(`${missionArgs.mission.progress?.total} Work Packages`);
+  });
+});
+
+describe('sidebar footer percentage', () => {
+  const withProgress = (progress: { done: number; total: number; percentage?: number }): Args => ({
+    ...missionArgs,
+    mission: { ...missionArgs.mission, progress },
+  });
+  const meta = (el: SkMissionShell): string => one<HTMLElement>(root(el), '[data-footer] .sk-progress__meta').textContent?.trim() ?? '';
+
+  it('shows a given percentage rounded to a whole percent: bar value is the given figure, meta is whole', async () => {
+    const el = await mount(1280, withProgress({ done: 1, total: 6, percentage: 41.6667 }));
+    const bar = one<HTMLProgressElement>(root(el), '[data-footer] progress');
+    expect(bar.value).toBe(41.6667);
+    expect(bar.max).toBe(100);
+    expect(meta(el)).toBe('42%');
+    expect(bar.labels?.[0]?.textContent?.trim()).toBe('6 Work Packages');
+  });
+
+  it('without a percentage the footer is the existing rounded done over total (unchanged path)', async () => {
+    const el = await mount(1280, withProgress({ done: 1, total: 6 }));
+    const bar = one<HTMLProgressElement>(root(el), '[data-footer] progress');
+    expect(bar.value).toBe(1);
+    expect(bar.max).toBe(6);
+    expect(meta(el)).toBe('17%');
+  });
+
+  it('a percentage with total 0 still renders no footer, and a positive control with total 1 does', async () => {
+    const none = await mount(1280, withProgress({ done: 0, total: 0, percentage: 50 }));
+    expect(root(none).querySelector('[data-footer]')).toBeNull();
+    expect(root(none).querySelector('progress')).toBeNull();
+    document.body.replaceChildren();
+    const some = await mount(1280, withProgress({ done: 0, total: 1, percentage: 50 }));
+    expect(root(some).querySelector('[data-footer] progress')).not.toBeNull();
+  });
+
+  it('NaN and Infinity percentages fall back to the existing path (and a finite one does not)', async () => {
+    const seen: string[] = [];
+    for (const percentage of [Number.NaN, Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY]) {
+      const el = await mount(1280, withProgress({ done: 1, total: 4, percentage }));
+      const bar = one<HTMLProgressElement>(root(el), '[data-footer] progress');
+      expect([bar.value, bar.max]).toEqual([1, 4]);
+      seen.push(meta(el));
+      document.body.replaceChildren();
+    }
+    expect(seen).toEqual(['25%', '25%', '25%']);
+    const finite = await mount(1280, withProgress({ done: 1, total: 4, percentage: 0 }));
+    expect(meta(finite)).toBe('0%');
   });
 });
 

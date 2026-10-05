@@ -1,0 +1,2 @@
+// expect: S8b.1
+export const f = (phases: string[]) => phases.at(0);
