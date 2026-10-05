@@ -21,6 +21,9 @@ All user-visible changes to this repository. Per-package notes live in `packages
   and `Gate: contract` fails when the copy drifts from its pin, a generated file is stale, or a fixture is not a valid,
   coherent contract document. Hygiene now also rejects e-mail addresses in the contract and fixture paths, and the
   `node:test` suites of the gate scripts run inside the hygiene gate.
+- **Screens can run their content to the edges of the mission shell** (`#4`). `sk-mission-shell` gains a `flush`
+  option and a public `--sk-mission-shell-content-padding` property, so a screen that needs edge-to-edge panels (the
+  Pipeline's phase band and current-step sidebar) no longer undoes the shell's padding with negative margins.
 - **An application shell screen with a project and a mission layout that adapts from desktop to phone width**
   (`app-shell-01M3V82X`). `sk-mission-shell` brings the top bar, rail, sidebar and content column, three responsive
   tiers, an overlay drawer and a flyout, with 42 visual baselines; its design-library gaps are recorded in
@@ -43,3 +46,9 @@ All user-visible changes to this repository. Per-package notes live in `packages
   locally.
 - **Contributor guide** (`#1`). `README.md` covers setup, the credential, the screen contract, every gate, adding an
   element, and the gates' known limitations.
+
+### Changed
+
+- **💥 The mission sample's open event is now `sk-open-mission`** (`#4`). Hosts that listened for `sk-mission-open`
+  on `sk-mission-sample` must listen for `sk-open-mission`; it carries the same detail type as the Missions screen, so
+  one listener serves both. New events follow the verb-noun form; the shell's older event names are unchanged.
