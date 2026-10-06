@@ -266,3 +266,19 @@ describe('the vocabulary has one home', () => {
     expect(code(filesLogicSource)).toContain('UNKNOWN_CHANGE_STATE');
   });
 });
+
+describe('one declaration per word across src/defaults (DESIGN-009)', () => {
+  type Glob = (pattern: string, options: { query: string; import: string; eager: boolean }) => Record<string, string>;
+  const sources = Object.entries((import.meta as unknown as { glob: Glob }).glob('../src/defaults/*.ts', { query: '?raw', import: 'default', eager: true }));
+
+  it.each(['Target branch', 'Loading Work Package detail', 'Work Package detail unavailable'])('writes "%s" as a literal in exactly one defaults file', (word) => {
+    const homes = sources.filter(([, source]) => source.split(`'${word}'`).length > 1).map(([path]) => path.split('/').pop());
+    expect(homes).toHaveLength(1);
+  });
+
+  it('the aliases are the same values as their homes', () => {
+    expect(copy.LABEL_TARGET_BRANCH).toBe(defaults.TARGET_BRANCH_LABEL);
+    expect(copy.ANNOUNCE_DETAIL_LOADING).toBe(refusals.DETAIL_LOADING_LABEL);
+    expect(copy.ANNOUNCE_DETAIL_UNAVAILABLE).toBe(refusals.DETAIL_REFUSAL_HEADING);
+  });
+});

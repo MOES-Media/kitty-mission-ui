@@ -3,6 +3,9 @@
 // file so an amendment is a one-file change. The count text and the subtask bar label are the Mission screens' own
 // (LANE_COUNT_TEXT, SUBTASK_PROGRESS_TEXT in defaults/lanes.ts) and are imported, not repeated.
 
+import { TARGET_BRANCH_LABEL } from './pipeline-copy.js';
+import { DETAIL_LOADING_LABEL, DETAIL_REFUSAL_HEADING } from './refusals.js';
+
 // Panel titles (the prototype's h2 text where it has one).
 export const FACTS_TITLE = 'Facts';
 export const ASSIGNMENT_TITLE = 'Assignment';
@@ -20,7 +23,8 @@ export const WORKSPACE_TITLE = 'Workspace environment';
 export const LABEL_WORK_PACKAGE = 'Work Package';
 export const LABEL_COMMITTED_STATE = 'Committed state';
 export const LABEL_ACTOR = 'Actor';
-export const LABEL_TARGET_BRANCH = 'Target branch';
+// An alias: the word has one home, in `pipeline-copy.ts`.
+export const LABEL_TARGET_BRANCH = TARGET_BRANCH_LABEL;
 export const LABEL_PHASE = 'Phase';
 export const LABEL_TASK_TYPE = 'Task type';
 export const LABEL_TRACKER_REFS = 'Tracker refs';
@@ -115,8 +119,9 @@ export const dependencyNodeLabel = (wpId: string, title: string | null, laneWord
 export const announceLoading = (wpId: string): string => `Loading Work Package ${wpId}`;
 export const announceLoaded = (wpId: string): string => `Work Package ${wpId} loaded`;
 export const announceNotFound = (wpId: string): string => `Work Package ${wpId} not found`;
-export const ANNOUNCE_DETAIL_LOADING = 'Loading Work Package detail';
+// Aliases: the two words have one home each, in `refusals.ts` (the notice's own words).
+export const ANNOUNCE_DETAIL_LOADING = DETAIL_LOADING_LABEL;
 export const ANNOUNCE_DETAIL_LOADED = 'Work Package detail loaded';
-export const ANNOUNCE_DETAIL_UNAVAILABLE = 'Work Package detail unavailable';
+export const ANNOUNCE_DETAIL_UNAVAILABLE = DETAIL_REFUSAL_HEADING;
 // A Work Package that arrives together with a refused detail: one line, so the refusal is not lost behind "loaded".
 export const announceLoadedDetailUnavailable = (wpId: string): string => `${announceLoaded(wpId)}. ${ANNOUNCE_DETAIL_UNAVAILABLE}`;
