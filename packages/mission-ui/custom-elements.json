@@ -1454,7 +1454,7 @@
                 "text": "LabelHooks | null"
               },
               "default": "null",
-              "description": "Lane and state label hooks."
+              "description": "Lane and state label hooks. A lane has two kinds of word and a host sets both to change a lane everywhere: the `state`\nhook (a word and a tone) draws the state badge, the dependency-chain and subtask lane words and the cancellation badge;\nthe `lane` hook (a word) draws the lane history's \"from\" and \"to\" words. Setting one hook leaves the other kind on its\ndefaults. The `time` hook draws every relative time."
             },
             {
               "kind": "field",

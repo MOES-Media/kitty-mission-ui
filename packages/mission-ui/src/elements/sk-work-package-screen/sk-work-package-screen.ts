@@ -246,7 +246,12 @@ export class SkWorkPackageScreen extends LitElement {
   @property()
   now: string | null = null;
 
-  /** Lane and state label hooks. */
+  /**
+   * Lane and state label hooks. A lane has two kinds of word and a host sets both to change a lane everywhere: the `state`
+   * hook (a word and a tone) draws the state badge, the dependency-chain and subtask lane words and the cancellation badge;
+   * the `lane` hook (a word) draws the lane history's "from" and "to" words. Setting one hook leaves the other kind on its
+   * defaults. The `time` hook draws every relative time.
+   */
   @property({ attribute: false })
   labels: LabelHooks | null = null;
 

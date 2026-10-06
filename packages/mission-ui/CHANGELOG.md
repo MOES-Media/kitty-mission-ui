@@ -10,6 +10,9 @@
   review summary and cycles, cancellation, evidence and dependency chains, subtasks, owned files, workspace and artifact
   links; whole-screen and detail-only views (`loading`, `error`, `empty`, `not-found`, `nothing-selected`); three responsive
   tiers. Every lane, verdict and status word is read from `src/defaults/` (`#5`).
+- `sk-work-package-screen` `labels`: a lane has two kinds of word. The `state` hook draws the state badge, the dependency and
+  subtask lane words and the cancellation badge; the `lane` hook draws the lane history's "from" and "to" words. A host that
+  rewords a lane sets both (`#5`).
 - Defaults and logic (`src/defaults`, `src/logic`): `review`, `files`, `refusals`, `staleness` and `wp-copy` vocabulary, and
   `resolveLists`, `joinHandles`, `resolveVerdict`, `resolveChangeState`, `filesView`, `stalenessView`, `historyView`,
   `retryDetail` and `resolveRefusal` for the Work Package screen (`#5`).
