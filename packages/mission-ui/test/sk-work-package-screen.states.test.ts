@@ -316,7 +316,7 @@ describe('the focus order of the retry and return states', () => {
     const screen = await mount(stateProps.notFound());
     focusRoot(screen);
     await userEvent.tab();
-    expect(root(screen).activeElement).toBe(buttonNamed(screen, sampleMission.name));
+    expect(root(screen).activeElement).toBe(buttonNamed(screen, sampleMission.friendlyName));
     await userEvent.tab();
     const back = buttonNamed(screen, RETURN_TO_PIPELINE_LABEL);
     expect(root(screen).activeElement).toBe(back);

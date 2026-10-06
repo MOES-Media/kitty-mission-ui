@@ -5,6 +5,7 @@ import type { components } from './types.generated.js';
 type Schemas = components['schemas'];
 
 export type Project = Schemas['Project'];
+export type MissionHead = Schemas['MissionHead'];
 export type MissionOverview = Schemas['MissionOverview'];
 export type MissionOverviewPage = Schemas['MissionOverviewPage'];
 export type PageInfo = Schemas['PageInfo'];

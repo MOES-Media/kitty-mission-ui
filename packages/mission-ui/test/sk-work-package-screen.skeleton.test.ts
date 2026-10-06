@@ -147,7 +147,7 @@ describe('events: one test per event, exactly one event with its exact payload',
     const events = listenAll(screen);
     const host = document.createElement('div');
     document.body.append(host);
-    render(renderBreadcrumb({ missionLabel: sampleMission.name, wpId: 'WP04', inert: false }, () => handlersOf(screen).openMission()), host);
+    render(renderBreadcrumb({ missionLabel: sampleMission.friendlyName, wpId: 'WP04', inert: false }, () => handlersOf(screen).openMission()), host);
     const crumb = one<HTMLElement>(host, 'nav sk-button');
     // positive control first: an unrelated click on the nav (not the control) emits nothing
     await userEvent.click(one<HTMLElement>(host, 'nav'));

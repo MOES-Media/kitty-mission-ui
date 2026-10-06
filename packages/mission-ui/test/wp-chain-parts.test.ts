@@ -76,7 +76,7 @@ describe('Evidence chain (T041)', () => {
 
   it('through the screen: a null lane gives the not-started word, an unknown lane shows raw, never undefined', async () => {
     const stated = await mount('WP-01');
-    expect([...region(stated, 'evidence-chain').querySelectorAll('sk-pill-tag')].map((p) => text(p))).toEqual([sampleMission.name, WORK_PACKAGE_FIXTURES.wpPopulated.wpId, badge.label]);
+    expect([...region(stated, 'evidence-chain').querySelectorAll('sk-pill-tag')].map((p) => text(p))).toEqual([sampleMission.friendlyName, WORK_PACKAGE_FIXTURES.wpPopulated.wpId, badge.label]);
     document.body.replaceChildren();
 
     const noEvents = await mount('WP-10');

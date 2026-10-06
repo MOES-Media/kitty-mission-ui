@@ -75,7 +75,7 @@ describe('EV-3: Return to Pipeline', () => {
   it('is the same event as the crumb: the crumb emits the identical type and payload, and no sk-open-pipeline is ever seen', async () => {
     const screen = await mount(stateProps.notFound());
     const events = listenAll(screen);
-    await userEvent.click(buttonNamed(screen, sampleMission.name));
+    await userEvent.click(buttonNamed(screen, sampleMission.friendlyName));
     expectOpen(events);
     events.length = 0;
     await userEvent.click(buttonNamed(screen, RETURN_TO_PIPELINE_LABEL));

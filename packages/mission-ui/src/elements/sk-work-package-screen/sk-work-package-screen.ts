@@ -44,7 +44,7 @@ import {
   stalenessView,
 } from '../../logic/index.js';
 import type { LabelHooks, RetryLoadDetail } from '../../logic/index.js';
-import type { WorkPackageDetailView, WorkPackageRecordView } from '../../contract/types.js';
+import type { MissionHead, WorkPackageDetailView, WorkPackageRecordView } from '../../contract/types.js';
 import { eventTimelineSheet, breadcrumbsSheet, emptyStateSheet, factsSheet } from '../../library-sheets.js';
 import { progressSheet } from '../../progress-sheet.js';
 import { visuallyHidden } from '../../visually-hidden.js';
@@ -87,13 +87,8 @@ function enclosingShell(start: Element): Element | null {
   return null;
 }
 
-/** The Mission the screen shows a Work Package of: host data. */
-export interface WpScreenMission {
-  missionId: string;
-  slug: string;
-  name: string;
-  workPackageCount: number;
-}
+/** The Mission the screen shows a Work Package of: host data, with the contract's field names (the Pipeline screen's Mission is assignable). */
+export type WpScreenMission = Pick<MissionHead, 'missionId' | 'slug' | 'friendlyName' | 'wpTotal'>;
 
 /** Payload of `sk-open-artifact`: the artifact `kind` is passed through unchanged. */
 export interface SkOpenArtifactDetail {
@@ -441,7 +436,7 @@ export class SkWorkPackageScreen extends LitElement {
   // ---- View builders: each returns null for the contract's "not drawn" form.
 
   private breadcrumbView(): BreadcrumbView {
-    return { missionLabel: this.mission?.name ?? STAGE_MISSION, wpId: this.currentWpId(), inert: this.mission === null };
+    return { missionLabel: this.mission?.friendlyName ?? STAGE_MISSION, wpId: this.currentWpId(), inert: this.mission === null };
   }
 
   private statusContentView(state: WholeScreenState): StatusContentView {
@@ -450,7 +445,7 @@ export class SkWorkPackageScreen extends LitElement {
       wpId: this.currentWpId(),
       breadcrumb: this.breadcrumbView(),
       errorMessage: this.errorMessage,
-      mission: this.mission === null ? null : { name: this.mission.name, slug: this.mission.slug, workPackageCount: this.mission.workPackageCount },
+      mission: this.mission === null ? null : { friendlyName: this.mission.friendlyName, slug: this.mission.slug, wpTotal: this.mission.wpTotal },
       inert: this.mission === null,
       retryInert: this.retryPayload('work-package') === null,
     };
@@ -556,7 +551,7 @@ export class SkWorkPackageScreen extends LitElement {
         ? null
         : { sourceText: lookup(REASON_SOURCE_WORDS, wp.cancellation.reasonSource) ?? wp.cancellation.reasonSource, reason: wp.cancellation.reason, stateBadge };
 
-    const evidence: EvidenceChainView = { missionLabel: this.mission?.name ?? STAGE_MISSION, wpId: wp.wpId, stateBadge };
+    const evidence: EvidenceChainView = { missionLabel: this.mission?.friendlyName ?? STAGE_MISSION, wpId: wp.wpId, stateBadge };
     const dependencyChain: DependencyChainView = {
       nodes: lists.dependencies.map((d) => ({
         wpId: d.wpId,

@@ -35,7 +35,7 @@ const view = (state: WholeScreenState, over: Partial<StatusContentView> = {}): S
   wpId: 'WP04',
   breadcrumb: { missionLabel: 'Sample mission', wpId: 'WP04', inert: false },
   errorMessage: '',
-  mission: { name: 'Sample mission', slug: 'sample-mission-01', workPackageCount: 6 },
+  mission: { friendlyName: 'Sample mission', slug: 'sample-mission-01', wpTotal: 6 },
   inert: false,
   retryInert: false,
   ...over,
@@ -199,10 +199,10 @@ describe('nothing-selected', () => {
   });
 
   it('the count is as given: one reads "1 Work Package", zero reads "0 Work Packages"', () => {
-    const one = draw(view('nothing-selected', { mission: { name: 'M', slug: 's', workPackageCount: 1 } })).box;
+    const one = draw(view('nothing-selected', { mission: { friendlyName: 'M', slug: 's', wpTotal: 1 } })).box;
     expect(text(one)).toContain('1 Work Package');
     expect(text(one)).not.toContain('1 Work Packages');
-    expect(text(draw(view('nothing-selected', { mission: { name: 'M', slug: 's', workPackageCount: 0 } })).box)).toContain('0 Work Packages');
+    expect(text(draw(view('nothing-selected', { mission: { friendlyName: 'M', slug: 's', wpTotal: 0 } })).box)).toContain('0 Work Packages');
   });
 
   it('with no Mission it draws the heading with no slug, no count and no "undefined" or "null"', () => {

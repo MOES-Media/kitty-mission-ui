@@ -413,7 +413,7 @@ describe('control names and tab order (NFR-003)', () => {
   const expectedOrder = (screen: SkWorkPackageScreen): string[] => {
     const cycles = DETAIL_FIXTURES.detailPopulated.reviewCycles ?? [];
     return [
-      sampleMission.name,
+      sampleMission.friendlyName,
       ...cycles.filter((c) => c.artifactPath !== null).map((c) => OPEN_REVIEW_LABEL(c.cycleNumber)),
       ...q(screen, '[data-region="dependency-chain"] ul sk-button').map(nameOf),
       OPEN_SPEC_LABEL,
@@ -511,7 +511,7 @@ describe('keyboard operation (NFR-003): Enter and Space operate every control ki
     const references = populated.artifactReferences;
     if (cycle === undefined || dependency === undefined || references === undefined || references.spec === null || references.prompt === null) throw new Error('fixture gap');
     const cases: Array<[string, () => string, string, unknown]> = [
-      ['crumb', () => sampleMission.name, 'sk-open-mission', { missionId: sampleMission.missionId, slug: sampleMission.slug }],
+      ['crumb', () => sampleMission.friendlyName, 'sk-open-mission', { missionId: sampleMission.missionId, slug: sampleMission.slug }],
       [
         'node',
         () => nameOf(q(screenRef.current as SkWorkPackageScreen, '[data-region="dependency-chain"] ul sk-button')[0] as HTMLElement),

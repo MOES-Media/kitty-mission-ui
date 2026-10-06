@@ -34,7 +34,7 @@ export interface StatusContentView {
   /** The host's error text; '' draws the default body. */
   readonly errorMessage: string;
   /** The Mission the nothing-selected state names; null when the host gave none. */
-  readonly mission: { readonly name: string; readonly slug: string; readonly workPackageCount: number } | null;
+  readonly mission: { readonly friendlyName: string; readonly slug: string; readonly wpTotal: number } | null;
   /** True while there is no Mission: "Return to Pipeline" is drawn inert. */
   readonly inert: boolean;
   /** True when no retry request can be built (no Mission or no id): Retry is drawn inert. */
@@ -126,7 +126,7 @@ function renderNothingSelected(view: StatusContentView): TemplateResult {
       <h1 slot="title" title=${NOTHING_SELECTED_HEADING}>${NOTHING_SELECTED_HEADING}</h1>
       ${mission === null
         ? nothing
-        : html`<span slot="supporting">${mission.slug}${HEADER_SEPARATOR}${LANE_COUNT_TEXT(mission.workPackageCount)}</span>`}
+        : html`<span slot="supporting">${mission.slug}${HEADER_SEPARATOR}${LANE_COUNT_TEXT(mission.wpTotal)}</span>`}
     </sk-page-header>
   </div>`;
 }

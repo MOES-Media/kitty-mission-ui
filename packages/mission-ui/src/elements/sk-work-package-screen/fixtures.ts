@@ -75,8 +75,8 @@ export type RefusalFixtureName = keyof typeof REFUSAL_FIXTURES;
 export const sampleMission: WpScreenMission = {
   missionId: '01JZCB3C4D5E6F7G8H9JKMNPQT',
   slug: 'sample-mission-01',
-  name: 'Sample mission',
-  workPackageCount: 6,
+  friendlyName: 'Sample mission',
+  wpTotal: 6,
 };
 
 /** The props a story or a test sets on the screen. */
