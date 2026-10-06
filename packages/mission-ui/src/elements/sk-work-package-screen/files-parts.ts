@@ -1,5 +1,7 @@
 // Owned files: the body only. A pattern as authored, a marker for a glob and the change-state word as a pill, each row a
-// plain (not selectable) library `sk-action-row`. This file carries no class and no exception: layout CSS only. The part reads
+// plain (not selectable) library `sk-action-row`. The `::part` rules of this file are exception E-22
+// (contracts/gates.md), pinned selector and declaration by `test/wp-part-selectors.test.ts`; the row geometry they give is
+// asserted in `test/wp-files-parts.test.ts`, and the part names are checked against the library's manifest. The part reads
 // the `filesView` of the resolved list only and dispatches nothing.
 import { css, html, nothing } from 'lit';
 import type { TemplateResult } from 'lit';

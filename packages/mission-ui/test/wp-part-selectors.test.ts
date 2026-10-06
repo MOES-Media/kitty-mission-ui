@@ -2,6 +2,7 @@
 // a `::part` selector that is not listed here fails, so a new reach into a library element's shadow DOM needs a ruling and an
 // entry in contracts/gates.md first. Each file's list is exact: no more and no fewer.
 import { describe, expect, it } from 'vitest';
+import libraryManifest from '@spec-kitty/elements/custom-elements.json';
 
 // Vite resolves `import.meta.glob` at build time; this package carries no vite types, so the call is typed here.
 type Glob = (pattern: string, options: { query: string; import: string; eager: boolean }) => Record<string, string>;
@@ -104,5 +105,44 @@ describe('the ::part selectors of the screen files are the listed set (E-18, E-2
       }
     }
     expect(rules).toBe(Object.values(PINNED).reduce((sum, file) => sum + Object.keys(file).length, 0));
+  });
+});
+
+interface ManifestShape {
+  modules: Array<{ declarations?: Array<{ tagName?: string; cssParts?: Array<{ name: string }> }> }>;
+}
+
+/** The `part` names each library element declares, from the library's own manifest. */
+function libraryParts(): Map<string, Set<string>> {
+  const parts = new Map<string, Set<string>>();
+  for (const module of (libraryManifest as unknown as ManifestShape).modules) {
+    for (const declaration of module.declarations ?? []) {
+      if (declaration.tagName !== undefined) parts.set(declaration.tagName, new Set((declaration.cssParts ?? []).map((part) => part.name)));
+    }
+  }
+  return parts;
+}
+
+describe('every pinned ::part names a part the library element declares (DESIGN-002)', () => {
+  it('reads the library manifest (positive control: sk-action-row declares trigger and title)', () => {
+    const parts = libraryParts();
+    expect(parts.get('sk-action-row')?.has('trigger')).toBe(true);
+    expect(parts.get('sk-action-row')?.has('title')).toBe(true);
+    expect(parts.get('sk-action-row')?.has('no-such-part')).toBe(false);
+  });
+
+  it('each ::part(name) of a pinned selector exists in the cssParts of its element', () => {
+    const parts = libraryParts();
+    let checked = 0;
+    for (const [file, rules] of Object.entries(PINNED)) {
+      for (const selector of Object.keys(rules)) {
+        const match = /(sk-[a-z-]+)::part\(([^)]+)\)$/.exec(selector);
+        expect(match, `${file}: ${selector}`).not.toBeNull();
+        const [, tag, part] = match as RegExpExecArray;
+        expect(parts.get(tag as string)?.has(part as string), `${file}: ${selector}`).toBe(true);
+        checked += 1;
+      }
+    }
+    expect(checked).toBe(Object.values(PINNED).reduce((sum, file) => sum + Object.keys(file).length, 0));
   });
 });

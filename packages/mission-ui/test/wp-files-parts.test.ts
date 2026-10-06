@@ -183,3 +183,32 @@ describe('Owned files: keyed rows (TESTS-002)', () => {
     expect(rows(box).map((row) => row.querySelector('[data-pattern]')?.getAttribute('title'))).toEqual(['a.py', 'a.py', 'b.py']);
   });
 });
+
+describe('Owned files: the row geometry the library parts give (DESIGN-002; no screenshot)', () => {
+  it('stacks the marker above the pattern in one column, and hides the four unused parts', async () => {
+    await page.viewport(1280, 900);
+    const screen = document.createElement('sk-work-package-screen') as SkWorkPackageScreen;
+    Object.assign(screen, pairingProps('WP-25'));
+    const box = document.createElement('div');
+    document.body.append(box);
+    render(workPackageFrame(html`${screen}`), box);
+    await screen.updateComplete;
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    const row = screen.shadowRoot?.querySelector('[data-files] sk-action-row') as HTMLElement;
+    const inside = row.shadowRoot as ShadowRoot;
+    const trigger = inside.querySelector('[part~="trigger"]') as HTMLElement;
+    expect(getComputedStyle(trigger).gridTemplateColumns.split(' ')).toHaveLength(1);
+    const marker = row.querySelector('[slot="marker"]') as HTMLElement;
+    const pattern = row.querySelector('[data-pattern]') as HTMLElement;
+    expect(marker.getBoundingClientRect().bottom).toBeLessThanOrEqual(pattern.getBoundingClientRect().top + 1);
+    expect(Math.round(marker.getBoundingClientRect().left)).toBe(Math.round(pattern.getBoundingClientRect().left));
+    for (const name of ['title', 'metadata', 'supporting', 'controls']) {
+      const part = inside.querySelector(`[part~="${name}"]`) as HTMLElement | null;
+      expect(part, name).not.toBeNull();
+      expect(getComputedStyle(part as HTMLElement).display, name).toBe('none');
+    }
+    // control: the tags part is not hidden
+    const tags = inside.querySelector('[part~="tags"]') as HTMLElement;
+    expect(getComputedStyle(tags).display).not.toBe('none');
+  });
+});
