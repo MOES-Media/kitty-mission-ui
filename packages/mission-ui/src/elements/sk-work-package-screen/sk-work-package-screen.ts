@@ -4,7 +4,7 @@
 // (the panels through `renderPanel`, the plain wrappers itself); a part returns the BODY of its region only, never decides
 // whether its region is drawn and never dispatches an event. Exception E-19 (b): the grid track minimums, this file only.
 import { LitElement, css, html, nothing } from 'lit';
-import type { PropertyValues, TemplateResult } from 'lit';
+import type { TemplateResult } from 'lit';
 import { property } from 'lit/decorators.js';
 import { keyed } from 'lit/directives/keyed.js';
 import '@spec-kitty/elements';
@@ -278,7 +278,7 @@ export class SkWorkPackageScreen extends LitElement {
   // The id of the Work Package the screen shows while ready (null in any other state): what "loaded" is announced for.
   private lastShownWpId: string | null = null;
   private announcing = false;
-  // The element that had focus inside the shadow root when a status, detailStatus or wpId change began.
+  // The element that had focus inside the shadow root when the current update began.
   private focusedBefore: Element | null = null;
 
   // ---- Dispatch: one literal site per event; the part files receive these as arguments.
@@ -353,13 +353,12 @@ export class SkWorkPackageScreen extends LitElement {
     return this.wpId !== '' && this.wpId !== wp.wpId ? 'loading' : state;
   }
 
-  protected override willUpdate(changed: PropertyValues<this>): void {
+  protected override willUpdate(): void {
     const state = this.effectiveState();
     const detailState = normaliseDetailStatus(this.detailStatus);
-    if (changed.has('status') || changed.has('detailStatus') || changed.has('wpId')) {
-      const active = this.shadowRoot?.activeElement ?? null;
-      this.focusedBefore = active;
-    }
+    // On every update: any property can detach the focused node (a Work Package swap under the same id, an effective state
+    // change); `updated` moves focus only when the captured node is gone.
+    this.focusedBefore = this.shadowRoot?.activeElement ?? null;
     const shown = state === 'ready' ? (this.workPackage?.wpId ?? null) : null;
     if (this.announcing) {
       const text = this.transitionText(state, detailState, shown);
@@ -418,7 +417,7 @@ export class SkWorkPackageScreen extends LitElement {
     super.disconnectedCallback();
   }
 
-  /** When the focused element was detached by a status, detailStatus or wpId change, focus moves to the `h1`, else to the root. */
+  /** When the focused element was detached by an update, focus moves to the `h1`, else to the root. */
   protected override updated(): void {
     const before = this.focusedBefore;
     this.focusedBefore = null;
