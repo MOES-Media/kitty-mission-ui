@@ -9,6 +9,16 @@ Private Lit elements for the Spec Kitty mission screens, built on `@spec-kitty/e
   `HTMLElementEventMap` and in the generated `custom-elements.json`. Event names are verb first
   (`sk-open-mission`, `sk-select-work-package`, `sk-view-artifacts`, `sk-load-more`); the shell's older noun-first
   names (`sk-tree-toggle`, `sk-mission-retry`, `sk-shell-retry`) are left for a separate pass.
+- The Work Package screen adds `SkOpenArtifactDetail`, `SkRetryLoadDetail` (a union keyed on `target`), `WpScreenMission`
+  (the contract's `missionId`, `slug`, `friendlyName` and `wpTotal`, so the Pipeline screen's Mission object is assignable
+  unchanged), `WpScreenStatus` and `DetailStatus`; `sk-select-work-package` reuses the board's `SkSelectWorkPackageDetail`.
+  The retry events are `sk-shell-retry` (the shell, a whole-page failure) and `sk-retry-load` (a screen, its own regions).
+- Render a screen that pads its own inset parts (the Work Package and Pipeline screens) inside an `sk-mission-shell` with the
+  `flush` attribute set: the shell then adds no padding, and the screen pads with the shell's public
+  `--sk-mission-shell-content-padding` (24px, 16px at the mobile tier). Without `flush` the content is padded twice.
+- The shell's `tier` (`expanded`, `collapsed`, `mobile`) is public. A screen follows it with `ShellTierController`
+  (`src/shell-tier.ts`), which sets the CSS custom state `:state(shell-mobile)` on its host; style it with
+  `:host(:state(shell-mobile))`. A browser without custom states is not supported by it.
 - A screen re-exposes the events of the pattern elements it composes (`sk-filter-change` from the filter group,
   `sk-select-work-package` from the board): those names and detail keys are part of the screen's API, listed in its
   `@fires`. The Pipeline screen's `missionsHref` has a default only for a modified click; a host sets it to its own

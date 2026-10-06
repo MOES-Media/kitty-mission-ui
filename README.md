@@ -46,7 +46,8 @@ under "Mission / Sample", plus an autodocs page.
 
 Every screen element in `packages/mission-ui/src/elements/` follows the charter:
 
-- Data in as properties; a `status` property carries the view state `loading`, `error`, `empty` or `ready`.
+- Data in as properties; a `status` property carries the view state `loading`, `error`, `empty` or `ready`. The Work Package
+  screen adds `not-found` and `nothing-selected`, and a separate `detailStatus` for its detail regions.
 - User intents out as `sk-*` CustomEvents with `bubbles` and `composed`, dispatched as
   `this.dispatchEvent(new CustomEvent('<string literal>', ...))` so the manifest can see them.
 - No I/O: no fetch, XHR, WebSocket, Tauri API or browser storage. Hosts own fetching, routing and refresh.
