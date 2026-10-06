@@ -275,6 +275,93 @@ const EXCEPTIONS = [
     },
   },
   {
+    // E-18 (CP-1 operator ruling, 2026-10-05; sunset spec-kitty-design#516, a compact density for `sk-card`; this file only):
+    // the panels are the library's `sk-card` with an `sk-section-header` title, restyled in EXACTLY five respects, each pinned to
+    // one token: (1) border width 1px, (2) radius, (3) padding, (4) title size and weight, (5) the gap between title and body
+    // (a block margin, with the header's own row gap at 0). Nothing else: no colour, no letter-spacing, no flat-chrome property. Padding and margin-block are
+    // layout properties already allowed everywhere; pinning them here makes the token the only value this file may write.
+    id: 'E-18',
+    files: ['sk-work-package-screen/panel-parts.ts'],
+    properties: ['border-width', 'border-radius', 'padding', 'font-size', 'font-weight', 'margin-block', 'row-gap'],
+    strict: ['border-width', 'font-weight'],
+    values: {
+      'border-width': ['var(--sk-border-width-1)'],
+      'border-radius': ['var(--sk-radius-md)'],
+      padding: ['var(--sk-space-5)'],
+      'font-size': ['var(--sk-text-lg)'],
+      'font-weight': ['var(--sk-weight-bold)'],
+      'margin-block': ['0 var(--sk-space-4)'],
+      'row-gap': ['0'],
+    },
+    pinned: ['border-width', 'border-radius', 'padding', 'font-size', 'font-weight', 'margin-block', 'row-gap'],
+  },
+  {
+    // E-21 (operator ruling during WP05, 2026-10-05; kept as a deliberate local allowance): a single over-long word in the title
+    // band is ellipsized, and a long unbroken Facts value wraps. One keyword property, one value, per file; nothing else.
+    id: 'E-21',
+    files: ['sk-work-package-screen/header-parts.ts'],
+    properties: ['text-overflow'],
+    values: { 'text-overflow': ['ellipsis'] },
+  },
+  {
+    id: 'E-21',
+    files: ['sk-work-package-screen/facts-parts.ts'],
+    properties: ['overflow-wrap'],
+    values: { 'overflow-wrap': ['break-word'] },
+  },
+  {
+    // E-21, review-parts.ts (operator ruling during WP09): `break-word` for the latest-result values, which are text and not pills.
+    id: 'E-21',
+    files: ['sk-work-package-screen/review-parts.ts'],
+    properties: ['overflow-wrap'],
+    values: { 'overflow-wrap': ['break-word'] },
+  },
+  {
+    // E-21, shared-parts.ts (operator ruling during WP09, superseding "pills wrap"): EVERY pill ellipsizes, by one rule on
+    // `sk-pill-tag::part(tag)` in this one file, so a library fix replaces one block. Keywords and `100%` only.
+    id: 'E-21',
+    files: ['sk-work-package-screen/shared-parts.ts'],
+    properties: ['max-width', 'overflow', 'text-overflow', 'white-space'],
+    values: { 'max-width': ['100%'], overflow: ['hidden'], 'text-overflow': ['ellipsis'], 'white-space': ['nowrap'] },
+    keywords: { 'max-width': ['100%'] },
+  },
+  {
+    // E-21, third file (derived from the CP-1 ruling, which allowed "layout-only ::part(button) rules for long titles"): a dependency
+    // node's `::part(button)` breaks one over-long word and aligns its text to the start. Two keyword declarations, one value each.
+    id: 'E-21',
+    files: ['sk-work-package-screen/chain-parts.ts'],
+    properties: ['overflow-wrap', 'text-align'],
+    values: { 'overflow-wrap': ['break-word'], 'text-align': ['start'] },
+  },
+  // E-22 (operator ruling on the pre-merge squad, 2026-10-06; NO entry here, because every declaration it covers is already a layout
+  // property with a token or a keyword, so the rules pass the base config): the `::part` rules that reach into a library element's
+  // shadow DOM beyond E-18 and E-21. `header-parts.ts`: the breadcrumb `sk-button::part(button)` inline padding (sunset
+  // spec-kitty-design#518, a compact inline padding for `sk-button`). `review-parts.ts`: the nested `[data-cycles] sk-card::part(card)`
+  // padding (sunset #516, the compact card density). `files-parts.ts`: `sk-action-row::part(trigger)` grid areas, columns and
+  // row gap, `display: none` on the `title`, `metadata`, `supporting` and `controls` parts, and the `tags` block margin (sunsets #493
+  // and #508, flush empty parts and a card layout; `layout="card"` and `presentation="flush"` were tried and neither reproduces the
+  // row, it grows from 102 px to 120 and 122 px). The exact set of `::part` selectors per file is pinned by
+  // `packages/mission-ui/test/wp-part-selectors.test.ts`: an unlisted `::part` rule fails there.
+  {
+    // E-19 (b) (operator ruling 2026-10-05; sunset: a library breakpoint or container token, G-13; this file only): the track
+    // minimums of the prototype's `.detail-grid`, as `px` lengths inside `minmax()` of `grid-template-columns` and nowhere
+    // else. The values are pinned: the two recipes with their minimums, and the explicit tracks without any length. E-19 (a)
+    // (the container-query lengths) was deleted at CP-1: the probe passed, so no exception exists for `@container`.
+    id: 'E-19 (b)',
+    files: ['sk-work-package-screen/sk-work-package-screen.ts'],
+    properties: ['grid-template-columns'],
+    values: {
+      'grid-template-columns': [
+        'minmax(220px, .8fr) minmax(320px, 1.3fr) minmax(220px, .8fr)',
+        'minmax(220px, .8fr) minmax(320px, 1.2fr)',
+        'minmax(0, 1fr) minmax(0, 1fr)',
+        'minmax(0, 1fr)',
+      ],
+    },
+    pinned: ['grid-template-columns'],
+    pxProperties: ['grid-template-columns'],
+  },
+  {
     // E-14 (operator Storybook review, item 1, 2026-10-04; sunset spec-kitty-design#511, a joined segmented-choice variant):
     // the filter group is ONE joined segmented control. Per-corner `border-radius` (a token or 0)
     // and the shared inner border (`border-inline-start-width: 0`) on the library's segmented buttons. Scope: the filter

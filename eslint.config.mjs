@@ -127,6 +127,30 @@ export default tseslint.config(
     rules: { 'no-restricted-syntax': ['error', ...withoutClassBan, classOnly(['sk-breadcrumbs', 'sk-empty-state', 'sk-progress'])] },
   },
   {
+    // Exception E-17 (Work Package screen; gaps G-09, G-10 and the adopted families; sunset: a library element for each family,
+    // as E-01 to E-03): one override per file the table of contracts/gates.md lists, written now so that no region work package
+    // needs a lint-config edit. A file not listed here (files-parts, review-parts, chain-parts, panel-parts and the screen file)
+    // carries no class. There is NO sk-breadcrumbs row for state-parts.ts.
+    files: ['packages/*/src/elements/sk-work-package-screen/history-parts.ts'],
+    rules: { 'no-restricted-syntax': ['error', ...withoutClassBan, classOnly(['sk-event-timeline'])] },
+  },
+  {
+    files: ['packages/*/src/elements/sk-work-package-screen/facts-parts.ts'],
+    rules: { 'no-restricted-syntax': ['error', ...withoutClassBan, classOnly(['sk-facts'])] },
+  },
+  {
+    files: ['packages/*/src/elements/sk-work-package-screen/work-parts.ts'],
+    rules: { 'no-restricted-syntax': ['error', ...withoutClassBan, classOnly(['sk-facts', 'sk-progress'])] },
+  },
+  {
+    files: ['packages/*/src/elements/sk-work-package-screen/header-parts.ts'],
+    rules: { 'no-restricted-syntax': ['error', ...withoutClassBan, classOnly(['sk-breadcrumbs'])] },
+  },
+  {
+    files: ['packages/*/src/elements/sk-work-package-screen/state-parts.ts'],
+    rules: { 'no-restricted-syntax': ['error', ...withoutClassBan, classOnly(['sk-empty-state', 'sk-progress'])] },
+  },
+  {
     // Elements never import story-only helpers (research D-02): story-support is for stories and fixtures.
     files: ['packages/*/src/elements/**/*.ts'],
     ignores: ['**/*.stories.ts', '**/fixtures.ts'],
