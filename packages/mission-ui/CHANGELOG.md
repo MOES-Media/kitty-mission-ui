@@ -13,6 +13,13 @@
 - `sk-work-package-screen` `labels`: a lane has two kinds of word. The `state` hook draws the state badge, the dependency and
   subtask lane words and the cancellation badge; the `lane` hook draws the lane history's "from" and "to" words. A host that
   rewords a lane sets both (`#5`).
+- `ShellTierController` (`src/shell-tier.ts`): follows the enclosing `sk-mission-shell`'s public `tier` across shadow roots and
+  sets the CSS custom state `:state(shell-mobile)` on its host while the tier is `mobile` (no attribute). The Work Package
+  screen is its first consumer; it needs `ElementInternals` custom states (`#5`).
+- `sk-work-package-screen` `mission` has the contract's field names (`missionId`, `slug`, `friendlyName`, `wpTotal`), so the
+  Pipeline screen's Mission is assignable unchanged; `sk-retry-load` carries a union keyed on `target`
+  (`'work-package'` or `'detail'`). A `wpId` that differs from `workPackage.wpId` in `ready` renders `loading`; a detail of
+  another Mission counts as omitted (`#5`).
 - Defaults and logic (`src/defaults`, `src/logic`): `review`, `files`, `refusals`, `staleness` and `wp-copy` vocabulary, and
   `resolveLists`, `joinHandles`, `resolveVerdict`, `resolveChangeState`, `filesView`, `stalenessView`, `historyView`,
   `retryDetail` and `resolveRefusal` for the Work Package screen (`#5`).
