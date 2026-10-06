@@ -317,10 +317,17 @@ export class SkWorkPackageScreen extends LitElement {
     return retryDetail(target, { mission: this.mission, wpId: this.wpId, workPackage: this.workPackage, detail: this.matchingDetail() });
   }
 
-  /** The detail, or null when it belongs to another Work Package than the one shown (it then counts as omitted). */
+  /**
+   * The detail, or null when it belongs to another Work Package or another Mission than the one shown (it then counts as
+   * omitted). A `wpId` is unique only within one Mission, so the Mission is compared too, once the host has given one.
+   */
   private matchingDetail(): WorkPackageDetailView | null {
     const wp = this.workPackage;
-    return this.detail !== null && wp !== null && this.detail.wpId !== wp.wpId ? null : this.detail;
+    const detail = this.detail;
+    if (detail === null) return null;
+    if (wp !== null && detail.wpId !== wp.wpId) return null;
+    if (this.mission !== null && detail.missionId !== this.mission.missionId) return null;
+    return detail;
   }
 
   /** The id every control and header of the screen uses: the `wpId` property, then the Work Package's, then the detail's. */
@@ -452,7 +459,7 @@ export class SkWorkPackageScreen extends LitElement {
   private renderReady(wp: WorkPackageRecordView, detailState: DetailStatus): TemplateResult {
     const hooks = this.labels;
     const inert = this.mission === null;
-    const lists = resolveLists(wp, detailState === 'ready' ? this.detail : null);
+    const lists = resolveLists(wp, detailState === 'ready' ? this.matchingDetail() : null);
     const usable = lists.detail;
     const stateBadge = resolveStateBadge(wp.statusLane, hooks);
     const staleness = stalenessView(wp.staleness);
