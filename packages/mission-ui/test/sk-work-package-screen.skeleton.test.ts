@@ -486,7 +486,7 @@ describe('the focus rule', () => {
     const screen = await mount();
     const button = inject(one(root(screen), '[data-region="facts"]'), 'button');
     button.focus();
-    screen.wpId = 'WP05';
+    screen.detailStatus = 'loading';
     await settle(screen);
     expect(button.isConnected).toBe(true);
     expect(root(screen).activeElement).toBe(button);

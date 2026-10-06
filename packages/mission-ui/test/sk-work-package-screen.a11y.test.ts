@@ -296,9 +296,11 @@ describe('announcements (FR-031): one test per row of the Announcements table, n
 
   it('a wpId change while ready announces announceLoaded(new id) once', async () => {
     const screen = await mount({ wpId: 'WP04' });
-    screen.wpId = 'WP08';
+    const next = WORK_PACKAGE_FIXTURES.wpActorHandle;
+    screen.workPackage = next;
+    screen.wpId = next.wpId;
     await settle(screen);
-    expect(text(live(screen))).toBe(announceLoaded('WP08'));
+    expect(text(live(screen))).toBe(announceLoaded(next.wpId));
     expect(seqOf(screen)).toBe(1);
   });
 

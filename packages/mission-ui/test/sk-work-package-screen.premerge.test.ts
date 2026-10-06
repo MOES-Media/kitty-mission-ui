@@ -161,7 +161,7 @@ describe('A11Y-002: the heading outline of the canceled screens', () => {
   it('the cancellation heading is an h2 at the panel level, and no outline skips a level', async () => {
     let ran = 0;
     for (const key of ['wpCanceled', 'wpCanceledSynthetic', 'wpCanceledNullReason'] as const) {
-      const screen = await mount({ workPackage: WORK_PACKAGE_FIXTURES[key], detail: null });
+      const screen = await mount({ workPackage: WORK_PACKAGE_FIXTURES[key], detail: null, wpId: WORK_PACKAGE_FIXTURES[key].wpId });
       const headings = [...root(screen).querySelectorAll('h1,h2,h3,h4,h5,h6')];
       const levels = headings.map((heading) => Number(heading.localName.slice(1)));
       const cancel = headings.find((heading) => norm(heading.textContent) === CANCELLED_NOTICE_HEADING);

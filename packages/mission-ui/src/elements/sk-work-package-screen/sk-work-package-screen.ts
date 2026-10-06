@@ -337,10 +337,17 @@ export class SkWorkPackageScreen extends LitElement {
 
   // ---- Focus and announcements.
 
-  /** The state the screen draws: `ready` with no Work Package is the empty form, so it is also what a transition announces. */
+  /**
+   * The state the screen draws, so also what a transition announces. `ready` with no Work Package is the empty form; `ready`
+   * with a `wpId` that differs from the Work Package's fails closed to `loading` (the data-less header of the selected id):
+   * the screen never shows a mixed identity.
+   */
   private effectiveState(): WpScreenStatus {
     const state = normaliseWpStatus(this.status);
-    return state === 'ready' && this.workPackage === null ? 'empty' : state;
+    if (state !== 'ready') return state;
+    const wp = this.workPackage;
+    if (wp === null) return 'empty';
+    return this.wpId !== '' && this.wpId !== wp.wpId ? 'loading' : state;
   }
 
   protected override willUpdate(changed: PropertyValues<this>): void {
