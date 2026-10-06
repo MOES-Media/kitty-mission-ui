@@ -9,6 +9,7 @@ import { SkPipelineScreen } from './elements/sk-pipeline-screen/sk-pipeline-scre
 import { SkShellNavItem } from './elements/sk-shell-nav-item/sk-shell-nav-item.js';
 import { SkShellTree } from './elements/sk-shell-tree/sk-shell-tree.js';
 import { SkWorkPackageBoard } from './elements/sk-work-package-board/sk-work-package-board.js';
+import { SkWorkPackageScreen } from './elements/sk-work-package-screen/sk-work-package-screen.js';
 
 if (!customElements.get('sk-mission-sample')) {
   customElements.define('sk-mission-sample', SkMissionSample);
@@ -37,6 +38,9 @@ if (!customElements.get('sk-phase-bar')) {
 if (!customElements.get('sk-work-package-board')) {
   customElements.define('sk-work-package-board', SkWorkPackageBoard);
 }
+if (!customElements.get('sk-work-package-screen')) {
+  customElements.define('sk-work-package-screen', SkWorkPackageScreen);
+}
 
 export {
   SkFilterToggleGroup,
@@ -48,11 +52,19 @@ export {
   SkShellNavItem,
   SkShellTree,
   SkWorkPackageBoard,
+  SkWorkPackageScreen,
 };
 export type { SkFilterChangeDetail } from './elements/sk-filter-toggle-group/sk-filter-toggle-group.js';
 export type { SkLoadMoreDetail, SkOpenMissionDetail, SkSearchDetail } from './elements/sk-missions-screen/sk-missions-screen.js';
 export type { SkOpenMissionsDetail, SkViewArtifactsDetail } from './elements/sk-pipeline-screen/sk-pipeline-screen.js';
 export type { SkSelectWorkPackageDetail } from './elements/sk-work-package-board/sk-work-package-board.js';
+export type {
+  DetailStatus,
+  SkOpenArtifactDetail,
+  SkRetryLoadDetail,
+  WpScreenMission,
+  WpScreenStatus,
+} from './elements/sk-work-package-screen/sk-work-package-screen.js';
 export type {
   BadgeTone,
   FilterOption,
@@ -66,6 +78,8 @@ export type {
   PageInfo,
   PhaseView,
   Project,
+  WorkPackageDetailView,
+  WorkPackageRecordView,
   WorkPackageView,
 } from './contract/types.js';
 export type { SkMissionRetryDetail } from './elements/sk-mission-sample/sk-mission-sample.js';

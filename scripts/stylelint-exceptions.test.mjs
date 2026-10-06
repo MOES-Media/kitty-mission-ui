@@ -519,7 +519,7 @@ describe('E-17: the class= overrides of the Work Package screen, per file, with 
     ['header-parts.ts', ['sk-breadcrumbs']],
     ['state-parts.ts', ['sk-empty-state', 'sk-progress']],
   ];
-  const UNLISTED = ['files-parts.ts', 'review-parts.ts', 'chain-parts.ts', 'panel-parts.ts'];
+  const UNLISTED = ['files-parts.ts', 'review-parts.ts', 'chain-parts.ts', 'panel-parts.ts', 'sk-work-package-screen.ts'];
   const ALL_PREFIXES = ['sk-event-timeline', 'sk-facts', 'sk-progress', 'sk-breadcrumbs', 'sk-empty-state'];
 
   test('a granted prefix passes, in its own file only', async () => {
@@ -553,7 +553,7 @@ describe('E-17: the class= overrides of the Work Package screen, per file, with 
         ran += 1;
       }
     }
-    assert.equal(ran, 20);
+    assert.equal(ran, 25);
   });
   test('there is no sk-breadcrumbs row for state-parts.ts', async () => {
     assert.ok((await lintClass('state-parts.ts', 'sk-breadcrumbs')).length >= 1);
