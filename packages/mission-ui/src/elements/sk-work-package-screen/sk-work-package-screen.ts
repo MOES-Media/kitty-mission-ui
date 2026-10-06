@@ -26,6 +26,7 @@ import {
   SUBTASKS_TITLE,
   WORKSPACE_TITLE,
   announceLoaded,
+  announceLoadedDetailUnavailable,
   announceLoading,
   announceNotFound,
 } from '../../defaults/index.js';
@@ -274,7 +275,9 @@ export class SkWorkPackageScreen extends LitElement {
   private announcementSeq = 0;
   private lastStatus: WpScreenStatus | null = null;
   private lastDetailStatus: DetailStatus | null = null;
-  private lastWpId: string | null = null;
+  // The id of the Work Package the screen shows while ready (null in any other state): what "loaded" is announced for.
+  private lastShownWpId: string | null = null;
+  private announcing = false;
   // The element that had focus inside the shadow root when a status, detailStatus or wpId change began.
   private focusedBefore: Element | null = null;
 
@@ -357,8 +360,9 @@ export class SkWorkPackageScreen extends LitElement {
       const active = this.shadowRoot?.activeElement ?? null;
       this.focusedBefore = active;
     }
-    if (this.lastStatus !== null && this.lastDetailStatus !== null && this.lastWpId !== null) {
-      const text = this.transitionText(state, detailState);
+    const shown = state === 'ready' ? (this.workPackage?.wpId ?? null) : null;
+    if (this.announcing) {
+      const text = this.transitionText(state, detailState, shown);
       if (text !== null) {
         this.announcement = text;
         this.announcementSeq += 1;
@@ -366,19 +370,24 @@ export class SkWorkPackageScreen extends LitElement {
     }
     this.lastStatus = state;
     this.lastDetailStatus = detailState;
-    this.lastWpId = this.wpId;
+    this.lastShownWpId = shown;
+    this.announcing = true;
   }
 
-  /** The announcement of a transition since the last update, or null when there is none (first render, same-id refresh). */
-  private transitionText(state: WpScreenStatus, detailState: DetailStatus): string | null {
+  /**
+   * The announcement of a transition since the last update, or null when there is none (first render, same-Work-Package
+   * refresh). "Loaded" is keyed on the Work Package that is SHOWN (`workPackage.wpId`), never on the `wpId` property alone.
+   */
+  private transitionText(state: WpScreenStatus, detailState: DetailStatus, shown: string | null): string | null {
     const id = this.currentWpId();
+    const loaded = (): string => (detailState === 'error' || detailState === 'not-found' ? announceLoadedDetailUnavailable(id) : announceLoaded(id));
     if (state !== this.lastStatus) {
       if (state === 'loading') return announceLoading(id);
-      if (state === 'ready') return announceLoaded(id);
+      if (state === 'ready') return loaded();
       if (state === 'not-found') return announceNotFound(id);
       return null;
     }
-    if (state === 'ready' && this.wpId !== this.lastWpId) return announceLoaded(id);
+    if (state === 'ready' && shown !== this.lastShownWpId) return loaded();
     if (state === 'ready' && detailState !== this.lastDetailStatus) {
       if (detailState === 'loading') return ANNOUNCE_DETAIL_LOADING;
       if (detailState === 'ready') return ANNOUNCE_DETAIL_LOADED;

@@ -118,3 +118,5 @@ export const announceNotFound = (wpId: string): string => `Work Package ${wpId} 
 export const ANNOUNCE_DETAIL_LOADING = 'Loading Work Package detail';
 export const ANNOUNCE_DETAIL_LOADED = 'Work Package detail loaded';
 export const ANNOUNCE_DETAIL_UNAVAILABLE = 'Work Package detail unavailable';
+// A Work Package that arrives together with a refused detail: one line, so the refusal is not lost behind "loaded".
+export const announceLoadedDetailUnavailable = (wpId: string): string => `${announceLoaded(wpId)}. ${ANNOUNCE_DETAIL_UNAVAILABLE}`;
