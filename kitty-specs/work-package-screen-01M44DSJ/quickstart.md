@@ -10,7 +10,7 @@ For a developer or reviewer picking up a work package of this mission. Commands 
 </sk-mission-shell>
 <script type="module">
   const el = document.querySelector('#wp');
-  el.mission = { missionId, slug, name, workPackageCount };   // host data
+  el.mission = { missionId, slug, friendlyName, wpTotal };      // host data: a MissionHead (or the Pipeline screen's Mission) works as is
   el.workPackage = workPackageFromGetWorkPackage;              // contract 1.0 WorkPackage
   el.detail = detailFromGetWorkPackageDetail;                  // contract 1.1 WorkPackageDetail, or null
   el.detailRefusalCode = detailRefusal ? detailRefusal.code : null; // when detail-status is error or not-found

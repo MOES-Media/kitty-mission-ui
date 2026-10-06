@@ -14,14 +14,14 @@ The plan-phase forks are ruled (operator, 2026-10-05; `plan.md`, "Rulings applie
 | `detailStatus` | `detail-status` | `DetailStatus` | `'ready'` | governs the detail regions only; unknown collapses to `error` |
 | `workPackage` | none | `WorkPackageRecordView \| null` | `null` | contract `WorkPackage` (1.0), widened lanes (#4's `WorkPackageView` is a different type and stays untouched) |
 | `detail` | none | `WorkPackageDetailView \| null` | `null` | contract `WorkPackageDetail` (1.1); null = omitted by the host |
-| `mission` | none | `WpScreenMission \| null` | `null` | `missionId`, `slug`, `name`, `workPackageCount` (host data, N-1) |
+| `mission` | none | `WpScreenMission \| null` | `null` | `Pick<MissionHead, 'missionId' \| 'slug' \| 'friendlyName' \| 'wpTotal'>`: the contract's field names, so the Pipeline screen's Mission object is assignable unchanged (host data, N-1; landing ruling DESIGN-005) |
 | `detailRefusalCode` | none | `string \| null` | `null` | the detail refusal code (`not_found`, `source_unreadable` or an unknown code) of a refused detail, read only when `detailStatus` is `error` or `not-found`; worded through `DETAIL_REFUSAL_WORDS` with raw fallback; null gives one generic regional wording (P-3, CORRECT-008 (a)) |
 | `wpId` | `wp-id` | `string` | `''` | the selected id; header of the not-found state, retry payloads (P-3). Payload rule: `wpId`, then `workPackage.wpId`, then `detail.wpId` |
 | `now` | `now` | `string \| null` | `null` | RFC 3339 instant for relative time (#4 D-24); null means ISO text |
 | `labels` | none | `LabelHooks \| null` | `null` | lane, state and (reserved) hooks of #4 `logic/labels.ts` |
 | `errorMessage` | `error-message` | `string` | `''` | overrides the default error body |
 
-Ten properties (status, detailStatus, detailRefusalCode, workPackage, detail, mission, wpId, now, labels, errorMessage; one surface amendment before the IC-03b freeze, P-3). `laneGroups` is not declared (P-2). A `detail` whose `wpId` differs from `workPackage.wpId` is treated as omitted (the bare lists show, no detail-only region, no notice). Controls that need `missionId` (the crumb, dependency nodes, artifact links, Open review, retry, return) are drawn inert while `mission` is null. One test per branch. `missionsHref` of #4's Pipeline screen is not needed (no anchor navigation: the crumb is a control that emits `sk-open-mission`).
+Ten properties (status, detailStatus, detailRefusalCode, workPackage, detail, mission, wpId, now, labels, errorMessage; one surface amendment before the IC-03b freeze, P-3). `laneGroups` is not declared (P-2). A `detail` whose `wpId` differs from `workPackage.wpId`, or whose `missionId` differs from `mission.missionId` once a Mission is given, is treated as omitted (the bare lists show, no detail-only region, no notice, and no payload built from it): a `WpId` is unique only within one Mission (landing CORR-001). A `wpId` that is non-empty and differs from `workPackage.wpId` while `status` is `ready` fails closed: the screen renders `loading` (the data-less header carrying `wpId`), never a mixed identity (landing CORR-004, ruling (a)). Controls that need `missionId` (the crumb, dependency nodes, artifact links, Open review, retry, return) are drawn inert while `mission` is null. One test per branch. `missionsHref` of #4's Pipeline screen is not needed (no anchor navigation: the crumb is a control that emits `sk-open-mission`).
 
 ## Slots and parts
 
@@ -34,7 +34,7 @@ None. All text is slotted into library elements by the screen's own templates.
 | `sk-select-work-package` | `{ missionId, wpId }` | a dependency-chain node is activated (EV-1): `wpId` is the dependency's |
 | `sk-open-mission` | `{ missionId, slug }` | the Mission crumb or "Return to Pipeline" is activated (EV-3 and EV-4 collapsed, P-1) |
 | `sk-open-artifact` | `{ missionId, path, kind }` | "Open spec.md", "Open prompt" (EV-5), "Open review" on a cycle with a non-null `artifactPath`, `kind` = `REVIEW_CYCLE_ARTIFACT_KIND` (EV-6) |
-| `sk-retry-load` | `{ missionId, wpId, target }` | retry on `error` (`target: 'work-package'`) and on a refused detail (`target: 'detail'`) (EV-7) |
+| `sk-retry-load` | `{ missionId, wpId, target }`, a union discriminated by `target` (`WorkPackageRetryDetail` with `'work-package'`, `DetailRetryDetail` with `'detail'`; a later screen adds its own member to the union rather than declaring the event again) | retry on `error` (`target: 'work-package'`) and on a refused detail (`target: 'detail'`) (EV-7). Retry ownership: the shell owns a whole-page failure (`sk-shell-retry`), a screen owns the failure of its own regions (landing DESIGN-006, ruling (a)) |
 
 Library events stop at the screen. The screen never navigates and never re-emits a selection it did not originate (EV-2). Focus and scroll emit nothing (EV-8).
 
@@ -63,7 +63,7 @@ Thresholds are container widths derived from the shell's real content widths (op
 | content cell 689 px up to 847 px | two: `minmax(220px, .8fr) minmax(320px, 1.2fr)`; the third stack (`.stack:last-child`) spans all columns as two explicit tracks `minmax(0, 1fr) minmax(0, 1fr)` (no `repeat(N, ...)` form: the data-driven gate S12.1 refuses a hard-coded track count in CSS text) (the 1100 px story, content about 804 px, shows this) |
 | content cell `max-width: 688px` | one column, the third stack as one column; the header band becomes a column at this same threshold (the prototype's `.page-header` rule sits in its 800 px block and not at 620; the 800 px story has a content cell of about 688 px; at 620 the screen has no further rule) |
 
-The screen follows the enclosing `sk-mission-shell`, including across shadow roots: a wrapper element that holds the screen in its own shadow root does not hide the shell, and the screen reads the shell's reflected `tier` through the wrapper's host (pre-merge squad, BOUNDARY-005).
+The screen follows the enclosing `sk-mission-shell`, including across shadow roots: a wrapper element that holds the screen in its own shadow root does not hide the shell, and the screen reads the shell's reflected `tier` through the wrapper's host (pre-merge squad, BOUNDARY-005). The seam is `ShellTierController` (`src/shell-tier.ts`, a Lit `ReactiveController`, landing DESIGN-003 and DESIGN-004): it finds the enclosing shell across shadow roots, observes `tier`, disconnects on host disconnect and exposes the tier; it sets the CSS custom state `:state(shell-mobile)` through `ElementInternals` while the tier is `mobile`, IN PLACE OF the former `data-shell-mobile` attribute, and the screen's mobile rules are `:host(:state(shell-mobile))`. The shell documents `tier` as public on its `tier` property (so the manifest carries it on the attribute).
 
 Every `display: grid` stack (the column stacks) declares `grid-template-columns: minmax(0, 1fr)`, or an unbreakable word widens the whole column (spike S9 lesson; the prototype's `.stack` lacks it); the skeleton test names it.
 
@@ -152,7 +152,8 @@ The screen has exactly one status region. It announces text that names the Work 
 |---|---|
 | first render (any state) | nothing |
 | `status` becomes `loading` after first render | `announceLoading(wpId)` |
-| `status` becomes `ready`, or `wpId` changes while `ready` and the load completes | `announceLoaded(wpId)` once; a property refresh with the same `wpId` announces nothing |
+| `status` becomes `ready`, or the SHOWN Work Package changes while `ready` (the `wpId` of `workPackage`, whatever the `wpId` property says: landing CORR-002) | `announceLoaded(shown id)` once; a property refresh of the same Work Package announces nothing. Setting the `wpId` property alone, while `ready`, renders `loading` (see Properties) and announces `announceLoading` |
+| `status` becomes `ready` together with `detailStatus` `error` or `not-found` | ONE line, `announceLoadedDetailUnavailable(wpId)`: "Work Package WP04 loaded. Work Package detail unavailable" (landing CORR-005), so the refusal is not lost behind "loaded" |
 | `status` becomes `error` | nothing from the region (the assertive alert notice is the only announcer) |
 | `status` becomes `not-found` | `announceNotFound(wpId)` |
 | `status` becomes `empty` or `nothing-selected` | nothing (static content) |
@@ -163,9 +164,11 @@ Each row has a test (IC-08), including the negative rows (first render silent, s
 
 ## Behaviour rules (tested)
 
+- Focus (landing CORR-003): on EVERY update the screen captures the element that has focus inside its shadow root; after the update, only when that element has been detached by it (a status or detail state change, a `ready` screen turning `empty`, a Work Package swapped under the same `wpId`), focus moves to the `h1`, or to the root element (`tabindex=-1`) when no `h1` is drawn. An element that survives the update keeps focus. No property and no event.
+
 - One source per list (`resolveLists`, FR-004). No arithmetic (C-004). No lane, phase, verdict, change-state or staleness literal in the screen (D-07). History in array order; "Current" on the last entry (D-08).
 - A null `statusLane` gives a "not started" badge, the empty-history form and no actor (FR-021). An unknown lane value is shown raw (FR-023).
-- Payload and fallback rule (P-3, ARCH-013 (a')): one payload builder takes `wpId`, then `workPackage.wpId`, then `detail.wpId`; a detail for another Work Package is treated as omitted; controls that need `missionId` are inert while `mission` is null; a refused detail with an unknown or null `detailRefusalCode` shows the raw code or the generic wording. One test per branch.
+- Payload and fallback rule (P-3, ARCH-013 (a')): one payload builder takes `wpId`, then `workPackage.wpId`, then `detail.wpId`; a detail for another Work Package or another Mission is treated as omitted; controls that need `missionId` are inert while `mission` is null; a refused detail with an unknown or null `detailRefusalCode` shows the raw code or the generic wording. One test per branch.
 - A dependency-chain node is a control; a Frontmatter dependency, subtask row, owned-file row, workspace row and history entry are not.
 - No path is ever shown (C-008): the workspace shows code lane, lane branch, planning branch and worktree present only.
 - Foreign values (FR-023, element-level tests with foreign strings cast in): a verdict, a change state, a staleness status, a staleness reason and a detail refusal word outside their tables render their raw text in the DOM and never `undefined`; a foreign change state among known ones is shown and does not collapse the all-unknown note; the artifact `kind` is passed through unchanged in the event payload.

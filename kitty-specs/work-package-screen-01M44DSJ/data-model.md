@@ -26,13 +26,13 @@ Types come from the vendored contract (1.1, pinned: `contracts/contract-pin.md`)
 
 ## Screen entities (host props and derived read models)
 
-### `WpScreenMission` (host prop `mission`)
+### `WpScreenMission` (host prop `mission`): `Pick<MissionHead, 'missionId' | 'slug' | 'friendlyName' | 'wpTotal'>` (landing DESIGN-005)
 | Field | Type | Rule |
 |---|---|---|
 | `missionId` | `string` | in every event payload |
 | `slug` | `string` | in `sk-open-mission`; shown in nothing-selected |
-| `name` | `string` | the breadcrumb's Mission crumb |
-| `workPackageCount` | `number` | "N Work Packages", shown as given; used only in nothing-selected |
+| `friendlyName` | `string` | the breadcrumb's Mission crumb |
+| `wpTotal` | `number` | "N Work Packages", shown as given; used only in nothing-selected |
 
 ### View states
 `WpScreenStatus = 'loading' | 'error' | 'empty' | 'ready' | 'not-found' | 'nothing-selected'` (unknown collapses to `empty`); `DetailStatus = 'loading' | 'ready' | 'error' | 'not-found'` (unknown collapses to `error`: a refusal word is safer than a silent success). The detail refusal code reaches the screen through the optional property `detailRefusalCode` (`string | null`, no attribute, default null; operator ruling 2026-10-05, CORRECT-008 (a)): the contract's `not_found` or `source_unreadable`, or a code the screen has never seen. It is read only when `detailStatus` is `error` or `not-found`.
