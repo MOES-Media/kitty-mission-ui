@@ -1,0 +1,2 @@
+// expect: S13.1 S13.3
+export const f = (v: string): boolean => v === 'changes_requested';

@@ -1,0 +1,2 @@
+// expect: S13.4
+export const t = `x-not_applicable-${y}`;

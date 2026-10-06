@@ -1,0 +1,2 @@
+// expect: S13.5
+export const m = { not_applicable: 1 };

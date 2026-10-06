@@ -1,0 +1,34 @@
+import { DETAIL_REFUSAL_GENERIC, DETAIL_REFUSAL_WORDS } from '../defaults/index.js';
+import { lookup } from './lookup.js';
+
+/** The payload of a retry request; the screen's `SkRetryLoadDetail` is this shape. */
+export interface RetryLoadDetail {
+  missionId: string;
+  wpId: string;
+  target: 'work-package' | 'detail';
+}
+
+/** What the builder reads from the host's properties. */
+export interface RetryProps {
+  mission: { missionId: string } | null;
+  wpId?: string | null;
+  workPackage?: { wpId: string } | null;
+  detail?: { wpId: string } | null;
+}
+
+/**
+ * The one payload builder. The id comes from the host property `wpId`, then `workPackage.wpId`, then `detail.wpId`.
+ * Null when there is no Mission or no id anywhere: the control is inert and no event is built.
+ */
+export function retryDetail(target: RetryLoadDetail['target'], props: RetryProps): RetryLoadDetail | null {
+  if (props.mission === null) return null;
+  const wpId = [props.wpId, props.workPackage?.wpId, props.detail?.wpId].find((id): id is string => typeof id === 'string' && id !== '');
+  if (wpId === undefined) return null;
+  return { missionId: props.mission.missionId, wpId, target };
+}
+
+/** The refusal in words: the table, then the raw code; null (no code given) is the generic wording. */
+export function resolveRefusal(code: string | null): string {
+  if (code === null) return DETAIL_REFUSAL_GENERIC;
+  return lookup(DETAIL_REFUSAL_WORDS, code) ?? code;
+}

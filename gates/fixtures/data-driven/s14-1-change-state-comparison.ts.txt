@@ -1,0 +1,2 @@
+// expect: S14.1
+export const f = (s: string): boolean => s === 'unknown';

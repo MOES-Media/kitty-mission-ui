@@ -1,0 +1,2 @@
+// expect: S13.1 S13.3
+export const f = (r: string): boolean => r !== 'live_claim_process';
