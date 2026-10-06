@@ -4,6 +4,22 @@
 
 ### Added
 
+- `sk-work-package-screen` (screen): one Work Package of a Mission. Ten properties (`status`, `detailStatus`,
+  `detailRefusalCode`, `workPackage`, `detail`, `mission`, `wpId`, `now`, `labels`, `errorMessage`) and four events
+  (`sk-select-work-package`, `sk-open-mission`, `sk-open-artifact`, `sk-retry-load`). Regions: header, facts, lane history,
+  review summary and cycles, cancellation, evidence and dependency chains, subtasks, owned files, workspace and artifact
+  links; whole-screen and detail-only views (`loading`, `error`, `empty`, `not-found`, `nothing-selected`); three responsive
+  tiers. Every lane, verdict and status word is read from `src/defaults/` (`#5`).
+- Defaults and logic (`src/defaults`, `src/logic`): `review`, `files`, `refusals`, `staleness` and `wp-copy` vocabulary, and
+  `resolveLists`, `joinHandles`, `resolveVerdict`, `resolveChangeState`, `filesView`, `stalenessView`, `historyView`,
+  `retryDetail` and `resolveRefusal` for the Work Package screen (`#5`).
+- Contract (`src/contract`): types and 70 generated fixtures from Mission Status contract commit `b61d1fa` on `main` (48
+  new for the Work Package and its detail), the bulk generators `makeWorkPackageHistory`, `makeSubtasks` and
+  `makeOwnedFiles`, and the widened view types `WorkPackageRecordView`, `HistoryEntryView`, `WorkPackageDetailView`,
+  `SubtaskView` and `DependencyRefView` (`#5`).
+- 56 new stories with visual baselines (`Screens/Work Package/`: 10 header and facts, 13 review and history, 19 chains,
+  subtasks, workspace and links, 8 states, 6 tiers and edge cases; 174 stories in the workbench), one story per row of the
+  state matrix plus six second variants (`#5`).
 - `sk-missions-screen` (screen): the Missions list of a project. Header with the project name, the host `branch` and the
   Mission count; a search field; a status filter (`sk-filter-toggle-group`: All, Active, Planned, Done, Stale and
   Discarded); one row per Mission with its badges, lane summary, lifecycle and relative activity; a Load more row. Views

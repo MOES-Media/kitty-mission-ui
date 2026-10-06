@@ -66,6 +66,19 @@ Every screen element in `packages/mission-ui/src/elements/` follows the charter:
   its slotted text, so text placed in a sibling span loses its colour. Check the element's slots in the
   `@spec-kitty/elements` custom-elements manifest before using it.
 
+## The Work Package screen
+
+`sk-work-package-screen` shows one Work Package of a Mission: the header, facts, lane history, review summary and cycles,
+the evidence and dependency chains, subtasks, owned files, workspace and links to the spec and prompt. A host passes
+contract-shaped data only. Ten properties: `status` (`loading`, `error`, `empty`, `ready`, `not-found`,
+`nothing-selected`), `detailStatus` (`loading`, `ready`, `error`, `not-found`), `detailRefusalCode`, `workPackage`,
+`detail`, `mission`, `wpId`, `now`, `labels` (optional lane-word hooks) and `errorMessage`. Four events, each with
+`bubbles` and `composed` true: `sk-select-work-package` (a dependency node), `sk-open-mission` (the Mission crumb or
+"Return to Pipeline"), `sk-open-artifact` (the spec, prompt or a review cycle) and `sk-retry-load` (Retry, for the whole
+screen or for a refused detail). The screen performs no I/O and draws every status and lane word from the tables in
+`src/defaults/`. Its 56 stories are under `Screens/Work Package/` (five titles), with one visual baseline each. The
+walkthrough is `kitty-specs/work-package-screen-01M44DSJ/quickstart.md`.
+
 ## Gates
 
 One workflow, `.github/workflows/ci.yml`; the job ids are the gate ids and the check names are `Gate: <id>`. The list
@@ -154,6 +167,10 @@ The screens are typed from a pinned copy of the spec-kitty Mission Status contra
 `fixtures.generated.ts` under `packages/mission-ui/src/contract/`; never edit either by hand. `pnpm contract:update --sha
 <sha>` re-pins (network), `pnpm contract:verify-remote` confirms the vendored bytes equal upstream (network). Fixtures
 are valid contract documents; the only deviations are the two named relaxations in `scripts/contract/registry.mjs`.
+
+The pin is a commit on spec-kitty `main` (`provenance: "main"` in `PIN.json`; the contract file is still versioned
+`1.0.0-SNAPSHOT`). `pnpm contract:check --require-main` refuses a pin taken from a branch, and a pin from a local checkout
+(`contract:update --from-repo`) is always a branch pin, so a main pin is taken over the network.
 
 ### Timed clean-clone check (NFR-001, SC-001)
 

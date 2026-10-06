@@ -6,6 +6,19 @@ All user-visible changes to this repository. Per-package notes live in `packages
 
 ### Added
 
+- **A Work Package screen: one Work Package of a Mission, drawn from the pinned Mission Status contract** (`#5`).
+  `sk-work-package-screen` shows the header and facts, lane history, review summary and cycles, the evidence and dependency
+  chains, subtasks, owned files, workspace and links to the spec, prompt and review files. A host passes only
+  contract-shaped data, the Mission, `now` and optional lane-word hooks; the screen performs no I/O and emits four events
+  (`sk-select-work-package`, `sk-open-mission`, `sk-open-artifact`, `sk-retry-load`). 56 new Storybook stories under
+  `Screens/Work Package/` with one visual baseline each (174 in total), and CI timeouts re-derived for the larger set.
+- **The vocabulary of the Work Package screen lives in one place, and `Gate: data-driven` guards it** (`#5`). Review,
+  change-state, staleness, refusal and screen copy are in `src/defaults/` only, with small logic functions beside the
+  Mission ones; the gate now also rejects the verdict, change-state and staleness words outside `src/defaults/`.
+- **The contract copy moves to Mission Status contract commit `b61d1fa`, on spec-kitty `main`, with 48 new fixtures** (`#5`).
+  The Work Package detail screen reads Work Package, review cycle, workspace and artifact-reference data. The pin is
+  taken from `main` (`provenance: main`), `contract:check --require-main` passes and `contract:verify-remote` confirms the
+  bytes. `Gate: contract` also checks Work Package coherence and actor handles.
 - **A Missions screen and a Pipeline screen, built from the design library and the pinned Mission Status contract** (`#4`).
   The Missions screen lists a project's Missions with a status filter, search and Load more; the Pipeline screen shows one
   Mission's phase bar, its work packages on a five-column board and an inspector. A host passes only contract-shaped data,
