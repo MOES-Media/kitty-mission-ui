@@ -79,6 +79,14 @@ screen or for a refused detail). The screen performs no I/O and draws every stat
 `src/defaults/`. Its 56 stories are under `Screens/Work Package/` (five titles), with one visual baseline each. The
 walkthrough is `kitty-specs/work-package-screen-01M44DSJ/quickstart.md`.
 
+Lane words come in two kinds, and a host that rewords a lane sets both hooks of `labels`: `state` (a word and a tone) draws
+the state badge, the dependency and subtask lane words and the cancellation badge, while `lane` (a word) draws the lane
+history's "from" and "to" words. Setting one leaves the other kind on its defaults.
+
+Retry ownership: the shell owns a whole-page failure (`sk-shell-retry`); a screen owns the failure of its own regions
+(`sk-retry-load`). The `sk-retry-load` payload is a union keyed on `target`; this screen's members are `'work-package'` and
+`'detail'`, and a later screen adds its own member to the union instead of declaring the event again.
+
 ## Gates
 
 One workflow, `.github/workflows/ci.yml`; the job ids are the gate ids and the check names are `Gate: <id>`. The list
