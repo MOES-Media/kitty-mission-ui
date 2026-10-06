@@ -2,6 +2,7 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { expect, test } from '@playwright/test';
 import { settleNested } from './settle.mjs';
+import { viewportFor } from './tags.mjs';
 
 interface IndexEntry {
   id: string;
@@ -25,7 +26,7 @@ const stories = Object.values(index.entries).filter((entry) => entry.type === 's
 const storyIds = stories.map((entry) => entry.id).sort();
 const entryById = new Map(stories.map((entry) => [entry.id, entry]));
 
-// Story tags: `vw-<n>` sets the viewport width (and asserts the shell tier), `tab-<n>` presses Tab n times before the shot.
+// Story tags: `vw-<n>` sets the viewport width (and asserts the shell tier), `vh-<n>` the viewport height (default 800), `tab-<n>` presses Tab n times before the shot.
 // Stories with neither tag behave exactly as before.
 const TIER_BREAKPOINTS = { expanded: 1100, collapsed: 720 } as const;
 
@@ -63,7 +64,8 @@ for (const id of storyIds) {
       if (/two copies|multiple versions of lit/i.test(msg.text())) consoleProblems.push(msg.text());
     });
 
-    if (width !== undefined) await page.setViewportSize({ width, height: 800 });
+    const viewport = viewportFor(entry?.tags, page.viewportSize()?.width ?? 800);
+    if (viewport !== undefined) await page.setViewportSize(viewport);
     await page.goto(`/iframe.html?id=${id}&viewMode=story`);
     const element = page.locator(STORY_ELEMENT);
     await element.waitFor({ state: 'attached' });
