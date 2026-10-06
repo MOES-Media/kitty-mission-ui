@@ -30,7 +30,7 @@ test('tallyLanes of nothing is nine zeros', () => {
 
 test('the overlays build exactly the registered fixtures, in registry order', () => {
   assert.deepEqual(Object.keys(fixtures), Object.keys(FIXTURES));
-  assert.equal(Object.keys(fixtures).length, 22);
+  assert.equal(Object.keys(fixtures).length, 70);
 });
 
 // The declared values of contract-pin.md, "Declared derived values": [wpTotal, blockedCount, doneCount, donePercentage, W].
@@ -88,7 +88,7 @@ test('actors come only from SYNTHETIC_ACTORS and exist on detailBadges', () => {
   assert.ok(SYNTHETIC_ACTORS.length >= 2);
   const seen = [];
   for (const [name, d] of Object.entries(fixtures)) {
-    for (const wp of d.workPackages ?? []) if ('actor' in wp) seen.push([name, wp.actor]);
+    for (const item of d.workPackages ?? []) if ('actor' in item) seen.push([name, item.actor]);
   }
   assert.equal(seen.length, 1);
   assert.deepEqual(seen[0][0], 'detailBadges');
@@ -116,4 +116,113 @@ test('page shapes: counts, next-page flags', () => {
   assert.equal(fixtures.pageExhausted.items.length, 0);
   assert.equal(fixtures.pageLongNames.items.length, 1);
   assert.equal(fixtures.projectEmpty.missionCount, 0);
+});
+
+// ---- the Work Package fixtures: the lane-rewrite rule and the facts the pairing relies on ----
+const wp = (name) => fixtures[name];
+const DETAIL_IDS = ['T017', 'T018', 'T019'];
+
+test('wpPopulated: in progress after two events, three subtasks equal to detailPopulated, one dependency, the same owned files', () => {
+  const d = wp('wpPopulated');
+  assert.equal(d.statusLane, 'in_progress');
+  assert.equal(d.history.length, 2);
+  assert.deepEqual(d.subtasks, { T017: 'done', T018: 'in_progress', T019: 'planned' });
+  assert.deepEqual(d.subtaskProgress, { done: 1, total: 3 });
+  assert.deepEqual(Object.keys(d.subtasks), fixtures.detailPopulated.subtasks.map((x) => x.id));
+  assert.deepEqual(Object.keys(d.subtasks), DETAIL_IDS);
+  assert.deepEqual(d.dependencies, ['WP03']);
+  assert.deepEqual(d.dependencies, fixtures.detailPopulated.dependencies.map((x) => x.wpId));
+  assert.deepEqual(d.ownedFiles, fixtures.detailPopulated.ownedFiles.map((x) => x.pattern));
+  assert.equal(d.ownedFiles.length, 3);
+  assert.deepEqual(d.review, { latestResult: null, override: null });
+  assert.equal(d.lastEventId, d.history[1].eventId);
+  assert.equal(d.lastTransitionAt, d.history[1].at);
+});
+
+test('the lane overlays end their history on the lane and carry the review the table of contract-pin.md gives', () => {
+  const want = {
+    wpPopulated: ['in_progress', 2, [1, 3], null],
+    wpReviewNone: ['for_review', 3, [3, 3], null],
+    wpChangesRequested: ['in_progress', 4, [1, 3], 'changes_requested'],
+    wpApproved: ['approved', 6, [3, 3], 'approved'],
+    wpDone: ['done', 7, [3, 3], 'approved'],
+    wpReady: ['planned', 1, [0, 3], null],
+    wpBlocked: ['planned', 1, [0, 3], null],
+  };
+  let n = 0;
+  for (const [name, [lane, entries, progress, verdict]] of Object.entries(want)) {
+    const d = wp(name);
+    assert.equal(d.statusLane, lane, name);
+    assert.equal(d.history.length, entries, name);
+    assert.equal(d.history.at(-1).toStatusLane, lane, name);
+    assert.deepEqual([d.subtaskProgress.done, d.subtaskProgress.total], progress, name);
+    assert.equal(d.review.latestResult?.verdict ?? null, verdict, name);
+    assert.equal(d.lastEventId, d.history.at(-1).eventId, name);
+    assert.equal(d.lastTransitionAt, d.history.at(-1).at, name);
+    n += 1;
+  }
+  assert.equal(n, 7);
+  assert.equal(wp('wpChangesRequested').history[3].reviewVerdict, 'changes_requested');
+  assert.equal(wp('wpApproved').history[5].reviewVerdict, 'approved');
+});
+
+test('wpReady and wpBlocked: readiness follows the dependencies, ready to start only when satisfied', () => {
+  assert.deepEqual([wp('wpReady').readyToStart, wp('wpReady').readiness.satisfied, wp('wpReady').dependencies], [true, true, ['WP03']]);
+  assert.deepEqual(wp('wpBlocked').dependencies, ['WP01', 'WP02']);
+  assert.deepEqual(wp('wpBlocked').readiness, { satisfied: false, unsatisfied: ['WP01', 'WP02'] });
+  assert.equal(wp('wpBlocked').readyToStart, false);
+  assert.deepEqual(fixtures.detailDepsBlocked.dependencies.map((x) => x.wpId), wp('wpBlocked').readiness.unsatisfied);
+  assert.deepEqual(fixtures.detailDepsBlocked.dependencies.map((x) => x.statusLane), ['planned', 'in_progress']);
+  assert.ok(fixtures.detailDepsBlocked.dependencies.every((x) => x.title.length > 0));
+});
+
+test('named cases: cancellation, history, staleness, nulls and the long and bulk documents', () => {
+  assert.equal(wp('wpCanceledSynthetic').cancellation.reasonSource, 'synthetic');
+  assert.equal(wp('wpCanceled').cancellation.reasonSource, 'operator');
+  assert.equal(wp('wpCanceledNullReason').cancellation.reason, null);
+  const rich = wp('wpHistoryRich');
+  assert.equal(rich.history[0].fromStatusLane, null);
+  assert.equal(rich.forceCount, rich.history.filter((e) => e.force).length);
+  assert.ok(rich.forceCount >= 1);
+  assert.ok(rich.history.some((e) => e.reason !== null));
+  assert.deepEqual([wp('wpStale').staleness.status, wp('wpFresh').staleness.status, wp('wpNotApplicable').staleness.status], ['stale', 'fresh', 'not_applicable']);
+  assert.equal(typeof wp('wpStale').staleness.minutesSinceCommit, 'number');
+  assert.equal(typeof wp('wpStale').staleness.reason, 'string');
+  assert.equal(Object.hasOwn(wp('wpStalenessOmitted'), 'staleness'), false);
+  assert.equal(Object.hasOwn(wp('wpPopulated'), 'staleness'), true);
+  const nulls = wp('wpFactsNull');
+  assert.deepEqual([nulls.executionMode, nulls.priority, nulls.mergeTargetBranch, nulls.phaseLabel, nulls.implementerOfRecord], [null, null, null, null, null]);
+  assert.deepEqual(nulls.trackerRefs, []);
+  assert.equal(wp('wpBulkHistory').history.length, 60);
+  assert.equal(wp('wpBulkHistory').history.at(-1).toStatusLane, wp('wpBulkHistory').statusLane);
+  assert.equal(fixtures.detailLong.subtasks.length, 40);
+  assert.equal(fixtures.detailLong.ownedFiles.length, 100);
+  assert.ok(wp('wpLong').title.length > 200 && wp('wpLong').review.latestResult !== null);
+  const lanes = wp('wpUnknownLane');
+  assert.equal(lanes.statusLane, 'on_hold');
+  assert.equal(lanes.history.at(-1).toStatusLane, 'on_hold');
+  assert.ok(Object.values(lanes.subtasks).includes('on_hold'));
+  assert.equal(wp('wpWithPrompt').promptMarkdown.length > 0, true);
+});
+
+test('detail fixtures: the one-member variations of detailPopulated', () => {
+  const base = fixtures.detailPopulated;
+  assert.equal(base.reviewCycles.length, 2);
+  assert.deepEqual(fixtures.detailNoCycles.reviewCycles, []);
+  assert.equal(fixtures.detailSubtasksNone.subtasks.length, 0);
+  assert.equal(fixtures.detailDepsNone.dependencies.length, 0);
+  assert.equal(fixtures.detailOwnedNone.ownedFiles.length, 0);
+  assert.deepEqual(fixtures.detailSubtaskNulls.subtasks.filter((x) => x.title === null && x.statusLane === null).length, 1);
+  assert.deepEqual(fixtures.detailDepNullLane.dependencies.map((x) => [x.statusLane, x.title === x.wpId]), [[null, true]]);
+  assert.equal(fixtures.detailWorkspaceNoWorktree.workspace.worktreePresent, false);
+  assert.ok(fixtures.detailWorkspaceNoWorktree.workspace.laneId.length > 0);
+  assert.equal(fixtures.detailLinksPromptNull.artifactReferences.prompt, null);
+  assert.notEqual(fixtures.detailLinksPromptNull.artifactReferences.spec, null);
+  assert.deepEqual(fixtures.detailLinksNone.artifactReferences, { prompt: null, spec: null });
+  assert.ok(JSON.stringify(fixtures.detailRedaction).includes('[path]') && JSON.stringify(fixtures.detailRedaction).includes('[email]'));
+  assert.deepEqual(fixtures.detailRefusalNotFound.code, 'not_found');
+  assert.deepEqual(fixtures.detailRefusalUnreadable.code, 'source_unreadable');
+  assert.equal(Object.hasOwn(fixtures.detailOmittedProvisional, 'reviewCycles'), false);
+  assert.equal(Object.hasOwn(fixtures.detailOmittedProvisional, 'workspace'), false);
+  assert.ok(fixtures.detailUnknownLanes.subtasks.some((x) => x.statusLane === 'on_hold') && fixtures.detailUnknownLanes.dependencies.some((x) => x.statusLane === 'on_hold'));
 });

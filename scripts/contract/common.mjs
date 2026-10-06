@@ -79,12 +79,14 @@ export function changelogTopVersionOf(changelogText) {
 }
 
 /** Build the pin record for the vendored files on disk. `retrievedAt` is informational. */
-export function buildPin({ root = ROOT, sha, committerDate, retrievedAt }) {
+export function buildPin({ root = ROOT, sha, committerDate, retrievedAt, provenance = 'main', branch, reason }) {
   return {
     repo: REPO,
     sha,
     committerDate,
     retrievedAt,
+    provenance,
+    ...(provenance === 'branch' ? { branch, reason } : {}),
     paths: [...UPSTREAM_PATHS],
     infoVersion: infoVersionOf(readText(root, LAYOUT.openapi)),
     changelogTopVersion: changelogTopVersionOf(readText(root, LAYOUT.changelog)),

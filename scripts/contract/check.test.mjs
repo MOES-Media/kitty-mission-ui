@@ -7,7 +7,7 @@ import { tmpdir, userInfo } from 'node:os';
 import { join } from 'node:path';
 import { test, before, after } from 'node:test';
 import { LAYOUT, ROOT } from './common.mjs';
-import { PRODUCER_LANE_WEIGHTS, runChecks } from './check.mjs';
+import { PRODUCER_LANE_WEIGHTS, actorProblems, runChecks, workPackageFailures } from './check.mjs';
 import { generateFixturesSource, loadBulk, loadExamples } from './generate.mjs';
 import { buildFixtures as realBuild } from './overlays.mjs';
 import { FIXTURES } from './registry.mjs';
@@ -28,6 +28,7 @@ const TOKENS = {
   hygiene: 'hygiene',
   provisional: 'provisional',
   guard: 'guard',
+  pinProvenance: 'pin provenance',
 };
 
 const dirs = [];
@@ -66,7 +67,29 @@ async function mutateDocs(root, mutate) {
   return { buildFixtures };
 }
 
-const check = (root, deps) => runChecks({ root, deps });
+const check = (root, deps, options = {}) => runChecks({ root, deps, ...options });
+/** Rewrite the temp copy's PIN.json (it is not in its own hash list, and no generated header quotes these keys). */
+const editPin = (root, mutate) => {
+  const pin = JSON.parse(read(root, LAYOUT.pin));
+  mutate(pin);
+  write(root, LAYOUT.pin, `${JSON.stringify(pin, null, 2)}\n`);
+};
+const asMainPin = (pin) => {
+  pin.provenance = 'main';
+  delete pin.branch;
+  delete pin.reason;
+};
+const asBranchPin = (pin) => {
+  pin.provenance = 'branch';
+  pin.branch = 'example-branch';
+  pin.reason = 'a branch pin built by the test; the repository itself pins main';
+};
+// the repository pins main, so the C8 branch-pin cases build their own branch pin
+const branchRepo = () => {
+  const root = tempRepo();
+  editPin(root, asBranchPin);
+  return root;
+};
 const without = (obj, key) => Object.fromEntries(Object.entries(obj).filter(([k]) => k !== key));
 
 let clean;
@@ -76,8 +99,11 @@ before(async () => {
 
 test('positive control: the repository itself passes every check, and the checks counted real inputs', () => {
   assert.deepEqual(clean.problems, []);
-  assert.equal(clean.summary.vendoredFiles, 98);
-  assert.equal(clean.summary.fixtures, 22);
+  // independent literals, deliberately not computed from PIN.files (a pin and a directory that shrink together would
+  // keep a derived floor green); edited deliberately at each re-pin
+  assert.equal(clean.summary.vendoredFiles, 151);
+  assert.equal(clean.summary.fixtures, 70);
+  assert.equal(clean.summary.anchorFiles, 5);
   assert.equal(clean.summary.bulkPages, 2);
   assert.ok(clean.summary.c7Files > 0);
 });
@@ -130,6 +156,49 @@ test('C1: a wrong changelogTopVersion gives pin metadata', async () => {
   pin.changelogTopVersion = '2.0.0';
   write(root, LAYOUT.pin, JSON.stringify(pin, null, 2));
   assert.deepEqual(tokens(await check(root)), [TOKENS.pinMetadata]);
+});
+
+// ---- C8 ----
+test('C8: a branch pin without a reason gives the C8 token', async () => {
+  const root = branchRepo();
+  editPin(root, (p) => {
+    delete p.reason;
+  });
+  assert.deepEqual(tokens(await check(root)), [TOKENS.pinProvenance]);
+});
+
+test('C8: a branch pin without a branch label, a missing provenance and an unknown provenance each give the C8 token', async () => {
+  for (const mutate of [(p) => { delete p.branch; }, (p) => { delete p.provenance; }, (p) => { p.provenance = 'tag'; }, (p) => { p.reason = ''; }]) {
+    const root = branchRepo();
+    editPin(root, mutate);
+    assert.deepEqual(tokens(await check(root)), [TOKENS.pinProvenance]);
+  }
+});
+
+test('C8: a main pin that carries a branch or a reason gives the C8 token', async () => {
+  const root = tempRepo();
+  assert.equal(JSON.parse(read(root, LAYOUT.pin)).provenance, 'main', 'the repository itself pins main');
+  editPin(root, (p) => {
+    p.branch = 'example-branch';
+  });
+  assert.deepEqual(tokens(await check(root)), [TOKENS.pinProvenance]);
+  editPin(root, (p) => {
+    delete p.branch;
+    p.reason = 'a reason on a main pin';
+  });
+  assert.deepEqual(tokens(await check(root)), [TOKENS.pinProvenance]);
+});
+
+test('C8: --require-main refuses a branch pin, and passes a main pin (positive control)', async () => {
+  const branch = branchRepo();
+  assert.deepEqual(tokens(await check(branch)), [], 'a branch pin is accepted without the flag (development)');
+  const refused = await check(branch, undefined, { requireMain: true });
+  assert.deepEqual(tokens(refused), [TOKENS.pinProvenance]);
+  assert.match(refused.problems[0].message, /main/);
+  const main = tempRepo();
+  editPin(main, asMainPin);
+  assert.deepEqual(tokens(await check(main, undefined, { requireMain: true })), []);
+  assert.deepEqual(tokens(await check(main)), []);
 });
 
 // ---- C2, C3 ----
@@ -302,6 +371,126 @@ test('C5 covers the bulk pages: a wrong bulk declared value is rejected', async 
   assert.ok(tokens(r).includes(TOKENS.incoherent), tokens(r).join());
 });
 
+// ---- C5 over the WorkPackage fixtures, and the relaxation schema assertion ----
+test('C5 WorkPackage fixtures: each rule fails a fixture built to violate exactly it, and passes when reverted', async () => {
+  const cases = [
+    ['ready-to-start', (d) => { d.wpPopulated.readyToStart = true; }],
+    ['subtask-progress', (d) => { d.wpPopulated.subtaskProgress.done = 2; }],
+    ['history-order', (d) => { d.wpApproved.history[3].at = '2026-01-01T00:00:00Z'; }],
+    ['history-last', (d) => { d.wpDone.statusLane = 'approved'; }],
+    ['readiness-subset', (d) => { d.wpBlocked.readiness.unsatisfied = ['WP01', 'WP77']; }],
+  ];
+  let n = 0;
+  for (const [rule, mutate] of cases) {
+    const root = tempRepo();
+    const deps = await mutateDocs(root, mutate);
+    const r = await check(root, deps);
+    assert.ok(rulesOf(r).includes(rule), `${rule}: ${tokens(r).join()} ${rulesOf(r).join()}`);
+    assert.ok(tokens(r).includes(TOKENS.incoherent));
+    n += 1;
+  }
+  assert.equal(n, 5);
+  assert.deepEqual(tokens(await check(tempRepo())), [], 'reverted: the unmutated fixtures are coherent');
+});
+
+test('C4 WorkPackage fixtures: an actor outside SYNTHETIC_ACTORS is a violation on every kind (history actor, reviewer, cycle reviewer)', async () => {
+  const cases = [
+    (d) => { d.wpPopulated.history[0].actor.tool = 'someone-real'; },
+    (d) => { d.wpApproved.review.latestResult.reviewer = 'someone-real'; },
+    (d) => { d.detailPopulated.reviewCycles[0].reviewer = 'someone-real'; },
+    (d) => { d.wpUnknownLane.actor.profile = 'someone-real'; },
+  ];
+  let n = 0;
+  for (const mutate of cases) {
+    const root = tempRepo();
+    const deps = await mutateDocs(root, mutate);
+    const r = await check(root, deps);
+    assert.ok(r.problems.some((p) => p.token === TOKENS.violates && p.message.includes('someone-real')), tokens(r).join());
+    n += 1;
+  }
+  assert.equal(n, 4);
+});
+
+test('C4: a relaxed fixture whose schema differs from its relaxation schema gives relaxation', async () => {
+  const root = tempRepo();
+  const registry = { ...FIXTURES, wpUnknownLane: { ...FIXTURES.wpUnknownLane, schema: 'WorkPackageDetail' } };
+  const r = await check(root, { registry });
+  assert.ok(r.problems.some((p) => p.token === TOKENS.relaxation && /schema/.test(p.message)), tokens(r).join());
+});
+
+test('C4: the new relaxations let nothing else through: an unknown verdict next to an unknown lane still violates', async () => {
+  const root = tempRepo();
+  const deps = await mutateDocs(root, (d) => {
+    d.wpUnknownLane.review = { latestResult: { reviewer: 'reviewer-renata', verdict: 'unheard-of', reference: 'x' }, override: null };
+  });
+  assert.ok(tokens(await check(root, deps)).includes(TOKENS.relaxation));
+});
+
+// ---- C5, WorkPackage rules (pure function over a document; the fixture-level cases follow the fixtures) ----
+const WP_EXAMPLES = ['populated', 'with-prompt', 'provisional', 'no-events', 'actor-structured', 'actor-handle', 'actor-redacted', 'canceled', 'override', 'override-partial'];
+const wpExample = (name) => structuredClone(loadExamples(ROOT)[`WorkPackage.${name}`]);
+
+test('C5 WorkPackage rules: the ten contract examples satisfy every rule (a violating example is escalated, never relaxed)', () => {
+  let n = 0;
+  for (const name of WP_EXAMPLES) {
+    assert.deepEqual(workPackageFailures(wpExample(name)), [], name);
+    n += 1;
+  }
+  assert.equal(n, 10);
+});
+
+// Each case violates exactly one rule; the mutated document fails with that rule's name and the original passes.
+const WP_RULE_CASES = [
+  ['ready-to-start', 'populated', (d) => { d.readyToStart = true; }],
+  ['ready-to-start', 'no-events', (d) => { d.readyToStart = true; d.readiness = { satisfied: true, unsatisfied: [] }; }],
+  ['subtask-progress', 'populated', (d) => { d.subtaskProgress.done = 3; }],
+  ['subtask-progress', 'populated', (d) => { d.subtaskProgress.total = 5; }],
+  ['history-order', 'populated', (d) => { d.history[2].at = '2026-09-20T00:00:00Z'; }],
+  ['history-order', 'populated', (d) => { d.history[1].at = d.history[0].at; d.history[1].eventId = d.history[0].eventId; }],
+  ['history-last', 'populated', (d) => { d.statusLane = 'claimed'; }],
+  ['history-last', 'no-events', (d) => { d.statusLane = 'planned'; }],
+  ['history-last', 'populated', (d) => { d.history = []; }],
+  ['readiness-subset', 'populated', (d) => { d.readiness = { satisfied: false, unsatisfied: ['WP99'] }; }],
+];
+
+test('C5 WorkPackage rules: each rule has a negative case that names it, and the unmutated document passes (positive control)', () => {
+  let n = 0;
+  for (const [rule, example, mutate] of WP_RULE_CASES) {
+    const doc = wpExample(example);
+    assert.deepEqual(workPackageFailures(doc), [], `${example} passes before the mutation`);
+    mutate(doc);
+    assert.ok(workPackageFailures(doc).includes(rule), `${rule} on ${example}: ${workPackageFailures(doc).join()}`);
+    n += 1;
+  }
+  assert.equal(n, 10);
+  assert.deepEqual([...new Set(WP_RULE_CASES.map((c) => c[0]))].sort(), ['history-last', 'history-order', 'readiness-subset', 'ready-to-start', 'subtask-progress']);
+});
+
+test('C5 WorkPackage rules: equal times with ascending event ids are in order (positive control for the tie rule)', () => {
+  const doc = wpExample('populated');
+  doc.history[1].at = doc.history[0].at;
+  assert.ok(doc.history[0].eventId < doc.history[1].eventId);
+  assert.deepEqual(workPackageFailures(doc), []);
+});
+
+// ---- actorProblems over the WorkPackage shapes ----
+test('actorProblems: handles of actor, history actors, the latest reviewer and detail cycle reviewers must be synthetic', () => {
+  const doc = wpExample('populated');
+  assert.deepEqual(actorProblems(doc), [], 'positive control: the example handles are in SYNTHETIC_ACTORS');
+  const at = (mutate) => {
+    const d = wpExample('populated');
+    mutate(d);
+    return actorProblems(d);
+  };
+  assert.deepEqual(at((d) => { d.actor.tool = 'someone-else'; }), ['someone-else']);
+  assert.deepEqual(at((d) => { d.history[3].actor.profile = 'real-person'; }), ['real-person']);
+  assert.deepEqual(at((d) => { d.review.latestResult.reviewer = 'reviewer-real'; }), ['reviewer-real']);
+  assert.deepEqual(at((d) => { d.actor = 'plain-string-handle'; }), ['plain-string-handle']);
+  assert.deepEqual(actorProblems({ wpId: 'WP01', reviewCycles: [{ reviewer: 'reviewer-renata' }, { reviewer: 'someone-real' }] }), ['someone-real']);
+  assert.deepEqual(actorProblems({ wpId: 'WP01', reviewCycles: [{ reviewer: 'reviewer-renata' }] }), []);
+  assert.deepEqual(actorProblems({ workPackages: [{ actor: 'agent-a' }, { actor: 'agent-z' }] }), ['agent-z'], 'the Mission detail shape is still covered');
+});
+
 test('producer lane weights: the nine weights extracted from a captured excerpt equal the constant', () => {
   const excerpt = `DEFAULT_LANE_WEIGHTS: dict[str, float] = {
     "genesis": 0.0,
@@ -371,21 +560,50 @@ test('C7: the contract directory itself may name stream identifiers', async () =
 });
 
 // ---- guards ----
-test('guard: a registry of 21 entries against 22 exports is reported with both counts', async () => {
+test('guard: a registry of 69 entries against 70 exports is reported with both counts', async () => {
   const root = tempRepo();
   const registry = without(FIXTURES, 'pageLong');
+  assert.equal(Object.keys(registry).length, 69);
   const r = await check(root, { registry });
   assert.ok(tokens(r).includes(TOKENS.unregistered));
-  assert.match(r.problems.find((p) => p.token === TOKENS.unregistered).message, /21.*22|22.*21/);
+  assert.match(r.problems.find((p) => p.token === TOKENS.unregistered).message, /69.*70|70.*69/);
 });
 
-test('guard: a PIN.files of 97 keys against 98 files gives file set', async () => {
+test('guard: a PIN.files of 150 keys against 151 files gives file set', async () => {
   const root = tempRepo();
   const pin = JSON.parse(read(root, LAYOUT.pin));
   delete pin.files[Object.keys(pin.files)[0]];
-  assert.equal(Object.keys(pin.files).length, 97);
+  assert.equal(Object.keys(pin.files).length, 150);
   write(root, LAYOUT.pin, JSON.stringify(pin, null, 2));
   assert.deepEqual(tokens(await check(root)), [TOKENS.fileSet]);
+});
+
+test('guard: the floors fail when the vendored set shrinks by one file together with its pin (a pin-derived guard would stay green)', async () => {
+  const root = tempRepo();
+  const gone = 'mission-status/examples/StreamRefusal.negative.yaml';
+  rmSync(join(root, LAYOUT.vendor, gone));
+  editPin(root, (p) => {
+    delete p.files[gone];
+  });
+  const r = await check(root);
+  assert.equal(r.problems.some((p) => p.token === TOKENS.fileSet), false, 'the pin and the directory agree, so C1 alone is silent');
+  assert.equal(r.summary.vendoredFiles, 150);
+  assert.notEqual(r.summary.vendoredFiles, 151, 'the literal floor of the positive control would fail on this');
+});
+
+test('guard: a vendored set missing a named anchor file gives guard and names the file', async () => {
+  const anchors = ['mission-status/openapi.yaml', 'mission-status/schemas/WorkPackageDetail.yaml', 'mission-status/schemas/ReviewCycle.yaml', 'mission-status/schemas/Workspace.yaml', 'mission-status/examples/WorkPackageDetail.populated.yaml'];
+  for (const anchor of anchors) {
+    const root = tempRepo();
+    rmSync(join(root, LAYOUT.vendor, anchor));
+    editPin(root, (p) => {
+      delete p.files[anchor];
+    });
+    const r = await check(root);
+    const hit = r.problems.filter((p) => p.token === TOKENS.guard);
+    assert.equal(hit.length, 1, `${anchor}: ${tokens(r).join()}`);
+    assert.ok(hit[0].message.includes(anchor), hit[0].message);
+  }
 });
 
 test('guard: a C7 scan that does not include index.ts gives guard', async () => {
