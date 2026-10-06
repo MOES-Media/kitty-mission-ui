@@ -221,10 +221,8 @@ describe('surface freeze: the Work Package screen (ten properties, four events)'
     expect(own.sort()).toEqual(
       [
         'breadcrumbView',
-        'connectedCallback',
         'constructor',
         'currentWpId',
-        'disconnectedCallback',
         'effectiveState',
         'matchingDetail',
         'moveFocusIntoView',

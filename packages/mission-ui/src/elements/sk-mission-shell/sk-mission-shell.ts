@@ -54,9 +54,6 @@ const COLLAPSED_QUERY = '(min-width: 720px)';
  * `main` pads the content by `--sk-mission-shell-content-padding` (24px, 16px at the mobile tier); that property is
  * public: a slotted screen that sets the `flush` attribute on the shell pads its own inset parts with it. `flush` removes
  * the padding, so a screen can run to the edges of the content column (the Pipeline screen's inspector and phase band).
- * The current tier (`expanded`, `collapsed` or `mobile`) is reflected on the host as the `tier` attribute and is public: a
- * slotted screen may read it and observe its changes (the Work Package screen shows one column in the mobile tier, where
- * the content cell is the whole viewport).
  *
  * @slot - the page content, inside the main landmark
  * @slot brand - the product name beside the mark (falls back to "kitty desktop")
@@ -417,7 +414,12 @@ export class SkMissionShell extends LitElement {
   @property({ type: Boolean, attribute: 'flyout-open' })
   flyoutOpen = false;
 
-  /** Read-only: derived from the window width, re-asserted on every update. */
+  /**
+   * Read-only: derived from the window width, re-asserted on every update. The current tier (`expanded`, `collapsed` or
+   * `mobile`) is reflected on the host as the `tier` attribute and is public: a slotted screen may read it and observe its
+   * changes, through `ShellTierController` (the Work Package screen shows one column in the mobile tier, where the content
+   * cell is the whole viewport).
+   */
   @property({ reflect: true, attribute: 'tier' })
   tier: ShellTier = 'expanded';
 

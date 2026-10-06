@@ -47,6 +47,7 @@ import type { LabelHooks, RetryLoadDetail } from '../../logic/index.js';
 import type { MissionHead, WorkPackageDetailView, WorkPackageRecordView } from '../../contract/types.js';
 import { eventTimelineSheet, breadcrumbsSheet, emptyStateSheet, factsSheet } from '../../library-sheets.js';
 import { progressSheet } from '../../progress-sheet.js';
+import { ShellTierController } from '../../shell-tier.js';
 import { visuallyHidden } from '../../visually-hidden.js';
 import { normaliseViewState } from '../../view-state.js';
 import type { SkOpenMissionDetail } from '../sk-missions-screen/sk-missions-screen.js';
@@ -74,18 +75,6 @@ import type { ArtifactLinksView, SubtasksView, WorkspaceView } from './work-part
 export type WpScreenStatus = 'loading' | 'error' | 'empty' | 'ready' | 'not-found' | 'nothing-selected';
 /** The state of the detail regions only. Unknown values collapse to `error`. */
 export type DetailStatus = 'loading' | 'ready' | 'error' | 'not-found';
-
-/** The nearest enclosing `sk-mission-shell`, looking through shadow roots: a wrapper element may hold the screen in its own. */
-function enclosingShell(start: Element): Element | null {
-  let node: Element | null = start;
-  while (node !== null) {
-    const shell: Element | null = node.closest('sk-mission-shell');
-    if (shell !== null) return shell;
-    const host: Node | null = node.getRootNode() instanceof ShadowRoot ? (node.getRootNode() as ShadowRoot).host : null;
-    node = host instanceof Element ? host : null;
-  }
-  return null;
-}
 
 /** The Mission the screen shows a Work Package of: host data, with the contract's field names (the Pipeline screen's Mission is assignable). */
 export type WpScreenMission = Pick<MissionHead, 'missionId' | 'slug' | 'friendlyName' | 'wpTotal'>;
@@ -189,15 +178,15 @@ export class SkWorkPackageScreen extends LitElement {
         }
       }
       /* The shell's mobile tier (operator ruling during WP10): its content cell is the whole viewport, so the container
-         queries above would leave two columns between 689 and 719 px. The screen reads the shell's reflected 'tier'. */
-      :host([data-shell-mobile]) [data-region='header'] {
+         queries above would leave two columns between 689 and 719 px. The screen follows the shell's reflected 'tier' through the ShellTierController. */
+      :host(:state(shell-mobile)) [data-region='header'] {
         align-items: flex-start;
         flex-direction: column;
       }
-      :host([data-shell-mobile]) [data-grid] {
+      :host(:state(shell-mobile)) [data-grid] {
         grid-template-columns: minmax(0, 1fr);
       }
-      :host([data-shell-mobile]) [data-stack]:last-child {
+      :host(:state(shell-mobile)) [data-stack]:last-child {
         grid-column: auto;
         grid-template-columns: minmax(0, 1fr);
       }
@@ -275,6 +264,9 @@ export class SkWorkPackageScreen extends LitElement {
   private announcing = false;
   // The element that had focus inside the shadow root when the current update began.
   private focusedBefore: Element | null = null;
+
+  // Sets the custom state `:state(shell-mobile)` on this host while the enclosing shell reads its mobile tier.
+  protected readonly shellTier = new ShellTierController(this);
 
   // ---- Dispatch: one literal site per event; the part files receive these as arguments.
 
@@ -388,28 +380,6 @@ export class SkWorkPackageScreen extends LitElement {
       return ANNOUNCE_DETAIL_UNAVAILABLE;
     }
     return null;
-  }
-
-  private tierObserver: MutationObserver | null = null;
-
-  /** Follows the enclosing shell's reflected `tier` attribute: `data-shell-mobile` is set on this host while it reads mobile. */
-  override connectedCallback(): void {
-    super.connectedCallback();
-    const shell = enclosingShell(this);
-    const follow = (): void => {
-      this.toggleAttribute('data-shell-mobile', shell?.getAttribute('tier') === 'mobile');
-    };
-    follow();
-    if (shell === null) return;
-    this.tierObserver = new MutationObserver(follow);
-    this.tierObserver.observe(shell, { attributes: true, attributeFilter: ['tier'] });
-  }
-
-  override disconnectedCallback(): void {
-    this.tierObserver?.disconnect();
-    this.tierObserver = null;
-    this.removeAttribute('data-shell-mobile');
-    super.disconnectedCallback();
   }
 
   /** When the focused element was detached by an update, focus moves to the `h1`, else to the root. */

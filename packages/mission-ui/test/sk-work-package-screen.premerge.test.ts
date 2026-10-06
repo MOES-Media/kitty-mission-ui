@@ -1,6 +1,5 @@
 // Pre-merge squad R2 findings, each pinned: the live region's repeat announcement (A11Y-001), the effective state of a ready
-// screen with no Work Package (A11Y-003), the Assignment draw rule (CONTRACT-001), the shell lookup across shadow roots
-// (BOUNDARY-005), the tier observer's detach and re-parent (TESTS-001) and the heading outline of the canceled screens (A11Y-002).
+// screen with no Work Package (A11Y-003), the Assignment draw rule (CONTRACT-001) and the heading outline of the canceled screens (A11Y-002).
 import { afterEach, describe, expect, it } from 'vitest';
 import { page } from 'vitest/browser';
 import '@spec-kitty/tokens';
@@ -89,71 +88,6 @@ describe('CONTRACT-001: the Assignment panel is drawn from what it renders', () 
     screen.workPackage = { ...wp, assignment: { ...empty, agent: 'claude' } };
     await tick(screen);
     expect(root(screen).querySelector('[data-region="assignment"]')).not.toBeNull();
-  });
-});
-
-describe('BOUNDARY-005: the enclosing shell is found across shadow roots', () => {
-  it('a screen inside a wrapper shadow root under the shell follows the mobile tier', async () => {
-    await page.viewport(700, 900);
-    const box = document.createElement('div');
-    document.body.append(box);
-    const host = document.createElement('div');
-    render(workPackageFrame(html`${host}`), box);
-    const screen = document.createElement('sk-work-package-screen');
-    Object.assign(screen, pairingProps('WP-01'));
-    host.attachShadow({ mode: 'open' }).append(screen);
-    await tick(screen);
-    const shell = document.querySelector('sk-mission-shell');
-    expect(shell?.getAttribute('tier')).toBe('mobile');
-    expect(screen.hasAttribute('data-shell-mobile')).toBe(true);
-    await page.viewport(1280, 900);
-    await expect.poll(() => screen.hasAttribute('data-shell-mobile')).toBe(false);
-  });
-});
-
-describe('TESTS-001: the tier observer is released on detach and follows only the new shell on re-parent', () => {
-  const shellOf = (box: Element): HTMLElement => box.querySelector('sk-mission-shell') as HTMLElement;
-
-  it('a detached screen does not follow the shell, and the attribute is cleared', async () => {
-    await page.viewport(700, 900);
-    const screen = document.createElement('sk-work-package-screen');
-    Object.assign(screen, pairingProps('WP-01'));
-    const box = document.createElement('div');
-    document.body.append(box);
-    render(workPackageFrame(html`${screen}`), box);
-    await tick(screen);
-    expect(screen.hasAttribute('data-shell-mobile')).toBe(true);
-    screen.remove();
-    expect(screen.hasAttribute('data-shell-mobile')).toBe(false);
-    await page.viewport(1280, 900);
-    await expect.poll(() => shellOf(box).getAttribute('tier')).toBe('expanded');
-    await page.viewport(700, 900);
-    await expect.poll(() => shellOf(box).getAttribute('tier')).toBe('mobile');
-    await new Promise((resolve) => setTimeout(resolve, 50));
-    expect(screen.hasAttribute('data-shell-mobile'), 'a detached screen sets nothing').toBe(false);
-  });
-
-  it('a re-parented screen follows the new shell only (positive control: the new shell drives it)', async () => {
-    await page.viewport(1280, 900);
-    const screen = document.createElement('sk-work-package-screen');
-    Object.assign(screen, pairingProps('WP-01'));
-    const first = document.createElement('div');
-    document.body.append(first);
-    render(workPackageFrame(html`${screen}`), first);
-    await tick(screen);
-    const oldShell = shellOf(first);
-    // The second shell: only its reflected attribute matters to the screen.
-    const second = document.createElement('sk-mission-shell');
-    document.body.append(second);
-    second.append(screen);
-    await tick(screen);
-    expect(screen.closest('sk-mission-shell')).toBe(second);
-    expect(screen.hasAttribute('data-shell-mobile')).toBe(false);
-    oldShell.setAttribute('tier', 'mobile');
-    await new Promise((resolve) => setTimeout(resolve, 50));
-    expect(screen.hasAttribute('data-shell-mobile'), 'the old shell no longer drives it').toBe(false);
-    second.setAttribute('tier', 'mobile');
-    await expect.poll(() => screen.hasAttribute('data-shell-mobile')).toBe(true);
   });
 });
 

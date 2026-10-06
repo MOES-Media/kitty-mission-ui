@@ -1,5 +1,5 @@
 // The shell's mobile tier shows ONE column (operator ruling during WP10). The shell reflects its `tier` attribute (a public
-// surface, documented on the shell); the screen follows it. Columns are measured from the computed grid of the detail grid.
+// surface, documented on the shell); the screen follows it through the ShellTierController (`test/shell-tier.test.ts`). Columns are measured from the computed grid of the detail grid.
 import { afterEach, describe, expect, it } from 'vitest';
 import { page } from 'vitest/browser';
 import '@spec-kitty/tokens';
@@ -49,7 +49,7 @@ describe('columns by viewport inside the shell', () => {
     it(`${width}px: shell tier ${tier}, ${expected} column(s)`, async () => {
       const screen = await mountAt(width);
       expect(shellOf(screen).getAttribute('tier')).toBe(tier);
-      expect(screen.hasAttribute('data-shell-mobile')).toBe(tier === 'mobile');
+      expect(screen.matches(':state(shell-mobile)')).toBe(tier === 'mobile');
       expect(columns(screen)).toBe(expected);
     });
   }
@@ -64,7 +64,7 @@ describe('columns by viewport inside the shell', () => {
     await expect.poll(() => columns(screen)).toBe(3);
     document.body.replaceChildren();
     const bare = await mountAt(700, false);
-    expect(bare.hasAttribute('data-shell-mobile')).toBe(false);
+    expect(bare.matches(':state(shell-mobile)')).toBe(false);
     expect(columns(bare)).toBe(2);
   });
 });

@@ -355,7 +355,7 @@
                 "text": "ShellTier"
               },
               "default": "'expanded'",
-              "description": "Read-only: derived from the window width, re-asserted on every update.",
+              "description": "Read-only: derived from the window width, re-asserted on every update. The current tier (`expanded`, `collapsed` or\n`mobile`) is reflected on the host as the `tier` attribute and is public: a slotted screen may read it and observe its\nchanges, through `ShellTierController` (the Work Package screen shows one column in the mobile tier, where the content\ncell is the whole viewport).",
               "attribute": "tier",
               "reflects": true
             }
@@ -394,7 +394,7 @@
               "type": {
                 "text": "CustomEvent<ShellRetryDetail>"
               },
-              "description": "the error-state retry button was activated The content slot is a flex column (the slotted screen may `flex-grow` to fill it; inline children are blockified). `main` pads the content by `--sk-mission-shell-content-padding` (24px, 16px at the mobile tier); that property is public: a slotted screen that sets the `flush` attribute on the shell pads its own inset parts with it. `flush` removes the padding, so a screen can run to the edges of the content column (the Pipeline screen's inspector and phase band). The current tier (`expanded`, `collapsed` or `mobile`) is reflected on the host as the `tier` attribute and is public: a slotted screen may read it and observe its changes (the Work Package screen shows one column in the mobile tier, where the content cell is the whole viewport)."
+              "description": "the error-state retry button was activated The content slot is a flex column (the slotted screen may `flex-grow` to fill it; inline children are blockified). `main` pads the content by `--sk-mission-shell-content-padding` (24px, 16px at the mobile tier); that property is public: a slotted screen that sets the `flush` attribute on the shell pads its own inset parts with it. `flush` removes the padding, so a screen can run to the edges of the content column (the Pipeline screen's inspector and phase band)."
             }
           ],
           "attributes": [
@@ -475,7 +475,7 @@
                 "text": "ShellTier"
               },
               "default": "'expanded'",
-              "description": "Read-only: derived from the window width, re-asserted on every update.",
+              "description": "Read-only: derived from the window width, re-asserted on every update. The current tier (`expanded`, `collapsed` or\n`mobile`) is reflected on the host as the `tier` attribute and is public: a slotted screen may read it and observe its\nchanges, through `ShellTierController` (the Work Package screen shows one column in the mobile tier, where the content\ncell is the whole viewport).",
               "fieldName": "tier"
             }
           ],
