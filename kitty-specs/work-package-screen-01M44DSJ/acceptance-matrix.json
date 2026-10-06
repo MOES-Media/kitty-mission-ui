@@ -1,0 +1,389 @@
+{
+  "mission_slug": "work-package-screen-01M44DSJ",
+  "mission_number": "",
+  "mission_type": "software-dev",
+  "overall_verdict": "pass",
+  "criteria": [
+    {
+      "criterion_id": "FR-001",
+      "description": "Verify FR-001 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/surface-freeze.test.ts; test/sk-work-package-screen.skeleton.test.ts (events, payload rule)",
+      "pass_fail": "pass",
+      "verified_by": "claude:opus",
+      "verified_at": "2026-10-06T14:05:33.489878+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-002",
+      "description": "Verify FR-002 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/wp-header-parts.test.ts (the band: crumb, h1, badges)",
+      "pass_fail": "pass",
+      "verified_by": "claude:opus",
+      "verified_at": "2026-10-06T14:05:36.473738+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-003",
+      "description": "Verify FR-003 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-work-package-screen.events-4.test.ts (EV-4 Mission crumb emits sk-open-mission)",
+      "pass_fail": "pass",
+      "verified_by": "claude:opus",
+      "verified_at": "2026-10-06T14:05:39.288200+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-004",
+      "description": "Verify FR-004 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/wp-lists.test.ts (resolveLists, one source per list)",
+      "pass_fail": "pass",
+      "verified_by": "claude:opus",
+      "verified_at": "2026-10-06T14:05:42.108093+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-005",
+      "description": "Verify FR-005 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/wp-facts-parts.test.ts (Facts rows, committed state, staleness row)",
+      "pass_fail": "pass",
+      "verified_by": "claude:opus",
+      "verified_at": "2026-10-06T14:05:44.931106+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-006",
+      "description": "Verify FR-006 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/wp-facts-parts.test.ts (Assignment: seven rows against the authored recommendation)",
+      "pass_fail": "pass",
+      "verified_by": "claude:opus",
+      "verified_at": "2026-10-06T14:05:48.448503+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-007",
+      "description": "Verify FR-007 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/wp-facts-parts.test.ts (Frontmatter: plain pills, rows only when present)",
+      "pass_fail": "pass",
+      "verified_by": "claude:opus",
+      "verified_at": "2026-10-06T14:06:04.308271+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-008",
+      "description": "Verify FR-008 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/wp-work-parts.test.ts (Subtasks)",
+      "pass_fail": "pass",
+      "verified_by": "claude:opus",
+      "verified_at": "2026-10-06T14:06:05.983052+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-009",
+      "description": "Verify FR-009 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/wp-chain-parts.test.ts (Dependency chain node and the three D1 readiness cases); test/sk-work-package-screen.events-1.test.ts",
+      "pass_fail": "pass",
+      "verified_by": "claude:opus",
+      "verified_at": "2026-10-06T14:06:07.570030+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-010",
+      "description": "Verify FR-010 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/wp-files.test.ts; test/wp-files-parts.test.ts (Owned files)",
+      "pass_fail": "pass",
+      "verified_by": "claude:opus",
+      "verified_at": "2026-10-06T14:06:12.078673+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-011",
+      "description": "Verify FR-011 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/wp-history.test.ts; test/wp-history-parts.test.ts (semantic ordered list in array order)",
+      "pass_fail": "pass",
+      "verified_by": "claude:opus",
+      "verified_at": "2026-10-06T14:06:13.652397+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-012",
+      "description": "Verify FR-012 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/wp-history-parts.test.ts (\"Current\" is positional, mid-array terminal lane not marked)",
+      "pass_fail": "pass",
+      "verified_by": "claude:opus",
+      "verified_at": "2026-10-06T14:06:15.192074+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-013",
+      "description": "Verify FR-013 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/wp-review.test.ts; test/wp-review-parts.test.ts (Review summary: latest result and override)",
+      "pass_fail": "pass",
+      "verified_by": "claude:opus",
+      "verified_at": "2026-10-06T14:06:16.750758+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-014",
+      "description": "Verify FR-014 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/wp-review-parts.test.ts (Review cycles); test/sk-work-package-screen.events-6.test.ts",
+      "pass_fail": "pass",
+      "verified_by": "claude:opus",
+      "verified_at": "2026-10-06T14:06:18.388277+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-015",
+      "description": "Verify FR-015 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/wp-work-parts.test.ts (Workspace, omitted-versus-all-null pair)",
+      "pass_fail": "pass",
+      "verified_by": "claude:opus",
+      "verified_at": "2026-10-06T14:06:19.926426+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-016",
+      "description": "Verify FR-016 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/wp-work-parts.test.ts (Artifact links); test/sk-work-package-screen.events-5.test.ts",
+      "pass_fail": "pass",
+      "verified_by": "claude:opus",
+      "verified_at": "2026-10-06T14:06:21.496234+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-017",
+      "description": "Verify FR-017 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/wp-chain-parts.test.ts (Evidence chain)",
+      "pass_fail": "pass",
+      "verified_by": "claude:opus",
+      "verified_at": "2026-10-06T14:06:23.031533+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-018",
+      "description": "Verify FR-018 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/wp-review-parts.test.ts (omitted, empty and absent results); test/wp-work-parts.test.ts (omitted pair)",
+      "pass_fail": "pass",
+      "verified_by": "claude:opus",
+      "verified_at": "2026-10-06T14:06:24.557935+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-019",
+      "description": "Verify FR-019 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/wp-staleness.test.ts; test/wp-header-parts.test.ts (staleness badge); test/wp-facts-parts.test.ts (staleness row)",
+      "pass_fail": "pass",
+      "verified_by": "claude:opus",
+      "verified_at": "2026-10-06T14:06:26.103216+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-020",
+      "description": "Verify FR-020 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/wp-review-parts.test.ts (Cancellation notice draws lane word and tone from the tables)",
+      "pass_fail": "pass",
+      "verified_by": "claude:opus",
+      "verified_at": "2026-10-06T14:06:27.656438+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-021",
+      "description": "Verify FR-021 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/wp-header-parts.test.ts (status badge: not started for a null lane); test/wp-defaults.test.ts",
+      "pass_fail": "pass",
+      "verified_by": "claude:opus",
+      "verified_at": "2026-10-06T14:06:29.179738+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-022",
+      "description": "Verify FR-022 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-work-package-screen.time.test.ts; test/time.test.ts",
+      "pass_fail": "pass",
+      "verified_by": "claude:opus",
+      "verified_at": "2026-10-06T14:06:30.709215+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-023",
+      "description": "Verify FR-023 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "pnpm lint:data-driven and pnpm test:data-driven (92 selftests, planted S14.3/S14.4 closed the template-literal gap); packages/mission-ui/test/wp-defaults.test.ts (the vocabulary has one home)",
+      "pass_fail": "pass",
+      "verified_by": "claude:opus",
+      "verified_at": "2026-10-06T14:06:32.254897+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-024",
+      "description": "Verify FR-024 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-work-package-screen.states.test.ts; test/wp-state-parts.test.ts (the regional detail notice)",
+      "pass_fail": "pass",
+      "verified_by": "claude:opus",
+      "verified_at": "2026-10-06T14:06:33.776035+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-025",
+      "description": "Verify FR-025 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/wp-state-parts.test.ts; test/sk-work-package-screen.states.test.ts (SC-004 region sets)",
+      "pass_fail": "pass",
+      "verified_by": "claude:opus",
+      "verified_at": "2026-10-06T14:06:35.309036+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-026",
+      "description": "Verify FR-026 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/wp-state-parts.test.ts (not-found); test/sk-work-package-screen.states.test.ts",
+      "pass_fail": "pass",
+      "verified_by": "claude:opus",
+      "verified_at": "2026-10-06T14:06:36.962468+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-027",
+      "description": "Verify FR-027 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/wp-state-parts.test.ts (nothing-selected)",
+      "pass_fail": "pass",
+      "verified_by": "claude:opus",
+      "verified_at": "2026-10-06T14:06:38.493055+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-028",
+      "description": "Verify FR-028 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-work-package-screen.skeleton.test.ts (the status switch); test/surface-freeze.test.ts",
+      "pass_fail": "pass",
+      "verified_by": "claude:opus",
+      "verified_at": "2026-10-06T14:06:40.102053+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-029",
+      "description": "Verify FR-029 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-work-package-screen.skeleton.test.ts (layout: track count follows the container); test/sk-work-package-screen.tier.test.ts",
+      "pass_fail": "pass",
+      "verified_by": "claude:opus",
+      "verified_at": "2026-10-06T14:06:41.824833+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-030",
+      "description": "Verify FR-030 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-work-package-screen.a11y.test.ts (control names and tab order; keyboard operation; focus restoration)",
+      "pass_fail": "pass",
+      "verified_by": "claude:opus",
+      "verified_at": "2026-10-06T14:06:43.371899+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-031",
+      "description": "Verify FR-031 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-work-package-screen.a11y.test.ts (semantics and announcements tables)",
+      "pass_fail": "pass",
+      "verified_by": "claude:opus",
+      "verified_at": "2026-10-06T14:06:44.937980+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-032",
+      "description": "Verify FR-032 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/surface-freeze.test.ts; pnpm manifest:check",
+      "pass_fail": "pass",
+      "verified_by": "claude:opus",
+      "verified_at": "2026-10-06T14:06:46.500946+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-033",
+      "description": "Verify FR-033 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "pnpm contract:check and pnpm test:contract (fixtures freshness, schema validity, coherence); packages/mission-ui/test/wp-pairing.test.ts",
+      "pass_fail": "pass",
+      "verified_by": "claude:opus",
+      "verified_at": "2026-10-06T14:06:48.016721+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-034",
+      "description": "Verify FR-034 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "pnpm typecheck, lint, lint:styles, lint:no-io, test:no-io, lint:data-driven, test:data-driven, manifest:check, hygiene, test:scripts, test:contract, contract:check, test:terminology all exit 0; pnpm gate-proof 12 gates verdict pass (lane-j 59b710c)",
+      "pass_fail": "pass",
+      "verified_by": "claude:opus",
+      "verified_at": "2026-10-06T14:06:49.514210+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-035",
+      "description": "Verify FR-035 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-work-package-screen.events-1/3/4/5/6/7.test.ts and skeleton events block (every event with its payload, positive control, exactly-one)",
+      "pass_fail": "pass",
+      "verified_by": "claude:opus",
+      "verified_at": "2026-10-06T14:06:51.045623+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-036",
+      "description": "Verify FR-036 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "pnpm visual: 175 passed, baseline parity 1:1 with stories (lane-j 59b710c); scripts/wp-story-catalogue.test.mjs via test:terminology",
+      "pass_fail": "pass",
+      "verified_by": "claude:opus",
+      "verified_at": "2026-10-06T14:06:52.568285+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-037",
+      "description": "Verify FR-037 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-mission-shell.test.ts; test/sk-mission-shell-overlays.test.ts; test/host-composition.test.ts (SH-06/SH-07 wiring)",
+      "pass_fail": "pass",
+      "verified_by": "claude:opus",
+      "verified_at": "2026-10-06T14:06:54.104379+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-038",
+      "description": "Verify FR-038 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "scripts/stylelint-exceptions.test.mjs (E-17 to E-21 file-scoped exceptions); contracts/gates.md exceptions table; gaps G-09 to G-13 recorded",
+      "pass_fail": "pass",
+      "verified_by": "claude:opus",
+      "verified_at": "2026-10-06T14:06:55.645906+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    }
+  ],
+  "negative_invariants": []
+}

@@ -1,0 +1,30 @@
+schema: review-refute/v1
+complete: true
+phase: plan
+batch: 1
+verdicts:
+  - id: PLAN-CORRECT-001
+    verdict: confirmed
+    reason: 'pr6-folds contract/types.ts line 25 already exports WorkPackageView as a widened WorkPackageSummary (used at line 30 by MissionDetailView.workPackages), while data-model.md line 20 defines a different WorkPackageView in the same file.'
+  - id: PLAN-CORRECT-002
+    verdict: confirmed
+    reason: 'RELAXATIONS lane-open in registry.mjs is bound to schema MissionDetail, patches via schema.allOf and workPackages, and allows only /workPackages/N/statusLane; contract-pin.md lines 91 and 115 reuse it for WorkPackage and WorkPackageDetail fixtures, so the patch would throw or the allowedPath would reject history, subtask and dependency lanes.'
+  - id: PLAN-CORRECT-003
+    verdict: confirmed
+    reason: 'stripHost in validate.mjs only deletes stale and actor, while schemas/WorkPackage.yaml requires staleness and WorkPackageDetail.yaml requires reviewCycles and workspace, so the host-kind fixtures wpStalenessOmitted (line 85) and detailOmittedProvisional (line 116) fail strict validation.'
+  - id: PLAN-CORRECT-004
+    verdict: confirmed
+    reason: 'app-shell-01M3V82X/research.md row 5-6 defines SH-06 and SH-07 (MissionWorkPackageSelected1280 and NoneSelected1280), so the plan''s OQ-1 and P-4 premise that they are undefined in the repository is false.'
+  - id: PLAN-CORRECT-005
+    verdict: confirmed
+    reason: 'Workspace.laneId is nullable, so the contract-pin.md line 101 hedge is moot; WP-32 and WP-33b both end up as the all-null workspace (null-workspace example), and no fixture shows a lane present with worktreePresent false (R-4). Severity 3 is right.'
+  - id: PLAN-CORRECT-006
+    verdict: confirmed
+    reason: 'WP-13 maps to wpBlocked plus detailPopulated, whose only dependency is WP03 with statusLane approved, so wpBlocked''s two unsatisfied ids are not in detail.dependencies and no unsatisfied dependency is shown consistently. Severity 3 is right.'
+  - id: PLAN-CORRECT-007
+    verdict: confirmed
+    reason: 'Detail examples carry wpIds WP01 to WP06 against WorkPackage bases WP04, WP07 to WP10 and others, contract-pin.md line 120 asserts same-wpId pairs but declares no wpId overlay, and overlays such as wpApproved and wpChangesRequested change statusLane without saying they rewrite history (the base ends at for_review). Severity 3 is right.'
+  - id: PLAN-CORRECT-008
+    verdict: confirmed
+    reason: 'sk-work-package-screen.md Properties has only detailStatus (ready, not-found, error; unknown collapses to error) and no refusal-code property, and WP-36a and WP-36b use detailStatus values only, so resolveRefusal(code) in defaults.md line 42 and the refusal fixtures at contract-pin.md lines 104 and 105 have no input path.'
+

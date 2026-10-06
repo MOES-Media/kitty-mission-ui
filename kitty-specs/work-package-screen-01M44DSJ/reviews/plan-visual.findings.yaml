@@ -1,0 +1,281 @@
+schema: review-findings/v1
+complete: true
+phase: plan
+lens_group: VISUAL
+mission: work-package-screen-01M44DSJ
+findings:
+  - id: PLAN-VISUAL-001
+    lens: Prototype fidelity (breakpoints and container-query approach)
+    severity: 4
+    title: Container thresholds of 1100/800 px render the 1280 px baselines (50 of 56 stories) in TWO columns; the prototype shows THREE
+    evidence:
+      - artifact: "plan.md § Architecture (content width table: three columns at 1100 px and above); research.md D-13; spec.md FR-029, DW-24 (keep, same behaviour), WP-46 to WP-48"
+      - code: "<prototype>/04-work-package.html + prototype.css: .detail-grid (3 tracks), @media (max-width:1100px) two columns, @media (max-width:800px) one column. These are VIEWPORT queries; the prototype app-shell takes 56 px rail + 240 px sidebar from the viewport (--sk-layout-personal-rail-width 3.5rem, --sk-layout-context-sidebar-width 15rem)."
+      - code: "pr6-folds/packages/mission-ui/src/elements/sk-mission-shell/sk-mission-shell.ts: EXPANDED_QUERY '(min-width: 1100px)', COLLAPSED_QUERY '(min-width: 720px)'; expanded mission layout grid is rail + sidebar + minmax(0,1fr); flush removes the main padding"
+    claim: >-
+      The plan turns the prototype's viewport breakpoints (1100, 800) into container-width breakpoints of the same numbers.
+      In the real shell the content cell is the viewport minus 296 px (expanded) or minus 112 px (collapsed). At the 1280 px
+      viewport of 50 of the 56 stories the content cell is about 984 px, so the plan's table gives two columns where the
+      prototype at 1280 shows three. At the 1100 px story the cell is about 804 px (only 4 px above the 800 one-column
+      threshold, so the baseline sits on a knife edge); the 800 px and 620 px stories happen to land correctly. Operator-confirmed
+      DW-24 says "same breakpoints and behaviour, keep", so this is unregistered drift in every 1280 baseline. Spike S8 would
+      expose it, but the plan states the wrong thresholds as the design and E-19 pins the lengths 1100/800/620 px. WP-46 also
+      calls 1100 px the "collapsed tier", but at 1100 px the shell is in its expanded tier (collapsed is 720 to 1099).
+    remediation: >-
+      FORK: pick one and state it in plan.md, research.md D-13, DW-24, E-19 and the WP-46 to WP-48 rows. (a) Keep container
+      queries but derive the container thresholds from the shell's real content widths so each viewport tier yields the
+      prototype's columns (for example three columns from about 805 px content, one column below about 690 px; prove with
+      S8 at 1280/1100/800/620 and change the E-19 lengths accordingly). (b) Keep the numbers 1100/800/620 as VIEWPORT media
+      conditions (the screen then follows the window, not its cell; amend D-13 and the #4 D-30 reasoning). (c) Register the
+      content-width semantics as a new drift item for CP-1 and re-baseline expectations (three columns appear only at a
+      content cell of 1100 px or wider; the 1280 px stories would show two). In every case add an acceptance check that the
+      1280 px story has three columns and fix the "collapsed tier" wording of WP-46.
+  - id: PLAN-VISUAL-002
+    lens: Prototype fidelity (header wrap breakpoint)
+    severity: 3
+    title: The prototype header wraps at 800 px, not 620 px; plan, FR-029, DW-24 and WP-47/WP-48 disagree with the prototype CSS
+    evidence:
+      - artifact: "plan.md § Architecture table (620 px and below: one column, header wraps; 621 to 799: one column); spec.md DW-24, FR-029, WP-47 (one column, header wraps), WP-48"
+      - code: "<prototype>/prototype.css: @media (max-width: 800px) { .page-header { align-items: flex-start; flex-direction: column; } } ; the @media (max-width: 620px) block does not touch .page-header"
+    claim: >-
+      DW-24 is marked keep (identical) yet states the header wraps at 620 px. In the prototype the header turns into a
+      column at 800 px and below. The plan's table keeps the header in one row from 621 to 799 px, and WP-47 (800 px) says
+      "header wraps" while the plan's table says it does not between 621 and 799. A reviewer comparing the 800 px baseline
+      to the prototype will find a mismatch either way.
+    remediation: >-
+      Correct DW-24 and FR-029 to the prototype's behaviour (header wraps at 800 px and below) and the plan table
+      (header wraps in the one-column rows at or below the 800 px threshold; 620 px has no header rule). If the operator prefers
+      620 px, record it as a confirmed drift item at CP-1 instead of marking it keep.
+  - id: PLAN-VISUAL-003
+    lens: Visual authority (unregistered drift)
+    severity: 4
+    title: E-18 and DW-30 drop the prototype's bordered panel cards and restyle the panel title to small uppercase mono, citing a precedent (N-4) that concerned lanes
+    evidence:
+      - artifact: "contracts/gates.md E-18 (flat, small uppercase mono panel title); research.md D-12 and G-11; spec.md DW-30 (bordered panel cards to flat panels per N-4)"
+      - code: "<prototype>/prototype.css: .panel { border: 1px solid var(--sk-border-default); border-radius: var(--sk-radius-md); background: var(--sk-surface-card); padding } and .panel > h2 { margin-bottom } with h2 { font-size: var(--sk-text-lg); font-family: var(--sk-font-display) }; the uppercase mono h2 rule exists only for .lane-head h2 and .sidebar-section h3"
+      - code: "pr6-folds/kitty-specs/missions-and-pipeline-screens-01M40SKZ/tracer-design-decisions.md: N-4 (lanes are flat ... small uppercase mono title) is a ruling on Pipeline lanes"
+    claim: >-
+      The prototype panel is a bordered, rounded card with a display-font h2 at text-lg. DW-30 proposes flat panels and
+      E-18 additionally restyles the panel title (uppercase, mono, small, tracking). The title restyle is in no DW item at
+      all, and "per N-4" borrows a lane ruling for a different component. Under the charter and the CP-1 rule an
+      unregistered or unconfirmed prototype difference is a REJECT, so IC-03b/IC-04 to IC-07 would build chrome the
+      operator may refuse, after panel-parts.ts is frozen. Also the charter makes cards sk-card; G-11 ("no titled panel
+      container") does not explain why sk-card is not the panel.
+    remediation: >-
+      FORK: (a) keep the prototype look: panel = bordered card using sk-card (or its closest form) with the prototype h2, no E-18
+      title restyle; DW-30 becomes keep. (b) Keep the proposal but split DW-30 into separate register items (panel chrome:
+      border, radius, background; panel title: font, size, case) each with prototype value, screen value and the sk-card
+      question, so CP-1 decides each; E-18 then lists only what is confirmed. Either way show the prototype panel beside the
+      S5-S8 spike at CP-1.
+  - id: PLAN-VISUAL-004
+    lens: Visual authority (copy drift not in register)
+    severity: 3
+    title: Panel titles "Review" and "Workspace" differ from the prototype's "Review cycles" and "Workspace environment" with no DW item
+    evidence:
+      - artifact: "contracts/defaults.md defaults/wp-copy.ts (REVIEW_TITLE 'Review', WORKSPACE_TITLE 'Workspace'); spec.md DW-13, DW-14, DW-18 (silent on panel titles)"
+      - code: "<prototype>/04-work-package.html: section data-od-id wp04-review-cycles with h2 'Review cycles'; wp04-workspace with h2 'Workspace environment'"
+    claim: >-
+      Two prototype panel titles are renamed in the copy defaults. The register covers the content of the panels but not
+      their titles, so the renames are silent copy drift (a REJECT item if unconfirmed). The 'Lane history' and
+      'Evidence chain' titles do match.
+    remediation: >-
+      Either use the prototype titles ('Review cycles', 'Workspace environment') in wp-copy.ts, or add the two renames to
+      DW-13 and DW-18 (or a new DW item) so CP-1 confirms them.
+  - id: PLAN-VISUAL-005
+    lens: Prototype fidelity (grid tracks) and exception coverage
+    severity: 3
+    title: Column track sizes of the prototype grid are not specified and E-19 forbids any px other than the three breakpoints
+    evidence:
+      - artifact: "plan.md § Architecture (three CSS grid columns, then two, then one); research.md D-13; contracts/gates.md E-19 (only 1100px, 800px, 620px; no other px)"
+      - code: "<prototype>/prototype.css: .detail-grid { grid-template-columns: minmax(220px, .8fr) minmax(320px, 1.3fr) minmax(220px, .8fr) }; at 1100 px minmax(220px, .8fr) minmax(320px, 1.2fr); .detail-grid > .stack:last-child spans all columns as repeat(2, minmax(0, 1fr))"
+    claim: >-
+      The prototype's column proportions (0.8 / 1.3 / 0.8, with 220 and 320 px minimums, 1.2 in the two-column form) are
+      what gives the middle column (timeline, review) its width. Neither plan nor contract states them, and Stylelint's
+      token-only rule would reject the px minimums while E-19 explicitly allows no other px. IC-03b will either pick equal
+      tracks (visual drift against DW-24 "keep") or hit a lint red and ask for an exception mid-WP, after the
+      exception set was approved at CP-1.
+    remediation: >-
+      State the track recipe in plan.md and contracts/sk-work-package-screen.md for each tier, and either add the
+      220px and 320px lengths to E-19 (or a new E-21) for operator approval at CP-1, or register equal or fr-only
+      tracks as a drift item. Add the two-column third-stack rule to the same text.
+  - id: PLAN-VISUAL-006
+    lens: Visual authority (ordering and spike disposition)
+    severity: 3
+    title: IC-03a spikes are called throwaway but nothing removes them; they would be lane-merged into IC-03b and compacted into the PR, and they cannot pass lint before the exceptions are approved
+    evidence:
+      - artifact: "plan.md § IC-03a (throwaway stories, no committed baseline); § Lane mechanics item 5 (IC-03b lane created from the approved IC-03a tip); § PR shape (slice 'spikes, skeleton and layout (IC-03a, IC-03b)'); contracts/gates.md E-17 to E-19 are applied by IC-03b after CP-1"
+    claim: >-
+      Spike stories need class= for the event-timeline family, container-query px lengths and panel chrome, which are
+      exactly what E-17 to E-19 permit only after CP-1 and only from IC-03b. IC-03a's lane therefore either fails ESLint and
+      Stylelint at its review gate or carries unapproved exceptions. Because IC-03b's lane is created from the approved
+      IC-03a tip and the compaction slice list names the spikes, the throwaway code (and stories with no baseline, which the
+      visual gate and the 56-baseline count do not expect) reaches the PR. The ordering itself (spikes before CP-1,
+      IC-03b after) is sound; the disposition is not defined.
+    remediation: >-
+      FORK: (a) spikes are never committed: they live in an untracked scratch path outside the lint, story and manifest
+      globs, and the WP report carries the CP-1 captures; IC-03a then has no merge to the lane. (b) Spikes are committed in
+      IC-03a under an excluded path, deleted by a named final commit of IC-03a before approval, and the slice list drops the
+      spikes. (c) E-17 to E-19 are approved provisionally for the spike path. State the chosen option and the review check
+      (no spike file on the IC-03a tip).
+  - id: PLAN-VISUAL-007
+    lens: Visual authority (CP-1 versus IC-02 copy)
+    severity: 3
+    title: Copy defaults (panel titles, states, empty copy) are written in IC-02 before CP-1, yet CP-1 confirms the copy and IC-02 is the only writer of defaults/
+    evidence:
+      - artifact: "plan.md § CP-1 (operator confirms DW list, copy defaults in contracts/defaults.md, exceptions); § Shared files (src/defaults/** IC-02 only; a gap is a change request); § IC-02 before CP-1; contracts/defaults.md defaults/wp-copy.ts"
+    claim: >-
+      The visible strings of the screen (panel titles, 'Choose a Work Package', 'Task detail unavailable', empty forms, refusal
+      headings) are built into defaults/wp-copy.ts by IC-02, ahead of CP-1. If the operator changes any wording at CP-1 (the
+      drift items DW-25 to DW-28 are copy drift) no work package owns the edit: IC-02 is approved and closed, and IC-03b to
+      IC-08 must not write defaults/. That is rework through an ad hoc change request on the critical path.
+    remediation: >-
+      Name an owner and mechanism for post-CP-1 copy edits: either move wp-copy.ts (visible strings that are not
+      vocabulary) from IC-02 to IC-03b, or let IC-03b make one recorded copy-adjust commit to defaults/wp-copy.ts and its
+      test from the CP-1 entry, and add a Shared-files row for it.
+  - id: PLAN-VISUAL-008
+    lens: Story catalogue and accessibility (refusal wording untestable)
+    severity: 4
+    title: The refusal code has no property to arrive on, so the regional refusal notice cannot name not_found or source_unreadable and the refusal fixtures are unusable by WP-36a/36b
+    evidence:
+      - artifact: "data-model.md § View states (the detail refusal itself arrives as detailStatus, not as data; DetailStatus has not-found and error, unknown collapses to error); contracts/sk-work-package-screen.md Properties (no refusal property; detail is WorkPackageDetailView or null); defaults.md resolveRefusal(code) and DETAIL_REFUSAL_WORDS keyed by code; contract-pin.md fixtures detailRefusalNotFound and detailRefusalUnreadable (WP-36a, WP-36b); spec.md Q7, Q9, FR-023, NFR-011 (refusal in words, code passed through)"
+    claim: >-
+      Q7 and Q9 require the notice to name the refusal code in words with a raw fallback for an unknown code, and WP-36
+      covers both codes. The surface (frozen by IC-03b) has no property for the code: detailStatus carries only
+      not-found or error, an unknown value collapses to error, and error is also the generic fault. The screen would have to
+      map a status value to a code (a literal) or show one generic sentence, and the raw-fallback and unknown-code
+      paths (FR-023) cannot be exercised. The two valid refusal fixtures are listed for WP-36a/36b but nothing consumes them.
+    remediation: >-
+      FORK: (a) add an optional property (for example detailRefusalCode, string or null) to the frozen surface so the notice
+      reads lookup(DETAIL_REFUSAL_WORDS, code) with a raw fallback (amend FR-001 as P-2/P-3 do); (b) let detail carry the
+      WorkPackageDetailRefusal object when detailStatus is not ready, with the same lookup; (c) drop code-level wording and
+      amend Q7/Q9 and WP-36 to two fixed sentences keyed by detailStatus. Either way make WP-36a/36b use the refusal
+      fixtures and add an unknown-code story or test.
+  - id: PLAN-VISUAL-009
+    lens: Accessibility (link purpose, duplicate names)
+    severity: 3
+    title: Repeated controls with identical accessible names ("Open review" per cycle; the same dependency as a Frontmatter node and a chain node)
+    evidence:
+      - artifact: "contracts/defaults.md OPEN_REVIEW_LABEL 'Open review'; contracts/sk-work-package-screen.md Behaviour rules, Focus order (Open review links in cycle order; Frontmatter dependency nodes and dependency chain nodes both controls); spec.md FR-030, NFR-003"
+    claim: >-
+      With two review cycles WP-28 shows two links named only 'Open review', and a dependency appears twice as a control
+      (Frontmatter column 1 and the Dependency chain column 3) with the same name and the same event. A screen-reader links list
+      cannot tell them apart (WCAG 2.4.4). The plan gives no accessible-name rule for either, and nothing states the
+      tab-stop count for a dependency that is shown twice.
+    remediation: >-
+      Define the accessible names in defaults/: 'Open review, cycle N' (cycle number printed as given) and a dependency
+      node name that includes id, title and lane word, with the Frontmatter occurrence either non-interactive (as in the
+      prototype, where Frontmatter dependencies are plain badges) or named 'Frontmatter dependency WPxx'. Add an assertion
+      in the WP-28 and WP-49 tests that no two controls share a name unless they are the same destination on purpose.
+  - id: PLAN-VISUAL-010
+    lens: Accessibility (live region)
+    severity: 3
+    title: Live-region behaviour is under-specified and duplicates the assertive error notice and the loading status region
+    evidence:
+      - artifact: "research.md D-14 (role=status polite live region announcing loading, ready and error changes, never on first render); contracts/sk-work-package-screen.md Rendering by status (loading is itself a role=status busy region; error is an alert notice, assertive); spec.md FR-031"
+      - code: "pr6-folds/packages/mission-ui/src/elements/sk-missions-screen/sk-missions-screen.ts: the polite data-live region announces only result counts; the error uses sk-notice announce='assertive' and is not repeated in the live region"
+    claim: >-
+      The plan says the hidden polite region announces error, but the error state already carries an assertive alert, so an
+      error is announced twice; loading has a visible role=status region plus the hidden one, so two status regions
+      compete. The #4 pattern cited does not announce error that way. Nothing says what text is announced on ready
+      (every host re-assignment of workPackage/wpId, for example after activating a dependency node, would re-announce),
+      whether the regional detail states (detailStatus loading, refused, ready) are announced, or that the text names the Work
+      Package.
+    remediation: >-
+      Add an announcement table to the contract: one status region only; the whole-screen loading and ready transitions
+      announce a text naming the Work Package ('Work Package WP04 loaded') once per wpId change or load completion, not on a prop
+      refresh of the same wpId; error is announced only by the alert notice (not the live region); detailStatus transitions
+      announce one polite line each; first render announces nothing. Cover each row with a test.
+  - id: PLAN-VISUAL-011
+    lens: Accessibility (keyboard and focus continuity)
+    severity: 3
+    title: No rule for where focus goes when the focused control is removed (retry, dependency node, return) although FR-030 demands no trap and a documented order
+    evidence:
+      - artifact: "contracts/sk-work-package-screen.md Events (Focus and scroll emit nothing, EV-8) and Focus order; spec.md FR-030, NFR-003; plan.md § IC-08 (focus-order and tab-n tests)"
+    claim: >-
+      Activating Retry (the button disappears when the screen goes error to loading), activating a dependency node (the host swaps
+      wpId and the focused node is re-rendered or removed) or Return to Pipeline leaves focus on a detached node, which resets
+      keyboard users to the page start. WP-49 and the IC-08 tab tests walk Tab order only; there is no story or test for
+      focus after a state change.
+    remediation: >-
+      FORK: (a) the screen moves focus to its own h1 or a tabindex=-1 container whenever the focused element is removed by a
+      status or wpId change (needs a documented property of the frozen surface or an internal rule, no event); (b) declare it a
+      host duty, document it in quickstart.md, and cover it with a host-composition test. Add a test for either choice.
+  - id: PLAN-VISUAL-012
+    lens: Accessibility (heading and landmark structure)
+    severity: 3
+    title: Heading levels, h1 in the not-found and nothing-selected states, region names and breadcrumb semantics are not specified
+    evidence:
+      - artifact: "contracts/sk-work-package-screen.md (header h1 title; not-found and nothing-selected draw their own header; panels 'titled'); research.md D-14; spec.md FR-031"
+      - code: "<prototype>/04-work-package.html: crumb is div.breadcrumbs with links and '/' spans (no nav, no aria-current); panels are section with h2; the unavailable and unselected states carry an h2 and no h1"
+    claim: >-
+      The plan fixes h1 for the title only. In not-found (crumb and id only) and nothing-selected ('Choose a Work Package' is a
+      heading) no element is declared the h1, so the page has no h1 or a mis-levelled one. Panel and sub-group heading levels
+      (Assignment's two groups, Authored recommendation) and list or region names (history ol, files ul, subtasks ul,
+      dependencies ul: only CYCLE_LABEL is defined) are unspecified. The crumb is described as a control (no anchor), yet no role,
+      nav landmark, aria-current on the Work Package id or aria-hidden on the '/' separators is defined.
+    remediation: >-
+      Add a semantics table to the contract: h1 = title when present, else the id or 'Choose a Work Package'; panel titles
+      h2; sub-groups h3; each panel a section named by its heading (aria-labelledby); lists named through the panel heading;
+      breadcrumb as nav aria-label with an ol, the Mission crumb a button-or-link per the host contract, the id marked
+      aria-current='page', separators hidden. Assert each in an a11y test per state.
+  - id: PLAN-VISUAL-013
+    lens: Accessibility (evidence chain and dependency chain semantics)
+    severity: 2
+    title: Evidence chain order and arrows are not given a semantic form and S5 may land on a library element with unknown semantics
+    evidence:
+      - artifact: "research.md Evidence (sk-evidence-chain has no named property; inference: slotted nodes) and S5, S6, G-12; plan.md Dependency chain; contracts/sk-work-package-screen.md Regions (Evidence chain always)"
+      - code: "<prototype>/04-work-package.html: evidence-chain is spans separated by literal '→' spans"
+    claim: >-
+      Mission, Work Package, state word read as three unrelated spans plus arrows (the arrow characters are read aloud) unless the
+      markup is an ordered list with decorative arrows. The fallback in S5 is a native ol, but the default case (sk-evidence-chain
+      slots) says nothing about order semantics, and a dependency node as sk-button inside it must still keep one tab stop and the
+      name from PLAN-VISUAL-009.
+    remediation: >-
+      Require in the contract that the chain is exposed as an ordered list (or the library element proves it is), arrows
+      aria-hidden, nodes each carry visible text, and add an S5/S6 exit check that the accessibility tree shows the order and
+      one tab stop per control.
+  - id: PLAN-VISUAL-014
+    lens: Accessibility (text for every status, NFR-011)
+    severity: 2
+    title: Staleness not_applicable is a status with no text in the DOM; its reason is promised only as an accessible description with no element to carry it
+    evidence:
+      - artifact: "research.md D-08 (not_applicable and absent: nothing visible; the reason goes in the Facts region's accessible description only); spec.md WP-21, NFR-011, SC-009; contracts/defaults.md FRESH_TEXT, STALENESS_REASON_WORDS"
+    claim: >-
+      NFR-011 and SC-009 require 100 percent of statuses to carry a text form in the DOM. For not_applicable nothing is drawn,
+      and the reason is attached to the 'Facts region', which is a dl (not a widget) with no stated element or attribute;
+      descriptions on a dl are not reliably announced. The WP-21b assertion therefore has no defined target.
+    remediation: >-
+      FORK: (a) keep Q1 (nothing visible) and specify the exact mechanism, for example visually-hidden text inside the Facts panel
+      ('Staleness: not applicable, <reason>') via visually-hidden.ts, asserted by a DOM text query in WP-21b; (b) aria-description
+      on a named element, asserted on that attribute; (c) reopen Q1 for a quiet row. State the choice and the test.
+  - id: PLAN-VISUAL-015
+    lens: Story catalogue completeness and NFR coverage
+    severity: 2
+    title: Catalogue leaves fixtures unnamed for six stories and has no story or test definition for NFR-004 (200 percent text at 1100 and 720 px) or for the focus-order states
+    evidence:
+      - artifact: "contracts/sk-work-package-screen.md Story catalogue (WP-44, WP-46, WP-47, WP-48, WP-49 and WP-39 carry no fixture name, while every other story does); plan.md IC-08 (200% font, tab-n tests) and Traceability (NFR-001 to NFR-011: gates, IC-08); spec.md NFR-004, NFR-003"
+    claim: >-
+      The catalogue's row-to-story check (50 rows, 56 stories) is complete and every title has at least four stories, but the
+      tier stories WP-46 to WP-48, the long-text story WP-44 and the focus-order story WP-49 name no fixture (the reviewer cannot
+      verify that WP-49 shows every control kind: crumb, both dependency spots, review links, spec and prompt actions), and
+      the retry and return controls of the error and not-found states are in a different story file (IC-07). NFR-004 is
+      only the words '200% font' in IC-08 with no viewport pair, story or test file named.
+    remediation: >-
+      Name the fixtures for those stories (WP-49 must use a fixture with dependencies, two cycles with paths, spec and prompt);
+      add focus-order assertions for the retry and return states in the IC-07 tests; and add to IC-08 an explicit
+      NFR-004 test (root font size 200 percent at 1100 px and 720 px viewports, no horizontal overflow) with its file name.
+  - id: PLAN-VISUAL-016
+    lens: Prototype fidelity (long unbreakable text) and accessibility
+    severity: 2
+    title: Long paths and branch names ellipsize with no recoverable full text, while the prototype wraps them
+    evidence:
+      - artifact: "research.md D-13 (a long path or branch ellipsizes, words-only wrapping from #4); spec.md WP-44; contracts/sk-work-package-screen.md (Owned files, Workspace)"
+      - code: "<prototype>/prototype.css: .facts dd { overflow-wrap: anywhere }; pr6-folds/kitty-specs/missions-and-pipeline-screens-01M40SKZ/tracer-design-decisions.md (the Q2 ruling kept the full text in the accessible name and a title tooltip)"
+    claim: >-
+      Facts values (branches) wrap anywhere in the prototype, so ellipsis is an unregistered difference, and an ellipsized
+      owned-file path or branch loses text for sighted keyboard and touch users because the plan does not repeat the #4 tooltip
+      rule. Only the pattern text exists in the DOM.
+    remediation: >-
+      FORK: (a) follow the prototype and wrap with overflow-wrap: anywhere for Facts, Workspace and file rows (WP-44 acceptance
+      changes to no horizontal overflow, not no mid-word wrap, and no new drift item); (b) keep ellipsis but register it as a
+      drift item and carry the full text in the accessible name plus a title tooltip as #4 did.

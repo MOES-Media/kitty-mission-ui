@@ -1,0 +1,30 @@
+schema: review-refute/v1
+complete: true
+phase: plan
+batch: 6
+verdicts:
+  - id: PLAN-VERIFY-007
+    verdict: confirmed
+    reason: 'verify-remote.mjs main() only fetches pin.sha by sha and compares bytes and lane weights, and a grep of scripts/contract and the mission docs finds no merge-base or ancestor check for the pin sha, so an unmerged sha labelled provenance main passes every proof (severity 3 is fair).'
+  - id: PLAN-VERIFY-008
+    verdict: confirmed
+    reason: 'WorkPackage.yaml and SubtaskProgress.yaml carry x-derived rules for readyToStart, subtaskProgress and history order, yet contract-pin.md and research D-10 say no WorkPackage C5 rule exists, and check.mjs actorProblems only reads doc.workPackages, so the SYNTHETIC_ACTORS sentence is unenforced for WorkPackage fixtures. The plan explicitly accepts incoherent subtaskProgress, but that is the gap the finding names (severity 3, arguably 2).'
+  - id: PLAN-VERIFY-009
+    verdict: confirmed
+    reason: 'FR-023 demands raw fallback for verdict, change state and refusal words, but D-17 specifies a foreign-value test for lanes only, and stalenessView reads STALENESS_STATUS_ROLE with no stated outcome for a status that is not a key (defaults.md).'
+  - id: PLAN-VERIFY-010
+    verdict: confirmed
+    reason: 'Not-drawn rows (WP-22, WP-33b, WP-35 and others) are covered only by baselines plus one named detailOmittedProvisional unit test (plan FR-018 row); no per-region DOM-absence assertion, positive-control sibling or omitted-vs-empty paired test is specified, and no row covers detail null with detailStatus ready (severity may be 2).'
+  - id: PLAN-VERIFY-011
+    verdict: confirmed
+    reason: 'SC-004 and the data-model detailStatus table list subtasks, dependencies and owned files as detail regions, yet resolveLists degrades them to bare 1.0 forms when detail is null, and the error and loading behaviour for those three lists is never stated; no region-identifier enumeration exists for a set-equality test.'
+  - id: PLAN-VERIFY-012
+    verdict: confirmed
+    reason: 'research D-04 EV-2 dispatches on the host and asserts the screen emits nothing, which is vacuous because that event never enters the shadow tree; plan.md line 147 gives IC-07 the event methods while the traceability rows land EV-1 at IC-06, EV-5 at IC-06 and EV-6 at IC-05, which are IC-06 and IC-05 WPs barred from editing that file.'
+  - id: PLAN-VERIFY-014
+    verdict: confirmed
+    reason: 'research D-17 and spec NFR-006 require node identity plus a 200 ms bound on re-render but never name the property change; the #4 model test works because a real filter press hides rows, and a no-op re-render would pass the wall-clock bound alone (severity 2 to 3).'
+  - id: PLAN-VERIFY-015
+    verdict: confirmed
+    reason: 'sk-work-package-screen.md line 90 says every spec WP-nn appears exactly once and compares id sets, but the spec matrix has WP-21, 24, 33, 35 and 36 while the stories use 21a/21b, 24a/24b and so on (50 rows vs 56 stories), so no normalisation or non-vacuity guard (exact counts) is specified (severity 2).'
+

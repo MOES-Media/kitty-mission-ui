@@ -1,0 +1,124 @@
+schema: review-verify/v1
+complete: true
+phase: plan
+results:
+  - id: PLAN-CORRECT-001
+    status: resolved
+    reason: The new type is named WorkPackageRecordView in data-model, research D-06, the element contract, plan and quickstart; the only remaining WorkPackageView mentions are the deliberate statement that #4's type is untouched and the IC-01 tsc exit check.
+  - id: PLAN-CORRECT-002
+    status: resolved
+    reason: contract-pin.md declares wp-lane-open (WorkPackage) and detail-lane-open (WorkPackageDetail) with their own patches, allowedPath regexes and reverted-must-fail proofs; RELAXATIONS entries carry a schema that check.mjs asserts, and research D-10 matches.
+  - id: PLAN-CORRECT-005
+    status: unresolved
+    remaining_severity: 1
+    reason: detailWorkspaceAllNull is deleted, WP-33b maps to detailNullWorkspace and WP-32 gets detailWorkspaceNoWorktree. However contract-pin.md line 160 still says "(45 if the two omitted-member entries are built in the stories instead)", and with 48 new exports it should read 46 (a leftover from the old 47).
+  - id: PLAN-CORRECT-006
+    status: resolved
+    reason: detailDepsBlocked (WP01 planned, WP02 in_progress) has ids equal to wpBlocked.readiness.unsatisfied and is used for WP-13 in the pairing table, with a node-test assertion on equality.
+  - id: PLAN-CORRECT-007
+    status: resolved
+    reason: The pairDetail helper rewrites the detail wpId for every pair, a per-story pairing table is given and fed to the IC-09 test, and a lane-rewrite rule plus per-overlay table fixes history, subtasks and review, enforced by new C5 WorkPackage rules.
+  - id: PLAN-CORRECT-009
+    status: resolved
+    reason: registry.test.mjs and overlays.test.mjs are in IC-01 scope with every literal listed; the guard is independent literal floors (150 files, 70 fixtures, tally 59/6/5) plus an anchor-file presence check, not derived from the pin. I verified the inventory arithmetic (27+21=48, 22+48=70, kinds add up).
+  - id: PLAN-CORRECT-011
+    status: resolved
+    reason: Plan Shared files, IC-03b, IC-07, element contract, data-model and research D-04 all say IC-03b writes all four dispatch methods, IC-07 keeps only the status switch and notice logic, and each region WP owns its event test.
+  - id: PLAN-CORRECT-013
+    status: resolved
+    reason: The pin branch is the real lane branch name kitty/mission-mission-status-contract-1-1-01M42XJC-lane-a, stated as a label with the sha as authority, consistently in the pin, plan IC-01 and research D-09.
+  - id: PLAN-CORRECT-014
+    status: resolved
+    reason: ResolvedFile and UNKNOWN_CHANGE_STATE are the single names in defaults.md and data-model.md, ChangeStateView is gone, and an unknown staleness status resolves to a raw-text 'row' role.
+  - id: PLAN-CORRECT-015
+    status: resolved
+    reason: research D-12, gates.md E-17 and the contract Workspace region now give the same file scopes (history-parts; facts-parts and work-parts for facts; header, state and work parts for the other families).
+  - id: PLAN-ARCH-002
+    status: resolved
+    reason: defaults.md and data-model.md import STALE_BADGE, LANE_COUNT_TEXT, SUBTASK_PROGRESS_TEXT, StateBadge and BadgeTone. The three duplicate exports are deleted (no stale names remain by grep), resolvers return StateBadge, and the symbols are on the "Dependencies on #4" list.
+  - id: PLAN-ARCH-005
+    status: resolved
+    reason: Shared files now has rows for fixtures.ts, per-area screen test files with one writer each, and the skeleton and surface-freeze tests. The scaffold story is explicitly an uncommitted scratch story, keeping 56 stories and 174 baselines.
+  - id: PLAN-ARCH-007
+    status: resolved
+    reason: REVIEW_CYCLE_ARTIFACT_KIND is defined in defaults/review.ts, read by the Open review handler, asserted by the EV-6 test and added to the self-check list.
+  - id: PLAN-ARCH-008
+    status: resolved
+    reason: E-17 now lists classOnly overrides per file for sk-breadcrumbs, sk-empty-state and sk-progress (header, state and work parts), each with a leak plant, a per-family sunset and a narrowing rule.
+  - id: PLAN-ARCH-009
+    status: resolved
+    reason: Panel chrome is defined once as panelStyles in panel-parts.ts; E-18 is scoped to panel-parts.ts and the screen file (header-parts only if paint is needed), and the 0.08em literal is added to E-09's extension for panel-parts only.
+  - id: PLAN-ARCH-011
+    status: resolved
+    reason: E-19 (a) is conditional on a Stylelint probe in S8/IC-03b, with deletion if it passes and an at-rule form plus exception test if it fails; E-19 (b) is separated for the declaration-property track minimums.
+  - id: PLAN-ARCH-012
+    status: resolved
+    reason: S5, S6, G-12, research facts and the contract now treat Evidence chain as sk-evidence-chain with stages and Dependency chain as a semantic list of sk-button nodes, with E-20 only if S6 fails.
+  - id: PLAN-VISUAL-002
+    status: resolved
+    reason: The plan table, element contract, research D-13 and amendment P-6 all place the header wrap at 800 px and below, with no 620 px header rule, matching prototype.css.
+  - id: PLAN-VISUAL-004
+    status: resolved
+    reason: REVIEW_TITLE is "Review cycles" and WORKSPACE_TITLE is "Workspace environment", with a note that a rename would need a drift item.
+  - id: PLAN-VISUAL-005
+    status: resolved
+    reason: The track recipe for all three tiers, including the last-stack sub-grid, is stated in plan and contract, and E-19 (b) asks for the 220px and 320px lengths, with an fr-only drift item as the alternative.
+  - id: PLAN-VISUAL-009
+    status: unresolved
+    remaining_severity: 2
+    reason: Names are now unique ("Open review, cycle N", dependencyNodeLabel) and the duplicate is removed by making Frontmatter dependencies non-interactive pills. That contradicts spec DW-7 ("dependencies as titled, actionable nodes", marked confirm), and neither the amendment list (P-1 to P-6) nor the CP-1 packet records it, so the implementation would drift from a register item.
+  - id: PLAN-VISUAL-010
+    status: resolved
+    reason: The contract has an Announcements transition table with one polite region naming the Work Package, silent on first render and on same-wpId refresh, error announced only by the assertive notice, loading carrying no role=status, and a test per row; research D-14 agrees.
+  - id: PLAN-VISUAL-012
+    status: resolved
+    reason: The Semantics table fixes the h1 rule (including not-found and nothing-selected), h2/h3 levels, labelled sections, list naming, nav/ol breadcrumb with aria-current and aria-hidden separators, asserted per state.
+  - id: PLAN-VISUAL-013
+    status: resolved
+    reason: The evidence chain is required to be an ordered list with aria-hidden connectors and one tab stop per control, with the accessibility-tree check built into spike S5.
+  - id: PLAN-VISUAL-015
+    status: resolved
+    reason: Fixtures are named for WP-39, 44, 46, 47, 48 and 49 (WP-49 lists every control kind); focus-order tests for retry and return sit in IC-07; and the NFR-004 test at 200 percent text, 1100 px and 720 px has a named file in IC-08.
+  - id: PLAN-VERIFY-006
+    status: resolved
+    reason: cli.test.mjs spawns check.mjs --require-main with branch-pin, main-pin and no-flag cases, verify-remote's provenance decision is a pure function tested for both outcomes and spawned once, and these are in the IC-01 exit checks.
+  - id: PLAN-VERIFY-007
+    status: resolved
+    reason: update.mjs and verify-remote.mjs require the pin sha to be an ancestor of fetched upstream main (fail closed), with a side-branch temp-repo node test and listing in the wrap-up proofs.
+  - id: PLAN-VERIFY-008
+    status: resolved
+    reason: C5 gains independently recomputed WorkPackage rules (readyToStart, subtaskProgress, history order, last-entry lane, unsatisfied subset) with negative tests, and actorProblems is extended to the WorkPackage shapes.
+  - id: PLAN-VERIFY-009
+    status: resolved
+    reason: The unknown-staleness fallback is specified (raw-text row), and the contract's Behaviour rules plus research D-17 and the FR-023 traceability row require element-level foreign verdict, change state, staleness status and reason, refusal and kind pass-through tests, with the foreign-among-known case.
+  - id: PLAN-VERIFY-010
+    status: resolved
+    reason: Per-region DOM-absence assertions with present-sibling positive controls, paired omitted-vs-empty-vs-null tests, and a detail-null/detailStatus-ready element test are in the contract Behaviour rules and in IC-04, IC-05 and IC-06.
+  - id: PLAN-VERIFY-011
+    status: resolved
+    reason: Every region has a stable data-region id marked 1.0 or detail-only, the data-model states that refused and pending detail keep the bare lists with one notice, and a region-set equality test has an anti-vacuity floor of 13 ids (I verified the count).
+  - id: PLAN-VERIFY-012
+    status: resolved
+    reason: EV-2 is rewritten to dispatch at the element and inside the shadow tree with an exactly-one-event assertion and a positive control, and dispatch ownership is consistent (IC-03b) with a skeleton test per event.
+  - id: PLAN-VERIFY-014
+    status: resolved
+    reason: The NFR-006 test now defines the property change (one history entry and one subtask lane altered), asserts the changed text, node identity of other keyed rows and exact 40/60/100 counts, and keeps 200 ms as a coarse median bound.
+  - id: PLAN-VERIFY-015
+    status: resolved
+    reason: The row-to-story test specifies an anchored row pattern (50 spec rows verified with that pattern), exact counts of 50 and 56, trailing-letter normalisation, the six named extras, per-title counts, a failing temp copy with a row deleted, and a non-empty guard.
+  - id: PLAN-VERIFY-016
+    status: resolved
+    reason: Cast test-only inputs (non-chronological history, descending cycle numbers, single-entry and empty history) assert array order and Current on the last element, with a revert check that adding a sort fails.
+  - id: PLAN-VERIFY-017
+    status: resolved
+    reason: IC-03b extends surface-freeze.test.ts with the nine properties, attributes and run-time defaults and four event names, and the file is in its scope and the gates table.
+  - id: PLAN-VERIFY-018
+    status: resolved
+    reason: update.test.mjs with temp git repos covers working-tree-versus-blob, missing sha, flag pairing and path-not-recorded, each with a reverted-must-fail check.
+  - id: PLAN-VERIFY-019
+    status: resolved
+    reason: research D-11, gates.md and plan.md now agree that the data-driven cases are self-test cases with no plants or proof entries, and only the C8 plant is new.
+  - id: PLAN-VERIFY-021
+    status: resolved
+    reason: The catalogue defines WP-40 as status empty with workPackage null, names no fixture, requires one assertion that the empty panel carries the frame and neutral copy, and amendment P-6 records the spec wording.
+

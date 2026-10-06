@@ -1,0 +1,376 @@
+schema: review-findings/v1
+complete: true
+phase: plan
+lens_group: VERIFY
+mission: work-package-screen-01M44DSJ
+findings:
+  - id: PLAN-VERIFY-001
+    lens: Silent-success (omitted provisional region) / contract gate C4 scope
+    severity: 4
+    title: Host-kind fixtures that omit required members cannot validate with the existing stripHost mechanism
+    evidence:
+      - artifact: "contracts/contract-pin.md, fixture inventory rows wpStalenessOmitted and detailOmittedProvisional (kind host, 'registry strips before validation')"
+      - code: "<4>/scripts/contract/validate.mjs: stripHost only deletes the host-only extra fields stale (overview or page) and actor (on doc.workPackages entries); it cannot restore a removed member"
+      - code: "<4>/scripts/contract/check.mjs: checkFixtureDoc validates a host fixture against the STRICT schema after stripHost"
+      - code: "<lane-1.1>/schemas/WorkPackage.yaml: required includes staleness; schemas/WorkPackageDetail.yaml: required includes reviewCycles and workspace"
+    claim: >-
+      The plan defines the omitted-property fixtures (WP-22 and the FR-018 unit case) as kind host. checkFixtureDoc
+      validates a host fixture strictly after stripHost, and stripHost never re-adds a member. A WorkPackage without
+      staleness and a WorkPackageDetail without reviewCycles or workspace therefore fail the strict closed schema
+      (required member missing). The fixtures are red on arrival, or the implementer weakens the check until it validates
+      nothing. These are the only fixtures that prove omitted differs from null or empty (FR-018, Q9).
+    remediation: >-
+      FORK: (a) add named relaxations, for example provisional-omittable for WorkPackage and detail-omittable for
+      WorkPackageDetail, whose patch removes only staleness, reviewCycles and workspace from required. Give each an
+      allowedPath and the reverted-must-fail proof the relaxed kind already has (passes relaxed, fails strict, errors only
+      at the allowed path). (b) Add a restoreHost step that re-inserts staleness null, reviewCycles [] and the workspace
+      before strict validation, with a negative test that a fixture with any other defect still fails. Either way,
+      contract-pin.md must name the mechanism and check.test.mjs and registry.test.mjs must cover it.
+  - id: PLAN-VERIFY-002
+    lens: Gates (contract gate coverage of the new fixtures)
+    severity: 4
+    title: 'lane-open" relaxation is not reusable for WorkPackage or WorkPackageDetail; the claim "reuses #4''s name and proof" is false'
+    evidence:
+      - artifact: "contracts/contract-pin.md rows wpUnknownLane and detailUnknownLanes ('relaxed lane-open (reuses #4's name and proof)'); research.md D-10"
+      - code: "<4>/scripts/contract/registry.mjs: RELAXATIONS['lane-open'] has schema MissionDetail, allowedPath /^\\/workPackages\\/\\d+\\/statusLane$/ and a patch that walks schema.allOf for properties.workPackages"
+      - code: "<4>/scripts/contract/check.mjs: checkFixtureDoc applies relaxedSchema(pristine, RELAXATIONS[name]) to def.schema, and rejects strict errors outside allowedPath"
+    claim: >-
+      The existing lane-open patch looks for allOf and workPackages, which WorkPackage and WorkPackageDetail do not have, so
+      applying it throws or relaxes nothing. Its allowedPath only admits /workPackages/N/statusLane, so history/N/*StatusLane,
+      subtasks/N/statusLane and dependencies/N/statusLane are reported as 'deviates outside'. The unknown-lane fixtures
+      (WP-45, SC-003, FR-023) cannot pass the contract gate as planned, and no proof test is planned for the new relaxations.
+    remediation: >-
+      Add new named relaxations, for example wp-lane-open (WorkPackage: statusLane, history items fromStatusLane and
+      toStatusLane become string or null) and detail-lane-open (Subtask.statusLane, DependencyRef.statusLane). Each needs its
+      own allowedPath and a reverted-must-fail proof in check.test.mjs. Fix contract-pin.md and research D-10 to say 'new
+      relaxations modelled on lane-open'. Update the relaxed-count assertion in registry.test.mjs.
+  - id: PLAN-VERIFY-003
+    lens: Gates (data-driven self-test additions falsifiable)
+    severity: 4
+    title: The two new data-driven fixtures cannot show an escape and cannot be red without a fix; the new vocabularies stay ungated
+    evidence:
+      - artifact: "contracts/gates.md, data-driven row (fixtures 1 and 2; words join the list ONLY if a fixture shows an escape); plan.md IC-02 exit check 'each new case red without its fix'; research.md D-07"
+      - code: "<4>/eslint.data-driven.config.mjs: WORDS = MissionPhase names plus the nine StatusLane values (approved is already a lane); STATUS_WORDS = pending, complete, draft, discarded; UNDERSCORED = in_progress, for_review, in_review"
+      - code: "<4>/gates/fixtures/data-driven/s1-comparison.ts.txt: an existing positive fixture already covers a comparison with a lane literal (S1)"
+      - code: "<4>/gates/data-driven.selftest.ts: counts pinned (36 positives, readdir 36, 14 words, 31 entries)"
+    claim: >-
+      Fixture 1 (a comparison with 'approved') and fixture 2 (a marker keyed on a lane value) are both already reported by
+      S1 or S5, so they pass today with no gate change. They duplicate existing coverage and cannot be 'red without the fix'
+      because no fix exists. The real hazard is the words the gate does not know: changes_requested, fresh, stale,
+      not_applicable, changed, unchanged and unknown. A part that writes === 'changes_requested' or === 'stale' passes the
+      gate. gates.md says words are added only if a fixture shows an escape, but the chosen fixtures can never show one.
+      FR-023 and NFR-009 for the new vocabularies are enforced only by the reviewer self-check list.
+    remediation: >-
+      FORK: (a) extend the gate: read the verdict, change-state and staleness enums (ReviewVerdict.yaml, ChangeState.yaml,
+      Staleness.yaml status and reason) from the vendored schemas the way LANES is read. Replace fixture 1 with comparisons
+      against each new word, update EXPECTED_WORDS, the word-count test, the 36 and 38 counts and the 'covers every selector'
+      test in the same change. I grepped #4's packages/*/src outside the allow-list and found no existing literal of these
+      words, so a collision is unlikely; the self-test will confirm. (b) Keep the gate as is, state in gates.md that the
+      new vocabularies are review and behavioural-test only, drop the two fixtures and the 'red without its fix' exit check,
+      and rely on the foreign-vocabulary tests of PLAN-VERIFY-009.
+  - id: PLAN-VERIFY-004
+    lens: 'Gates (visual tests ownership: who regenerates baselines and when)'
+    severity: 4
+    title: Whole-screen baselines owned by one work package change when sibling work packages land; no regeneration rule
+    evidence:
+      - artifact: "plan.md, Shared files row 'stories and baselines: the WP that owns the story title; disjoint names'; IC-03b ('titled empty panels'); IC-04 to IC-08; IC-09 (five clean visual runs)"
+      - artifact: "contracts/sk-work-package-screen.md, Story catalogue: every story is the whole screen inside shellFrame; WP-01 (owned by IC-04) requires history, chains, workspace and links to show"
+      - code: "<4>/kitty-specs/missions-and-pipeline-screens-01M40SKZ/plan.md: #4 had one work package per screen, so the problem did not arise there"
+    claim: >-
+      Each baseline is a full-screen capture. The IC-04 stories (WP-01 and others) are captured with empty titled panels
+      for history, review, chains and subtasks. When IC-05 or IC-06 fills those panels, every IC-04 PNG changes. Chains X
+      and Y run in parallel lanes and each sees the other's panels empty, so after the IC-08 merge every baseline differs
+      from what its owner committed. The plan lets only the title owner regenerate a baseline and has IC-08 edit only its
+      own stories. Either every later WP fails its own pnpm visual on other owners' stories, or someone silently
+      regenerates them. NFR-002, SC-006 and NFR-008 cannot be demonstrated until this is settled.
+    remediation: >-
+      FORK: (a) commit baselines only in IC-09, after the chains are merged, with each WP checking its stories by uncommitted
+      screenshots against the prototype. (b) Let any WP regenerate any baseline its change alters, record the list in its
+      hand-off, and make the IC-08 merge resolve PNG conflicts by regeneration, with a reviewer check that no baseline
+      changed for a reason outside the WP diff. (c) Make the story owner the last WP that touches the screen's rendering of
+      that story, regenerated at IC-09. State the chosen rule in plan.md Shared files and the WP brief rules.
+  - id: PLAN-VERIFY-005
+    lens: Gates (150-file guard; fixture-count guards)
+    severity: 3
+    title: The '150-file guard computed from the pin' is tautological; fixture and bulk count literals are pinned in three test files, not one
+    evidence:
+      - artifact: "contracts/contract-pin.md, C8 paragraph ('the 98-file guard becomes a comparison of Object.keys(PIN.files).length with the directory'); plan.md IC-01"
+      - code: "<4>/scripts/contract/check.mjs: checkPin already reports extra and missing files between PIN.files and the directory; its only count guard is 'no vendored files'"
+      - code: "<4>/scripts/contract/check.test.mjs: positive control asserts vendoredFiles 98, fixtures 22, bulkPages 2; the 97-key guard test"
+      - code: "<4>/scripts/contract/overlays.test.mjs and registry.test.mjs: assert 22 fixtures and the 15 valid, 4 host, 3 relaxed split"
+    claim: >-
+      The 98 and 22 literals in the tests are the independent anti-vacuity guard. Comparing the pin's key count with the
+      directory repeats what checkPin already does. If a --from-repo or re-pin read returns a subset, the pin and the
+      directory shrink together and the guard stays green, which is exactly the vacuity it exists to stop. The plan names
+      only check.test.mjs for the fixture count, but overlays.test.mjs and registry.test.mjs also pin 22 and the kind
+      split, so they go red unexplained.
+    remediation: >-
+      Keep literal expected counts in the positive control (150 vendored files, 22+47=69 fixtures, the new kind split) and
+      update them deliberately at the re-pin. Add a presence check for named anchor files (openapi.yaml,
+      WorkPackageDetail.yaml, ReviewCycle.yaml, Workspace.yaml and their examples). Build the negative test from a dropped
+      key as today. List all three test files in the IC-01 scope and revert checks.
+  - id: PLAN-VERIFY-006
+    lens: Gates (C8 tests are function-level; the wrap-up path is the CLI)
+    severity: 3
+    title: --require-main and the verify-remote branch-pin behaviour have no CLI-level test, yet they are the only blocking wrap-up check
+    evidence:
+      - artifact: "contracts/contract-pin.md, C8 tests and 'Other tooling changes'; plan.md PR shape (blocking steps contract:verify-remote and contract:check --require-main); research D-09 item 4 (recorded weakness: CI cannot see provenance)"
+      - code: "<4>/scripts/contract/check.mjs: main() takes no arguments, and the exit code comes only from the driver"
+      - code: "<4>/scripts/contract/check.test.mjs: calls check(root) in-process; no spawn or execFile anywhere in the file"
+      - code: "<4>/scripts/contract/verify-remote.mjs: main() exits 0 or 1 on byte comparison only"
+    claim: >-
+      The planned C8 node tests call the function with an option. The flag is read from process.argv by the scripts, and
+      pnpm passes the argument through. A parsing slip (flag ignored, wrong exit code) leaves every planned test green
+      while contract:check --require-main exits 0 on a branch pin. The verify-remote rule 'prints not verifiable, exits 0,
+      or non-zero with --require-main' has no test at all. The PR-readiness gate then succeeds while checking nothing.
+    remediation: >-
+      Add node:test cases that spawn node scripts/contract/check.mjs --require-main against a temp copy with a branch pin
+      and assert a non-zero exit and the token 'pin provenance'. Spawn the same command on a main pin (positive control)
+      and without the flag on a branch pin (exit 0). Factor verify-remote's provenance decision into a pure function and
+      test both outcomes. Add the CLI spawn to the IC-01 exit checks.
+  - id: PLAN-VERIFY-007
+    lens: Silent-success (provenance label is self-asserted)
+    severity: 3
+    title: 'provenance: main" is never verified to be on spec-kitty main; the re-pin proofs would pass for an unmerged commit'
+    evidence:
+      - artifact: "contracts/contract-pin.md, steps 4 and 5 and C8; research.md D-09 item 4; plan.md PR shape"
+      - code: "<4>/scripts/contract/verify-remote.mjs: main() fetches pin.sha by sha and compares bytes and lane weights; it never checks the sha is reachable from upstream main"
+      - code: "<4>/scripts/contract/update.mjs: fetchRef(sha) accepts any fetchable commit"
+    claim: >-
+      contract:update --sha <sha> writes provenance main for whatever it was given. verify-remote then re-fetches the same
+      sha and the bytes match. C8 and --require-main only check the label. A commit that exists only on the #5625 branch or
+      a PR ref would pass all three and be recorded as 'main'. This is the failure the provenance mechanism exists to prevent.
+    remediation: >-
+      In update.mjs (writing main) and verify-remote.mjs (for a main pin), fetch upstream main and require the pin sha to be
+      an ancestor (git merge-base --is-ancestor), failing closed otherwise. Cover it with a pure-function test, using a temp
+      repo where the sha is on a side branch. Add it to the wrap-up proofs in plan.md.
+  - id: PLAN-VERIFY-008
+    lens: Test strategy per requirement (fixture coherence, C5 scope)
+    severity: 3
+    title: Plan says WorkPackage has no derivable coherence rule, but the contract defines exact derived rules that hand-built overlays can violate unchecked
+    evidence:
+      - artifact: "contracts/contract-pin.md, 'Other tooling changes' (C5 stays Mission-scoped; a subtaskProgress that disagrees with the list 'is allowed by the contract'; SYNTHETIC_ACTORS claim); research.md D-10"
+      - code: "<lane-1.1>/schemas/WorkPackage.yaml: readyToStart x-derived 'True when statusLane is planned and readiness.satisfied is true'; history x-derived 'sorted by at then eventId ascending'"
+      - code: "<lane-1.1>/schemas/SubtaskProgress.yaml: done and total x-derived from the resolved subtask map"
+      - code: "<4>/scripts/contract/check.mjs: coherenceFailures and actorProblems only handle MissionDetail, MissionOverviewPage and doc.workPackages"
+    claim: >-
+      The contract states readyToStart, subtaskProgress and history order as exact derivations. Many planned fixtures are
+      hand-edited overlays (wpDone with a full bar, wpReady and wpBlocked, wpPopulated with part-done subtasks,
+      wpHistoryRich, the bulk 60-entry history). Nothing recomputes them, so WP-07, WP-13, WP-14 and the history baselines
+      can show an incoherent but visually plausible state and pass. A history that is not in time order also makes the
+      'array order, no sort' tests meaningless. The claim 'every actor value comes from SYNTHETIC_ACTORS' is not enforced
+      either, because actorProblems never looks at a WorkPackage document.
+    remediation: >-
+      Add C5 rules for WorkPackage fixtures, recomputed independently of overlays.mjs as #4 does: readyToStart equals
+      (lane planned and readiness.satisfied); subtaskProgress equals the counts of the subtasks map; history non-decreasing
+      by at. Give each a negative node test. Extend actorProblems to the WorkPackage shapes (actor handles, history actor,
+      cycle reviewer), or delete the SYNTHETIC_ACTORS sentence from contract-pin.md.
+  - id: PLAN-VERIFY-009
+    lens: Silent-success (unknown values) / test strategy per requirement (FR-023)
+    severity: 3
+    title: Raw-value fallback for the new vocabularies has no fixture or planned test, and the staleness status fallback is unspecified
+    evidence:
+      - artifact: "research.md D-07 and D-10 ('unknown verdict is NOT relaxed'); contracts/defaults.md (stalenessView via STALENESS_STATUS_ROLE; resolveVerdict, resolveChangeState raw fallback); data-model.md ChangeStateView"
+      - artifact: "plan.md D-17 equivalent (research D-17): the behavioural test feeds foreign LANE values only"
+    claim: >-
+      FR-023 requires raw fallback for change state, verdict and refusal words. The only foreign-value test is for lane
+      values. Nothing feeds a foreign verdict, change state, staleness status or reason, refusal code or artifact kind
+      through the rendered element. For staleness, a status that is not a key of STALENESS_STATUS_ROLE has no defined
+      outcome: it could render nothing, which is a silent drop of an unknown value. A lookup miss could also render
+      'undefined'.
+    remediation: >-
+      Specify the fallback for an unknown staleness status (a quiet row showing the raw status text, never nothing). Add
+      element-level behavioural tests that cast foreign strings for verdict, changeState, staleness status and reason, and
+      detail refusal, asserting the raw text is in the DOM and 'undefined' is not. Add an artifact kind pass-through
+      assertion in the event payload. Add a foreign change state among known ones, to prove the all-unknown collapse does
+      not swallow it.
+  - id: PLAN-VERIFY-010
+    lens: Silent-success (not-drawn regions, omitted versus empty versus null)
+    severity: 3
+    title: 'Not drawn'' pass conditions have no DOM-absence assertion with a presence control, and omitted-vs-empty has no paired test'
+    evidence:
+      - artifact: "spec.md WP-19, WP-21 (not_applicable), WP-22, WP-33, WP-35, WP-38 ('nothing', 'no element drawn'); contracts/sk-work-package-screen.md Regions (Absent form column); plan.md Traceability FR-018 ('detailOmittedProvisional test')"
+      - code: "<lane-1.1>/examples/WorkPackage.populated.yaml and no-events.yaml: staleness null, so WP-01, WP-22 and WP-21b-style stories render the same absence"
+    claim: >-
+      These rows are proven only by a baseline or a unit test of the part. A pixel baseline of 'nothing' cannot tell
+      omitted, null and not_applicable apart, and a story that omits the thing it asserts absent passes however the code
+      behaves. FR-018 turns on omitted staleness, reviewCycles or workspace being distinct from an empty array or null: an
+      omitted reviewCycles must not print the 'none found on the primary planning surface' claim, and an empty one must. No
+      paired test is specified. The same applies to the detail-null degradation, which no story or row asserts.
+    remediation: >-
+      Require, per not-drawn region, a DOM assertion that the region, its heading and its label text are absent, each paired
+      with a sibling fixture where it is present (positive control). Add paired tests: reviewCycles omitted versus [],
+      workspace omitted versus all-null, staleness omitted versus null versus not_applicable (same output, and the reason
+      only in the accessible description). Add an element-level test for detail null with detailStatus ready (bare lists, no
+      detail-only regions, no false 'none' claims).
+  - id: PLAN-VERIFY-011
+    lens: Test strategy per requirement (SC-004, FR-024)
+    severity: 3
+    title: SC-004 ('100% of the 1.0 regions visible, exactly the detail regions replaced') is not testable as written; region membership is inconsistent
+    evidence:
+      - artifact: "spec.md SC-004 and FR-024; data-model.md detailStatus table (error replaces subtasks list, dependencies with titles, review cycles, workspace, owned files, artifact links); contracts/sk-work-package-screen.md Regions (Owned files, Dependency chain, Subtasks have 1.0 bare forms)"
+    claim: >-
+      The detail regions are enumerated as including owned files, dependency chain and subtasks, yet a 1.0 bare form exists
+      for each and the 'detail null' path degrades to it. On a refused detail the plan replaces those regions with one
+      notice, while on a null detail it shows the bare lists, so the two 'no detail' paths differ without a stated reason.
+      'All 1.0 regions' is never enumerated, so a test cannot assert set equality, and WP-36 and WP-37 are only baselines.
+    remediation: >-
+      Enumerate the region identifiers (stable part names or test ids) in the screen contract, marked 1.0 or detail-only.
+      State whether a refused or pending detail shows the bare lists or the notice for the three overlapping lists. Add a
+      test that the region set under error, not-found and loading equals the ready set minus exactly the detail-only
+      regions plus one notice, with ready as positive control.
+  - id: PLAN-VERIFY-012
+    lens: 'Test strategy per requirement (EV-1 to EV-8: exactly-one-event, positive controls)'
+    severity: 3
+    title: EV-2 test as worded is vacuous, and the event methods for EV-1, EV-5 and EV-6 have no consistent owner
+    evidence:
+      - artifact: "research.md D-04 EV-2 ('the test dispatches one on the host and asserts the screen emits nothing')"
+      - artifact: "plan.md Shared files (sk-work-package-screen.ts: IC-03b, then IC-07 'for the status switch and the event methods only'); IC-03b ('literal dispatchEvent calls'); IC-07 ('EV-3, EV-7'); Traceability (EV-1 test at IC-06, EV-6 at IC-05, EV-5 at IC-06)"
+    claim: >-
+      An event dispatched on or above the host element never enters the screen, so 'the screen emits nothing' is true for
+      any implementation, including one that re-emits what it hears. Separately, the Traceability table has the EV-1, EV-5
+      and EV-6 tests land in IC-05 and IC-06, but the ownership table gives the dispatch methods to IC-03b (literal calls)
+      and IC-07 (event methods), and forbids IC-05 and IC-06 from editing the file. Those tests either run against a stub,
+      and are vacuous, or the WPs break the ownership rule.
+    remediation: >-
+      Rewrite EV-2: dispatch sk-select-work-package at the screen element and from inside its shadow tree, collect with a
+      listener on a wrapper, and assert exactly one event in total (the injected one) and no other sk-* name. The positive
+      control is a dependency activation yielding exactly one event with the exact payload. Make IC-03b implement all four
+      dispatch methods and payload builders (retryDetail included), with a skeleton test per event (exactly one, exact
+      payload, bubbles and composed). Restrict IC-07 to the status switch and the not-found, error and retry wiring.
+  - id: PLAN-VERIFY-013
+    lens: Silent-success (event payload identity)
+    severity: 3
+    title: Payload identity sources are undefined when mission is null or wp-id is empty; events would carry empty ids
+    evidence:
+      - artifact: "data-model.md Events ('missionId is mission.missionId for every payload'; retry wpId is the host property wpId); contracts/sk-work-package-screen.md Properties (mission default null, wpId default '')"
+      - artifact: "research.md R-08 and data-model.md ('when workPackage is present the two must agree; the screen shows workPackage.wpId and never reconciles')"
+    claim: >-
+      With status ready and the default mission null, or a host that passes workPackage but no wp-id, the crumb, dependency
+      activation, artifact links and retry emit missionId or wpId undefined or ''. The host receives a successful event
+      that routes nowhere. A detail for a different Work Package than workPackage is shown without notice. No test or
+      story covers any of these.
+    remediation: >-
+      FORK: (a) define fallbacks: retry wpId from the wpId property, then workPackage.wpId, then detail.wpId, and treat a
+      detail whose wpId differs from workPackage.wpId as omitted. Draw controls that need mission.missionId inert and
+      unlinked when mission is null. (b) Keep the strict host contract, document that mission and wp-id are required in
+      ready, and add a test that pins the present behaviour for the null and empty inputs. Either way add the tests.
+  - id: PLAN-VERIFY-014
+    lens: Gates (NFR-006 200 ms test design)
+    severity: 3
+    title: NFR-006 test does not define the property change or a structural pass criterion; a wall-clock bound passes on a no-op re-render
+    evidence:
+      - artifact: "research.md D-17 ('node identity on re-render ... and a 200 ms bound in the browser-mode environment'); spec.md NFR-006"
+      - code: "<4>/packages/mission-ui/test/sk-missions-screen.test.ts, describe '500 Missions, 200 ms': performance.now() wall-clock bound with keyed li identity (repeat by missionId)"
+    claim: >-
+      #4's bound was meaningful because the change (a filter press) visibly updated rows. Here the 'property change' is
+      unspecified. A re-render that changes nothing (for example setting now to the same value) is fast and passes. The
+      wall-clock bound also flakes under CI load. Node identity only proves anything when the lists are keyed and the
+      change touches a known subset.
+    remediation: >-
+      Specify the change: replace workPackage with one history entry and one subtask lane altered. Assert (1) the altered row
+      text changed (positive control), (2) the other rows' nodes are the same objects, with lists keyed by stable id,
+      (3) the rendered counts equal 40, 60 and 100 exactly. Keep elapsed 200 ms as a coarse bound, taking the median of
+      several runs, and state it is not the pass criterion.
+  - id: PLAN-VERIFY-015
+    lens: Test strategy per requirement (row-to-story node test, vacuity by empty set)
+    severity: 3
+    title: The row-to-story set comparison is ill-defined (WP-21 versus WP-21a) and can pass vacuously on an empty parse
+    evidence:
+      - artifact: "plan.md IC-09 ('the 50 spec rows against the 56 stories, in both directions'); contracts/sk-work-package-screen.md ('compares the sets')"
+      - artifact: "spec.md State Matrix uses ids WP-21, WP-24, WP-33, WP-35, WP-36; the catalogue uses 21a, 21b, 24a, 24b, 33a, 33b, 35a-c, 36a, 36b"
+    claim: >-
+      The sets are not equal as literal ids: the spec has WP-21, the stories WP-21a and WP-21b. The test needs a
+      normalisation rule, and without a stated one it is either red on arrival or written to pass. If the matrix
+      table is reformatted and the regex finds zero rows, an empty-versus-empty comparison passes. Nothing pins 50 rows, 56
+      stories or the six extras.
+    remediation: >-
+      Specify: parse rows with one anchored pattern, assert exactly 50 rows and 56 stories discovered, map a story to a row
+      by stripping a trailing lowercase letter, assert every row has at least one story, and assert the extras set equals the
+      listed six (WP-21b, WP-24b, WP-33b, WP-35b, WP-35c, WP-36b). Run the test against a temp copy with a row deleted to
+      prove it fails.
+  - id: PLAN-VERIFY-016
+    lens: 'Test strategy per requirement (revert checks: array order, no sorting)'
+    severity: 3
+    title: Fixtures are chronological and ascending, so a regression that adds a sort of history or cycles would slip through
+    evidence:
+      - artifact: "research.md D-08 (history in array order; cycles in array order; the screen holds no sort or comparison); spec.md FR-011, FR-014"
+      - artifact: "contracts/contract-pin.md: wpHistoryRich, wpBulkHistory, detailPopulated (cycles 1 then 2)"
+    claim: >-
+      Every planned fixture already arrives in the order a sort would produce. A later change that sorts by time or by
+      cycleNumber changes no baseline and fails no test, and 'Current' on the last entry versus the latest time is
+      indistinguishable. The 'revert checks listed per test file' have nothing to bite on.
+    remediation: >-
+      Add test-only inputs, built by cast and not contract fixtures, with history in non-chronological order and cycles in
+      descending cycleNumber. Assert the DOM keeps array order and that Current is on the last array element. Include a
+      single-entry history and an empty history (no Current).
+  - id: PLAN-VERIFY-017
+    lens: Test strategy per requirement (FR-032 surface freeze)
+    severity: 3
+    title: The surface freeze after IC-03b has no test; the existing surface-freeze test covers only #4's five elements
+    evidence:
+      - artifact: "plan.md Shared files and IC-03b ('the single manifest regeneration (the freeze)'; 'a surface change is reported'); research D-05"
+      - code: "<4>/packages/mission-ui/test/surface-freeze.test.ts: NEW_TAGS and SURFACE list tag, property, attribute and default for the five #4 elements, so 'a later work package that changes the surface fails here'"
+    claim: >-
+      The manifest gate regenerates and compares, so a later WP that adds a property and runs pnpm manifest:generate stays
+      green. The freeze is enforced by the surface-freeze test, which the plan does not extend. FR-032 and the 'freeze'
+      depend on reviewer attention only.
+    remediation: >-
+      IC-03b adds sk-work-package-screen to surface-freeze.test.ts: the nine properties with attributes and run-time
+      defaults (status loading, detailStatus ready, workPackage null, detail null, mission null, wpId '', now null, labels
+      null, errorMessage ''), and the four event names. Add the file to the IC-03b scope.
+  - id: PLAN-VERIFY-018
+    lens: Gates (new tooling without tests)
+    severity: 3
+    title: contract:update --from-repo, the mechanism behind the 'dirty lane cannot leak' and 'path never recorded' claims, has no planned tests
+    evidence:
+      - artifact: "research.md D-09 item 1; contracts/contract-pin.md '--from-repo rules'; plan.md IC-01 exit checks (a manual git grep of the checkout path prefix)"
+      - code: "<4>/scripts/contract/update.mjs and remote.mjs: no update.test.mjs exists in #4; check.test.mjs, overlays.test.mjs and registry.test.mjs are the only contract tests"
+    claim: >-
+      The privacy and integrity claims (read from git objects at the sha and not the working tree; both flags required;
+      unknown sha fails closed; the path is never written to PIN.json or output) rest on a manual grep. The grep cannot
+      prove the working tree was not read, and it checks only committed files.
+    remediation: >-
+      Factor the git ls-tree and cat-file read into a function and add node:test cases using a temp git repo. Commit a file,
+      then edit the working tree: the vendored bytes must equal the committed blob. A missing sha must throw. --from-repo
+      without --sha must be refused. After an update from a uniquely named temp directory, assert neither PIN.json nor the
+      generated headers nor stdout contains that directory name.
+  - id: PLAN-VERIFY-019
+    lens: Gates (consistency of plant claims)
+    severity: 2
+    title: research D-11 says the data-driven cases get gate-proof plants; gates.md and plan.md say they are self-test cases, not plants
+    evidence:
+      - artifact: "research.md D-11 ('gate-proof gets plants for C8 and for the two new data-driven cases'); contracts/gates.md gate-proof row ('self-test cases, not plants'); plan.md Charter Check ('C8 and two self-test fixtures added with proof entries')"
+    claim: >-
+      The three artifacts disagree. An implementer may add plants that coverage and proof matrices do not expect, or omit
+      what a reviewer expects.
+    remediation: >-
+      Strike the plants wording from D-11 and 'with proof entries' from the Charter Check, or add the plants to gates.md
+      and the IC-02 exit checks. Pick one.
+  - id: PLAN-VERIFY-020
+    lens: Test strategy per requirement (WP-32, WP-33b distinctness)
+    severity: 2
+    title: WP-33b fixture is described against a wrong schema reading and duplicates the WP-32 data; the lane-present, worktree-absent case is untested
+    evidence:
+      - artifact: "contracts/contract-pin.md rows detailNullWorkspace (WP-32), detailWorkspaceAllNull (WP-33b: 'laneId the only non-null member as the contract allows ... if the schema requires laneId non-null')"
+      - code: "<lane-1.1>/schemas/Workspace.yaml: laneId is string or null (nullable); examples/WorkPackageDetail.null-workspace.yaml is all-null with worktreePresent false"
+    claim: >-
+      laneId is nullable, so the hedge is moot. The all-null workspace is exactly the null-workspace example already used
+      for WP-32, so WP-32 and WP-33b are the same data and give two identical baselines. The intended WP-32 case (a lane
+      present, worktreePresent false, where the 'removed' claim must not appear, R-4) is never exercised.
+    remediation: >-
+      Use an overlay with laneId lane-a, a lane branch and worktreePresent false for WP-32. Keep null-workspace for WP-33b
+      and delete the hedge text. Assert in the WP-32 test that no word implying removal appears.
+  - id: PLAN-VERIFY-021
+    lens: Test strategy per requirement (WP-40)
+    severity: 2
+    title: WP-40 has no fixture and its pass condition is ambiguous between status empty and a ready Work Package with nothing in it
+    evidence:
+      - artifact: "spec.md WP-40 ('Work Package found, nothing to show'); contracts/sk-work-package-screen.md (empty status renders an empty-state panel; ready with workPackage null also), Story catalogue (WP-40 '(empty)' with no fixture)"
+    claim: >-
+      The row describes a found Work Package with no content; the contract renders the empty status with no Work Package.
+      The story could be built either way and still pass its own condition, and one reading duplicates WP-09 or WP-39.
+    remediation: >-
+      State in the story catalogue that WP-40 is status empty with workPackage null (and name any fixture), or define a
+      ready fixture with every list empty. Add a one-line assertion that the empty panel carries the frame and neutral copy.
+

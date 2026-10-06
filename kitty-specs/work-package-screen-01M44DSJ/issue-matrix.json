@@ -1,0 +1,53 @@
+{
+  "rows": {
+    "#516": {
+      "evidence_ref": "spec-kitty-design#516: design-library gap (compact sk-card density) cited as the sunset of E-18; tracked in the design library, not resolved by this mission",
+      "fr": null,
+      "nfr": null,
+      "repo": null,
+      "sc": null,
+      "scope": null,
+      "source_file": null,
+      "title": null,
+      "verdict": "not-applicable",
+      "wp": null
+    },
+    "#517": {
+      "evidence_ref": "spec-kitty-design#517: design-library gap (non-wrapping sk-evidence-chain) cited as context; tracked in the design library, not resolved by this mission",
+      "fr": null,
+      "nfr": null,
+      "repo": null,
+      "sc": null,
+      "scope": null,
+      "source_file": null,
+      "title": null,
+      "verdict": "not-applicable",
+      "wp": null
+    },
+    "#5528": {
+      "evidence_ref": "spec-kitty#5528: the read service is built in parallel; the screens are built against the contract and fixtures, not that service",
+      "fr": null,
+      "nfr": null,
+      "repo": null,
+      "sc": null,
+      "scope": null,
+      "source_file": null,
+      "title": null,
+      "verdict": "not-applicable",
+      "wp": null
+    },
+    "#5625": {
+      "evidence_ref": "upstream dependency: this mission vendors the contract that spec-kitty#5625 adds; it does not change #5625 (WP10 re-pins once it merges)",
+      "fr": null,
+      "nfr": null,
+      "repo": null,
+      "sc": null,
+      "scope": null,
+      "source_file": "spec.md",
+      "title": "<fill at WP-implementation time>",
+      "verdict": "not-applicable",
+      "wp": null
+    }
+  },
+  "schema_version": 1
+}

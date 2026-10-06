@@ -1,0 +1,20 @@
+schema: review-refute/v1
+complete: true
+phase: plan
+batch: 7
+verdicts:
+  - id: PLAN-VERIFY-016
+    verdict: confirmed
+    reason: 'No non-chronological, descending-cycle, single-entry or empty-history test input is planned, so a regression that adds a sort has nothing to fail on; severity 2-3.'
+  - id: PLAN-VERIFY-017
+    verdict: confirmed
+    reason: 'The mission artifacts never mention surface-freeze.test.ts; #4''s only pins the five #4 elements, so nothing freezes the new element.'
+  - id: PLAN-VERIFY-018
+    verdict: confirmed
+    reason: 'plan.md IC-01 relies on a manual git grep and plans no node:test for the --from-repo git-object read, both-flags rule, unknown-sha failure or path-not-recorded claim.'
+  - id: PLAN-VERIFY-019
+    verdict: confirmed
+    reason: 'research D-11 says plants for the two data-driven cases while gates.md says self-test cases, not plants, and plan.md says with proof entries.'
+  - id: PLAN-VERIFY-021
+    verdict: confirmed
+    reason: 'spec WP-40 says Work Package found with nothing to show, the contract renders status empty (also ready with null workPackage), and the catalogue names no fixture.'

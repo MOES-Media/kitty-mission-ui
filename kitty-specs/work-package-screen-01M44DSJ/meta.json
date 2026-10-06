@@ -1,0 +1,35 @@
+{
+  "accept_commit": "6d7b9ad15492a2f249a6ad3028a09128d8791dc1",
+  "acceptance_history": [
+    {
+      "accept_commit": "6d7b9ad15492a2f249a6ad3028a09128d8791dc1",
+      "acceptance_mode": "local",
+      "accepted_at": "2026-10-06T14:07:17.883371+00:00",
+      "accepted_by": "claude:opus",
+      "accepted_from_commit": "56cae7e9e666bfce53d6b16d2c1d4e717b726962"
+    }
+  ],
+  "acceptance_mode": "local",
+  "accepted_at": "2026-10-06T14:07:17.883371+00:00",
+  "accepted_by": "claude:opus",
+  "accepted_from_commit": "56cae7e9e666bfce53d6b16d2c1d4e717b726962",
+  "baseline_merge_commit": "bfbf5b8eace771cff89670376705bb25e9d12e24",
+  "created_at": "2026-10-04T21:40:49.321355+00:00",
+  "flattened": false,
+  "friendly_name": "Work Package detail screen",
+  "merged_at": "2026-10-06T14:52:39.747407+00:00",
+  "merged_commit": "4594cc183ff50ec5bf0599c748cedb8706b9d801",
+  "mid8": "01M44DSJ",
+  "mission_id": "01M44DSJ10Z36HSA8JCGXZMRRF",
+  "mission_number": 2,
+  "mission_slug": "work-package-screen-01M44DSJ",
+  "mission_type": "software-dev",
+  "purpose_context": "This mission advances Work Package detail screen on feat/work-package-screen-5 so stakeholders can track the work from mission creation onward.",
+  "purpose_tldr": "Work Package detail screen",
+  "slug": "work-package-screen-01M44DSJ",
+  "status_phase": "1",
+  "target_branch": "feat/work-package-screen-5",
+  "topology": "lanes",
+  "vcs": "git",
+  "vcs_locked_at": "2026-10-05T07:38:53.731929+00:00"
+}
