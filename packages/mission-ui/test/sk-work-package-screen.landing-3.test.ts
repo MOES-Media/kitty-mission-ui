@@ -41,7 +41,7 @@ describe('CORR-003: focus restoration ignores effective-state and shown-WP chang
     expect(crumb.isConnected).toBe(false);
     expect(document.activeElement).toBe(s);
   });
-  it('a dependency-node swap by a host that leaves wpId empty loses focus to body', async () => {
+  it('a dependency-node swap by a host that leaves wpId empty moves focus into the screen', async () => {
     const s = await mount({ ...pairingProps('WP-49'), wpId: '' });
     const node = sr(s).querySelector<HTMLElement>('[data-region="dependency-chain"] ul sk-button') as HTMLElement;
     node.shadowRoot?.querySelector('button')?.focus();

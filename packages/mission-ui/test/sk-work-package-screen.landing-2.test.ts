@@ -45,7 +45,7 @@ describe('CORR-002: "loaded" must be announced only when the shown Work Package 
     await settle(s);
     expect(liveText(s)).toBe(announceLoaded('WP99'));
   });
-  it('a host that drives by workPackage only (wpId stays empty) gets no announcement when the Work Package changes', async () => {
+  it('a host that drives by workPackage only (wpId stays empty) hears the new Work Package announced as loaded', async () => {
     const a = WORK_PACKAGE_FIXTURES.wpPopulated;
     const b = WORK_PACKAGE_FIXTURES.wpActorHandle;
     expect(a.wpId).not.toBe(b.wpId);

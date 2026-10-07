@@ -32,7 +32,7 @@ const liveText = (s: SkWorkPackageScreen): string => (sr(s).querySelector('[data
 
 
 describe('CORR-005: a load that completes with a refused detail never announces the refusal', () => {
-  it('loading -> ready with detailStatus error in the same update: the live region says only "loaded"', async () => {
+  it('loading -> ready with detailStatus error in the same update: one line says loaded and the detail is unavailable', async () => {
     const wp = WORK_PACKAGE_FIXTURES.wpPopulated;
     const s = await mount({ status: 'loading', workPackage: null, detail: null, wpId: wp.wpId, detailStatus: 'loading' });
     s.status = 'ready';
