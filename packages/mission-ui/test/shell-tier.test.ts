@@ -147,3 +147,36 @@ describe('the package entry exports the tier seam', () => {
     expect(SHELL_MOBILE_STATE).toBe('shell-mobile');
   });
 });
+
+describe('nested and several shells (control)', () => {
+  const force = async (shell: Element, tier: string): Promise<void> => {
+    (shell as unknown as { readTier: () => string }).readTier = () => tier;
+    (shell as unknown as { requestUpdate: () => void }).requestUpdate();
+    await (shell as unknown as { updateComplete: Promise<unknown> }).updateComplete;
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  };
+  it('nested shells: the nearest wins; after a move the host follows only its new shell', async () => {
+    await page.viewport(1280, 900);
+    const outer = document.createElement('sk-mission-shell');
+    const inner = document.createElement('sk-mission-shell');
+    const other = document.createElement('sk-mission-shell');
+    const probe = document.createElement('tier-probe-host') as TierProbeHost;
+    inner.append(probe);
+    outer.append(inner);
+    document.body.append(outer, other);
+    await force(outer, 'mobile');
+    expect(mobile(probe)).toBe(false);
+    await force(inner, 'mobile');
+    expect(mobile(probe)).toBe(true);
+    other.append(probe);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(mobile(probe)).toBe(false);
+    await force(inner, 'expanded');
+    await force(inner, 'mobile');
+    expect(mobile(probe)).toBe(false);
+    await force(other, 'mobile');
+    expect(mobile(probe)).toBe(true);
+    await force(other, 'expanded');
+    expect(mobile(probe)).toBe(false);
+  });
+});
