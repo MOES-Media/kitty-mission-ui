@@ -54,6 +54,7 @@ export {
   SkWorkPackageBoard,
   SkWorkPackageScreen,
 };
+export { SHELL_MOBILE_STATE, ShellTierController } from './shell-tier.js';
 export type { SkFilterChangeDetail } from './elements/sk-filter-toggle-group/sk-filter-toggle-group.js';
 export type { SkLoadMoreDetail, SkOpenMissionDetail, SkSearchDetail } from './elements/sk-missions-screen/sk-missions-screen.js';
 export type { SkOpenMissionsDetail, SkViewArtifactsDetail } from './elements/sk-pipeline-screen/sk-pipeline-screen.js';

@@ -6,7 +6,8 @@ import { page } from 'vitest/browser';
 import '@spec-kitty/tokens';
 import '../src/index.js';
 import { LitElement, html, render } from 'lit';
-import { ShellTierController } from '../src/shell-tier.js';
+import { SHELL_MOBILE_STATE, ShellTierController } from '../src/shell-tier.js';
+import * as entry from '../src/index.js';
 import { shellFrame } from '../src/story-support/shell-frame.js';
 
 class TierProbeHost extends LitElement {
@@ -136,5 +137,13 @@ describe('TESTS-001: the observer is released on detach and follows only the new
     expect(mobile(probe), 'the old shell no longer drives it').toBe(false);
     second.setAttribute('tier', 'mobile');
     await expect.poll(() => mobile(probe)).toBe(true);
+  });
+});
+
+describe('the package entry exports the tier seam', () => {
+  it('exports ShellTierController and SHELL_MOBILE_STATE as the very values of src/shell-tier.ts', () => {
+    expect(entry.ShellTierController).toBe(ShellTierController);
+    expect(entry.SHELL_MOBILE_STATE).toBe(SHELL_MOBILE_STATE);
+    expect(SHELL_MOBILE_STATE).toBe('shell-mobile');
   });
 });
