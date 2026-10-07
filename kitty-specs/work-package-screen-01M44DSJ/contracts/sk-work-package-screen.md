@@ -158,6 +158,7 @@ The screen has exactly one status region. It announces text that names the Work 
 | `status` becomes `not-found` | `announceNotFound(wpId)` |
 | `status` becomes `empty` or `nothing-selected` | nothing (static content) |
 | `detailStatus` becomes `loading`, then `ready` | `ANNOUNCE_DETAIL_LOADING`, then `ANNOUNCE_DETAIL_LOADED`, one line each |
+| `detailStatus` becomes `ready` while the detail is withheld (another Mission or another Work Package: the detail counts as omitted) | nothing; `ANNOUNCE_DETAIL_LOADED` follows once a matching detail is drawn, including a matching detail that arrives after `ready` (landing F6) |
 | `detailStatus` becomes `error` or `not-found` | `ANNOUNCE_DETAIL_UNAVAILABLE` once; the regional notice carries no live role of its own, so nothing is announced twice |
 
 Each row has a test (IC-08), including the negative rows (first render silent, same-`wpId` refresh silent, error not duplicated).

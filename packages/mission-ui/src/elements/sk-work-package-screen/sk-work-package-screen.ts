@@ -267,6 +267,8 @@ export class SkWorkPackageScreen extends LitElement {
   // The id of the Work Package the screen shows while ready (null in any other state): what "loaded" is announced for.
   private lastShownWpId: string | null = null;
   private announcing = false;
+  // Whether a detail was drawn (usable) at the last update: "detail loaded" follows the detail that is drawn.
+  private lastDetailDrawn = false;
   // The element that had focus inside the shadow root when the current update began.
   private focusedBefore: Element | null = null;
 
@@ -362,6 +364,7 @@ export class SkWorkPackageScreen extends LitElement {
     this.lastStatus = state;
     this.lastDetailStatus = detailState;
     this.lastShownWpId = shown;
+    this.lastDetailDrawn = detailState === 'ready' && this.matchingDetail() !== null;
     this.announcing = true;
   }
 
@@ -381,9 +384,12 @@ export class SkWorkPackageScreen extends LitElement {
     if (state === 'ready' && shown !== this.lastShownWpId) return loaded();
     if (state === 'ready' && detailState !== this.lastDetailStatus) {
       if (detailState === 'loading') return ANNOUNCE_DETAIL_LOADING;
-      if (detailState === 'ready') return ANNOUNCE_DETAIL_LOADED;
+      // A withheld detail (another Mission or another Work Package) draws nothing, so it announces nothing.
+      if (detailState === 'ready') return this.matchingDetail() === null ? null : ANNOUNCE_DETAIL_LOADED;
       return ANNOUNCE_DETAIL_UNAVAILABLE;
     }
+    // The matching detail arriving after the status turned ready.
+    if (state === 'ready' && detailState === 'ready' && !this.lastDetailDrawn && this.matchingDetail() !== null) return ANNOUNCE_DETAIL_LOADED;
     return null;
   }
 
