@@ -1,0 +1,30 @@
+schema: review-refute/v1
+complete: true
+phase: plan
+batch: 3
+verdicts:
+  - id: PLAN-ARCH-005
+    verdict: confirmed
+    reason: 'plan.md Shared files has no row for fixtures.ts or the screen test file, and IC-03b asks for one scaffold story while the five owned titles already sum to 56 (10+13+19+8+6), so the scaffold is a 57th, an uncommitted spike, or a second writer.'
+  - id: PLAN-ARCH-006
+    verdict: confirmed
+    reason: 'approved is in StatusLane so S1 already flags it (and #4 has s1-comparison fixture), making fixture 1 vacuous; changes_requested, fresh, stale, not_applicable, changed, unchanged and unknown match no WORDS, STATUS_WORDS or UNDERSCORED entry in eslint.data-driven.config.mjs; severity 4 is right.'
+  - id: PLAN-ARCH-007
+    verdict: confirmed
+    reason: 'ReviewCycle.yaml has no kind field, research D-04 and the contract only name the literal review_cycle with no home in defaults/, and no gate word covers it; severity 3 is generous (2 is defensible).'
+  - id: PLAN-ARCH-008
+    verdict: confirmed
+    reason: 'plan.md adopts the breadcrumbs, empty-state and progress families but E-17 grants class= only for sk-event-timeline and sk-facts, while #4 needed a classOnly override for exactly sk-breadcrumbs, sk-empty-state and sk-progress on its Pipeline screen files.'
+  - id: PLAN-ARCH-009
+    verdict: confirmed
+    reason: 'E-18 lists eight files but not panel-parts.ts (where plan.md says IC-03b creates the titled panels) or header-parts.ts, and it spreads the chrome and the pinned 0.08em literal across every part file.'
+  - id: PLAN-ARCH-010
+    verdict: confirmed
+    reason: 'DW-30 cites N-4, which in #4 tracer-design-decisions is a ruling on Pipeline lanes; prototype .panel is a bordered radius-md card, and neither G-11 nor any research text records why sk-card plus sk-section-header cannot be the panel; severity 4 stands because DW-30 is marked confirm (precedent) on a misapplied precedent.'
+  - id: PLAN-ARCH-011
+    verdict: confirmed
+    reason: 'Stylelint unit-allowed-list walks only @media at-rules (rule source line 102), and #4 ships px in @container in files with no px exception, so E-19 probably grants nothing; plan research.md line 148 assumes the opposite as an unverified inference; severity 3 is generous (2 is defensible since spike S8 can settle it).'
+  - id: PLAN-ARCH-012
+    verdict: confirmed
+    reason: 'sk-evidence-chain.d.ts has no slots, only a property-only stages array of {id,label,displayValue,annotation,tone} composed of sk-metric, so research.md inference of slotted nodes and the G-12 stand-in of an sk-button inside the chain cannot work as written.'
+

@@ -355,7 +355,7 @@
                 "text": "ShellTier"
               },
               "default": "'expanded'",
-              "description": "Read-only: derived from the window width, re-asserted on every update.",
+              "description": "Read-only: derived from the window width, re-asserted on every update. The current tier (`expanded`, `collapsed` or\n`mobile`) is reflected on the host as the `tier` attribute and is public: a slotted screen may read it and observe its\nchanges, through `ShellTierController` (the Work Package screen shows one column in the mobile tier, where the content\ncell is the whole viewport).",
               "attribute": "tier",
               "reflects": true
             }
@@ -475,7 +475,7 @@
                 "text": "ShellTier"
               },
               "default": "'expanded'",
-              "description": "Read-only: derived from the window width, re-asserted on every update.",
+              "description": "Read-only: derived from the window width, re-asserted on every update. The current tier (`expanded`, `collapsed` or\n`mobile`) is reflected on the host as the `tier` attribute and is public: a slotted screen may read it and observe its\nchanges, through `ShellTierController` (the Work Package screen shows one column in the mobile tier, where the content\ncell is the whole viewport).",
               "fieldName": "tier"
             }
           ],
@@ -1312,6 +1312,268 @@
           }
         }
       ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/elements/sk-work-package-screen/chain-parts.ts",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/elements/sk-work-package-screen/facts-parts.ts",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/elements/sk-work-package-screen/files-parts.ts",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/elements/sk-work-package-screen/header-parts.ts",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/elements/sk-work-package-screen/history-parts.ts",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/elements/sk-work-package-screen/panel-parts.ts",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/elements/sk-work-package-screen/review-parts.ts",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/elements/sk-work-package-screen/shared-parts.ts",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/elements/sk-work-package-screen/sk-work-package-screen.ts",
+      "declarations": [
+        {
+          "kind": "class",
+          "description": "The Work Package screen. Read-only (C-003): it only asks the host to read again.",
+          "name": "SkWorkPackageScreen",
+          "members": [
+            {
+              "kind": "field",
+              "name": "status",
+              "type": {
+                "text": "WpScreenStatus"
+              },
+              "default": "'loading'",
+              "description": "The view state; unknown values collapse to `empty`.",
+              "attribute": "status",
+              "reflects": true
+            },
+            {
+              "kind": "field",
+              "name": "detailStatus",
+              "type": {
+                "text": "DetailStatus"
+              },
+              "default": "'ready'",
+              "description": "The state of the detail regions only; unknown values collapse to `error`.",
+              "attribute": "detail-status"
+            },
+            {
+              "kind": "field",
+              "name": "detailRefusalCode",
+              "type": {
+                "text": "string | null"
+              },
+              "default": "null",
+              "description": "The refusal code of a refused detail, read only when `detailStatus` is `error` or `not-found`; null gives one generic wording."
+            },
+            {
+              "kind": "field",
+              "name": "workPackage",
+              "type": {
+                "text": "WorkPackageRecordView | null"
+              },
+              "default": "null",
+              "description": "The Work Package (contract 1.0 with open lanes); null renders as `empty`."
+            },
+            {
+              "kind": "field",
+              "name": "detail",
+              "type": {
+                "text": "WorkPackageDetailView | null"
+              },
+              "default": "null",
+              "description": "The detail (contract 1.1); null means the host gave none."
+            },
+            {
+              "kind": "field",
+              "name": "mission",
+              "type": {
+                "text": "WpScreenMission | null"
+              },
+              "default": "null",
+              "description": "The Mission: host data. Controls that need its id are drawn inert while this is null."
+            },
+            {
+              "kind": "field",
+              "name": "wpId",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "description": "The selected Work Package id: the not-found header and the retry payloads use it first.",
+              "attribute": "wp-id"
+            },
+            {
+              "kind": "field",
+              "name": "now",
+              "type": {
+                "text": "string | null"
+              },
+              "default": "null",
+              "description": "RFC 3339 instant for relative times; null shows the ISO text as given.",
+              "attribute": "now"
+            },
+            {
+              "kind": "field",
+              "name": "labels",
+              "type": {
+                "text": "LabelHooks | null"
+              },
+              "default": "null",
+              "description": "Lane and state label hooks. A lane has two kinds of word and a host sets both to change a lane everywhere: the `state`\nhook (a word and a tone) draws the state badge, the dependency-chain and subtask lane words and the cancellation badge;\nthe `lane` hook (a word) draws the lane history's \"from\" and \"to\" words. Setting one hook leaves the other kind on its\ndefaults. The `time` hook draws every relative time."
+            },
+            {
+              "kind": "field",
+              "name": "errorMessage",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "description": "Overrides the default error body.",
+              "attribute": "error-message"
+            }
+          ],
+          "events": [
+            {
+              "name": "sk-select-work-package",
+              "type": {
+                "text": "CustomEvent<SkSelectWorkPackageDetail>"
+              },
+              "description": "a dependency-chain node was activated; `wpId` is the dependency's"
+            },
+            {
+              "name": "sk-open-mission",
+              "type": {
+                "text": "CustomEvent<SkOpenMissionDetail>"
+              },
+              "description": "the Mission crumb or \"Return to Pipeline\" was activated"
+            },
+            {
+              "name": "sk-open-artifact",
+              "type": {
+                "text": "CustomEvent<SkOpenArtifactDetail>"
+              },
+              "description": "\"Open spec.md\", \"Open prompt\" or \"Open review\" was activated"
+            },
+            {
+              "name": "sk-retry-load",
+              "type": {
+                "text": "CustomEvent<SkRetryLoadDetail>"
+              },
+              "description": "Retry was activated on the whole screen (`work-package`) or on a refused detail (`detail`)"
+            }
+          ],
+          "attributes": [
+            {
+              "name": "status",
+              "type": {
+                "text": "WpScreenStatus"
+              },
+              "default": "'loading'",
+              "description": "The view state; unknown values collapse to `empty`.",
+              "fieldName": "status"
+            },
+            {
+              "name": "detail-status",
+              "type": {
+                "text": "DetailStatus"
+              },
+              "default": "'ready'",
+              "description": "The state of the detail regions only; unknown values collapse to `error`.",
+              "fieldName": "detailStatus"
+            },
+            {
+              "name": "wp-id",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "description": "The selected Work Package id: the not-found header and the retry payloads use it first.",
+              "fieldName": "wpId"
+            },
+            {
+              "name": "now",
+              "type": {
+                "text": "string | null"
+              },
+              "default": "null",
+              "description": "RFC 3339 instant for relative times; null shows the ISO text as given.",
+              "fieldName": "now"
+            },
+            {
+              "name": "error-message",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "description": "Overrides the default error body.",
+              "fieldName": "errorMessage"
+            }
+          ],
+          "superclass": {
+            "name": "LitElement",
+            "package": "lit"
+          },
+          "tagName": "sk-work-package-screen",
+          "customElement": true
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "SkWorkPackageScreen",
+          "declaration": {
+            "name": "SkWorkPackageScreen",
+            "module": "src/elements/sk-work-package-screen/sk-work-package-screen.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/elements/sk-work-package-screen/state-parts.ts",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/elements/sk-work-package-screen/work-parts.ts",
+      "declarations": [],
+      "exports": []
     }
   ]
 }

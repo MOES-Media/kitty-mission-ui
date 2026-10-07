@@ -1,4 +1,5 @@
-// Scope proofs for the Stylelint exception blocks E-04 and E-08 to E-16 (E-13: one half per screen file).
+// Scope proofs for the Stylelint exception blocks E-04, E-08 to E-16 (E-13: one half per screen file), E-18 (narrowed) and
+// E-19 (b), and the ESLint `class=` overrides of E-17 with their leak plants.
 // Each exception is proven three ways: its allowed CSS passes in its named files only (leak check), anything
 // beyond the exception fails inside its named files, and `min-inline-size` is allowed only in E-10's file.
 import { test, describe } from 'node:test';
@@ -6,6 +7,7 @@ import assert from 'node:assert/strict';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import stylelint from 'stylelint';
+import { ESLint } from 'eslint';
 import config from '../stylelint.config.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -157,6 +159,55 @@ const CASES = [
       'background: var(--sk-bg-pill);',
     ],
   },
+  {
+    // E-18 (CP-1, narrowed; sunset spec-kitty-design#516): the declarations that no other file may write. Padding and the title
+    // gap are layout properties and are proven separately below.
+    id: 'E-18',
+    files: [`${EL}/sk-work-package-screen/panel-parts.ts`],
+    allowed: 'border-width: var(--sk-border-width-1); border-radius: var(--sk-radius-md); font-size: var(--sk-text-lg); font-weight: var(--sk-weight-bold);',
+    stillFails: [
+      'border-width: 1px;',
+      'border-width: var(--sk-border-width-2);',
+      'border-radius: 12px;',
+      'border-radius: var(--sk-radius-lg);',
+      'font-size: 18px;',
+      'font-size: var(--sk-text-xl);',
+      'font-weight: 700;',
+      'font-weight: var(--sk-weight-semibold);',
+      'padding: var(--sk-space-7);',
+      'padding: 20px;',
+      'margin-block: 0 var(--sk-space-2);',
+      'row-gap: var(--sk-space-2);',
+      // a sixth property is refused
+      'letter-spacing: var(--sk-tracking-wide);',
+      'letter-spacing: 0.08em;',
+      'background: var(--sk-surface-hero);',
+      'color: var(--sk-fg-subtle);',
+      'border-style: dashed;',
+      'border-color: var(--sk-border-default);',
+      'box-shadow: var(--sk-shadow-md);',
+      'font-family: var(--sk-font-mono);',
+      'text-transform: uppercase;',
+    ],
+  },
+  {
+    // E-19 (b): the track minimums of the prototype grid, as lengths in `grid-template-columns` of the screen file only.
+    id: 'E-19 (b)',
+    files: [`${EL}/sk-work-package-screen/sk-work-package-screen.ts`],
+    allowed:
+      'grid-template-columns: minmax(220px, .8fr) minmax(320px, 1.3fr) minmax(220px, .8fr); grid-template-columns: minmax(220px, .8fr) minmax(320px, 1.2fr);',
+    stillFails: [
+      'grid-template-columns: minmax(300px, 1fr);',
+      'grid-template-columns: minmax(220px, .8fr) minmax(321px, 1.3fr) minmax(220px, .8fr);',
+      'grid-template-columns: repeat(3, minmax(220px, 1fr));',
+      'grid-template-columns: 220px 320px;',
+      'width: 220px;',
+      'min-width: 320px;',
+      'gap: 20px;',
+      'flex-basis: 220px;',
+      'grid-template-rows: minmax(220px, 1fr);',
+    ],
+  },
 ];
 
 describe('exception blocks: allowed in scope, absent elsewhere', () => {
@@ -269,6 +320,88 @@ describe('cross-scope leaks between neighbouring exceptions', () => {
       assert.ok((await problems(`${EL}/sk-work-package-board/sk-work-package-board.ts`, css)).length >= 1, css);
     }
   });
+  test('E-21: text-overflow ellipsis in header-parts.ts only, overflow-wrap break-word in facts-parts.ts only, and only those values', async () => {
+    const header = `${EL}/sk-work-package-screen/header-parts.ts`;
+    const facts = `${EL}/sk-work-package-screen/facts-parts.ts`;
+    assert.deepEqual(await problems(header, 'text-overflow: ellipsis;'), []);
+    assert.deepEqual(await problems(facts, 'overflow-wrap: break-word;'), []);
+    // refused in a sibling and across the pair
+    for (const [file, css] of [
+      [`${EL}/sk-work-package-screen/panel-parts.ts`, 'text-overflow: ellipsis;'],
+      [`${EL}/sk-work-package-screen/panel-parts.ts`, 'overflow-wrap: break-word;'],
+      [`${EL}/sk-work-package-screen/state-parts.ts`, 'text-overflow: ellipsis;'],
+      [facts, 'text-overflow: ellipsis;'],
+      [header, 'overflow-wrap: break-word;'],
+      [OTHER, 'text-overflow: ellipsis;'],
+    ]) {
+      assert.ok((await problems(file, css)).length >= 1, `${file} ${css}`);
+    }
+    // other values refused
+    for (const css of ['text-overflow: clip;', 'text-overflow: "…";', 'white-space: nowrap;', 'word-break: break-all;']) {
+      assert.ok((await problems(header, css)).length >= 1, `header ${css}`);
+    }
+    for (const css of ['overflow-wrap: foo;', 'word-break: break-all;', 'hyphens: auto;', 'text-overflow: ellipsis;']) {
+      assert.ok((await problems(facts, css)).length >= 1, `facts ${css}`);
+    }
+  });
+  test('E-21 pill rule (operator ruling during WP09, pills ellipsize): one shared file carries it; review-parts adds break-word for text values', async () => {
+    const shared = `${EL}/sk-work-package-screen/shared-parts.ts`;
+    const review = `${EL}/sk-work-package-screen/review-parts.ts`;
+    const rule = 'max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;';
+    assert.deepEqual(await problems(shared, rule), []);
+    assert.deepEqual(await problems(review, 'overflow-wrap: break-word;'), []);
+    let refused = 0;
+    for (const file of [`${EL}/sk-work-package-screen/header-parts.ts`, `${EL}/sk-work-package-screen/facts-parts.ts`, review, `${EL}/sk-work-package-screen/work-parts.ts`, `${EL}/sk-work-package-screen/history-parts.ts`, OTHER]) {
+      for (const css of ['max-width: 100%;', 'white-space: nowrap;']) {
+        assert.ok((await problems(file, css)).length >= 1, `${file} ${css}`);
+        refused += 1;
+      }
+    }
+    assert.equal(refused, 12);
+    let values = 0;
+    for (const css of ['white-space: normal;', 'white-space: pre;', 'overflow: auto;', 'overflow: scroll;', 'text-overflow: clip;', 'max-width: 50%;', 'max-width: 300px;', 'overflow-wrap: anywhere;', 'word-break: break-all;']) {
+      assert.ok((await problems(shared, css)).length >= 1, `shared ${css}`);
+      values += 1;
+    }
+    assert.equal(values, 9);
+    for (const css of ['overflow-wrap: anywhere;', 'white-space: normal;']) {
+      assert.ok((await problems(review, css)).length >= 1, `review ${css}`);
+    }
+  });
+  test('E-21 (third file, derived from the CP-1 ruling): overflow-wrap break-word and text-align start in chain-parts.ts only, and only those values', async () => {
+    const chain = `${EL}/sk-work-package-screen/chain-parts.ts`;
+    const header = `${EL}/sk-work-package-screen/header-parts.ts`;
+    const facts = `${EL}/sk-work-package-screen/facts-parts.ts`;
+    assert.deepEqual(await problems(chain, 'overflow-wrap: break-word;'), []);
+    assert.deepEqual(await problems(chain, 'text-align: start;'), []);
+    assert.deepEqual(await problems(chain, 'overflow-wrap: break-word; text-align: start;'), []);
+    // refused in the siblings, in the other E-21 files (text-align) and elsewhere
+    let refused = 0;
+    for (const [file, css] of [
+      [`${EL}/sk-work-package-screen/panel-parts.ts`, 'text-align: start;'],
+      [`${EL}/sk-work-package-screen/panel-parts.ts`, 'overflow-wrap: break-word;'],
+      [`${EL}/sk-work-package-screen/work-parts.ts`, 'overflow-wrap: break-word;'],
+      [`${EL}/sk-work-package-screen/work-parts.ts`, 'text-align: start;'],
+      [header, 'text-align: start;'],
+      [header, 'overflow-wrap: break-word;'],
+      [facts, 'text-align: start;'],
+      [OTHER, 'text-align: start;'],
+      [OTHER, 'overflow-wrap: break-word;'],
+      // the other files' E-21 property is not granted here
+      [chain, 'text-overflow: ellipsis;'],
+    ]) {
+      assert.ok((await problems(file, css)).length >= 1, `${file} ${css}`);
+      refused += 1;
+    }
+    assert.equal(refused, 10);
+    // other values refused in the chain file
+    let values = 0;
+    for (const css of ['overflow-wrap: anywhere;', 'overflow-wrap: foo;', 'word-break: break-all;', 'hyphens: auto;', 'white-space: nowrap;', 'text-align: center;', 'text-align: left;', 'text-align: right;', 'text-align: end;', 'text-align: justify;']) {
+      assert.ok((await problems(chain, css)).length >= 1, `chain ${css}`);
+      values += 1;
+    }
+    assert.equal(values, 10);
+  });
   test('exception keywords are granted per property, not file-wide (PR-EXC-001)', async () => {
     const refused = {
       [`${EL}/sk-pipeline-screen/pipeline-parts.ts`]: [
@@ -300,5 +433,130 @@ describe('cross-scope leaks between neighbouring exceptions', () => {
   });
   test('global rules still hold: a plain px padding fails everywhere', async () => {
     assert.ok((await problems(`${EL}/sk-phase-bar/sk-phase-bar.ts`, 'padding: var(--sk-space-1) 4px;')).length >= 1);
+  });
+});
+
+describe('E-18 narrowed: exactly the five properties, token values only, in panel-parts.ts only', () => {
+  const PANEL = `${EL}/sk-work-package-screen/panel-parts.ts`;
+  const FIVE =
+    'border-width: var(--sk-border-width-1); border-radius: var(--sk-radius-md); padding: var(--sk-space-5); font-size: var(--sk-text-lg); font-weight: var(--sk-weight-bold); margin-block: 0 var(--sk-space-4); row-gap: 0;';
+  test('the five pass in panel-parts.ts', async () => {
+    assert.deepEqual(await problems(PANEL, FIVE), []);
+  });
+  test('the paint of the five is refused in every other file of the screen, and in the two other part files', async () => {
+    let ran = 0;
+    for (const file of [
+      `${EL}/sk-work-package-screen/sk-work-package-screen.ts`,
+      `${EL}/sk-work-package-screen/header-parts.ts`,
+      `${EL}/sk-work-package-screen/state-parts.ts`,
+      OTHER,
+    ]) {
+      for (const css of ['border-width: var(--sk-border-width-1);', 'border-radius: var(--sk-radius-md);', 'font-size: var(--sk-text-lg);', 'font-weight: var(--sk-weight-bold);']) {
+        assert.ok((await problems(file, css)).length >= 1, `${file} ${css}`);
+        ran += 1;
+      }
+    }
+    assert.equal(ran, 16);
+  });
+  test('a sixth property is refused in panel-parts.ts, with the five beside it', async () => {
+    let ran = 0;
+    for (const sixth of ['letter-spacing: var(--sk-tracking-wide);', 'background: var(--sk-surface-hero);', 'box-shadow: var(--sk-shadow-md);', 'color: var(--sk-fg-subtle);']) {
+      assert.ok((await problems(PANEL, `${FIVE} ${sixth}`)).length >= 1, sixth);
+      ran += 1;
+    }
+    assert.equal(ran, 4);
+  });
+  test('no E-18 property is granted for the Missions and Pipeline screens', async () => {
+    for (const file of [`${EL}/sk-pipeline-screen/pipeline-parts.ts`, `${EL}/sk-missions-screen/mission-row-parts.ts`]) {
+      assert.ok((await problems(file, 'border-width: var(--sk-border-width-1);')).length >= 1, file);
+    }
+  });
+});
+
+describe('E-19 (b): the track minimums in the screen file only; the container lengths need no exception (E-19 (a) deleted)', () => {
+  const SCREEN = `${EL}/sk-work-package-screen/sk-work-package-screen.ts`;
+  test('the three explicit-track recipes without a pixel length pass in the screen file', async () => {
+    assert.deepEqual(await problems(SCREEN, 'grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-columns: minmax(0, 1fr);'), []);
+  });
+  test('the pixel minimums are refused in every other file of the screen', async () => {
+    let ran = 0;
+    for (const file of [`${EL}/sk-work-package-screen/panel-parts.ts`, `${EL}/sk-work-package-screen/chain-parts.ts`, OTHER]) {
+      assert.ok((await problems(file, 'grid-template-columns: minmax(220px, .8fr) minmax(320px, 1.2fr);')).length >= 1, file);
+      ran += 1;
+    }
+    assert.equal(ran, 3);
+  });
+  test('a container query with pixel lengths passes everywhere (no exception was needed)', async () => {
+    const code = "import { css } from 'lit';\nexport const s = css`\n  @container (min-width: 848px) { .x { display: grid; } }\n  @container (max-width: 688px) { .x { display: block; } }\n`;\n";
+    for (const file of [`${EL}/sk-work-package-screen/sk-work-package-screen.ts`, OTHER]) {
+      const result = await stylelint.lint({ code, codeFilename: join(root, file), config, configBasedir: root });
+      assert.deepEqual(result.results.flatMap((r) => r.warnings), [], file);
+    }
+  });
+  test('E-20 is dropped: nothing in the screen directory is granted for a raw button, and the ESLint config has no allowance for chain-parts.ts', async () => {
+    const eslint = new ESLint({ cwd: root });
+    const [result] = await eslint.lintText("import { html } from 'lit';\nexport const t = html`<button type=\"button\">x</button>`;\n", {
+      filePath: join(root, `${EL}/sk-work-package-screen/chain-parts.ts`),
+    });
+    assert.ok((result?.messages ?? []).some((m) => m.ruleId === 'no-restricted-syntax' && /Raw <button>/.test(m.message)));
+  });
+});
+
+// E-17: one `classOnly` override per listed file, each with a leak plant (a class outside the file's prefixes is refused).
+// The plants live here with the stylelint scope proofs: #4 proved E-01 to E-03 by the gate-proof plants, which are not a test file.
+describe('E-17: the class= overrides of the Work Package screen, per file, with leak plants', () => {
+  const eslint = new ESLint({ cwd: root });
+  const lintClass = async (file, classes) => {
+    const code = `import { html } from 'lit';\nexport const t = html\`<div class="${classes}"></div>\`;\n`;
+    const [result] = await eslint.lintText(code, { filePath: join(root, `${EL}/sk-work-package-screen/${file}`) });
+    return (result?.messages ?? []).filter((m) => m.ruleId === 'no-restricted-syntax').map((m) => m.message);
+  };
+  // file, the prefixes its row grants, one class of each
+  const ROWS = [
+    ['history-parts.ts', ['sk-event-timeline']],
+    ['facts-parts.ts', ['sk-facts']],
+    ['work-parts.ts', ['sk-facts', 'sk-progress']],
+    ['header-parts.ts', ['sk-breadcrumbs']],
+    ['state-parts.ts', ['sk-empty-state', 'sk-progress']],
+  ];
+  const UNLISTED = ['files-parts.ts', 'review-parts.ts', 'chain-parts.ts', 'panel-parts.ts', 'sk-work-package-screen.ts'];
+  const ALL_PREFIXES = ['sk-event-timeline', 'sk-facts', 'sk-progress', 'sk-breadcrumbs', 'sk-empty-state'];
+
+  test('a granted prefix passes, in its own file only', async () => {
+    let ran = 0;
+    for (const [file, prefixes] of ROWS) {
+      for (const prefix of prefixes) {
+        assert.deepEqual(await lintClass(file, `${prefix}__part ${prefix}`), [], `${file} ${prefix}`);
+        ran += 1;
+      }
+    }
+    assert.equal(ran, 7);
+  });
+  test('leak plant: a class outside the file\'s prefixes is refused, including another file\'s granted prefix', async () => {
+    let ran = 0;
+    for (const [file, prefixes] of ROWS) {
+      assert.ok((await lintClass(file, 'plain-class')).length >= 1, `${file} plain-class`);
+      assert.ok((await lintClass(file, `${prefixes[0]} plain-class`)).length >= 1, `${file} mixed`);
+      for (const other of ALL_PREFIXES.filter((p) => !prefixes.includes(p))) {
+        assert.ok((await lintClass(file, other)).length >= 1, `${file} ${other}`);
+        ran += 1;
+      }
+      ran += 2;
+    }
+    assert.equal(ran, 5 * 2 + 4 + 4 + 3 + 4 + 3);
+  });
+  test('the files the table does not list carry no class at all, whatever the prefix', async () => {
+    let ran = 0;
+    for (const file of UNLISTED) {
+      for (const prefix of ALL_PREFIXES) {
+        assert.ok((await lintClass(file, prefix)).some((m) => /class= is forbidden/.test(m)), `${file} ${prefix}`);
+        ran += 1;
+      }
+    }
+    assert.equal(ran, 25);
+  });
+  test('there is no sk-breadcrumbs row for state-parts.ts', async () => {
+    assert.ok((await lintClass('state-parts.ts', 'sk-breadcrumbs')).length >= 1);
+    assert.deepEqual(await lintClass('header-parts.ts', 'sk-breadcrumbs'), []);
   });
 });

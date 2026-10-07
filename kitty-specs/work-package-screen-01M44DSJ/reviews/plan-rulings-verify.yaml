@@ -1,0 +1,123 @@
+schema: review-findings/v1
+complete: true
+phase: plan-rulings
+findings:
+  - id: RUL-001
+    severity: 3
+    title: 'Layout recipe repeat(2, minmax(0, 1fr)) is red under the data-driven gate (S12.1)'
+    evidence:
+      - 'contracts/sk-work-package-screen.md § Layout (two-column tier: third stack as repeat(2, minmax(0, 1fr)))'
+      - 'plan.md § Architecture table row 2, and contracts/gates.md E-19 (b) (repeat(2, minmax(0, 1fr)) below the two columns)'
+      - 'pr6-folds eslint.data-driven.config.mjs entry S12.1 (TemplateElement /repeat\(\s*\d+\s*,/ = hard-coded track count in CSS text); ALLOW_LIST does not include the screen file; fixture s12-1-track-count.ts.txt'
+    claim: 'The data-driven gate scans every .ts file in packages/*/src outside defaults, contract, stories, fixtures and story-support. The screen css template in sk-work-package-screen.ts would contain repeat(2, ...) and fail S12.1. No artifact mentions this, and the E-19 (b) exception only covers px lengths, not this gate.'
+    remediation: 'Write the spanning third stack as two explicit tracks (minmax(0, 1fr) minmax(0, 1fr)) with no repeat(N, ...) form, and change the text in contracts/sk-work-package-screen.md Layout, plan.md Architecture and contracts/gates.md E-19 (b) to match.'
+  - id: RUL-002
+    severity: 3
+    title: 'CORRECT-012 (a) leaves the visual gate red for IC-04 to IC-08 and is not carried into those sections'
+    evidence:
+      - 'pr6-folds apps/storybook/tests/visual/stories.visual.spec.ts + playwright.config.ts (every story in index.json gets toHaveScreenshot against a committed snapshot; a missing snapshot fails)'
+      - 'plan.md § Shared files (baseline PNGs IC-09 only) and § Gates (pnpm visual part of the gate set); IC-04 to IC-08 sections carry no handover or visual-gate rule'
+      - 'plan.md § Rulings applied row PLAN-CORRECT-012 claims application in IC-04 to IC-09; WP brief rule list in § PR shape omits it'
+    claim: 'Stories committed by IC-04 to IC-08 have no baseline until IC-09, so pnpm visual is red by construction on every region WP. No text says how the per-WP gate set treats it, and the Where-applied claim for IC-04 to IC-08 is not true of those sections.'
+    remediation: 'State in plan.md Gates, the WP brief rules and each of IC-04 to IC-08 that pnpm visual is NOT an exit check of those WPs (missing snapshots are the known red); their exit evidence is the uncommitted side-by-side screenshot per story, no PNG committed; pnpm visual first runs green in IC-09.'
+  - id: RUL-003
+    severity: 3
+    title: 'Contract version literal 1.1.0-SNAPSHOT is asserted while the upstream lane is moving to 1.0.0-SNAPSHOT'
+    evidence:
+      - 'contracts/contract-pin.md step 1 (infoVersion and changelogTopVersion 1.1.0-SNAPSHOT), types header text; research.md § Evidence Contract 1.1 (Version row); plan.md Summary'
+      - 'lane checkout .../mission-status-contract-1-1-01M42XJC-lane-a: HEAD 0c3fc4951 follows commit fd3013bcc reopen WP07 for the no-new-version ruling; uncommitted edits set contracts/mission-status/openapi.yaml info.version to 1.0.0-SNAPSHOT and rewrite CHANGELOG.md top heading to 1.0.0-SNAPSHOT'
+      - 'git: 8cc31f44 and HEAD have 0 differing contract files (committed state), 150 files, 60 files differ from the 9f41e48 pin (these counts are true)'
+    claim: 'The plan treats the version strings as fixed facts of the pin. The lane is mid-change under a no-new-version ruling, so the next tip may carry 1.0.0-SNAPSHOT while the schemas stay. PIN.json literals, the generated header and any test or exit check that expects 1.1.0-SNAPSHOT would then be wrong.'
+    remediation: 'Say in contract-pin.md, research D-09 and plan IC-01 that infoVersion, changelogTopVersion and the generated-header version are read from the pinned commit at IC-01, and that 1.1.0-SNAPSHOT is the value at plan-time tip 8cc31f44 only; no test or exit check may hard-code it. 1.1 is the slice label, not a promised version string.'
+  - id: RUL-004
+    severity: 3
+    title: 'IC-09 pairing assertion no two stories share a pairing and a state is violated by the pairing table'
+    evidence:
+      - 'contracts/contract-pin.md § Pairing (last paragraph and the assertion list) and § Pairing table: WP-01, WP-11, WP-25, WP-31, WP-34 are all wpPopulated + detailPopulated with cycles none; WP-46 to WP-48 repeat the pairing'
+      - 'contracts/sk-work-package-screen.md IC-09 row and plan.md IC-09 (pairing test)'
+    claim: 'Five stories at 1280 px share one pairing and the same ready state, so the ruled assertion (FRESH-001/002) fails on the plan''s own table, or is vacuous depending on how state is read. WP-28 and WP-49 differ only by the tab-n tag.'
+    remediation: 'Scope the assertion to what the ruling is about: no two stories may share WorkPackage fixture, detail fixture, cycles option and status/detailStatus unless the table lists them as same-composition rows (WP-01, 11, 25, 31, 34 and the viewport rows 46 to 48, which differ in region under test or viewport); add a negative case WP-02 versus WP-29.'
+  - id: RUL-005
+    severity: 3
+    title: 'renderEmptyForm is a stub owned by IC-07 but IC-04 to IC-06 stories need it, and chain X never receives it'
+    evidence:
+      - 'contracts/sk-work-package-screen.md § Part signatures (state-parts.ts: renderEmptyForm stub at IC-03b); plan.md § Shared files (state-parts.ts: IC-07, stub bodies only)'
+      - 'IC-04 WP-09 (empty-history form), IC-06 WP-10, WP-15, WP-27, WP-35c (empty forms) call the shared helper; IC-07 depends on IC-06 and chain X (IC-04, IC-05) only meets IC-07 at the IC-08 merge'
+      - 'E-17: sk-empty-state* is allowed in state-parts.ts only, so region parts cannot draw their own'
+    claim: 'Under ARCH-003 (A) later WPs fill only stub bodies of the files they own. The one shared empty-form helper is filled by the last chain-Y WP, so IC-04 to IC-06 must either edit a file they do not own or hand over stories with the empty forms missing. Same ownership defect that FRESH-003 (a) fixed for the crumb.'
+    remediation: 'Have IC-03b write renderEmptyForm complete in state-parts.ts (with its E-17 sk-empty-state* override and leak plant), exactly as for renderBreadcrumb; IC-07 fills only the other state-parts bodies. Update Part signatures (State at IC-03b), Shared files, IC-03b and IC-07.'
+  - id: RUL-006
+    severity: 2
+    title: 'ARCH-003 text adds a progress sheet to library-sheets.ts but #4 already ships progress-sheet.ts'
+    evidence:
+      - 'plan.md § Shared files (library-sheets.ts: event-timeline, facts and progress sheets) and IC-03b Purpose; research D-02 and contracts/sk-work-package-screen.md § Dependencies on #4 list progress-sheet.ts as imported'
+      - 'pr6-folds packages/mission-ui/src/progress-sheet.ts (exports progressSheet from @spec-kitty/styles/progress); library-sheets.ts has breadcrumbs, empty-state and others but no event-timeline or facts'
+    claim: 'Adding a progress sheet to library-sheets.ts creates a second home for the same sheet and contradicts the rule that reuse is by import, never by copy.'
+    remediation: 'IC-03b adds only the event-timeline and facts sheets to library-sheets.ts and the screen imports the existing progress-sheet.ts; fix the three mentions in plan.md (Shared files, IC-03b) and the Rulings applied row.'
+  - id: RUL-007
+    severity: 2
+    title: 'VISUAL-006 (b) spike path is outside the Storybook glob, so the spikes cannot be rendered'
+    evidence:
+      - 'plan.md § IC-03a (spikes under spikes/ic-03a/ outside lint, Stylelint, story, manifest and test globs; the WP runs pnpm visual to produce evidence)'
+      - 'pr6-folds apps/storybook/.storybook/main.ts stories glob is ../../../packages/mission-ui/src/**/*.stories.ts; pnpm lint is eslint . (does reach a root spikes dir)'
+    claim: 'Spike stories at a root path excluded from the story glob never enter index.json, so there is nothing to screenshot; and pnpm visual compares committed snapshots that the spikes do not have. The text also says the ESLint ignores entry is added only if a glob matches.'
+    remediation: 'State that IC-03a adds one stories entry for spikes/ic-03a/** to the Storybook main config and one ESLint ignores entry, both removed by the named final commit, and that the evidence is captured with the pinned-container screenshot run (uncommitted), not by a pnpm visual pass.'
+  - id: RUL-008
+    severity: 2
+    title: 'Ruling text says all 13 technical forks; recomputed count is 14 technical plus ARCH-010 (15 forks)'
+    evidence:
+      - 'spec.md § Clarifications, Operator rulings 2026-10-05, first paragraph (all 13 technical forks)'
+      - 'tracer-design-decisions.md § Operator rulings 2026-10-05 (all 13 technical forks), whose own Forks bullet lists 14 ids plus ARCH-010'
+      - 'plan.md § Rulings applied table has 15 fork rows; the arbiter marks only ARCH-010 as operator-eye'
+    claim: 'The recorded count of technical forks is wrong (13 against 14), in the two documents that carry the ruling text.'
+    remediation: 'Write all 14 technical forks and ARCH-010 (A) in both places.'
+  - id: RUL-009
+    severity: 2
+    title: 'Scope In still lists shell wiring of SH-06 and SH-07'
+    evidence:
+      - 'spec.md § Scope In (shell wiring of SH-06 and SH-07)'
+      - 'spec.md FR-037 and P-4: SH-06 and SH-07 untouched, baselines unchanged'
+    claim: 'Leftover wording says the mission wires those shell stories while the ruling says it must not touch them.'
+    remediation: 'Replace with the screen shown as shell content by WP-01 and WP-43 in shellFrame; SH-06 and SH-07 left untouched (FR-037).'
+  - id: RUL-010
+    severity: 2
+    title: 'NFR-009 title and dynamic-pipeline section still say the data-driven gate is unchanged'
+    evidence:
+      - 'spec.md NFR-009 (title Data-driven gate unchanged; refusal code listed among words that may need new gate words)'
+      - 'spec.md § The dynamic-pipeline constraint (applies to this screen unchanged)'
+      - 'plan.md IC-02 and contracts/gates.md: ARCH-006 (A) extends the gate; it does not read refusal codes or ArtifactKind'
+    claim: 'The requirement text contradicts the ruled extension and names refusal codes as covered by the gate.'
+    remediation: 'Retitle NFR-009 to the gate being extended in IC-02 for verdict, change-state and staleness words, say refusal codes and ArtifactKind are covered by the self-check list and foreign-value tests, and drop unchanged from the constraint section.'
+  - id: RUL-011
+    severity: 2
+    title: 'User Story 6 scenario 2 replaces six regions with the notice; plan replaces only three'
+    evidence:
+      - 'spec.md User Story 6 acceptance 2 (subtasks list, dependencies with titles, review cycles, workspace, owned files, artifact links replaced by one notice)'
+      - 'data-model.md § View states detailStatus table; contracts/sk-work-package-screen.md § Regions (region-set test: only review-cycles, workspace, artifact-links replaced); spec SC-004 and FR-024'
+    claim: 'Subtasks, dependencies and owned files stay as bare lists under a loading or refused detail, so the story as written cannot be tested against the specified region-set.'
+    remediation: 'Reword scenario 2: the three detail-only regions (review cycles, workspace, artifact links) are replaced by one notice; subtasks, dependencies and owned files remain in their bare 1.0 form.'
+  - id: RUL-012
+    severity: 1
+    title: 'FR-031 puts error changes in the polite live region; the contract says the assertive alert alone announces errors'
+    evidence:
+      - 'spec.md FR-031 (a polite live region for loading, ready and error changes)'
+      - 'contracts/sk-work-package-screen.md § Announcements (status becomes error: nothing from the region)'
+    claim: 'Requirement and contract disagree on who announces an error.'
+    remediation: 'Edit FR-031 to say the polite region announces loading, ready, not-found and detail changes, and the alert notice announces errors.'
+  - id: RUL-013
+    severity: 1
+    title: 'Detail notice position names the Workspace slot as the first detail-only region in reading order'
+    evidence:
+      - 'data-model.md § View states (drawn once at the position of the first detail-only region in reading order, the Workspace slot of column 3)'
+      - 'spec.md DW-23: Review (with review-cycles) is in column 2, before column 3'
+    claim: 'In reading order the review-cycles slot precedes Workspace, so the stated position is self-contradictory.'
+    remediation: 'Name the review-cycles slot (column 2, inside the Review panel) as the notice position.'
+  - id: RUL-014
+    severity: 1
+    title: 'Two small false pointers in the new ruling text'
+    evidence:
+      - 'spec.md Clarifications 2026-10-05 (the rulings table in tracer-design-decisions.md): that file has a bullet summary, the table is plan.md Rulings applied'
+      - 'contracts/contract-pin.md § Other tooling changes (RELAXATIONS entries now carry their own schema) against pr6-folds scripts/contract/registry.mjs, where phases-open and lane-open already carry schema; only the equality assertion in check.mjs is new'
+    claim: 'The pointer names the wrong file, and the schema field is described as new when #4 already has it. Also contract-pin.md Fixture inventory keeps change-log narrative (detailWorkspaceAllNull is deleted ... are added).'
+    remediation: 'Point to plan.md Rulings applied; say check.mjs gains the schema-equality assertion; delete the change-log sentence about deleted and added fixtures.'
+

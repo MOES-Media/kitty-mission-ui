@@ -31,10 +31,15 @@ export function compile(schema) {
   return ajv.compile(schema);
 }
 
-/** Run a compiled validator; errors are reduced to path, keyword and message. */
+/** Run a compiled validator; errors are reduced to path, keyword and message (plus the missing property of a `required` error). */
 export function validateWith(validate, doc) {
   const valid = validate(doc) === true;
-  const errors = (validate.errors ?? []).map((e) => ({ path: e.instancePath, keyword: e.keyword, message: e.message ?? '' }));
+  const errors = (validate.errors ?? []).map((e) => ({
+    path: e.instancePath,
+    keyword: e.keyword,
+    message: e.message ?? '',
+    ...(e.keyword === 'required' ? { missingProperty: e.params?.missingProperty } : {}),
+  }));
   return { valid, errors };
 }
 

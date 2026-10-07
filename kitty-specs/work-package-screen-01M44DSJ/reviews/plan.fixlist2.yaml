@@ -1,0 +1,95 @@
+schema: review-findings/v1
+complete: true
+phase: plan
+lens_group: ROUND2
+mission: work-package-screen-01M44DSJ
+findings:
+- id: PLAN-CORRECT-005
+  lens: Contract fidelity
+  severity: 3
+  title: detailWorkspaceAllNull is described as "laneId the only non-null member", which is neither all-null nor a valid reading of the schema, and it duplicates detailNullWorkspace
+  evidence:
+  - artifact: "contracts/contract-pin.md \xA7 WorkPackageDetail fixtures (detailNullWorkspace; detailWorkspaceAllNull: \"laneId the only non-null member ... if the schema requires laneId non-null\"); spec.md\
+      \ WP-32, WP-33"
+  - code: 'lane contracts/mission-status/schemas/Workspace.yaml: laneId, laneBranch and planningBranch are all type [string, null]; worktreePresent boolean'
+  - code: 'lane contracts/mission-status/examples/WorkPackageDetail.null-workspace.yaml: laneId null, laneBranch null, planningBranch null, worktreePresent false'
+  - artifact: 'contracts/contract-pin.md rows detailNullWorkspace (WP-32), detailWorkspaceAllNull (WP-33b: ''laneId the only non-null member as the contract allows ... if the schema requires laneId non-null'')'
+  - code: '<lane-1.1>/schemas/Workspace.yaml: laneId is string or null (nullable); examples/WorkPackageDetail.null-workspace.yaml is all-null with worktreePresent false'
+  claim: 'The schema lets laneId be null, so the hedge is unnecessary. The example WorkPackageDetail.null-workspace is already the all-null "no lanes" workspace that spec row WP-33 (all-null) needs. detailWorkspaceAllNull,
+    as written, is a lane-planning variant with only laneId set. WP-32 (worktreePresent false with a lane present, and "no claim that it was removed", R-4) is mapped to detailNullWorkspace, which has no
+    lane at all. So WP-32 and WP-33b would render nearly the same workspace and the R-4 case would never be shown.
+
+    [merged PLAN-VERIFY-020] laneId is nullable, so the hedge is moot. The all-null workspace is exactly the null-workspace example already used for WP-32, so WP-32 and WP-33b are the same data and give
+    two identical baselines. The intended WP-32 case (a lane present, worktreePresent false, where the ''removed'' claim must not appear, R-4) is never exercised.'
+  remediation: 'Map WP-33b to detailNullWorkspace and delete detailWorkspaceAllNull (46 detail fixtures become 19, total new 46). Add a WP-32 fixture overlay (for example detailWorkspaceNoWorktree, from
+    detailPopulated with worktreePresent false and a lane set) or reuse the workspace of the unparseable-cycle example. Update the row-to-fixture table, the counts (47, 56 stories unchanged) and the story
+    catalogue.
+
+    [merged PLAN-VERIFY-020] Use an overlay with laneId lane-a, a lane branch and worktreePresent false for WP-32. Keep null-workspace for WP-33b and delete the hedge text. Assert in the WP-32 test that
+    no word implying removal appears.'
+  merged_from:
+  - PLAN-VERIFY-020
+  refuter_reason: Workspace.laneId is nullable, so the contract-pin.md line 101 hedge is moot; WP-32 and WP-33b both end up as the all-null workspace (null-workspace example), and no fixture shows a lane
+    present with worktreePresent false (R-4). Severity 3 is right.
+  fork: false
+  r5a_reason: detailWorkspaceAllNull is deleted, WP-33b maps to detailNullWorkspace and WP-32 gets detailWorkspaceNoWorktree. However contract-pin.md line 160 still says "(45 if the two omitted-member entries
+    are built in the stories instead)", and with 48 new exports it should read 46 (a leftover from the old 47).
+- id: PLAN-VISUAL-009
+  lens: Accessibility (link purpose, duplicate names)
+  severity: 3
+  title: Repeated controls with identical accessible names ("Open review" per cycle; the same dependency as a Frontmatter node and a chain node)
+  evidence:
+  - artifact: contracts/defaults.md OPEN_REVIEW_LABEL 'Open review'; contracts/sk-work-package-screen.md Behaviour rules, Focus order (Open review links in cycle order; Frontmatter dependency nodes and
+      dependency chain nodes both controls); spec.md FR-030, NFR-003
+  claim: With two review cycles WP-28 shows two links named only 'Open review', and a dependency appears twice as a control (Frontmatter column 1 and the Dependency chain column 3) with the same name and
+    the same event. A screen-reader links list cannot tell them apart (WCAG 2.4.4). The plan gives no accessible-name rule for either, and nothing states the tab-stop count for a dependency that is shown
+    twice.
+  remediation: 'Define the accessible names in defaults/: ''Open review, cycle N'' (cycle number printed as given) and a dependency node name that includes id, title and lane word, with the Frontmatter
+    occurrence either non-interactive (as in the prototype, where Frontmatter dependencies are plain badges) or named ''Frontmatter dependency WPxx''. Add an assertion in the WP-28 and WP-49 tests that
+    no two controls share a name unless they are the same destination on purpose.'
+  refuter_reason: defaults.md has a single OPEN_REVIEW_LABEL "Open review" with no per-cycle accessible-name rule, and the screen contract makes both Frontmatter dependency nodes and dependency-chain nodes
+    controls with no distinguishing name rule.
+  fork: false
+  r5a_reason: Names are now unique ("Open review, cycle N", dependencyNodeLabel) and the duplicate is removed by making Frontmatter dependencies non-interactive pills. That contradicts spec DW-7 ("dependencies
+    as titled, actionable nodes", marked confirm), and neither the amendment list (P-1 to P-6) nor the CP-1 packet records it, so the implementation would drift from a register item.
+- id: PLAN-FRESH-004
+  lens: scope
+  severity: 2
+  title: Amendment count is stated as P-1 to P-4 in two places while P-6 (and reserved P-5) exist
+  evidence:
+  - artifact: 'plan.md Charter Check last row: "proposals P-1 to P-4"'
+  - artifact: 'plan.md IC-09: PR description inputs "amendments P-1 to P-4"'
+  - artifact: 'plan.md Spec amendment proposals: P-6 is a real proposal (DW-24, FR-029 620 versus 800 px; WP-40 wording)'
+  claim: P-6 is a required spec correction but is dropped from the Charter Check and from the PR-description inputs, so it could reach the PR unreported. Also P-5 is reserved for a fork option, so the numbering
+    gap is intentional only if stated at the list sites.
+  remediation: Write "P-1 to P-4 and P-6 (P-5 reserved for PLAN-CORRECT-008 option b)" in the Charter Check and IC-09.
+- id: PLAN-FRESH-005
+  lens: correspondence
+  severity: 2
+  title: Panel chrome is built into the plan while PLAN-ARCH-010 is open
+  evidence:
+  - artifact: 'plan.md Shared files and source tree: panel-parts.ts "IC-03b (titled panel, panelStyles)" with no [PLAN-ARCH-010] tag; IC-03b purpose "panelStyles"'
+  - artifact: 'plan.md Open forks, PLAN-ARCH-010 option A: panelStyles mostly disappear'
+  claim: Several untagged lines (file table, IC-03b purpose, architecture diagram parts list) presuppose flat custom panels (option B). The revision promised that affected text is tagged; these lines would
+    be read as decided.
+  remediation: Tag these lines [PLAN-ARCH-010] and word them as "panel container (chrome per the fork)".
+- id: PLAN-FRESH-006
+  lens: correspondence
+  severity: 1
+  title: Spike S0 is placed in IC-03a by research and in IC-01 by plan
+  evidence:
+  - artifact: 'research.md Spikes: "front-loaded in IC-03a", table row S0'
+  - artifact: 'plan.md IC-01 Purpose: "spike S0"; IC-03a lists S5 to S8 only'
+  claim: Owner of S0 is stated two ways; IC-03a is also described as holding the spikes before CP-1 while S0 runs earlier and is not part of the CP-1 packet.
+  remediation: Change the research heading to "S0 in IC-01; S5 to S8 in IC-03a".
+- id: PLAN-FRESH-007
+  lens: correspondence
+  severity: 1
+  title: Fixture "Rows" column omits stories that use the fixture; resolveRefusal has no logic file
+  evidence:
+  - artifact: 'contracts/contract-pin.md: detailPopulated rows list WP-01, 03, 04, 11, 14, 25, 28, 31, 34, 49 but WP-46, 47, 48 use it (catalogue); wpPopulated rows list WP-01 only though it is the default
+      side for about 20 stories'
+  - artifact: plan.md source tree lists 7 logic files; contracts/defaults.md lists 9 functions, resolveRefusal has no named file
+  claim: The traceability of fixture to story is incomplete, and one logic function has no owner file, which matters because IC-02 is the only writer of src/logic.
+  remediation: Add WP-46 to 48 to the detailPopulated row and say "default side of every unnamed pair" for wpPopulated; assign resolveRefusal (and resolveChangeState, resolveVerdict) to named files, for
+    example wp-retry.ts, wp-files.ts, wp-review.ts.

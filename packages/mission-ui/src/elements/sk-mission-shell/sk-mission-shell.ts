@@ -414,7 +414,12 @@ export class SkMissionShell extends LitElement {
   @property({ type: Boolean, attribute: 'flyout-open' })
   flyoutOpen = false;
 
-  /** Read-only: derived from the window width, re-asserted on every update. */
+  /**
+   * Read-only: derived from the window width, re-asserted on every update. The current tier (`expanded`, `collapsed` or
+   * `mobile`) is reflected on the host as the `tier` attribute and is public: a slotted screen may read it and observe its
+   * changes, through `ShellTierController` (the Work Package screen shows one column in the mobile tier, where the content
+   * cell is the whole viewport).
+   */
   @property({ reflect: true, attribute: 'tier' })
   tier: ShellTier = 'expanded';
 

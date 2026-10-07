@@ -1,0 +1,30 @@
+schema: review-refute/v1
+complete: true
+phase: plan
+batch: 5
+verdicts:
+  - id: PLAN-VISUAL-010
+    verdict: confirmed
+    reason: 'research.md D-14 has the polite region announce loading, ready and error and cites the #4 pattern, but sk-missions-screen.ts announces only result counts and uses an assertive sk-notice for errors. The contract adds a role=status busy region for loading, so the duplicate announcements and the missing ready-text and re-announce rules are real.'
+  - id: PLAN-VISUAL-011
+    verdict: confirmed
+    reason: 'The contract Focus order section and quickstart.md cover Tab order only. Nothing defines focus after Retry, a dependency-node swap or Return removes the focused control. The contract says Focus emits nothing (EV-8) and no test is planned for it.'
+  - id: PLAN-VISUAL-012
+    verdict: confirmed
+    reason: 'The contract fixes h1 for the ready header only. not-found and nothing-selected draw their own header with no declared h1, and no nav, aria-current or list-naming semantics appear anywhere in the artifacts.'
+  - id: PLAN-VISUAL-013
+    verdict: confirmed
+    reason: 'research.md S5 and G-12 leave sk-evidence-chain semantics unknown, since it has no named property and slotted nodes are an inference. Order and arrow semantics are not specified. Severity 2 is right.'
+  - id: PLAN-VISUAL-014
+    verdict: confirmed
+    reason: 'research.md D-08 draws nothing for not_applicable and attaches the reason only to the Facts region''s accessible description, with no named element or attribute. NFR-011 requires a text form for every status, so the WP-21b assertion has no defined target.'
+  - id: PLAN-VISUAL-015
+    verdict: confirmed
+    reason: 'The catalogue names no fixture for WP-44, WP-46, WP-47, WP-48, WP-49 and WP-39. NFR-004 specifies 1100 and 720 px, but plan.md IC-08 says only "200% font" with no viewport pair or test file.'
+  - id: PLAN-VISUAL-016
+    verdict: refuted
+    reason: 'spec.md Edge cases (Long text) already require the full text as the accessible name plus a title tooltip. The words-only wrapping and ellipsis rule is a recorded #4 Q2 ruling, so this is not an unregistered gap and the plan does not contradict it.'
+  - id: PLAN-VERIFY-006
+    verdict: confirmed
+    reason: 'contract-pin.md C8 tests call check() in-process, and the pr6-folds check.mjs has no argument parsing (main() takes none). The --require-main wrap-up gate and the verify-remote provenance exit have no spawned-CLI test, so a flag-parsing slip would pass every planned test.'
+

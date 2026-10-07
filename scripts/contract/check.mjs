@@ -1,4 +1,4 @@
-// pnpm contract:check: gate `contract` checks C1 to C7 (contracts/gates.md). Plain Node. Collects every problem,
+// pnpm contract:check [--require-main]: gate `contract` checks C1 to C8 (contracts/gates.md). Plain Node. Collects every problem,
 // prints them all prefixed `contract:`, then `contract gate: ok` or `contract gate: N problem(s)`; exit 1 on a problem.
 //
 // check.mjs shares no helper with overlays.mjs (C5 recomputes every derived value itself) and imports only common
@@ -12,7 +12,7 @@ import {
   LAYOUT, ROOT, changelogTopVersionOf, infoVersionOf, listFiles, readPin, readText, vendoredDigest, vendoredHashes,
 } from './common.mjs';
 import { generateFixturesSource, generateTypesSource, importTs, loadBulk } from './generate.mjs';
-import { FIXTURES, RELAXATIONS } from './registry.mjs';
+import { FIXTURES, RELAXATIONS, errorAllowed } from './registry.mjs';
 import { SYNTHETIC_ACTORS } from './overlays.mjs';
 import { compile, loadSchema, relaxedSchema, stripHost, validateWith } from './validate.mjs';
 
@@ -30,6 +30,7 @@ export const TOKENS = {
   hygiene: 'hygiene',
   provisional: 'provisional',
   guard: 'guard',
+  pinProvenance: 'pin provenance',
 };
 
 /**
@@ -48,14 +49,23 @@ const STREAM_IDENTIFIERS = ['StreamCursor', 'streamCursor', 'StatusTransitionEve
 
 const problem = (token, message, extra = {}) => ({ token, message, ...extra });
 
+/** Files the Work Package detail screen cannot do without; their presence is checked against the directory, not the pin. */
+export const ANCHOR_FILES = [
+  'mission-status/openapi.yaml',
+  'mission-status/schemas/WorkPackageDetail.yaml',
+  'mission-status/schemas/ReviewCycle.yaml',
+  'mission-status/schemas/Workspace.yaml',
+  'mission-status/examples/WorkPackageDetail.populated.yaml',
+];
+
 // ---- C1 ---------------------------------------------------------------------------------------------------------
-function checkPin(root) {
+function checkPin(root, { requireMain = false } = {}) {
   const out = [];
   let pin;
   try {
     pin = readPin(root);
   } catch (err) {
-    return { problems: [problem(TOKENS.pinMetadata, `PIN.json unreadable: ${err.message}`)], files: 0 };
+    return { problems: [problem(TOKENS.pinMetadata, `PIN.json unreadable: ${err.message}`)], files: 0, anchors: 0 };
   }
   const actual = vendoredHashes(root);
   const pinned = pin.files ?? {};
@@ -70,9 +80,32 @@ function checkPin(root) {
   if (!/^[0-9a-f]{40}$/.test(String(pin.sha))) out.push(problem(TOKENS.pinMetadata, 'sha is not 40 lowercase hex characters'));
   const info = Object.hasOwn(actual, 'mission-status/openapi.yaml') ? infoVersionOf(readText(root, LAYOUT.openapi)) : null;
   if (info === null || pin.infoVersion !== info) out.push(problem(TOKENS.pinMetadata, `infoVersion ${pin.infoVersion} differs from the vendored openapi.yaml (${info})`));
+  out.push(...provenanceProblems(pin, { requireMain }));
   const top = Object.hasOwn(actual, 'mission-status/CHANGELOG.md') ? changelogTopVersionOf(readText(root, LAYOUT.changelog)) : null;
   if (top === null || pin.changelogTopVersion !== top) out.push(problem(TOKENS.pinMetadata, `changelogTopVersion ${pin.changelogTopVersion} differs from the vendored changelog (${top})`));
-  return { problems: out, files: Object.keys(actual).length };
+  const missingAnchors = ANCHOR_FILES.filter((a) => !Object.hasOwn(actual, a));
+  for (const a of missingAnchors) out.push(problem(TOKENS.guard, `the vendored contract lacks the anchor file ${a}`));
+  return { problems: out, files: Object.keys(actual).length, anchors: ANCHOR_FILES.length - missingAnchors.length };
+}
+
+// ---- C8 ---------------------------------------------------------------------------------------------------------
+/**
+ * Pure: the C8 problems of one pin record. `provenance` is `main` or `branch`; `branch` implies a non-empty `branch`
+ * label and `reason`; `main` implies neither; with `requireMain` (the PR-readiness form) the pin must be `main`.
+ */
+export function provenanceProblems(pin, { requireMain = false } = {}) {
+  const out = [];
+  const filled = (v) => typeof v === 'string' && v.trim() !== '';
+  if (pin.provenance === 'branch') {
+    if (!filled(pin.branch)) out.push(problem(TOKENS.pinProvenance, 'a branch pin needs a non-empty branch label'));
+    if (!filled(pin.reason)) out.push(problem(TOKENS.pinProvenance, 'a branch pin needs a non-empty reason'));
+    if (requireMain) out.push(problem(TOKENS.pinProvenance, 'the pin is a branch pin; --require-main needs a pin of a commit on main (re-pin: pnpm contract:update --sha <main sha>)'));
+  } else if (pin.provenance === 'main') {
+    if (Object.hasOwn(pin, 'branch') || Object.hasOwn(pin, 'reason')) out.push(problem(TOKENS.pinProvenance, 'a main pin carries neither branch nor reason'));
+  } else {
+    out.push(problem(TOKENS.pinProvenance, `provenance must be main or branch, got ${JSON.stringify(pin.provenance ?? null)}`));
+  }
+  return out;
 }
 
 // ---- C2, C3 -----------------------------------------------------------------------------------------------------
@@ -112,14 +145,30 @@ async function validators(root, schemaName, relaxation) {
   return validatorCache.get(key);
 }
 
+const WORK_PACKAGE_SCHEMAS = ['WorkPackage', 'WorkPackageDetail'];
+
 const summarise = (errors) => errors.slice(0, 3).map((e) => `${e.path || '/'} ${e.message}`).join('; ');
 
-function actorProblems(doc) {
-  const bad = [];
-  for (const wp of doc.workPackages ?? []) {
-    if ('actor' in wp && !SYNTHETIC_ACTORS.includes(wp.actor)) bad.push(String(wp.actor));
-  }
-  return bad;
+/** The handles of an actor value: the three handles of a structured actor, or the plain string. Null handles are skipped. */
+const handlesOf = (actor) => {
+  if (actor && typeof actor === 'object') return [actor.tool, actor.role, actor.profile].filter((h) => typeof h === 'string');
+  return typeof actor === 'string' ? [actor] : [];
+};
+
+/**
+ * Every actor value of a document that is not in SYNTHETIC_ACTORS. Mission detail: the host `actor` of each work
+ * package. Work Package: `actor`, `history[].actor` and `review.latestResult.reviewer`. Work Package detail:
+ * `reviewCycles[].reviewer`.
+ */
+export function actorProblems(doc) {
+  const found = [];
+  for (const wp of doc.workPackages ?? []) if ('actor' in wp) found.push(...handlesOf(wp.actor));
+  if ('actor' in doc) found.push(...handlesOf(doc.actor));
+  for (const entry of doc.history ?? []) found.push(...handlesOf(entry?.actor));
+  const reviewer = doc.review?.latestResult?.reviewer;
+  if (typeof reviewer === 'string') found.push(reviewer);
+  for (const cycle of doc.reviewCycles ?? []) if (typeof cycle?.reviewer === 'string') found.push(cycle.reviewer);
+  return [...new Set(found.filter((h) => !SYNTHETIC_ACTORS.includes(h)))];
 }
 
 function staleProblems(doc) {
@@ -130,12 +179,16 @@ function staleProblems(doc) {
 async function checkFixtureDoc(root, name, def, doc) {
   const out = [];
   const where = `fixture ${name}`;
+  if (WORK_PACKAGE_SCHEMAS.includes(def.schema)) {
+    const bad = actorProblems(doc);
+    if (bad.length) out.push(problem(TOKENS.violates, `${where} has an actor outside SYNTHETIC_ACTORS: ${bad.join(', ')}`));
+  }
   if (def.kind === 'valid') {
     const r = validateWith(await validators(root, def.schema), doc);
     if (!r.valid) out.push(problem(TOKENS.violates, `${where} violates the closed contract: ${summarise(r.errors)}`));
     return out;
   }
-  const bad = actorProblems(doc);
+  const bad = WORK_PACKAGE_SCHEMAS.includes(def.schema) ? [] : actorProblems(doc);
   if (bad.length) out.push(problem(TOKENS.violates, `${where} has an actor outside SYNTHETIC_ACTORS: ${bad.join(', ')}`));
   if (staleProblems(doc)) out.push(problem(TOKENS.violates, `${where} has a non-boolean stale`));
   const stripped = stripHost(doc);
@@ -147,12 +200,13 @@ async function checkFixtureDoc(root, name, def, doc) {
   // relaxed: passes the relaxed schema, FAILS the strict one, and every strict error lies inside the allowed paths
   const rel = RELAXATIONS[def.relaxation];
   if (!rel) return [problem(TOKENS.relaxation, `${where} names the unknown relaxation ${def.relaxation}`)];
+  if (rel.schema !== def.schema) return [problem(TOKENS.relaxation, `${where} validates against ${def.schema} but the ${def.relaxation} relaxation patches the schema ${rel.schema}`)];
   const relaxed = validateWith(await validators(root, def.schema, def.relaxation), stripped);
   const strict = validateWith(await validators(root, def.schema), stripped);
   if (!relaxed.valid) out.push(problem(TOKENS.relaxation, `${where} fails even the ${def.relaxation} schema: ${summarise(relaxed.errors)}`));
   else if (strict.valid) out.push(problem(TOKENS.relaxation, `${where} passes the strict schema: the ${def.relaxation} entry is stale`));
   else {
-    const outside = strict.errors.filter((e) => !rel.allowedPath.test(e.path));
+    const outside = strict.errors.filter((e) => !errorAllowed(rel, e));
     if (outside.length) out.push(problem(TOKENS.relaxation, `${where} deviates outside ${def.relaxation}: ${summarise(outside)}`));
   }
   return out;
@@ -182,7 +236,11 @@ async function checkFixtures(root, deps, registry) {
   for (const name of names) {
     if (!Object.hasOwn(registry, name)) continue;
     docs[name] = exported[name];
-    out.push(...(await checkFixtureDoc(root, name, registry[name], exported[name])));
+    try {
+      out.push(...(await checkFixtureDoc(root, name, registry[name], exported[name])));
+    } catch (err) {
+      out.push(problem(TOKENS.violates, `fixture ${name} could not be validated: ${String(err.message).split('\n')[0].slice(0, 200)}`));
+    }
     count += 1;
   }
   if (count !== names.length - unregistered.length || count === 0) out.push(problem(TOKENS.guard, `validated ${count} fixtures of ${names.length} exported`));
@@ -232,6 +290,39 @@ export function coherenceFailures(m, { isDetail, skipPhases = false }) {
   return failed;
 }
 
+// The lane whose producer weight is 1 is the finished one: the subtask rule reads it from the weights, not a literal.
+const FINISHED_LANE = LANES.find((l) => PRODUCER_LANE_WEIGHTS[l] === 1);
+
+/**
+ * C5 rules of one `WorkPackage` document, recomputed here and nowhere else (overlays.mjs shares no helper with this).
+ * Returns the names of the failed rules:
+ * ready-to-start      readyToStart equals (statusLane is planned and readiness.satisfied)
+ * subtask-progress    subtaskProgress.done and .total equal the counts of the subtasks map
+ * history-order       history is non-decreasing by `at`, then ascending by `eventId`
+ * history-last        the last entry's toStatusLane equals statusLane; a null statusLane has an empty history
+ * readiness-subset    readiness.unsatisfied is a subset of dependencies
+ */
+export function workPackageFailures(wp) {
+  const failed = [];
+  const history = wp.history ?? [];
+  const readiness = wp.readiness ?? {};
+  if (wp.readyToStart !== (wp.statusLane === 'planned' && readiness.satisfied === true)) failed.push('ready-to-start');
+  const states = Object.values(wp.subtasks ?? {});
+  if (wp.subtaskProgress?.total !== states.length || wp.subtaskProgress?.done !== states.filter((v) => v === FINISHED_LANE).length) failed.push('subtask-progress');
+  const ordered = history.every((e, i) => {
+    if (i === 0) return true;
+    const a = Date.parse(history[i - 1].at);
+    const b = Date.parse(e.at);
+    return a < b || (a === b && history[i - 1].eventId < e.eventId);
+  });
+  if (!ordered) failed.push('history-order');
+  const last = history[history.length - 1];
+  const lastOk = wp.statusLane === null ? history.length === 0 : last !== undefined && last.toStatusLane === wp.statusLane;
+  if (!lastOk) failed.push('history-last');
+  if (!(readiness.unsatisfied ?? []).every((d) => (wp.dependencies ?? []).includes(d))) failed.push('readiness-subset');
+  return failed;
+}
+
 function checkCoherence(docs, registry, bulkPages) {
   const out = [];
   let records = 0;
@@ -244,6 +335,11 @@ function checkCoherence(docs, registry, bulkPages) {
     const def = registry[name];
     if (def.schema === 'MissionDetail') run(`fixture ${name}`, doc, true, def.relaxation === 'phases-open');
     else if (def.schema === 'MissionOverviewPage') (doc.items ?? []).forEach((item, i) => run(`fixture ${name} item ${i}`, item, false, false));
+    else if (def.schema === 'WorkPackage') {
+      records += 1;
+      const rules = workPackageFailures(doc);
+      if (rules.length) out.push(problem(TOKENS.incoherent, `fixture ${name} is incoherent (rule ${rules.join(', ')})`, { rules }));
+    }
   }
   for (const [label, page] of Object.entries(bulkPages)) page.items.forEach((item, i) => run(`${label} item ${i}`, item, false, false));
   return { problems: out, records };
@@ -354,13 +450,13 @@ function checkProvisional(root) {
 
 // ---- driver -----------------------------------------------------------------------------------------------------
 /**
- * Run C1 to C7 over `root`. `deps` lets the tests inject changed inputs: `buildFixtures` (a changed overlay),
+ * Run C1 to C8 over `root`. `requireMain` is the PR-readiness form of C8 (the `--require-main` flag). `deps` lets the tests inject changed inputs: `buildFixtures` (a changed overlay),
  * `registry`, `bulk`, and `fixtures` (an already loaded fixtures module).
  */
-export async function runChecks({ root = ROOT, deps = {} } = {}) {
+export async function runChecks({ root = ROOT, deps = {}, requireMain = false } = {}) {
   const registry = deps.registry ?? FIXTURES;
   const problems = [];
-  const c1 = checkPin(root);
+  const c1 = checkPin(root, { requireMain });
   problems.push(...c1.problems);
   problems.push(...(await checkTypes(root)));
   problems.push(...(await checkFixturesFresh(root, { ...deps, registry })));
@@ -376,16 +472,16 @@ export async function runChecks({ root = ROOT, deps = {} } = {}) {
   problems.push(...c7.problems);
   return {
     problems,
-    summary: { vendoredFiles: c1.files, fixtures: fx.count, bulkPages: Object.keys(bulk.pages).length, coherenceRecords: c5.records, hygieneFiles: c6.scanned, c7Files: c7.files },
+    summary: { vendoredFiles: c1.files, anchorFiles: c1.anchors, fixtures: fx.count, bulkPages: Object.keys(bulk.pages).length, coherenceRecords: c5.records, hygieneFiles: c6.scanned, c7Files: c7.files },
   };
 }
 
 async function main() {
-  const { problems, summary } = await runChecks({ root: ROOT });
+  const { problems, summary } = await runChecks({ root: ROOT, requireMain: process.argv.includes('--require-main') });
   for (const p of problems) process.stdout.write(`contract: ${p.token}: ${p.message}\n`);
   if (problems.length === 0) {
     const s = summary;
-    process.stdout.write(`contract gate: ok (${s.vendoredFiles} vendored files, ${s.fixtures} fixtures, ${s.bulkPages} bulk pages, ${s.coherenceRecords} records checked for coherence, ${s.hygieneFiles} files in the hygiene scope, ${s.c7Files} files in the provisional scan)\n`);
+    process.stdout.write(`contract gate: ok (${s.vendoredFiles} vendored files, ${s.anchorFiles} anchor files, ${s.fixtures} fixtures, ${s.bulkPages} bulk pages, ${s.coherenceRecords} records checked for coherence, ${s.hygieneFiles} files in the hygiene scope, ${s.c7Files} files in the provisional scan)\n`);
     return 0;
   }
   process.stdout.write(`contract gate: ${problems.length} problem(s)\n`);

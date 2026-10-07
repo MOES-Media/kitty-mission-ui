@@ -1,0 +1,2 @@
+// expect: S14.3
+export const f = (s: string): boolean => s === `changed`;

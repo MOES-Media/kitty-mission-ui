@@ -46,5 +46,21 @@
         ]
       }
     ]
+  },
+  {
+    "gate": "contract",
+    "ciCommand": "pnpm contract:check && pnpm test:contract",
+    "expectFailPattern": "pin provenance",
+    "overlays": [
+      {
+        "target": "contracts/spec-kitty/PIN.json",
+        "edits": [
+          {
+            "find": "\"provenance\": \"main\"",
+            "replace": "\"provenance\": \"branch\""
+          }
+        ]
+      }
+    ]
   }
 ]

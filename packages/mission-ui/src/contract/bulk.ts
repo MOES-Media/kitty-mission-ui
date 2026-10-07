@@ -1,6 +1,6 @@
 // Large synthetic pages for the 500-Mission test (NFR-006) and the long-list story. Pure functions, no value imports
 // (only `import type`, erased), so plain Node loads this file too and gate `contract` validates its output.
-import type { MissionOverview, MissionOverviewPage } from './types.js';
+import type { HistoryEntry, MissionOverview, MissionOverviewPage, OwnedFile, Subtask } from './types.js';
 
 const ALPHABET = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
 const DIGEST = '3a7bd3e2360a3d29eea436fcfb7e44c735d117c42d1c1835420b6b9942dd4f1b';
@@ -100,4 +100,73 @@ export function makeMissionPage(count: number, hasNextPage: boolean): MissionOve
     items,
     pageInfo: { hasNextPage, nextPageCursor: hasNextPage ? 'c3ludGhldGljLXBhZ2U' : null, pageSize: Math.max(count, 1) },
   };
+}
+
+// ---- Work Package detail screen (long histories and lists) --------------------------------------------------------
+const WP_BASE_TIME = Date.UTC(2026, 8, 1, 8, 0, 0);
+const wpEventId = (n: number): string => `01JZAB3C4D5E6F7G8H9J${String(n).padStart(6, '0')}`;
+const SYNTHETIC_ACTOR = { tool: 'claude', role: 'implementer', profile: 'implementer-ivan' };
+const SYNTHETIC_REVIEWER = { tool: 'claude', role: 'reviewer', profile: 'reviewer-renata' };
+
+/**
+ * `count` status transitions of one work package: first appearance, claim, start, then review rounds that alternate
+ * "to review" and "changes requested" (the reviewer's entries carry the verdict). Non-decreasing in `at`, ascending in
+ * `eventId`; the last entry's `toStatusLane` is the lane the work package is in.
+ */
+export function makeWorkPackageHistory(count: number): HistoryEntry[] {
+  const steps: Array<[HistoryEntry['fromStatusLane'], HistoryEntry['toStatusLane']]> = [
+    [null, 'planned'],
+    ['planned', 'claimed'],
+    ['claimed', 'in_progress'],
+  ];
+  const entries: HistoryEntry[] = [];
+  for (let i = 0; i < count; i += 1) {
+    const round = i - steps.length;
+    const step = round < 0 ? steps[i] : round % 2 === 0 ? (['in_progress', 'for_review'] as const) : (['for_review', 'in_progress'] as const);
+    const changes = round >= 0 && round % 2 === 1;
+    entries.push({
+      eventId: wpEventId(i + 1),
+      at: new Date(WP_BASE_TIME + i * 3_600_000).toISOString().replace('.000Z', 'Z'),
+      kind: 'transition',
+      fromStatusLane: step?.[0] ?? null,
+      toStatusLane: step?.[1] ?? 'planned',
+      actor: changes ? { ...SYNTHETIC_REVIEWER } : { ...SYNTHETIC_ACTOR },
+      force: false,
+      reason: changes ? `Changes requested after review round ${(round + 1) / 2}.` : null,
+      reviewVerdict: changes ? 'changes_requested' : null,
+    });
+  }
+  return entries;
+}
+
+const SUBTASK_LANES: Array<NonNullable<Subtask['statusLane']>> = ['done', 'in_progress', 'planned', 'for_review', 'claimed', 'blocked', 'canceled'];
+
+/** `count` subtasks T001, T002, ... with a title and a lane that cycles through seven of the nine lanes. */
+export function makeSubtasks(count: number): Subtask[] {
+  const out: Subtask[] = [];
+  for (let i = 0; i < count; i += 1) {
+    out.push({
+      id: `T${String(i + 1).padStart(3, '0')}`,
+      title: `Subtask ${i + 1}: ${'a longer title that has to wrap over a few lines '.repeat(i % 3 === 0 ? 3 : 1)}`.trimEnd(),
+      statusLane: SUBTASK_LANES[i % SUBTASK_LANES.length] ?? 'planned',
+    });
+  }
+  return out;
+}
+
+const CHANGE_STATES: OwnedFile['changeState'][] = ['changed', 'unchanged', 'unknown'];
+
+/** `count` owned files and patterns, deep paths and globs alternating, the change state cycling through its three values. */
+export function makeOwnedFiles(count: number): OwnedFile[] {
+  const out: OwnedFile[] = [];
+  for (let i = 0; i < count; i += 1) {
+    const glob = i % 4 === 3;
+    const dir = `packages/example/src/module-${String(Math.floor(i / 5) + 1).padStart(2, '0')}/section-${(i % 5) + 1}`;
+    out.push({
+      pattern: glob ? `${dir}/**/*.ts` : `${dir}/file-${String(i + 1).padStart(3, '0')}.ts`,
+      isGlob: glob,
+      changeState: CHANGE_STATES[i % CHANGE_STATES.length] ?? 'unknown',
+    });
+  }
+  return out;
 }

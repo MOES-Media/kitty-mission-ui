@@ -29,6 +29,56 @@ export const FIXTURES = {
   detailPhases7: f('MissionDetail', 'relaxed', 'MissionDetailView', 'phases-open'),
   detailUnknownLane: f('MissionDetail', 'relaxed', 'MissionDetailView', 'lane-open'),
   detailCustomGroups: f('MissionDetail', 'valid', 'MissionDetail'),
+
+  // ---- Work Package detail screen (mission-ui#5): 27 Work Package fixtures, 21 detail and refusal fixtures ----
+  wpPopulated: f('WorkPackage', 'valid', 'WorkPackage'),
+  wpWithPrompt: f('WorkPackage', 'valid', 'WorkPackage'),
+  wpProvisional: f('WorkPackage', 'valid', 'WorkPackage'),
+  wpNoEvents: f('WorkPackage', 'valid', 'WorkPackage'),
+  wpActorStructured: f('WorkPackage', 'valid', 'WorkPackage'),
+  wpActorHandle: f('WorkPackage', 'valid', 'WorkPackage'),
+  wpActorRedacted: f('WorkPackage', 'valid', 'WorkPackage'),
+  wpCanceled: f('WorkPackage', 'valid', 'WorkPackage'),
+  wpCanceledSynthetic: f('WorkPackage', 'valid', 'WorkPackage'),
+  wpCanceledNullReason: f('WorkPackage', 'valid', 'WorkPackage'),
+  wpOverride: f('WorkPackage', 'valid', 'WorkPackage'),
+  wpOverridePartial: f('WorkPackage', 'valid', 'WorkPackage'),
+  wpReviewNone: f('WorkPackage', 'valid', 'WorkPackage'),
+  wpApproved: f('WorkPackage', 'valid', 'WorkPackage'),
+  wpChangesRequested: f('WorkPackage', 'valid', 'WorkPackage'),
+  wpDone: f('WorkPackage', 'valid', 'WorkPackage'),
+  wpHistoryRich: f('WorkPackage', 'valid', 'WorkPackage'),
+  wpStale: f('WorkPackage', 'valid', 'WorkPackage'),
+  wpFresh: f('WorkPackage', 'valid', 'WorkPackage'),
+  wpNotApplicable: f('WorkPackage', 'valid', 'WorkPackage'),
+  wpStalenessOmitted: f('WorkPackage', 'relaxed', 'WorkPackageRecordView', 'provisional-omittable'),
+  wpFactsNull: f('WorkPackage', 'valid', 'WorkPackage'),
+  wpBlocked: f('WorkPackage', 'valid', 'WorkPackage'),
+  wpReady: f('WorkPackage', 'valid', 'WorkPackage'),
+  wpLong: f('WorkPackage', 'valid', 'WorkPackage'),
+  wpBulkHistory: f('WorkPackage', 'valid', 'WorkPackage'),
+  wpUnknownLane: f('WorkPackage', 'relaxed', 'WorkPackageRecordView', 'wp-lane-open'),
+  detailPopulated: f('WorkPackageDetail', 'valid', 'WorkPackageDetail'),
+  detailNoCycles: f('WorkPackageDetail', 'valid', 'WorkPackageDetail'),
+  detailNullWorkspace: f('WorkPackageDetail', 'valid', 'WorkPackageDetail'),
+  detailWorkspaceNoWorktree: f('WorkPackageDetail', 'valid', 'WorkPackageDetail'),
+  detailPlanningLane: f('WorkPackageDetail', 'valid', 'WorkPackageDetail'),
+  detailUnknownChangeState: f('WorkPackageDetail', 'valid', 'WorkPackageDetail'),
+  detailUnparseableCycle: f('WorkPackageDetail', 'valid', 'WorkPackageDetail'),
+  detailRefusalNotFound: f('WorkPackageDetailRefusal', 'valid', 'WorkPackageDetailRefusal'),
+  detailRefusalUnreadable: f('WorkPackageDetailRefusal', 'valid', 'WorkPackageDetailRefusal'),
+  detailSubtasksNone: f('WorkPackageDetail', 'valid', 'WorkPackageDetail'),
+  detailSubtaskNulls: f('WorkPackageDetail', 'valid', 'WorkPackageDetail'),
+  detailDepsNone: f('WorkPackageDetail', 'valid', 'WorkPackageDetail'),
+  detailDepsBlocked: f('WorkPackageDetail', 'valid', 'WorkPackageDetail'),
+  detailDepNullLane: f('WorkPackageDetail', 'valid', 'WorkPackageDetail'),
+  detailOwnedNone: f('WorkPackageDetail', 'valid', 'WorkPackageDetail'),
+  detailLinksPromptNull: f('WorkPackageDetail', 'valid', 'WorkPackageDetail'),
+  detailLinksNone: f('WorkPackageDetail', 'valid', 'WorkPackageDetail'),
+  detailRedaction: f('WorkPackageDetail', 'valid', 'WorkPackageDetail'),
+  detailLong: f('WorkPackageDetail', 'valid', 'WorkPackageDetail'),
+  detailUnknownLanes: f('WorkPackageDetail', 'relaxed', 'WorkPackageDetailView', 'detail-lane-open'),
+  detailOmittedProvisional: f('WorkPackageDetail', 'relaxed', 'WorkPackageDetailView', 'detail-omittable'),
 };
 
 /** Every distinct `satisfies` target, for the generated import line. */
@@ -63,4 +113,54 @@ export const RELAXATIONS = {
       part.properties.workPackages.items.properties.statusLane = { type: ['string', 'null'] };
     },
   },
+  // ---- mission-ui#5: lane members of the Work Package and its detail become open strings; nothing else changes ----
+  'wp-lane-open': {
+    schema: 'WorkPackage',
+    description: 'WorkPackage.statusLane, history[].fromStatusLane (or null), history[].toStatusLane and the values of the open subtasks map become open strings',
+    allowedPath: /^(?:\/statusLane|\/history\/\d+\/(?:from|to)StatusLane|\/subtasks\/[^/]+)$/,
+    patch(schema) {
+      schema.properties.statusLane = { type: ['string', 'null'] };
+      const entry = schema.properties.history.items.properties;
+      entry.fromStatusLane = { type: ['string', 'null'] };
+      entry.toStatusLane = { type: 'string' };
+      schema.properties.subtasks.additionalProperties = { type: 'string' };
+    },
+  },
+  'detail-lane-open': {
+    schema: 'WorkPackageDetail',
+    description: 'Subtask.statusLane and DependencyRef.statusLane of the detail become open strings or null',
+    allowedPath: /^(?:\/subtasks\/\d+\/statusLane|\/dependencies\/\d+\/statusLane)$/,
+    patch(schema) {
+      schema.properties.subtasks.items.properties.statusLane = { type: ['string', 'null'] };
+      schema.properties.dependencies.items.properties.statusLane = { type: ['string', 'null'] };
+    },
+  },
+  'provisional-omittable': {
+    schema: 'WorkPackage',
+    description: 'staleness is removed from required (a host may omit the provisional member); nothing else changes',
+    allowedPath: /^$/,
+    allowedMissing: ['staleness'],
+    patch(schema) {
+      schema.required = schema.required.filter((k) => k !== 'staleness');
+    },
+  },
+  'detail-omittable': {
+    schema: 'WorkPackageDetail',
+    description: 'reviewCycles and workspace are removed from required (a host may omit the provisional members); nothing else changes',
+    allowedPath: /^$/,
+    allowedMissing: ['reviewCycles', 'workspace'],
+    patch(schema) {
+      schema.required = schema.required.filter((k) => k !== 'reviewCycles' && k !== 'workspace');
+    },
+  },
 };
+
+/**
+ * Whether one error of the STRICT validator lies inside a relaxation: its path matches `allowedPath` and, for an
+ * omittable relaxation, the error is the `required` error naming only one of the members it frees.
+ */
+export function errorAllowed(relaxation, error) {
+  if (!relaxation.allowedPath.test(error.path)) return false;
+  if (!relaxation.allowedMissing) return true;
+  return error.keyword === 'required' && relaxation.allowedMissing.includes(error.missingProperty);
+}

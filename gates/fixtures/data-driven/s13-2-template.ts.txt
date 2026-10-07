@@ -1,0 +1,2 @@
+// expect: S13.2
+export const t = `unchanged`;

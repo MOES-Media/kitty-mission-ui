@@ -46,7 +46,8 @@ under "Mission / Sample", plus an autodocs page.
 
 Every screen element in `packages/mission-ui/src/elements/` follows the charter:
 
-- Data in as properties; a `status` property carries the view state `loading`, `error`, `empty` or `ready`.
+- Data in as properties; a `status` property carries the view state `loading`, `error`, `empty` or `ready`. The Work Package
+  screen adds `not-found` and `nothing-selected`, and a separate `detailStatus` for its detail regions.
 - User intents out as `sk-*` CustomEvents with `bubbles` and `composed`, dispatched as
   `this.dispatchEvent(new CustomEvent('<string literal>', ...))` so the manifest can see them.
 - No I/O: no fetch, XHR, WebSocket, Tauri API or browser storage. Hosts own fetching, routing and refresh.
@@ -65,6 +66,27 @@ Every screen element in `packages/mission-ui/src/elements/` follows the charter:
   accessible name: `<sk-button label="Open">` alone renders a blank button. `sk-status-indicator` likewise colours
   its slotted text, so text placed in a sibling span loses its colour. Check the element's slots in the
   `@spec-kitty/elements` custom-elements manifest before using it.
+
+## The Work Package screen
+
+`sk-work-package-screen` shows one Work Package of a Mission: the header, facts, lane history, review summary and cycles,
+the evidence and dependency chains, subtasks, owned files, workspace and links to the spec and prompt. A host passes
+contract-shaped data only. Ten properties: `status` (`loading`, `error`, `empty`, `ready`, `not-found`,
+`nothing-selected`), `detailStatus` (`loading`, `ready`, `error`, `not-found`), `detailRefusalCode`, `workPackage`,
+`detail`, `mission`, `wpId`, `now`, `labels` (optional lane-word hooks) and `errorMessage`. Four events, each with
+`bubbles` and `composed` true: `sk-select-work-package` (a dependency node), `sk-open-mission` (the Mission crumb or
+"Return to Pipeline"), `sk-open-artifact` (the spec, prompt or a review cycle) and `sk-retry-load` (Retry, for the whole
+screen or for a refused detail). The screen performs no I/O and draws every status and lane word from the tables in
+`src/defaults/`. Its 56 stories are under `Screens/Work Package/` (five titles), with one visual baseline each. The
+walkthrough is `kitty-specs/work-package-screen-01M44DSJ/quickstart.md`.
+
+Lane words come in two kinds, and a host that rewords a lane sets both hooks of `labels`: `state` (a word and a tone) draws
+the state badge, the dependency and subtask lane words and the cancellation badge, while `lane` (a word) draws the lane
+history's "from" and "to" words. Setting one leaves the other kind on its defaults.
+
+Retry ownership: the shell owns a whole-page failure (`sk-shell-retry`); a screen owns the failure of its own regions
+(`sk-retry-load`). The `sk-retry-load` payload is a union keyed on `target`; this screen's members are `'work-package'` and
+`'detail'`, and a later screen adds its own member to the union instead of declaring the event again.
 
 ## Gates
 
@@ -154,6 +176,10 @@ The screens are typed from a pinned copy of the spec-kitty Mission Status contra
 `fixtures.generated.ts` under `packages/mission-ui/src/contract/`; never edit either by hand. `pnpm contract:update --sha
 <sha>` re-pins (network), `pnpm contract:verify-remote` confirms the vendored bytes equal upstream (network). Fixtures
 are valid contract documents; the only deviations are the two named relaxations in `scripts/contract/registry.mjs`.
+
+The pin is a commit on spec-kitty `main` (`provenance: "main"` in `PIN.json`; the contract file is still versioned
+`1.0.0-SNAPSHOT`). `pnpm contract:check --require-main` refuses a pin taken from a branch, and a pin from a local checkout
+(`contract:update --from-repo`) is always a branch pin, so a main pin is taken over the network.
 
 ### Timed clean-clone check (NFR-001, SC-001)
 

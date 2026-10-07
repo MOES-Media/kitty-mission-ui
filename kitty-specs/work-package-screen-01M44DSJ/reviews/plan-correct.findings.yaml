@@ -1,0 +1,314 @@
+schema: review-findings/v1
+complete: true
+phase: plan
+lens_group: CORRECT
+mission: work-package-screen-01M44DSJ
+findings:
+  - id: PLAN-CORRECT-001
+    lens: Data model and event typing
+    severity: 4
+    title: The new view type WorkPackageView collides with #4's exported WorkPackageView
+    evidence:
+      - artifact: "data-model.md § Widened view types (WorkPackageView); research.md § D-06; contracts/sk-work-package-screen.md § Properties (workPackage)"
+      - code: "pr6-folds/packages/mission-ui/src/contract/types.ts: export type WorkPackageView = Omit<WorkPackageSummary, 'statusLane'> & { statusLane: string | null; actor?: string }"
+      - code: "pr6-folds/packages/mission-ui/src/{index.ts, logic/types.ts, logic/placement.ts, elements/sk-work-package-board/sk-work-package-board.ts, elements/sk-work-package-board/fixtures.ts} all import or re-export that name"
+    claim: >-
+      #4 already exports WorkPackageView, the widened WorkPackageSummary of the Pipeline board.
+      The plan defines a different WorkPackageView, a widened full WorkPackage, in the same file
+      (src/contract/types.ts, "this mission adds the names below"). Adding it is a duplicate
+      declaration (TS2300). Redefining it would change the board's and placement's input type and
+      the public export. The 'host' fixture kinds also emit `satisfies WorkPackageView`, so the
+      generated fixtures file would bind to the wrong type.
+    remediation: >-
+      Rename the new type in data-model.md, research D-06, the element contract and contract-pin.md
+      to a non-colliding name (for example WorkPackageFullView, with WorkPackageDetailView
+      unchanged). Add a line to plan.md "Dependencies on #4" saying #4's WorkPackageView stays
+      untouched. The registry `satisfies` targets for the new host and relaxed fixtures use the
+      new name.
+  - id: PLAN-CORRECT-002
+    lens: Contract fidelity
+    severity: 4
+    title: wpUnknownLane and detailUnknownLanes name a "lane-open" relaxation that does not exist for WorkPackage or WorkPackageDetail
+    evidence:
+      - artifact: "contracts/contract-pin.md § Fixture inventory (wpUnknownLane, detailUnknownLanes: relaxed lane-open, reuses #4's name and proof); research.md § D-10"
+      - code: "pr6-folds/scripts/contract/registry.mjs: RELAXATIONS['lane-open'] = { schema: 'MissionDetail', allowedPath: /^\\/workPackages\\/\\d+\\/statusLane$/, patch() reads schema.allOf.find(x => x.properties.workPackages) }"
+      - code: "pr6-folds/scripts/contract/check.mjs: checkFixtureDoc, 'relaxed' branch compiles relaxedSchema(pristine, RELAXATIONS[def.relaxation]) against def.schema"
+      - code: "lane contracts/mission-status/schemas/WorkPackage.yaml: statusLane is oneOf [StatusLane, null]; history items fromStatusLane/toStatusLane; schemas/Subtask.yaml and DependencyRef.yaml statusLane"
+    claim: >-
+      The existing 'lane-open' relaxation patches MissionDetail.workPackages[].statusLane and
+      allows only paths under /workPackages/N/statusLane. WorkPackage and WorkPackageDetail are
+      different schemas with no allOf or workPackages member, so applying it throws in patch()
+      and the gate fails closed. The needed patches are different: WorkPackage.statusLane plus
+      history[].fromStatusLane and toStatusLane, and Subtask.statusLane plus
+      DependencyRef.statusLane. Their allowedPath patterns are different too. The plan says
+      "reuses #4's name and proof" and declares no new relaxation entries, schemas, patches or
+      reverted-must-fail proofs. This is the undeclared relaxation the lens asks about.
+    remediation: >-
+      Declare in contract-pin.md two new named relaxations (for example 'wp-lane-open' on schema
+      WorkPackage and 'detail-lane-open' on WorkPackageDetail). Give each its patch, its
+      allowedPath regex, and its check.test.mjs proof (a strict failure confined to the allowed
+      paths; reverting the patch makes the fixture fail). Say that RELAXATIONS entries now carry
+      their own schema and that check.mjs asserts def.schema equals RELAXATIONS[rel].schema.
+  - id: PLAN-CORRECT-003
+    lens: Vendoring mechanics
+    severity: 4
+    title: "'host' fixtures that omit staleness, reviewCycles or workspace cannot validate; stripHost only removes fields and cannot restore a required one"
+    evidence:
+      - artifact: "contracts/contract-pin.md § Fixture inventory (wpStalenessOmitted and detailOmittedProvisional are Kind host; \"registry strips before validation\")"
+      - code: "pr6-folds/scripts/contract/validate.mjs: stripHost deletes only `stale` (document and items) and `actor` (workPackages[])"
+      - code: "pr6-folds/scripts/contract/check.mjs: checkFixtureDoc 'host' branch validates stripHost(doc) against the strict schema"
+      - code: "lane schemas/WorkPackage.yaml required includes staleness; schemas/WorkPackageDetail.yaml required includes reviewCycles and workspace"
+    claim: >-
+      All three members are required in the closed 1.1 schemas. A document with the property
+      omitted fails the 'required' keyword after stripHost, because stripping removes keys and
+      never adds them. So wpStalenessOmitted and detailOmittedProvisional would raise 'violates
+      contract' at C4, and the fixture count of 47 is not producible as described. The plan's
+      wording ("registry strips before validation") describes a mechanism that does not exist for
+      these cases.
+    remediation: >-
+      Declare the mechanism in contract-pin.md and in the IC-01 exit checks. For example, a
+      registry field `omit: ['staleness']` that makes C4 validate the document with the omitted
+      members re-inserted as null (staleness) or [] and a minimal object (reviewCycles,
+      workspace). Add a stripHost-style extension in validate.mjs, and a check.test.mjs case
+      that the same document with the property truly missing still fails the strict schema (the
+      reverted-must-fail proof). Alternatively list these two as not fixtures and build them in
+      the stories by deleting the property from wpPopulated and detailPopulated (single source,
+      no registry entry). The inventory then has 45 entries. State one of the two.
+  - id: PLAN-CORRECT-004
+    lens: Spec fidelity
+    severity: 4
+    title: "FR-037's SH-06 and SH-07 are defined in the repository; the plan's open item OQ-1 and amendment P-4 rest on a false premise"
+    evidence:
+      - artifact: "plan.md § Technical Context (Open item OQ-1) and § Spec amendment proposals P-4; research.md § Not verified and Repository facts (\"appear nowhere in the repository\")"
+      - artifact: "spec.md FR-037 (take the real screen as content, existing shell baselines unchanged)"
+      - code: "kitty-specs/app-shell-01M3V82X/research.md (in this checkout and in #4), state matrix row 5-6: MissionWorkPackageSelected1280 and MissionWorkPackageNoneSelected1280, WP tree (SH-06, 07)"
+      - code: "pr6-folds/packages/mission-ui/src/elements/sk-mission-shell/sk-mission-shell.stories.ts: export const MissionWorkPackageSelected1280 / MissionWorkPackageNoneSelected1280 (mission('nav-work-packages', wpSelected() | wpNone()))"
+    claim: >-
+      SH-06 and SH-07 are the two shell stories whose sidebar WP tree shows one selected or none
+      selected. Both exist with baselines. FR-037 asks that they "take the real screen as
+      content" with "existing shell baselines unchanged". Changing the content of an
+      existing story changes its baseline, so the two parts of FR-037 conflict. The plan
+      sidesteps this by reading FR-037 as "0 shell changes" and rewriting it through P-4 on the
+      claim that the ids are undefined. As written, FR-037 has no implementing work package.
+    remediation: >-
+      FORK: replace the OQ-1 text and P-4 with the true finding (SH-06 and SH-07 are
+      app-shell-01M3V82X stories) and give the orchestrator two remedies. (a) Leave the shell
+      stories untouched and satisfy FR-037's intent through this mission's own WP-43
+      (nothing-selected) and WP-01 (selected) stories in shellFrame, with the spec text amended
+      accordingly. (b) Edit the two shell stories to host the real screen (IC-03b or IC-08
+      owns the edit of sk-mission-shell.stories.ts) and re-baseline those two images, amending
+      "existing shell baselines unchanged" to "except SH-06 and SH-07". Update the "0 shell
+      changes" statement and the IC-08 OQ-1 wiring check to match the chosen remedy.
+  - id: PLAN-CORRECT-005
+    lens: Contract fidelity
+    severity: 3
+    title: detailWorkspaceAllNull is described as "laneId the only non-null member", which is neither all-null nor a valid reading of the schema, and it duplicates detailNullWorkspace
+    evidence:
+      - artifact: "contracts/contract-pin.md § WorkPackageDetail fixtures (detailNullWorkspace; detailWorkspaceAllNull: \"laneId the only non-null member ... if the schema requires laneId non-null\"); spec.md WP-32, WP-33"
+      - code: "lane contracts/mission-status/schemas/Workspace.yaml: laneId, laneBranch and planningBranch are all type [string, null]; worktreePresent boolean"
+      - code: "lane contracts/mission-status/examples/WorkPackageDetail.null-workspace.yaml: laneId null, laneBranch null, planningBranch null, worktreePresent false"
+    claim: >-
+      The schema lets laneId be null, so the hedge is unnecessary. The example
+      WorkPackageDetail.null-workspace is already the all-null "no lanes" workspace that spec
+      row WP-33 (all-null) needs. detailWorkspaceAllNull, as written, is a lane-planning
+      variant with only laneId set. WP-32 (worktreePresent false with a lane present, and "no
+      claim that it was removed", R-4) is mapped to detailNullWorkspace, which has no lane at
+      all. So WP-32 and WP-33b would render nearly the same workspace and the R-4 case would
+      never be shown.
+    remediation: >-
+      Map WP-33b to detailNullWorkspace and delete detailWorkspaceAllNull (46 detail fixtures
+      become 19, total new 46). Add a WP-32 fixture overlay (for example
+      detailWorkspaceNoWorktree, from detailPopulated with worktreePresent false and a lane
+      set) or reuse the workspace of the unparseable-cycle example. Update the row-to-fixture
+      table, the counts (47, 56 stories unchanged) and the story catalogue.
+  - id: PLAN-CORRECT-006
+    lens: Spec fidelity
+    severity: 3
+    title: WP-13 (blocked dependencies) has no detail fixture whose dependencies are unsatisfied
+    evidence:
+      - artifact: "contracts/sk-work-package-screen.md § Story catalogue (WP-13 `wpBlocked` + deps); contracts/contract-pin.md (wpBlocked: readiness unsatisfied, two ids; detailPopulated has one dependency)"
+      - code: "lane contracts/mission-status/examples/WorkPackageDetail.populated.yaml: dependencies: one entry, WP03, statusLane approved"
+    claim: >-
+      The pass condition of WP-13 is titled dependency nodes with lane words and the unsatisfied
+      ones marked in words, with two unsatisfied ids from wpBlocked. The only detail fixtures
+      with dependencies are detailPopulated (one dependency, approved, i.e. satisfied) and
+      detailDepNullLane. Pairing wpBlocked with detailPopulated puts readiness.unsatisfied ids
+      that are not in detail.dependencies, and a satisfied dependency that nothing marks. The
+      "marked unsatisfied" behaviour of FR-009 is therefore not exercised by consistent data.
+    remediation: >-
+      Add a fixture to the inventory, for example detailDepsBlocked (two dependencies with
+      titles and lanes planned and in_progress, ids equal to wpBlocked.readiness.unsatisfied),
+      and use it for WP-13. Make wpBlocked.dependencies carry the same two ids. Update the
+      fixture count (the inventory and the guard literal change by one).
+  - id: PLAN-CORRECT-007
+    lens: Contract fidelity
+    severity: 3
+    title: "Fixture pairing and overlays leave wpId, statusLane and history inconsistent; the 'same wpId' node test cannot pass as specified"
+    evidence:
+      - artifact: "contracts/contract-pin.md § Fixture inventory (wpPopulated 'set to in_progress', wpReviewNone, wpApproved, wpChangesRequested, wpDone) and last paragraph (host compositions, node test that both fixtures agree on wpId, none deliberate)"
+      - code: "lane examples: WorkPackage.populated wpId WP04, statusLane for_review, history last entry to for_review; WorkPackageDetail.populated WP04; null-workspace WP01; no-cycles WP02; planning-lane WP06; unknown-change-state WP05; unparseable-cycle WP03; WorkPackage.actor-handle WP02, actor-redacted WP03"
+    claim: >-
+      The detail examples carry fixed wpIds (WP01 to WP06) that differ from the WorkPackage
+      overlay bases (WP04, WP07, WP08 and so on). Stories such as WP-29 (detailNoCycles WP02),
+      WP-32/33 (WP01, WP06) and WP-35b (WP03) need a WorkPackage with the same wpId, and the
+      inventory declares no wpId overlay, so the node test will fail or the pairs will be
+      invented ad hoc. Separately, overlays that change statusLane (wpPopulated to in_progress,
+      wpChangesRequested, wpApproved, wpReviewNone) do not say they rewrite history. The base
+      history ends at for_review, so the story would show header "approved" or "in progress"
+      while the newest history entry (the one marked "Current", Q12) says for_review. The
+      contract has no WorkPackage coherence rule, so only the overlay text can prevent this.
+    remediation: >-
+      State in contract-pin.md (a) a pairing table per story, with the wpId overlay applied to
+      the WorkPackage side (or the detail side) for every pair, and (b) for every overlay that
+      changes statusLane, the history, subtaskProgress and subtasks entries it rewrites, so the
+      last history entry's toStatusLane equals statusLane. Add the pairing table to the
+      IC-09 node test's input.
+  - id: PLAN-CORRECT-008
+    lens: Spec fidelity
+    severity: 3
+    title: "FORK: the detail refusal code has no input path into the screen, so resolveRefusal and the two refusal fixtures have no consumer"
+    evidence:
+      - artifact: "data-model.md § View states (detailStatus error / not-found; \"the detail refusal itself arrives as detailStatus, not as data\") and § Vocabulary tables (refusals.ts keyed by the two codes); contracts/defaults.md (resolveRefusal(code), DETAIL_REFUSAL_WORDS keyed not_found / source_unreadable); contracts/sk-work-package-screen.md § Story catalogue (WP-36a/b use `detailStatus` values only); contracts/contract-pin.md (detailRefusalNotFound, detailRefusalUnreadable named for WP-36a/b)"
+      - artifact: "spec.md Q9 (refusal code passed through, worded only through defaults/), Q7, FR-024"
+      - code: "lane schemas/WorkPackageDetailRefusalCode.yaml: values not_found, source_unreadable (snake_case); the screen's DetailStatus value is 'not-found' (hyphen)"
+    claim: >-
+      The element has no property carrying the refusal code, only detailStatus. resolveRefusal
+      takes a code string, but nothing supplies one. The code to detailStatus mapping
+      ('not-found' to not_found, 'error' to source_unreadable) is described in prose and is
+      lossy: an 'error' caused by a transport failure would be worded "A source of the Work
+      Package detail could not be read", a contract claim the host did not make. The two valid
+      refusal fixtures are listed for WP-36a/b but the stories use detailStatus only, so those
+      fixtures (and Q9's "pass through") are never exercised.
+    remediation: >-
+      FORK, orchestrator to rule. (a) Add an optional property detailRefusalCode
+      (attribute-less, string | null, additive before the IC-03b freeze): when set it is looked
+      up in DETAIL_REFUSAL_WORDS with raw fallback; detailStatus error / not-found without a
+      code uses a generic regional wording; WP-36a/b take the code from the two fixtures. (b)
+      Keep detailStatus only, key DETAIL_REFUSAL_WORDS by the two detailStatus values, drop
+      resolveRefusal's code argument and the two refusal fixtures (45 new exports) and amend Q9
+      wording through a P-5, accepting that the contract code is never shown. State which
+      remedy in plan.md and update data-model.md and defaults.md.
+  - id: PLAN-CORRECT-009
+    lens: Vendoring mechanics
+    severity: 3
+    title: Vendoring test updates miss registry.test.mjs and several literals, and the pin-derived file-count guard is vacuous
+    evidence:
+      - artifact: "plan.md § Source code (check.test.mjs overlays.test.mjs only) and § IC-01; contracts/contract-pin.md § Gate contract change (98-file guard becomes Object.keys(PIN.files).length vs the directory); research.md § D-09 item 5"
+      - code: "pr6-folds/scripts/contract/check.test.mjs: positive control asserts summary.vendoredFiles === 98 and summary.fixtures === 22; guard tests use 'registry of 21 entries against 22 exports' and 'PIN.files of 97 keys against 98 files'"
+      - code: "pr6-folds/scripts/contract/registry.test.mjs: 'the inventory has 22 fixtures: 15 valid, 4 host, 3 relaxed' and kinds.length 22; overlays.test.mjs: Object.keys(fixtures).length 22"
+      - code: "pr6-folds/scripts/contract/check.mjs: checkPin already compares PIN.files with the directory (file set)"
+    claim: >-
+      registry.test.mjs hard-codes 22 entries and a kind tally (15/4/3). It is not in the
+      plan's file list and will fail once 47 entries (with new host and relaxed kinds) are added.
+      The plan names only the 98 guard. A guard computed from Object.keys(PIN.files) compared
+      with the directory is the file-set check C1 already performs, so it cannot catch
+      the failure it exists for (a wrong or emptied vendoring where pin and directory shrink
+      together).
+    remediation: >-
+      Add scripts/contract/registry.test.mjs to IC-01's owned files and list the literals to
+      update (22, 15/4/3 tally, 98, 21/22, 97/98) in IC-01 and in the exit checks. Keep an
+      independent literal floor in the tests (vendoredFiles equals 150 and fixtures equals the
+      new total, edited at each re-pin) or compare with the file count of `git ls-tree` at the
+      pinned sha in verify-remote. Do not derive it from the pin.
+  - id: PLAN-CORRECT-010
+    lens: Spec fidelity
+    severity: 3
+    title: library-sheets.ts is edited by E-17 but has no writer in the Shared files table; both chains need it
+    evidence:
+      - artifact: "contracts/gates.md § E-17 (adopted sheets through library-sheets.ts additions); plan.md § Shared files (no row for library-sheets.ts); IC-04 facts-parts.ts, IC-05 history-parts.ts, IC-06 work-parts.ts"
+      - code: "pr6-folds/packages/mission-ui/src/library-sheets.ts: exports only segmentedChoice, workflowBoard, workflowLane, breadcrumbs and emptyState sheets; no facts or event-timeline sheet (styles package ships facts/ and event-timeline/ directories)"
+    claim: >-
+      The facts and event-timeline sheets do not exist yet and must be added to
+      library-sheets.ts. IC-04 (facts, chain X), IC-05 (history, chain X) and IC-06 (Workspace
+      rows via the facts family, chain Y) all need them, in parallel chains with disjoint
+      write scopes. The file has no owner, so either two WPs edit it and conflict, or an agent
+      edits out of map.
+    remediation: >-
+      Assign library-sheets.ts to IC-03b (add both sheets, plus the progress sheet check) in
+      the Shared files table and in IC-03b's purpose, before the surface freeze and before the
+      chains fork.
+  - id: PLAN-CORRECT-011
+    lens: Spec fidelity
+    severity: 3
+    title: Event dispatch ownership is contradictory, and IC-04 to IC-06 cannot pass their EV tests before IC-07
+    evidence:
+      - artifact: "plan.md § Shared files (index.ts row: IC-03b writes literal dispatchEvent calls; sk-work-package-screen.ts row: IC-07 afterwards 'for the status switch and the event methods only'); § Traceability (FR-002, FR-003 EV-4 test in IC-04; FR-008 to FR-010 EV-1; FR-015 to FR-017 EV-5; FR-013, FR-014 EV-6)"
+      - artifact: "spec.md FR-035 (tests for every event and payload with positive controls)"
+    claim: >-
+      The crumb event (EV-4), Open review (EV-6), dependency nodes (EV-1) and artifact links
+      (EV-5) belong to IC-04, IC-05 and IC-06, whose tests assert them. The event methods are
+      written by IC-07, the last WP of chain Y, and IC-04/IC-05 are not downstream of IC-07.
+      The plan says both that IC-03b writes the literal dispatch calls and that IC-07 writes the
+      event methods. A WP agent cannot meet its own exit test, or edits a file it does not
+      own.
+    remediation: >-
+      Give IC-03b all four typed dispatch methods (payload built from mission, wpId and the
+      activated item, one literal dispatch site each, @fires declared), with parts receiving
+      callbacks or calling the host element's methods. Restrict IC-07 to the status and
+      detailStatus switch and the retry wiring tests. Update the Shared files row and the
+      Traceability proofs accordingly.
+  - id: PLAN-CORRECT-012
+    lens: Spec fidelity
+    severity: 3
+    title: Baselines of the ready-state stories of earlier WPs go stale when later WPs add regions, and no WP owns their regeneration
+    evidence:
+      - artifact: "plan.md § IC-04 (WP-01, 09, 17 to 22, 38 baselines), IC-05, IC-06, IC-09 (five clean visual runs), § Shared files (stories and baselines: the WP that owns the story title)"
+      - artifact: "spec.md FR-036 and NFR-002 (every baseline stable across 5 runs; each row shows the whole screen in the shell)"
+    claim: >-
+      Every ready-state story renders all regions. IC-04's ten stories are approved while
+      history, review, chains, subtasks, files and workspace (IC-05, IC-06, IC-07) are still
+      titled empty panels, so their PNGs change when those WPs land. The same is true of
+      chain X versus chain Y stories. IC-08 edits only its own stories and IC-09's five clean
+      runs would then fail or force a WP to rewrite baselines it does not own.
+    remediation: >-
+      FORK, orchestrator to rule. (a) Give IC-09 an explicit step and ownership exception to
+      regenerate every ready-state baseline after IC-08 and have a reviewer check each against
+      the prototype; IC-04 to IC-07 commit stories and tests but no PNG for stories that show
+      regions they do not own. (b) Each region WP commits baselines only for its own region
+      stories rendered with the other regions still empty and the final integration baselines
+      are IC-09's. Say which, and adjust "stories and baselines" in the Shared files table.
+  - id: PLAN-CORRECT-013
+    lens: Vendoring mechanics
+    severity: 2
+    title: PIN.json branch value names a branch that does not exist
+    evidence:
+      - artifact: "contracts/contract-pin.md § 1.1 vendoring step 1 and PIN.json additions (branch: mission-status-contract-1-1-01M42XJC); research.md § D-09 item 2"
+      - code: "lane checkout: git branch --show-current gives kitty/mission-mission-status-contract-1-1-01M42XJC-lane-a; the lane tip is now 80840298d (the plan's 8cc31f4429ddc0b8baaba9fb6c8ccdb65e9a53a5 is an ancestor; contracts/mission-status and contracts/_shared are identical between the two)"
+    claim: >-
+      The recorded branch is the mission slug, not a branch of the lane repository, and the
+      research notes the commit is on no remote branch. C8 only checks non-empty, so the
+      provenance record would name nothing a reader could check.
+    remediation: >-
+      Record the actual lane branch name (kitty/mission-mission-status-contract-1-1-01M42XJC-lane-a)
+      in `branch`, or rename the field to `source` and say it is a label, and state that a
+      commit of a local lane has no upstream ref.
+  - id: PLAN-CORRECT-014
+    lens: Data model and event typing
+    severity: 2
+    title: "defaults.md and data-model.md disagree on names and leave two gaps (ResolvedFile vs RenderedFile, UNKNOWN_CHANGE_STATE vs UNKNOWN, unused ChangeStateView, unknown staleness status)"
+    evidence:
+      - artifact: "contracts/defaults.md § defaults/files.ts (UNKNOWN_CHANGE_STATE) and § logic additions (filesView(files: ResolvedFile[]), stalenessView); data-model.md § RenderedFile (\"the table's own UNKNOWN key\") and § Widened view types (ChangeStateView, not used in WorkPackageDetailView)"
+    claim: >-
+      The same function input is named ResolvedFile in one file and RenderedFile in the other,
+      and the unknown-key constant has two names. ChangeStateView is defined but WorkPackageDetailView does not use it
+      (ownedFiles is not widened). No relaxed fixture needs it, so it is dead.
+      STALENESS_STATUS_ROLE has no stated result for a staleness status outside the three
+      known values, although FR-023 requires a raw fallback.
+    remediation: >-
+      Pick one name for the filesView input and for the unknown-key constant. Delete
+      ChangeStateView or add ownedFiles to WorkPackageDetailView. State that an unknown
+      staleness status yields role 'none' and a raw word in the accessible description.
+  - id: PLAN-CORRECT-015
+    lens: Spec fidelity
+    severity: 2
+    title: E-17's file scope differs between research D-12 and gates.md
+    evidence:
+      - artifact: "research.md § D-12 (E-17 in history-parts.ts and facts-parts.ts only); contracts/gates.md § E-17 (history-parts.ts, facts-parts.ts and work-parts.ts); tracer-design-decisions.md G-10 (facts-parts.ts)"
+    claim: >-
+      The Workspace rows use the facts family and live in work-parts.ts (contracts/sk-work-package-screen.md
+      Workspace region). Under D-12's scope that file would be refused class= by ESLint.
+      The two documents give the operator different exceptions to approve at CP-1.
+    remediation: >-
+      Make research D-12 and tracer G-10 match gates.md (add work-parts.ts), or move the
+      Workspace panel into facts-parts.ts and narrow gates.md. State the single scope in the
+      CP-1 packet.

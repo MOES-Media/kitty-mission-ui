@@ -7,8 +7,25 @@
 // weightedPercentage is the producer's lane-weighted readiness for the fixture's counts (spec-kitty
 // src/specify_cli/status/progress.py at the pin), declared, not computed.
 
-/** The only values an overlay may write into a work package `actor` (host-only field). Obviously synthetic handles. */
-export const SYNTHETIC_ACTORS = ['agent-a', 'agent-b', 'agent-c'];
+/**
+ * The only handles a fixture may carry as an actor, a history actor or a reviewer. The first three are the host-only
+ * `actor` of the Mission detail overlays; the others are the handles of the contract's own Work Package examples,
+ * kept by the Work Package fixtures (a tool, two roles, two profiles and a bookkeeping handle).
+ */
+export const SYNTHETIC_ACTORS = [
+  'agent-a', 'agent-b', 'agent-c', 'claude', 'finalize-tasks', 'implementer', 'reviewer', 'implementer-ivan', 'reviewer-renata',
+  // two deliberately long handles (at most 128 characters, the contract's limit) for the long-text fixture
+  'implementer-profile-with-a-deliberately-long-handle-to-test-wrapping-in-the-facts-panel-of-the-screen',
+  'reviewer-profile-with-a-deliberately-long-handle-to-test-wrapping-in-the-review-summary-of-the-screen',
+];
+// Looked up by name, never by position: reordering SYNTHETIC_ACTORS must not change a fixture.
+const actorNamed = (prefix) => {
+  const found = SYNTHETIC_ACTORS.filter((a) => a.startsWith(prefix));
+  if (found.length !== 1) throw new Error(`expected exactly one synthetic actor starting with ${prefix}`);
+  return found[0];
+};
+const LONG_PROFILE = actorNamed('implementer-profile-with-a-deliberately-long');
+const LONG_REVIEWER = actorNamed('reviewer-profile-with-a-deliberately-long');
 
 const LANES = ['planned', 'claimed', 'in_progress', 'for_review', 'in_review', 'approved', 'done', 'blocked', 'canceled'];
 
@@ -200,7 +217,7 @@ function detailBadges(ex) {
       wpOf('WP01', 'blocked', { title: 'Wait for the review' }),
       wpOf('WP02', 'in_review', { title: 'Reviewing the filter group', sub: [3, 3] }),
       wpOf('WP03', 'canceled', { title: 'Dropped idea' }),
-      wpOf('WP04', 'in_progress', { title: 'Work owned by an agent', sub: [1, 2], actor: SYNTHETIC_ACTORS[0] }),
+      wpOf('WP04', 'in_progress', { title: 'Work owned by an agent', sub: [1, 2], actor: actorNamed('agent-a') }),
       wpOf('WP05', null, { title: 'Not started', phaseLabel: null }),
     ],
     declared: { progress: [25, 0, 0], lifecycleStatus: 'active', implement: 'in_progress', review: 'in_progress' },
@@ -229,6 +246,246 @@ function phasesOpen(ex, n, names) {
   d.friendlyName = `Example Mission with ${names.length} phases`;
   d.phases = names.map((name, i) => phase(name, i === 0 ? 'complete' : i === 1 ? 'in_progress' : 'pending', 'artifact'));
   return d;
+}
+
+
+// ---- Work Package detail screen (mission-ui#5) --------------------------------------------------------------------
+// Every overlay that changes `statusLane` rewrites, in the same overlay, the history (a prefix of the base history plus
+// appended entries), lastTransitionAt, lastEventId, forceCount, subtasks, subtaskProgress, review and readyToStart
+// (contract-pin.md "Lane-rewrite rule"). check.mjs recomputes the derived ones with its own implementation (C5).
+
+const WP_EVENT = (n) => `01JZAB3C4D5E6F7G8H9JKMNQ${String(n).padStart(2, '0')}`;
+const WP_REVIEW_REF = (cycle) => `review-cycle://example-mission-01JZAB3C/WP04/review-cycle-${cycle}.md`;
+const IMPLEMENTER = { tool: 'claude', role: 'implementer', profile: 'implementer-ivan' };
+const REVIEWER = { tool: 'claude', role: 'reviewer', profile: 'reviewer-renata' };
+const FINALIZER = { tool: 'finalize-tasks', role: null, profile: null };
+
+const transition = (n, at, from, to, actor, extra = {}) => ({
+  eventId: WP_EVENT(n),
+  at,
+  kind: 'transition',
+  fromStatusLane: from,
+  toStatusLane: to,
+  actor: { ...actor },
+  force: false,
+  reason: null,
+  reviewVerdict: null,
+  ...extra,
+});
+
+/** The state of each of the three subtasks that detailPopulated lists, by the lane the work package is in. */
+function subtaskStates(ids, lane) {
+  if (lane === 'in_progress') return Object.fromEntries(ids.map((id, i) => [id, ['done', 'in_progress', 'planned'][i] ?? 'planned']));
+  if (['planned', 'claimed'].includes(lane)) return Object.fromEntries(ids.map((id) => [id, 'planned']));
+  return Object.fromEntries(ids.map((id) => [id, 'done']));
+}
+
+/** The review of a history: the last entry that carries a verdict, with the reference of its cycle; null without one. */
+function reviewOf(history) {
+  const judged = history.filter((e) => e.reviewVerdict !== null);
+  const last = judged[judged.length - 1];
+  return {
+    latestResult: last ? { reviewer: last.actor.profile, verdict: last.reviewVerdict, reference: WP_REVIEW_REF(judged.length) } : null,
+    override: null,
+  };
+}
+
+/**
+ * A WorkPackage on top of `base`: `history` replaces the base history and everything that follows the lane is rewritten.
+ * `ids` are the subtask ids and `dependencies` the dependencies; `subtasks` overrides the derived subtask states.
+ */
+function wpFrom(base, { history, ids, dependencies, ownedFiles, unsatisfied = [], subtasks, review }) {
+  const wp = structuredClone(base);
+  const last = history[history.length - 1] ?? null;
+  const lane = last ? last.toStatusLane : null;
+  wp.history = history.map((e) => structuredClone(e));
+  wp.statusLane = lane;
+  wp.lastTransitionAt = last ? last.at : null;
+  wp.lastEventId = last ? last.eventId : null;
+  wp.forceCount = history.filter((e) => e.force).length;
+  if (last) wp.actor = { ...last.actor };
+  wp.subtasks = subtasks ?? subtaskStates(ids, lane);
+  const states = Object.values(wp.subtasks);
+  wp.subtaskProgress = { done: states.filter((v) => v === 'done').length, total: states.length };
+  wp.authored.subtasks = [...ids];
+  wp.dependencies = [...dependencies];
+  wp.readiness = { satisfied: unsatisfied.length === 0, unsatisfied: [...unsatisfied] };
+  wp.readyToStart = lane === 'planned' && unsatisfied.length === 0;
+  wp.ownedFiles = [...ownedFiles];
+  wp.review = review ?? reviewOf(history);
+  return wp;
+}
+
+/** A work package that never left planned: no assignment, nobody of record, one event by the planning tool. */
+function plannedWp(ex, opts) {
+  const wp = wpFrom(ex['WorkPackage.populated'], opts);
+  wp.assignment = structuredClone(ex['WorkPackage.no-events'].assignment);
+  wp.implementerOfRecord = null;
+  return wp;
+}
+
+const LONG_SENTENCE = `${'A deliberately long sentence that has to wrap over several lines of the narrow panel. '.repeat(3)}${LONG_WORD}`;
+
+function workPackageFixtures(ex, bulk) {
+  const base = ex['WorkPackage.populated'];
+  const detail = ex['WorkPackageDetail.populated'];
+  const ids = detail.subtasks.map((x) => x.id);
+  const owned = detail.ownedFiles.map((x) => x.pattern);
+  const deps = detail.dependencies.map((x) => x.wpId);
+  const common = { ids, dependencies: deps, ownedFiles: owned };
+  const at = (day, h = 9) => `2026-09-${String(day).padStart(2, '0')}T${String(h).padStart(2, '0')}:00:00Z`;
+  const first5 = base.history;
+  const populatedOver = (n) => wpFrom(base, { ...common, history: first5.slice(0, n) });
+
+  const approvedHistory = [...first5, transition(6, at(26), 'for_review', 'approved', REVIEWER, { reason: 'Approved after review.', reviewVerdict: 'approved' })];
+  const doneHistory = [...approvedHistory, transition(7, at(27, 10), 'approved', 'done', IMPLEMENTER)];
+  const wpPopulated = populatedOver(2);
+  const wpApproved = wpFrom(base, { ...common, history: approvedHistory });
+
+  const canceled = structuredClone(ex['WorkPackage.canceled']);
+  const canceledSynthetic = structuredClone(canceled);
+  canceledSynthetic.cancellation = { reasonSource: 'synthetic', reason: 'Canceled without a stated reason.' };
+  canceledSynthetic.history[0].reason = 'Canceled without a stated reason.';
+  const canceledNull = structuredClone(canceled);
+  canceledNull.cancellation = { reasonSource: 'operator', reason: null };
+  canceledNull.history[0].reason = null;
+
+  const richHistory = [
+    transition(1, at(20, 8), null, 'planned', FINALIZER),
+    transition(2, at(23, 9), 'planned', 'claimed', IMPLEMENTER),
+    transition(3, at(23, 10), 'claimed', 'in_progress', IMPLEMENTER),
+    transition(4, at(24, 10), 'in_progress', 'for_review', IMPLEMENTER, { force: true, reason: 'Sent to review by the operator before the last subtask.' }),
+    transition(5, at(24, 16), 'for_review', 'in_progress', REVIEWER, { reason: 'Changes requested after review.', reviewVerdict: 'changes_requested' }),
+    transition(6, at(25, 8), 'in_progress', 'for_review', IMPLEMENTER),
+  ];
+
+  const staleness = (value) => ({ ...structuredClone(wpPopulated), staleness: value });
+  const omitted = structuredClone(wpPopulated);
+  delete omitted.staleness;
+
+  const nulls = structuredClone(wpPopulated);
+  Object.assign(nulls, { executionMode: null, priority: null, mergeTargetBranch: null, phaseLabel: null, trackerRefs: [], implementerOfRecord: null });
+
+  const long = structuredClone(wpApproved);
+  long.title = `Build the detail view: ${LONG_WORD} ${LONG_SENTENCE}`;
+  long.mergeTargetBranch = `release/${LONG_WORD.toLowerCase()}-${LONG_WORD.toLowerCase()}`;
+  long.actor.profile = LONG_PROFILE;
+  long.history[5].reason = LONG_SENTENCE;
+  long.review.latestResult.reviewer = LONG_REVIEWER;
+  long.review.latestResult.reference = `review-cycle://example-mission-01JZAB3C/WP04/${LONG_WORD.toLowerCase()}${LONG_WORD.toLowerCase()}/review-cycle-2.md ${LONG_SENTENCE}`;
+
+  const bulkHistory = bulk.makeWorkPackageHistory(60);
+
+  const unknownHistory = [...first5.slice(0, 2), transition(3, at(24), 'in_progress', 'on_hold', IMPLEMENTER)];
+  const unknownLane = wpFrom(base, { ...common, history: unknownHistory, subtasks: { [ids[0]]: 'done', [ids[1]]: 'on_hold', [ids[2]]: 'planned' } });
+
+  const ready = plannedWp(ex, { ...common, history: [transition(1, at(22, 8), null, 'planned', FINALIZER)] });
+  const blocked = plannedWp(ex, {
+    ids,
+    ownedFiles: owned,
+    dependencies: ['WP01', 'WP02'],
+    unsatisfied: ['WP01', 'WP02'],
+    history: [transition(1, at(22, 8), null, 'planned', FINALIZER)],
+  });
+
+  return {
+    wpPopulated,
+    wpWithPrompt: structuredClone(ex['WorkPackage.with-prompt']),
+    wpProvisional: structuredClone(ex['WorkPackage.provisional']),
+    wpNoEvents: structuredClone(ex['WorkPackage.no-events']),
+    wpActorStructured: structuredClone(ex['WorkPackage.actor-structured']),
+    wpActorHandle: structuredClone(ex['WorkPackage.actor-handle']),
+    wpActorRedacted: structuredClone(ex['WorkPackage.actor-redacted']),
+    wpCanceled: canceled,
+    wpCanceledSynthetic: canceledSynthetic,
+    wpCanceledNullReason: canceledNull,
+    wpOverride: structuredClone(ex['WorkPackage.override']),
+    wpOverridePartial: structuredClone(ex['WorkPackage.override-partial']),
+    wpReviewNone: populatedOver(3),
+    wpApproved,
+    wpChangesRequested: populatedOver(4),
+    wpDone: wpFrom(base, { ...common, history: doneHistory }),
+    wpHistoryRich: wpFrom(base, { ...common, history: richHistory }),
+    wpStale: staleness({ status: 'stale', reason: 'live_claim_process', minutesSinceCommit: 2880 }),
+    wpFresh: staleness({ status: 'fresh', reason: null, minutesSinceCommit: 12 }),
+    wpNotApplicable: staleness({ status: 'not_applicable', reason: 'planning_artifact_repo_root_shared_workspace', minutesSinceCommit: null }),
+    wpStalenessOmitted: omitted,
+    wpFactsNull: nulls,
+    wpBlocked: blocked,
+    wpReady: ready,
+    wpLong: long,
+    wpBulkHistory: wpFrom(base, { ...common, history: bulkHistory }),
+    wpUnknownLane: unknownLane,
+  };
+}
+
+function detailFixtures(ex, bulk) {
+  const populated = ex['WorkPackageDetail.populated'];
+  const from = (change) => {
+    const d = structuredClone(populated);
+    change(d);
+    return d;
+  };
+  const long = from((d) => {
+    d.subtasks = bulk.makeSubtasks(40);
+    d.ownedFiles = bulk.makeOwnedFiles(100);
+    d.dependencies[0].title = `${d.dependencies[0].title} ${LONG_WORD} ${LONG_SENTENCE}`;
+    d.workspace.laneBranch = `kitty/mission-${LONG_WORD.toLowerCase()}-01JZCB3C-lane-a`;
+  });
+  return {
+    detailPopulated: structuredClone(populated),
+    detailNoCycles: structuredClone(ex['WorkPackageDetail.no-cycles']),
+    detailNullWorkspace: structuredClone(ex['WorkPackageDetail.null-workspace']),
+    detailWorkspaceNoWorktree: from((d) => {
+      d.workspace.worktreePresent = false;
+    }),
+    detailPlanningLane: structuredClone(ex['WorkPackageDetail.planning-lane']),
+    detailUnknownChangeState: structuredClone(ex['WorkPackageDetail.unknown-change-state']),
+    // main (b61d1fa33) gave `.unparseable-cycle` a pointer and a path; the all-null cycle (WP-30, WP-35b) is now `.cycle-without-path`
+    detailUnparseableCycle: structuredClone(ex['WorkPackageDetail.cycle-without-path']),
+    detailRefusalNotFound: structuredClone(ex['WorkPackageDetailRefusal.not-found']),
+    detailRefusalUnreadable: structuredClone(ex['WorkPackageDetailRefusal.source-unreadable']),
+    detailSubtasksNone: from((d) => {
+      d.subtasks = [];
+    }),
+    detailSubtaskNulls: from((d) => {
+      d.subtasks[0] = { id: d.subtasks[0].id, title: null, statusLane: null };
+    }),
+    detailDepsNone: from((d) => {
+      d.dependencies = [];
+    }),
+    detailDepsBlocked: from((d) => {
+      d.dependencies = [
+        { wpId: 'WP01', title: 'Define the data model', statusLane: 'planned' },
+        { wpId: 'WP02', title: 'Build the list view', statusLane: 'in_progress' },
+      ];
+    }),
+    detailDepNullLane: from((d) => {
+      d.dependencies = [{ wpId: 'WP03', title: 'WP03', statusLane: null }];
+    }),
+    detailOwnedNone: from((d) => {
+      d.ownedFiles = [];
+    }),
+    detailLinksPromptNull: from((d) => {
+      d.artifactReferences.prompt = null;
+    }),
+    detailLinksNone: from((d) => {
+      d.artifactReferences = { prompt: null, spec: null };
+    }),
+    detailRedaction: from((d) => {
+      d.subtasks[0].title = 'Fix the loader for [path] and notify [email]';
+      d.dependencies[0].title = 'Contract slice A for [path]';
+    }),
+    detailLong: long,
+    detailUnknownLanes: from((d) => {
+      d.subtasks[1].statusLane = 'on_hold';
+      d.dependencies[0].statusLane = 'on_hold';
+    }),
+    detailOmittedProvisional: from((d) => {
+      delete d.reviewCycles;
+      delete d.workspace;
+    }),
+  };
 }
 
 /**
@@ -326,5 +583,5 @@ export function buildFixtures({ examples: ex, bulk }) {
   out.detailCustomGroups.mid8 = id(16).slice(0, 8);
   out.detailCustomGroups.slug = `example-mission-${id(16).slice(0, 8)}`;
   out.detailCustomGroups.friendlyName = 'Example Mission Custom Groups';
-  return out;
+  return { ...out, ...workPackageFixtures(ex, bulk), ...detailFixtures(ex, bulk) };
 }

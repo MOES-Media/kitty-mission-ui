@@ -6,12 +6,16 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { page } from 'vitest/browser';
 import '@spec-kitty/tokens';
 import '../src/index.js';
-import { detailImplement, pageMixed, project } from '../src/contract/fixtures.generated.js';
-import type { MissionDetail, MissionOverviewPage } from '../src/contract/types.js';
+import { detailImplement, detailPopulated, pageMixed, project, wpPopulated } from '../src/contract/fixtures.generated.js';
+import type { MissionDetail, MissionOverviewPage, WorkPackage, WorkPackageDetail } from '../src/contract/types.js';
 import type { MissionDetailView, MissionOverviewView } from '../src/contract/types.js';
 import type { SkMissionsScreen } from '../src/elements/sk-missions-screen/sk-missions-screen.js';
 import type { SkPipelineScreen } from '../src/elements/sk-pipeline-screen/sk-pipeline-screen.js';
 import { STALE_BADGE } from '../src/defaults/index.js';
+import { html, render } from 'lit';
+import type { SkWorkPackageScreen } from '../src/elements/sk-work-package-screen/sk-work-package-screen.js';
+import { pairDetail, sampleMission, workPackageFrame } from '../src/elements/sk-work-package-screen/fixtures.js';
+import type { WorkPackageRecordView, WorkPackageDetailView } from '../src/contract/types.js';
 
 // What a host is handed by the contract, typed as the contract documents (never as the screens' view types).
 const overviewPage: MissionOverviewPage = pageMixed as unknown as MissionOverviewPage;
@@ -130,5 +134,154 @@ describe('a host composes both screens from contract-shaped data only', () => {
     missions.missions = without;
     await settle(missions, ['sk-action-row', 'sk-pill-tag']);
     expect(count()).toBe(0);
+  });
+});
+
+// ---- The Work Package screen (SC-008) ----
+const WP_EVENTS = ['sk-select-work-package', 'sk-open-mission', 'sk-open-artifact', 'sk-retry-load'] as const;
+const HOST_WP_NOW = '2026-09-24T10:00:00Z';
+
+/**
+ * The host: contract documents in, properties out. The Work Package and its detail are handed over as the contract has
+ * them (the detail rewritten to the Work Package's id, as a host fetching both by one id would have it); the host adds the
+ * Mission, `status`, `detailStatus`, `now` and `labels`, and nothing else.
+ */
+function hostScreen(wp: WorkPackage, detailDoc: WorkPackage | WorkPackageDetail, extra: Record<string, unknown> = {}): { screen: SkWorkPackageScreen; box: HTMLElement } {
+  const screen = document.createElement('sk-work-package-screen');
+  const record = wp as unknown as WorkPackageRecordView;
+  const detail = pairDetail(record, detailDoc as unknown as WorkPackageDetailView, { cycles: 'none' });
+  Object.assign(screen, {
+    status: 'ready',
+    detailStatus: 'ready',
+    wpId: wp.wpId,
+    workPackage: record,
+    detail,
+    mission: sampleMission,
+    now: HOST_WP_NOW,
+    labels: { lane: (value: string) => (value === 'in_progress' ? 'Doing' : undefined) },
+    ...extra,
+  });
+  const box = document.createElement('div');
+  document.body.append(box);
+  // The shell with `flush`, as the host page composes it.
+  render(workPackageFrame(html`${screen}`), box);
+  return { screen, box };
+}
+
+async function readyScreen(screen: SkWorkPackageScreen): Promise<void> {
+  await screen.updateComplete;
+  await new Promise((resolve) => requestAnimationFrame(() => resolve(null)));
+}
+
+function routeEvents(box: HTMLElement): { seen: CustomEvent[]; routed: Record<string, unknown[]> } {
+  const seen: CustomEvent[] = [];
+  const routed: Record<string, unknown[]> = { 'sk-select-work-package': [], 'sk-open-mission': [], 'sk-open-artifact': [], 'sk-retry-load': [] };
+  for (const name of WP_EVENTS) {
+    box.addEventListener(name, (event) => {
+      seen.push(event as CustomEvent);
+      routed[name]!.push((event as CustomEvent).detail);
+    });
+  }
+  return { seen, routed };
+}
+
+/** Every event of the screen bubbles and is composed (a host above the shell hears it) and cannot be cancelled. */
+function expectFlags(event: CustomEvent): void {
+  expect(event.bubbles, event.type).toBe(true);
+  expect(event.composed, event.type).toBe(true);
+  expect(event.cancelable, event.type).toBe(false);
+}
+
+describe('a host composes the Work Package screen from contract-shaped data only (SC-008)', () => {
+  it('routes the four events with exact payloads, exactly one per activation, and performs no I/O', async () => {
+    await page.viewport(1280, 900);
+    const io = spyOnIo();
+    const timer = vi.spyOn(globalThis, 'setTimeout');
+    const wp = { ...wpPopulated } as unknown as WorkPackage;
+    const { screen, box } = hostScreen(wp, detailPopulated as unknown as WorkPackageDetail);
+    const { seen, routed } = routeEvents(box);
+    await readyScreen(screen);
+    const root = screen.shadowRoot as ShadowRoot;
+    const click = (selector: string, index = 0): void => {
+      const target = root.querySelectorAll<HTMLElement>(selector)[index];
+      if (target === undefined) throw new Error(`no ${selector}`);
+      target.click();
+    };
+
+    // the host's lane label reached the screen (the screen drew from the hook, not from a literal)
+    expect(root.textContent).toContain('Doing');
+
+    // positive control for the listener's reach and for "no activation, no event": nothing has been activated yet
+    expect(seen).toHaveLength(0);
+
+    click('[data-region="header"] nav li > sk-button');
+    expect(seen.map((e) => e.type)).toEqual(['sk-open-mission']);
+    expect(routed['sk-open-mission']).toEqual([{ missionId: sampleMission.missionId, slug: sampleMission.slug }]);
+    expectFlags(seen[0]!);
+
+    seen.length = 0;
+    const dependencies = (detailPopulated as unknown as WorkPackageDetail).dependencies;
+    expect(dependencies.length).toBeGreaterThan(0);
+    click('[data-region="dependency-chain"] sk-button');
+    expect(seen).toHaveLength(1);
+    expect(seen[0]!.type).toBe('sk-select-work-package');
+    expect(seen[0]!.detail).toEqual({ missionId: sampleMission.missionId, wpId: dependencies[0]!.wpId });
+    expectFlags(seen[0]!);
+
+    seen.length = 0;
+    click('[data-region="artifact-links"] sk-button');
+    expect(seen).toHaveLength(1);
+    expect(seen[0]!.type).toBe('sk-open-artifact');
+    const spec = (detailPopulated as unknown as WorkPackageDetail).artifactReferences.spec!;
+    expect(seen[0]!.detail).toEqual({ missionId: sampleMission.missionId, path: spec.path, kind: spec.kind });
+    expectFlags(seen[0]!);
+
+    // the whole-screen retry, on a second screen in the error state
+    seen.length = 0;
+    const second = hostScreen(wp, detailPopulated as unknown as WorkPackageDetail, { status: 'error', workPackage: null, detail: null });
+    const retryRoute = routeEvents(second.box);
+    await readyScreen(second.screen);
+    second.screen.shadowRoot?.querySelector<HTMLElement>('sk-button')?.click();
+    expect(retryRoute.seen).toHaveLength(1);
+    expect(retryRoute.seen[0]!.type).toBe('sk-retry-load');
+    expect(retryRoute.seen[0]!.detail).toEqual({ missionId: sampleMission.missionId, wpId: wp.wpId, target: 'work-package' });
+    expectFlags(retryRoute.seen[0]!);
+    // nothing else was routed anywhere
+    expect(seen).toHaveLength(0);
+
+    // no I/O: every door was watched and none was used
+    expect(io.length).toBe(6);
+    for (const { name, spy } of io) expect(spy.mock.calls.length, `${name} was called`).toBe(0);
+    expect(timer.mock.calls.length, 'setTimeout was called').toBe(0);
+  });
+
+  it('positive control: the spies, the timer spy included, record a deliberate call on the same doors', async () => {
+    const io = spyOnIo();
+    const timer = vi.spyOn(globalThis, 'setTimeout');
+    await expect(fetch('/probe')).rejects.toThrow();
+    new XMLHttpRequest().open('GET', '/probe');
+    localStorage.setItem('probe', '1');
+    expect(() => new WebSocket('ws://probe.invalid')).toThrow();
+    setTimeout(() => undefined, 0);
+    for (const { name, spy } of io) {
+      if (name === 'Storage.getItem' || name === 'navigator.sendBeacon') continue;
+      expect(spy.mock.calls.length, name).toBe(1);
+    }
+    expect(timer.mock.calls.length).toBe(1);
+  });
+
+  it('no activation, no event: a screen with no Mission shows an inert crumb that routes nothing, while the same listener hears the control on a screen with a Mission', async () => {
+    await page.viewport(1280, 900);
+    const wp = { ...wpPopulated } as unknown as WorkPackage;
+    const inert = hostScreen(wp, detailPopulated as unknown as WorkPackageDetail, { mission: null });
+    const heard = routeEvents(inert.box);
+    await readyScreen(inert.screen);
+    inert.screen.shadowRoot?.querySelector<HTMLElement>('[data-region="header"] nav li > sk-button')?.click();
+    expect(heard.seen).toHaveLength(0);
+    const live = hostScreen(wp, detailPopulated as unknown as WorkPackageDetail);
+    const liveHeard = routeEvents(live.box);
+    await readyScreen(live.screen);
+    live.screen.shadowRoot?.querySelector<HTMLElement>('[data-region="header"] nav li > sk-button')?.click();
+    expect(liveHeard.seen).toHaveLength(1);
   });
 });

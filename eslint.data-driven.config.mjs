@@ -12,6 +12,14 @@
 //  - phases.at(-1) and phases.slice(i) with a negative or non-literal argument are legitimate and not flagged.
 //  - A padded literal (' blocked', 'blocked ') is not the whole word and is not flagged: the selectors are anchored.
 //  - Class-name fragments such as `is-blocked` that are neither whole words nor underscored are not flagged.
+//  - The verdict, change-state and staleness words (read from the vendored 1.1 schemas) are gated the same way, with one
+//    difference: the bare words that are common identifiers (changed, unknown, fresh, stale) are matched only in a
+//    comparison (=== !== == !=) and a case label, so a property, key, variable or type member of that name stays clean;
+//    a bare word held in a plain string (const x = 'fresh') is therefore not seen. An expression-free template literal
+//    (s === `fresh`, case `fresh`:) is the same comparison and is matched (S14.3, S14.4). The underscored and whole-word
+//    members (changes_requested, not_applicable, unchanged, the two reason codes) are matched as literals, as the lanes are.
+//  - The gate does NOT read ArtifactKind (the review-cycle kind) or the detail refusal codes (not_found,
+//    source_unreadable); the reviewer self-check list and the foreign-value tests cover them.
 //  - Vocabulary in a .d.ts or JSON file, and code outside packages/*/src (tests), is not scanned.
 //  - An element that imports the vocabulary from defaults/ and then compares with a different literal it never
 //    imports is covered only by the behavioural test with a foreign vocabulary.
@@ -27,6 +35,17 @@ const schema = (name) => parse(readFileSync(new URL(name, SCHEMAS), 'utf8'));
 export const PHASES = schema('MissionPhase.yaml').properties.name.enum;
 export const LANES = schema('StatusLane.yaml').enum;
 export const WORDS = [...PHASES, ...LANES];
+// The verdict, change-state and staleness enums of the 1.1 schemas (ruling ARCH-006 (A)).
+export const VERDICT_WORDS = schema('ReviewVerdict.yaml').enum;
+export const CHANGE_STATE_WORDS = schema('ChangeState.yaml').enum;
+export const STALENESS_STATUS_WORDS = schema('Staleness.yaml').properties.status.enum;
+// The reason enum lists null as its last member; only the codes are words.
+export const STALENESS_REASON_WORDS = schema('Staleness.yaml').properties.reason.enum.filter((w) => typeof w === 'string');
+const NEW_ALL = [...new Set([...VERDICT_WORDS, ...CHANGE_STATE_WORDS, ...STALENESS_STATUS_WORDS, ...STALENESS_REASON_WORDS])].filter((w) => !WORDS.includes(w));
+// Matched anywhere as a literal: underscored members and whole words that are not everyday identifiers.
+export const NEW_BARE_WORDS = ['changed', 'unknown', 'fresh', 'stale'].filter((w) => NEW_ALL.includes(w));
+export const NEW_WORDS = NEW_ALL.filter((w) => !NEW_BARE_WORDS.includes(w));
+export const NEW_UNDERSCORED = NEW_WORDS.filter((w) => w.includes('_'));
 const LANE_ONLY = LANES.filter((w) => w !== 'done');
 // Words used in identifier positions; `plan`, `review` and `done` are ordinary identifiers and are left out.
 export const IDENT_WORDS = [...LANE_ONLY, 'specify', 'implement', 'tasks'];
@@ -51,10 +70,13 @@ const SW = alt(STATUS_WORDS);
 const L = alt(LANES);
 const U = alt(UNDERSCORED);
 const M = alt(S8B_METHODS);
+const NW = alt(NEW_WORDS);
+const NU = alt(NEW_UNDERSCORED);
+const NB = alt(NEW_BARE_WORDS);
 
 const entry = (id, selector, text) => ({ selector, message: `data-driven: ${id} ${text}` });
 
-/** One entry per selector alternative (31), so a message names the alternative that fired. */
+/** One entry per selector alternative (40), so a message names the alternative that fired. */
 export const SELECTOR_ENTRIES = [
   entry('S1', `Literal[value=/^(${W})$/i]`, 'phase name or lane value as a literal; read it from src/defaults/'),
   entry('S1b.1', `Literal[value=/^(${SW})$/i]`, 'status word as a literal; read it from src/defaults/'),
@@ -87,6 +109,15 @@ export const SELECTOR_ENTRIES = [
   entry('S11', `ObjectPattern > Property > Identifier.key[name=/^(${I})$/]`, 'destructuring a name that is a phase or lane'),
   entry('S12.1', 'TemplateElement[value.cooked=/repeat\\(\\s*\\d+\\s*,/i]', 'hard-coded track count in CSS text'),
   entry('S12.2', 'TemplateElement[value.cooked=/nth-(last-)?(child|of-type)\\(\\s*[0-9]/i]', 'hard-coded position in CSS text'),
+  entry('S13.1', `Literal[value=/^(${NW})$/i]`, 'verdict, change-state or staleness word as a literal; read it from src/defaults/'),
+  entry('S13.2', `TemplateElement[value.cooked=/^(${NW})$/i]`, 'verdict, change-state or staleness word as an exact template'),
+  entry('S13.3', `Literal[value=/${NU}/i]`, 'underscored verdict or staleness word inside a longer string'),
+  entry('S13.4', `TemplateElement[value.cooked=/${NU}/i]`, 'underscored verdict or staleness word inside a template'),
+  entry('S13.5', `Property[computed=false] > Identifier.key[name=/^(${NU})$/]`, 'object key named like a verdict or staleness word'),
+  entry('S14.1', `BinaryExpression[operator=/^[!=]==?$/] > Literal[value=/^(${NB})$/i]`, 'change-state or staleness word compared as a literal; read it from src/defaults/'),
+  entry('S14.2', `SwitchCase > Literal.test[value=/^(${NB})$/i]`, 'change-state or staleness word as a case label; read it from src/defaults/'),
+  entry('S14.3', `BinaryExpression[operator=/^[!=]==?$/] > TemplateLiteral[expressions.length=0] > TemplateElement[value.cooked=/^(${NB})$/i]`, 'change-state or staleness word compared as an expression-free template; read it from src/defaults/'),
+  entry('S14.4', `SwitchCase > TemplateLiteral.test[expressions.length=0] > TemplateElement[value.cooked=/^(${NB})$/i]`, 'change-state or staleness word as a template case label; read it from src/defaults/'),
 ];
 
 export default [

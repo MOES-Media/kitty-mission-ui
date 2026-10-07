@@ -22,6 +22,13 @@ interface ConfigModule {
   WORDS: string[];
   STATUS_WORDS: string[];
   UNDERSCORED: string[];
+  VERDICT_WORDS: string[];
+  CHANGE_STATE_WORDS: string[];
+  STALENESS_STATUS_WORDS: string[];
+  STALENESS_REASON_WORDS: string[];
+  NEW_WORDS: string[];
+  NEW_UNDERSCORED: string[];
+  NEW_BARE_WORDS: string[];
   S8B_METHODS: string[];
   ALLOW_LIST: string[];
 }
@@ -49,24 +56,42 @@ const declared = (text: string): string[] => (/^\/\/ expect: (.+)$/m.exec(text)?
 const EXPECTED_WORDS = ['specify', 'plan', 'tasks', 'implement', 'review', 'planned', 'claimed', 'in_progress', 'for_review', 'in_review', 'approved', 'done', 'blocked', 'canceled'];
 const EXPECTED_STATUS_WORDS = ['pending', 'complete', 'draft', 'discarded'];
 const EXPECTED_UNDERSCORED = ['in_progress', 'for_review', 'in_review'];
+// The vocabulary the extension reads (ruling ARCH-006 (A)): the ReviewVerdict, ChangeState and Staleness enums of the
+// vendored 1.1 schemas, written out here independently of the schemas.
+const EXPECTED_VERDICT_WORDS = ['approved', 'changes_requested'];
+const EXPECTED_CHANGE_STATE_WORDS = ['changed', 'unchanged', 'unknown'];
+const EXPECTED_STALENESS_STATUS_WORDS = ['fresh', 'stale', 'not_applicable'];
+const EXPECTED_STALENESS_REASON_WORDS = ['planning_artifact_repo_root_shared_workspace', 'live_claim_process'];
+// Gate words (literals, anywhere outside the allow-list): underscored ones and whole-word ones that are not common identifiers.
+const EXPECTED_NEW_WORDS = ['changes_requested', 'unchanged', 'not_applicable', 'planning_artifact_repo_root_shared_workspace', 'live_claim_process'];
+const EXPECTED_NEW_UNDERSCORED = ['changes_requested', 'not_applicable', 'planning_artifact_repo_root_shared_workspace', 'live_claim_process'];
+// Common identifiers: matched only in comparisons and case labels.
+const EXPECTED_NEW_BARE_WORDS = ['changed', 'unknown', 'fresh', 'stale'];
 const EXPECTED_METHODS = ['at', 'slice', 'splice', 'with', 'toSpliced'];
 const EXPECTED_ENTRY_IDS = [
   'S1', 'S1b.1', 'S1b.2', 'S2', 'S3a', 'S3b', 'S3c.1', 'S3c.2', 'S4', 'S5', 'S5b.1', 'S5b.2', 'S5b.3', 'S6', 'S7',
   'S7b.1', 'S7b.2', 'S7b.3', 'S7b.4', 'S8a.1', 'S8a.2', 'S8b.1', 'S8b.2', 'S8c.1', 'S8c.2', 'S9.1', 'S9.2', 'S10', 'S11',
-  'S12.1', 'S12.2',
+  'S12.1', 'S12.2', 'S13.1', 'S13.2', 'S13.3', 'S13.4', 'S13.5', 'S14.1', 'S14.2', 'S14.3', 'S14.4',
 ];
 
 describe('data-driven gate self-test: configuration', () => {
-  it('declares the vocabulary of the contract and the 31 selector entries, each with a distinct id', async () => {
+  it('declares the vocabulary of the contract and the 40 selector entries, each with a distinct id', async () => {
     const cfg = await loadConfig();
     expect(cfg.WORDS).toEqual(EXPECTED_WORDS);
+    expect(cfg.VERDICT_WORDS).toEqual(EXPECTED_VERDICT_WORDS);
+    expect(cfg.CHANGE_STATE_WORDS).toEqual(EXPECTED_CHANGE_STATE_WORDS);
+    expect(cfg.STALENESS_STATUS_WORDS).toEqual(EXPECTED_STALENESS_STATUS_WORDS);
+    expect(cfg.STALENESS_REASON_WORDS).toEqual(EXPECTED_STALENESS_REASON_WORDS);
+    expect(cfg.NEW_WORDS).toEqual(EXPECTED_NEW_WORDS);
+    expect(cfg.NEW_UNDERSCORED).toEqual(EXPECTED_NEW_UNDERSCORED);
+    expect(cfg.NEW_BARE_WORDS).toEqual(EXPECTED_NEW_BARE_WORDS);
     expect(cfg.STATUS_WORDS).toEqual(EXPECTED_STATUS_WORDS);
     expect(cfg.UNDERSCORED).toEqual(EXPECTED_UNDERSCORED);
     expect(cfg.S8B_METHODS).toEqual(EXPECTED_METHODS);
     const ids = cfg.SELECTOR_ENTRIES.map((e) => /^data-driven: (S[\w.]+) /.exec(e.message)?.[1]);
     expect(ids).toEqual(EXPECTED_ENTRY_IDS);
-    expect(cfg.SELECTOR_ENTRIES.length).toBe(31);
-    expect(new Set(ids).size).toBe(31);
+    expect(cfg.SELECTOR_ENTRIES.length).toBe(40);
+    expect(new Set(ids).size).toBe(40);
   });
 
   it('turns inline configuration off', async () => {
@@ -77,9 +102,9 @@ describe('data-driven gate self-test: configuration', () => {
 });
 
 describe('data-driven gate self-test: positive fixtures', () => {
-  it('has the 36 positive fixtures and no other file', () => {
-    expect(positives.length).toBe(36);
-    expect(readdirSync(FIXTURE_DIR).length).toBe(36);
+  it('has the 46 positive fixtures and no other file', () => {
+    expect(positives.length).toBe(46);
+    expect(readdirSync(FIXTURE_DIR).length).toBe(46);
   });
 
   for (const name of positives) {
@@ -161,6 +186,60 @@ describe('data-driven gate self-test: every word of every vocabulary constant', 
   });
 });
 
+describe('data-driven gate self-test: every word of the verdict, change-state and staleness vocabularies', () => {
+  it('reports each gate word as a literal (S13.1), in any case, and underscored ones inside a longer string (S13.3)', async () => {
+    const cfg = await loadConfig();
+    let ran = 0;
+    for (const w of cfg.NEW_WORDS) {
+      for (const v of [w, w.toUpperCase()]) {
+        expect(selectorIds(await lint(`export const x = '${v}';\n`)), v).toContain('S13.1');
+        ran += 1;
+      }
+    }
+    expect(ran).toBe(10);
+    let inside = 0;
+    for (const w of cfg.NEW_UNDERSCORED) {
+      expect(selectorIds(await lint(`export const x = 'tone-${w}';\n`)), w).toEqual(['S13.3']);
+      inside += 1;
+    }
+    expect(inside).toBe(4);
+  });
+
+  it('reports each bare word only in a comparison (S14.1, S14.3) or a case label (S14.2, S14.4), as a string or a template', async () => {
+    const cfg = await loadConfig();
+    let ran = 0;
+    for (const w of cfg.NEW_BARE_WORDS) {
+      expect(selectorIds(await lint(`export const f = (s: string): boolean => s === '${w}';\n`)), w).toEqual(['S14.1']);
+      expect(selectorIds(await lint(`export const f = (s: string): boolean => '${w}' !== s;\n`)), w).toEqual(['S14.1']);
+      expect(selectorIds(await lint(`export function f(s: string): number {\n  switch (s) {\n    case '${w}':\n      return 1;\n    default:\n      return 0;\n  }\n}\n`)), w).toEqual(['S14.2']);
+      // the same words as an expression-free template literal are the same comparison (S14.3) and case label (S14.4)
+      expect(selectorIds(await lint(`export const f = (s: string): boolean => s === \`${w}\`;\n`)), w).toEqual(['S14.3']);
+      expect(selectorIds(await lint(`export const f = (s: string): boolean => \`${w}\` !== s;\n`)), w).toEqual(['S14.3']);
+      expect(selectorIds(await lint(`export function f(s: string): number {\n  switch (s) {\n    case \`${w}\`:\n      return 1;\n    default:\n      return 0;\n  }\n}\n`)), w).toEqual(['S14.4']);
+      // a template with an expression is not a bare word and is not flagged (positive control: the three above are)
+      expect(selectorIds(await lint(`export const f = (s: string, t: string): boolean => s === \`${w}\${t}\`;\n`)), w).toEqual([]);
+      // the same word as a plain literal is an ordinary string and is not flagged (positive control: the three above are)
+      expect(selectorIds(await lint(`export const x = '${w}';\n`)), w).toEqual([]);
+      ran += 1;
+    }
+    expect(ran).toBe(4);
+  });
+
+  it('reads the vocabulary from the vendored schemas: every enum member is a gate word or a bare word', async () => {
+    const cfg = await loadConfig();
+    const all = [...cfg.VERDICT_WORDS, ...cfg.CHANGE_STATE_WORDS, ...cfg.STALENESS_STATUS_WORDS, ...cfg.STALENESS_REASON_WORDS];
+    expect(all.length).toBe(10);
+    const covered = new Set([...cfg.WORDS, ...cfg.NEW_WORDS, ...cfg.NEW_BARE_WORDS]);
+    expect(all.filter((w) => !covered.has(w))).toEqual([]);
+  });
+
+  // The gate does not read ArtifactKind or the refusal codes; the reviewer self-check list and the foreign-value tests do.
+  it('does not read the artifact kind or the refusal codes', async () => {
+    expect(selectorIds(await lint("export const x = 'review_cycle';\n"))).toEqual([]);
+    expect(selectorIds(await lint("export const x = 'source_unreadable';\n"))).toEqual([]);
+  });
+});
+
 describe('data-driven gate self-test: negative fixtures', () => {
   const NEGATIVE: Record<string, string> = {
     'progress.done read': 'export const f = (progress: { done: number; total: number }) => progress.done + progress.total;',
@@ -177,10 +256,15 @@ describe('data-driven gate self-test: negative fixtures', () => {
     'phases length against zero': 'export const f = (phases: string[]) => phases.length > 0;',
     'phases at negative': 'export const f = (phases: string[]) => phases.at(-1);',
     'counts by variable': 'export const f = (counts: Record<string, number>, lane: string) => counts[lane];',
+    'property named changed': 'export const f = (o: { changed: boolean }) => o.changed;',
+    'object key unknown': 'export const m = { unknown: 1 };',
+    'variable named stale': 'export const f = (): boolean => {\n  const stale = true;\n  return stale;\n};',
+    'type member fresh': 'export interface R {\n  fresh: boolean;\n}',
+    'comparison with a variable': 'export const f = (s: string, t: string): boolean => s === t;',
   };
 
   it('has the declared number of negative cases', () => {
-    expect(Object.keys(NEGATIVE).length).toBe(14);
+    expect(Object.keys(NEGATIVE).length).toBe(19);
   });
 
   for (const [name, code] of Object.entries(NEGATIVE)) {
@@ -196,6 +280,7 @@ describe('data-driven gate self-test: negative fixtures', () => {
     expect(selectorIds(await lint('export const h = html`<sk-pill-tag status="info">${label}</sk-pill-tag> blocked`;\n'))).toEqual(['S3a']);
     expect(selectorIds(await lint('export const c = css`.g { grid-template-columns: repeat(5, 1fr); }`;\n'))).toEqual(['S12.1']);
     expect(selectorIds(await lint('export const f = (phases: string[]) => phases.length > 3;\n'))).toEqual(['S9.1']);
+    expect(selectorIds(await lint("export const f = (o: { changed: boolean }, s: string) => o.changed && s === 'changed';\n"))).toEqual(['S14.1']);
   });
 });
 
@@ -227,6 +312,18 @@ describe('data-driven gate self-test: the allow-list', () => {
       expect(selectorIds(await lint(VIOLATING, ELEMENT_FILE))).toEqual(['S1']);
     });
   }
+
+  it('exempts the new words in defaults and contract paths and reports them in an element', async () => {
+    const code = "export const f = (s: string): boolean => s === 'changes_requested' || s === 'unknown';\n";
+    let ran = 0;
+    for (const file of ['packages/sample/src/defaults/review.ts', 'packages/sample/src/contract/types.ts']) {
+      const ignored = await lint(code, file);
+      expect(ignored.map((m) => m.ruleId)).toEqual([null]);
+      ran += 1;
+    }
+    expect(ran).toBe(2);
+    expect(selectorIds(await lint(code, ELEMENT_FILE)).sort()).toEqual(['S13.1', 'S13.3', 'S14.1']);
+  });
 
   it('does not widen: look-alike paths are scanned', async () => {
     for (const file of [

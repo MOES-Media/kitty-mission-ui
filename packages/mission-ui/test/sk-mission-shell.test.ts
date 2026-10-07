@@ -128,6 +128,8 @@ function mountTree(el: SkMissionShell, items = workPackageTree, current = ''): S
 
 describe('tier (FR-005, D-02)', () => {
   const cases: Array<[number, ShellTier]> = [
+    [689, 'mobile'],
+    [700, 'mobile'],
     [719, 'mobile'],
     [720, 'collapsed'],
     [800, 'collapsed'],

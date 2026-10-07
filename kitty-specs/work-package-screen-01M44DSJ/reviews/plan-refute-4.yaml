@@ -1,0 +1,30 @@
+schema: review-refute/v1
+complete: true
+phase: plan
+batch: 4
+verdicts:
+  - id: PLAN-ARCH-013
+    verdict: confirmed
+    reason: 'wpId defaults to empty and data-model only says the two "must agree" and are never reconciled, with no rule for an empty wpId or a ready screen without wp-id, and EV-7/FR-026 cover only the null-workPackage case; the merged null-mission claim also holds.'
+  - id: PLAN-VISUAL-001
+    verdict: confirmed
+    reason: 'prototype.css uses viewport @media 1100/800 but plan.md table and E-19 use the same numbers as container widths, so the 1280 stories (content cell about 984 px) get two columns while the prototype shows three; S8 only allows E-19 adjustment and DW-24 says keep; severity 4 is right and WP-46 "collapsed tier" wording is also off.'
+  - id: PLAN-VISUAL-002
+    verdict: confirmed
+    reason: 'prototype.css sets .page-header to a column inside @media (max-width: 800px) and the 620 block does not touch it, while DW-24 and FR-029 say the header wraps at 620 px and the plan table leaves 621 to 799 px unwrapped.'
+  - id: PLAN-VISUAL-004
+    verdict: confirmed
+    reason: 'contracts/defaults.md sets REVIEW_TITLE "Review" and WORKSPACE_TITLE "Workspace" while the prototype h2s are "Review cycles" and "Workspace environment", and DW-13/DW-18 do not mention panel titles.'
+  - id: PLAN-VISUAL-005
+    verdict: confirmed
+    reason: 'prototype .detail-grid uses minmax(220px,.8fr) minmax(320px,1.3fr) minmax(220px,.8fr) (1.2fr at two columns) plus a last-stack sub-grid, none of which plan.md or the screen contract states, and E-19 permits only 1100/800/620 px.'
+  - id: PLAN-VISUAL-006
+    verdict: confirmed
+    reason: 'plan.md calls the IC-03a spikes throwaway with no committed baseline, but IC-03b is created from the approved IC-03a tip and the PR slice list names "spikes", and no step removes them or excludes them from lint before E-17 to E-19 are approved.'
+  - id: PLAN-VISUAL-007
+    verdict: refuted
+    reason: 'plan.md Shared-files already names the post-CP-1 route ("a gap is a change request" for src/defaults/**, with new copy files allowed inside a WP element directory), so "no work package owns the edit" overstates; at most a nit about convenience.'
+  - id: PLAN-VISUAL-009
+    verdict: confirmed
+    reason: 'defaults.md has a single OPEN_REVIEW_LABEL "Open review" with no per-cycle accessible-name rule, and the screen contract makes both Frontmatter dependency nodes and dependency-chain nodes controls with no distinguishing name rule.'
+

@@ -1,0 +1,26 @@
+schema: review-verify/v1
+complete: true
+phase: plan
+results:
+  - id: PLAN-CORRECT-005
+    status: resolved
+    reason: 'detailWorkspaceAllNull is gone from every artifact, WP-33b maps to detailNullWorkspace, WP-32 maps to the new detailWorkspaceNoWorktree (lane-a, worktreePresent false, no removal claim), and contract-pin.md line 160 now reads 48 exports with 46 for the omitted-member fork, which is arithmetically right.'
+  - id: PLAN-VISUAL-009
+    status: resolved
+    reason: 'Names are unique through OPEN_REVIEW_LABEL(n) and dependencyNodeLabel, Frontmatter dependencies are non-interactive pills, and the departure from spec DW-7 is now recorded as proposal P-7 in plan.md, in the Charter Check, in the CP-1 packet, in IC-09 PR inputs and in the screen contract (lines 74, 99, 125, 132).'
+  - id: PLAN-FRESH-004
+    status: resolved
+    reason: 'The Charter Check row and the IC-09 PR inputs now read "P-1 to P-4, P-6 and P-7 (P-5 reserved for PLAN-CORRECT-008 option b)", and no stale "P-1 to P-4" remains in any artifact.'
+  - id: PLAN-FRESH-005
+    status: resolved
+    reason: 'Every panel-chrome line is now tagged PLAN-ARCH-010 and worded as "panel container, chrome per the fork" (plan.md lines 72, 111, 136, 149, 190; quickstart.md line 44; research.md lines 99 and 113; gates.md E-18); panelStyles appears only as conditional wording.'
+  - id: PLAN-FRESH-006
+    status: resolved
+    reason: 'The research.md Spikes heading now reads "S0 in IC-01; S5 to S8 in IC-03a", which matches plan.md IC-01, and no artifact still puts S0 in IC-03a.'
+  - id: PLAN-FRESH-007
+    status: resolved
+    reason: 'The detailPopulated Rows column now includes WP-46 to WP-48 and WP-49, wpPopulated is described as the default side of every pair that does not name another, and resolveRefusal and resolveChangeState have named files (wp-retry.ts, wp-files.ts, wp-review.ts) that match the plan.md logic tree.'
+  - id: PLAN-FORKS-CHECK
+    status: resolved
+    reason: 'plan.md "Open forks for the operator" lists all 15 fork ids (CORRECT-003, 004, 008, 012; ARCH-003, 006, 010, 013; VISUAL-001, 006, 011, 014; FRESH-001, 002, 003) with claims, remedies and a "Provisional plan text until the operator rules" pointer, and the affected text I sampled is tagged with the finding ids, so I found no pre-commitment.'
+

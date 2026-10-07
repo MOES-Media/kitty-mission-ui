@@ -1,0 +1,132 @@
+schema: review-findings/v1
+complete: true
+phase: plan
+lens_group: ARCH
+mission: work-package-screen-01M44DSJ
+findings:
+  - id: PLAN-ARCH-001
+    lens: Reuse and single source of truth
+    severity: 4
+    title: "New view type `WorkPackageView` collides with #4's existing, different `WorkPackageView` in the same file"
+    evidence:
+      - artifact: "data-model.md § Widened view types (WorkPackageView); research.md D-06; plan.md IC-01 (view types in src/contract/types.ts)"
+      - code: "<#4>/packages/mission-ui/src/contract/types.ts: `export type WorkPackageView = Omit<WorkPackageSummary, 'statusLane'> & { statusLane: string | null; actor?: string }`"
+      - code: "<#4>/packages/mission-ui/src/logic/types.ts: PlacedCard.wp: WorkPackageView; contract/types.ts MissionDetailView.workPackages: WorkPackageView[]"
+    claim: "#4 already exports `WorkPackageView` from src/contract/types.ts (a widened WorkPackageSummary with a host `actor?: string`, used by the board, PlacedCard and MissionDetailView). The plan defines a second `WorkPackageView` in the same file, built on the 1.0 `WorkPackage`. IC-01 either breaks every #4 consumer or cannot add the type. `WorkPackageDetailView`, `HistoryEntryView`, `SubtaskView` and `DependencyRefView` have no collision. The contracts and data-model also use the name `WorkPackageView` for the screen's `workPackage` property and for `resolveLists` / `historyView` signatures."
+    remediation: "Rename the new type everywhere in plan, data-model, contracts/sk-work-package-screen.md and contracts/defaults.md (for example `WorkPackageRecordView`). Add to the IC-01 exit checks that #4's `WorkPackageView` stays unchanged and that `tsc` is green for the board and Pipeline screens."
+  - id: PLAN-ARCH-002
+    lens: Reuse and single source of truth
+    severity: 3
+    title: "Several new defaults and one type repeat what #4 already ships, giving a second source for the same word or tone"
+    evidence:
+      - artifact: "contracts/defaults.md § defaults/staleness.ts (STALENESS_BADGE), § defaults/wp-copy.ts (workPackageCountText, PROGRESS_LABEL_SUBTASKS), § logic additions (resolveVerdict / resolveChangeState return { word: string; tone: string })"
+      - code: "<#4>/packages/mission-ui/src/defaults/lifecycle.ts: STALE_BADGE = { label: 'stale', tone: 'info' }"
+      - code: "<#4>/packages/mission-ui/src/defaults/lanes.ts: LANE_COUNT_TEXT (1 Work Package / N Work Packages), SUBTASK_PROGRESS_TEXT(done, total)"
+      - code: "<#4>/packages/mission-ui/src/logic/types.ts: StateBadge { label, tone: BadgeTone }, BadgeTone"
+    claim: "(a) `STALENESS_BADGE` is the same literal as #4's `STALE_BADGE`, so the word 'stale' and its tone would have two homes. (b) `workPackageCountText(n)` duplicates `LANE_COUNT_TEXT`. (c) `PROGRESS_LABEL_SUBTASKS` duplicates `SUBTASK_PROGRESS_TEXT`. (d) The new resolvers return `tone: string`, a second, untyped tone vocabulary next to #4's `StateBadge` / `BadgeTone`. A string tone also needs a cast before it reaches `sk-pill-tag`. The plan's 'Dependencies on #4' list names none of these."
+    remediation: "Reuse `STALE_BADGE`, `LANE_COUNT_TEXT` and `SUBTASK_PROGRESS_TEXT` by import and delete the three new exports. Type `VERDICT_*` and `CHANGE_STATE_*` as `Record<string, StateBadge>` (one table of badges instead of separate WORDS and TONES tables). `resolveVerdict` and `resolveChangeState` return `StateBadge`. Add the symbols to the 'Dependencies on #4' re-check list."
+  - id: PLAN-ARCH-003
+    lens: Boundaries and write ownership
+    severity: 4
+    title: "No work package owns the wiring of a part into the screen: part styles, sheet adoption and render calls sit in files the part owner may not edit"
+    evidence:
+      - artifact: "plan.md § Shared files (sk-work-package-screen.ts: IC-03b then IC-07 for status switch and event methods only; panel-parts.ts: IC-03b, read-only for all; header/facts/history/review/files/chain/work/state parts each owned by one WP); § IC-03b (titled EMPTY panels); gates.md E-17 ('adopted sheets through library-sheets.ts additions')"
+      - artifact: "research.md G-09 / G-10 ('adopted event-timeline sheet in history-parts.ts', 'facts sheet in facts-parts.ts') versus gates.md E-17 (library-sheets.ts)"
+      - code: "<#4>/packages/mission-ui/src/elements/sk-pipeline-screen/sk-pipeline-screen.ts: imports { breadcrumbsSheet, emptyStateSheet } from library-sheets.js and { pipelineStyles, renderHeader, ... } from pipeline-parts.js; `pipelineStyles` is a css`` export of the parts file composed in the screen's `static styles`"
+      - code: "<#4>/packages/mission-ui/src/library-sheets.ts: only segmentedChoice, workflowBoard, workflowLane, breadcrumbs, emptyState sheets exist; no event-timeline or facts sheet"
+    claim: "In #4 a part file exports its css and render functions and the screen file imports and composes them, and sheets are adopted in the screen. Here IC-04 to IC-07 can make a region appear only by editing the screen file (import the part, call it, add its styles, adopt sheets) or the read-only `panel-parts.ts`. IC-03b cannot pre-wire parts that do not exist yet. `library-sheets.ts` must gain the event-timeline sheet (IC-05's history) and the facts sheet (IC-04 and IC-06) but is absent from the Shared files table, so it has no owner and two or three writers. Research and gates.md also disagree on where sheets are adopted."
+    remediation: "FORK. (A, preferred) IC-03b creates every part file as a stub with its final export signatures (`renderX(props)` returning `nothing`, `xStyles = css```) and wires all stubs, the composed `static styles` and every sheet into the screen. `library-sheets.ts` gets the event-timeline and facts sheets in IC-03b only. Later WPs replace stub bodies and never touch the screen or `library-sheets.ts`. Record the signatures in contracts/sk-work-package-screen.md. (B) Add `library-sheets.ts` and a marked wiring block of the screen file to a named owner per chain and accept merge conflicts, resolved by the orchestrator at the IC-08 merge. Either way fix the contradiction between research G-09/G-10 and E-17."
+  - id: PLAN-ARCH-004
+    lens: Boundaries and write ownership
+    severity: 3
+    title: "Event methods have two owners and the event tests of IC-04, IC-05 and IC-06 cannot pass before IC-07"
+    evidence:
+      - artifact: "plan.md § Shared files row 1 (IC-03b writes 'literal dispatchEvent calls') versus row 2 (IC-07 writes 'the event methods only'); § IC-06 (EV-1 proof via traceability FR-008..010); § IC-04 (EV-4 via FR-003); § IC-05 (EV-6); § Traceability"
+      - artifact: "research.md D-04 (every dispatch is a literal in the screen file, parts get a handler passed in)"
+    claim: "The crumb (EV-4), the 'Open review' link (EV-6), the dependency node (EV-1) and the Open spec / Open prompt links (EV-5) are drawn by IC-04, IC-05 and IC-06, but their dispatch methods are written by IC-03b or IC-07 (ambiguous). IC-07 comes last in chain Y, so IC-06's 'EV-1 test' and IC-04's 'EV-4 test' have no event to assert when those WPs are reviewed. The spec requires each event to be asserted with a positive control. The text also leaves open whether the surface freeze includes the dispatch bodies."
+    remediation: "State once that IC-03b writes all four dispatch methods (payload builders come from IC-02's `retryDetail` plus small literal builders, with `@fires`) as part of the frozen surface. IC-07 keeps only the status switch and the regional-notice logic. Part files receive the handlers as arguments. Each region WP then owns and runs its own event test."
+  - id: PLAN-ARCH-005
+    lens: Boundaries and write ownership
+    severity: 3
+    title: "Element `fixtures.ts`, the screen test file and IC-03b's scaffold story have no single writer or title"
+    evidence:
+      - artifact: "plan.md § Source code tree (fixtures.ts, test/sk-work-package-screen.test.ts, five *.stories.ts); § Shared files (stories and baselines only; no row for fixtures.ts or tests); § IC-03b ('shellFrame story scaffolding (one story proving the frame at 1280)')"
+      - artifact: "research.md D-17 ('one sk-work-package-screen.test.ts for events and states'); D-15 (56 stories, five titles each with at least four stories, one owner per title)"
+    claim: "(a) `elements/sk-work-package-screen/fixtures.ts` (prop builders consumed by all five story files) is written by whom? (b) `test/sk-work-package-screen.test.ts` collects EV-1 to EV-8 and the state tests, which belong to IC-04 to IC-07. (c) IC-03b's scaffold story is either a 57th baseline (the plan says 56 new, 174 total) or an uncommitted spike, or it lives in one of the five owned story files (two writers) or in a sixth title (violates MIN_STORIES_PER_COMPONENT of four)."
+    remediation: "Add rows to Shared files. `fixtures.ts`: IC-03b creates the prop builders for every fixture name in contract-pin.md, later WPs add only new exports with distinct names, or each story file keeps its own builders. The screen test file: split into `sk-work-package-screen.<area>.test.ts` per owning WP (or give EV-n tests to the WP that draws the control). The scaffold story: make it uncommitted, or fold it into a story of the title it belongs to and count it, keeping 56 consistent."
+  - id: PLAN-ARCH-006
+    lens: Dynamic-pipeline constraint
+    severity: 4
+    title: "The data-driven gate does not cover the new vocabularies the plan says it covers, and the two new self-test fixtures are vacuous"
+    evidence:
+      - artifact: "plan.md § Summary / Charter Check ('existing data-driven gate applies, extended only by self-test cases'); research.md D-07, D-11, R-04; contracts/gates.md § How each gate applies (data-driven row), § Self-check list"
+      - code: "<#4>/eslint.data-driven.config.mjs: WORDS = MissionPhase.name enum + StatusLane enum; STATUS_WORDS = pending, complete, draft, discarded; UNDERSCORED = in_progress, for_review, in_review; IDENT_WORDS excludes review and done; S1 flags any Literal equal to a WORD outside the allow-list"
+      - code: "<contract 1.1>/schemas/StatusLane.yaml (approved is a lane), ReviewVerdict.yaml (approved, changes_requested), ChangeState.yaml (changed, unchanged, unknown), Staleness.yaml status enum (fresh, stale, not_applicable)"
+    claim: "Only `approved` is already a gate word (S1, because it is a lane). So self-test fixture (1), a verdict compared with 'approved', is red today without any change, and fixture (2), a history marker keyed on a lane value, is also S1. The exit check 'each new case red without its fix' therefore proves nothing. The words that really are new (`changes_requested`, `fresh`, `stale`, `not_applicable`, `changed`, `unchanged`, `unknown`, `not_found`, `source_unreadable`) are matched by no selector, so `=== 'stale'` or `'changes_requested'` outside defaults/ passes the gate. The plan relies on a reviewer checklist, and D-07 says words are added only if a fixture shows an escape, but no fixture tests an escape. Lane-freedom of 'Current on the last array element' is fine: S8/S9 key on `phases` only and the history is positional."
+    remediation: "FORK. (A) Extend `eslint.data-driven.config.mjs` to read the verdict, change-state and staleness-status enums from the vendored schemas as it already does for lanes. Add `changes_requested`, `not_applicable` and `unchanged` to the underscored or whole-word lists and handle the false-positive risk of bare `unknown`, `changed`, `fresh`, `stale` (restrict to comparisons and case labels). Add positive fixtures per new word, update EXPECTED_WORDS and the count guards, and make each new fixture red before the config change. (B) Leave the gate as is, drop the claim that it covers the new vocabularies, and add a node test that scans the new logic and part files for these literals; plan fixtures (1) and (2) as non-vacuous only for what S1 already catches. Whichever is chosen, rewrite the plan so the self-test fixtures target a word that is red without the change."
+  - id: PLAN-ARCH-007
+    lens: Dynamic-pipeline constraint
+    severity: 3
+    title: "The artifact kind 'review_cycle' literal for EV-6 has no home and is not gated"
+    evidence:
+      - artifact: "research.md D-04 (kind typed from the generated ArtifactKind union 'only for the review-cycle constant'; 'the data-driven gate has no word for it'); contracts/sk-work-package-screen.md § Events; spec FR-023 text on pass-through"
+      - code: "<contract 1.1>/schemas/ReviewCycle.yaml (fields: cycleNumber, reviewedAt, reviewer, verdict, feedbackReference, artifactPath; no `kind`) and ArtifactKind.yaml (review_cycle)"
+    claim: "ReviewCycle has no `kind`, so the screen must supply 'review_cycle' itself. D-04 does not say where. The self-check list forbids vocabulary literals outside defaults/ but does not list this one, and the gate cannot see it, so the literal would sit in `sk-work-package-screen.ts` or a part file. It is a branch-free constant, but it is a contract vocabulary word that the plan's rule says belongs in defaults/."
+    remediation: "Add `REVIEW_CYCLE_ARTIFACT_KIND: ArtifactKind` (typed from the generated union) to `defaults/review.ts`, read it in the Open review handler, and add the symbol to the self-check list and to the data-driven word list decision of PLAN-ARCH-006. Test EV-6 asserts the payload kind equals that export."
+  - id: PLAN-ARCH-008
+    lens: Exceptions and gaps
+    severity: 3
+    title: "E-17's `class=` allowance omits the breadcrumbs, empty-state and progress prefixes that the screen's own parts need"
+    evidence:
+      - artifact: "contracts/gates.md E-17 (only sk-event-timeline and sk-facts, in history-parts, facts-parts, work-parts); plan.md § Technical Context (adopted families breadcrumbs, empty-state, progress); contracts/sk-work-package-screen.md ('empty': .sk-empty-state panel; DW-1 breadcrumb; subtasks progress bar); data-model.md ('Drift items met WITHOUT an exception')"
+      - code: "<#4>/eslint.config.mjs: classOnly(['sk-breadcrumbs', 'sk-empty-state', 'sk-progress']) override for sk-pipeline-screen/{sk-pipeline-screen,pipeline-parts}.ts; E-01 to E-03 are per-file and do not cover new files"
+    claim: "The new screen needs `class=sk-breadcrumbs` (header-parts.ts), `class=sk-empty-state` (state-parts.ts and the screen file's empty state, plus the regional empty forms) and `sk-progress` (work-parts.ts subtask bar, state-parts.ts indeterminate loading), exactly as #4's Pipeline screen does under its own per-file override. No exception covers them, and IC-03b is the only writer of `eslint.config.mjs`. The WP agent hits `class= is forbidden` and cannot fix it. The plan's 'Drift items met WITHOUT an exception' list does not mention them either."
+    remediation: "Extend E-17 (or add a numbered entry, as E-01..E-03 did) with the prefixes sk-breadcrumbs, sk-empty-state, sk-progress, and list the real file scopes: header-parts.ts, state-parts.ts, work-parts.ts, sk-work-package-screen.ts. State the sunset per family. IC-03b writes the override as one `classOnly([...])` per file and proves each with a leak plant like #4."
+  - id: PLAN-ARCH-009
+    lens: Exceptions and gaps
+    severity: 3
+    title: "E-18's file list omits panel-parts.ts and header-parts.ts, and spreads one panel chrome over eight files"
+    evidence:
+      - artifact: "contracts/gates.md E-18 (files: facts, files, history, review, chain, work, state parts and the screen); plan.md § Shared files (panel-parts.ts: IC-03b, titled empty panels); research.md G-11 (layout-only wrapper with token spacing)"
+      - code: "<#4>/stylelint.config.mjs: EXCEPTIONS entries are keyed per file; E-09's pinned `letter-spacing: 0.08em` and E-13 are scoped file by file; an override REPLACES the rule options for that file"
+    claim: "The panel chrome (padding, gap, mono uppercase title, border) is created in IC-03b's `panel-parts.ts`, but that file is not in E-18's scope, so Stylelint fails the first commit. `header-parts.ts` (header band) is also missing. Granting the 9 properties plus the pinned 0.08em literal to eight part files widens the exception far more than needed, because Stylelint cannot scope by selector."
+    remediation: "Define the panel chrome once as `panelStyles` in `panel-parts.ts` (IC-03b) and have the other parts use only layout CSS. Scope E-18 to `panel-parts.ts` and `sk-work-package-screen.ts` (and `header-parts.ts` only if the header band needs paint). Add the 0.08em literal to E-09's pinned extension for `panel-parts.ts` only. Later WPs then need no exception."
+  - id: PLAN-ARCH-010
+    lens: Exceptions and gaps
+    severity: 3
+    title: "FORK: the panel (E-18, gap G-11) may be avoidable with `sk-card` plus `sk-section-header`, and flat panels depart from the prototype"
+    evidence:
+      - artifact: "contracts/gates.md E-18; research.md G-11 ('no titled panel/section container'); spec.md DW-30 (prototype: bordered panel cards; proposed: flat per N-4); plan.md § Primary Dependencies lists sk-card"
+      - code: "<elements 1.1.0-rc.10>/custom-elements.json: sk-card (default slot, part `card`, `inset`, `status`, `variant`) and sk-section-header (slots title, eyebrow, metadata, description, action)"
+      - code: "<prototype>/prototype.css: `.panel` is padding space-5, border width-1 solid, radius-md, background surface-card"
+      - code: "<#4>/stylelint.config.mjs: E-09 (N-4) is about board lanes; the Pipeline inspector's flat panel is E-12"
+    claim: "The library already ships a card surface and a titled section header, and the prototype's `.panel` is a bordered card. The plan says G-11 'no titled panel container' without recording why `sk-card` + `sk-section-header` cannot do it, and DW-30 reaches 'flat' by citing N-4, which concerned board lanes. Flat panels make drift (a REJECT item unless confirmed) and require E-18. The charter says a card primitive is rendered with the element, and re-implementing it with CSS is a review failure."
+    remediation: "FORK, decided at CP-1. (A) Panels are `sk-card` (inset where nested) with an `sk-section-header` title: DW-30 becomes 'keep (identical look)', G-11 shrinks to the title typography, and E-18 and PLAN-ARCH-009's `panelStyles` mostly disappear; add a spike (in S8 or a new S9) comparing the card to the prototype `.panel`. (B) Keep flat panels as proposed and record in research why `sk-card` was rejected (evidence from a render), keeping E-18 scoped as in PLAN-ARCH-009. The plan must present both to the operator."
+  - id: PLAN-ARCH-011
+    lens: Exceptions and gaps
+    severity: 3
+    title: "E-19 (container-query px lengths) is probably unnecessary and cannot be expressed in #4's exception table"
+    evidence:
+      - artifact: "contracts/gates.md E-19; research.md D-12, D-13, S8; plan.md § Architecture table"
+      - code: "<#4>/packages/mission-ui/src/elements/sk-missions-screen/sk-missions-screen.ts: `@container not (max-width: 400px)`; elements/sk-work-package-board/card-parts.ts: `@container (min-width: 200px)`. Neither file has a px unit exception"
+      - code: "<#4>/stylelint.config.mjs: `exceptionOverrides()` keys units by declaration property (`pxProperties`, `emProperties`); there is no at-rule key"
+    claim: "#4 already ships px lengths in `@container` conditions in files with no px exception (the Missions screen and the board card), and only declaration properties are unit-checked. So either at-rule params are unrestricted, in which case E-19 grants nothing and is an unneeded numbered exception, or they are restricted, in which case the EXCEPTIONS table has no mechanism for `E-19` as written ('the lengths 1100px, 800px, 620px in @container conditions only') and IC-03b would need new table code that the plan does not budget or test."
+    remediation: "Before proposing E-19, have S8 or IC-03b run Stylelint on a probe file with `@container (min-width: 1100px)` in the screen file. If it passes (expected from #4's precedent), delete E-19 and G-13's exception, keeping G-13 as a library note only. If it fails, add an at-rule form to the EXCEPTIONS table with a test in `scripts/stylelint-exceptions.test.mjs` and say so in IC-03b's scope."
+  - id: PLAN-ARCH-012
+    lens: Reuse and single source of truth
+    severity: 3
+    title: "The plan assumes `sk-evidence-chain` takes slotted nodes; it takes a `stages` property with no actionable nodes, so the G-12 stand-in does not exist"
+    evidence:
+      - artifact: "research.md § Repository facts ('inference: slotted nodes; Spike S5 verifies'), G-12 ('sk-button per node inside the chain, or E-20'), S5, S6; contracts/gates.md E-20"
+      - code: "<elements 1.1.0-rc.10>/custom-elements.json and dist/evidence-chain/sk-evidence-chain.d.ts: SkEvidenceChain has no slots; one property `stages: ReadonlyArray<{ id, label, displayValue, annotation?, tone? }>` (property-only), parts list/stage/connector/empty-state, composed of `sk-metric`"
+    claim: "The Evidence chain (Mission, Work Package, state) is a plain fit for the `stages` property. The Dependency chain nodes are controls, and `sk-button` cannot be put inside the chain because there is no slot. So S5's pass rule ('takes slotted nodes') is wrong, and G-12's local stand-in as written is impossible. The real choice is whether the dependency chain is an `sk-evidence-chain` at all or a native list of `sk-button` nodes composed by `chain-parts.ts` with layout CSS (the S5 fallback)."
+    remediation: "Rewrite S5, S6 and G-12 from the manifest: Evidence chain = `sk-evidence-chain` with `stages` (displayValue from the ids, `annotation`/tone for the state word through the lane badge words); Dependency chain = a semantic list of `sk-button` nodes with arrow separators in `chain-parts.ts`. Request E-20 only if S6 shows `sk-button` cannot carry id, title and lane word. Record the dependency chain as the gap, not 'actionable node in sk-evidence-chain'."
+  - id: PLAN-ARCH-013
+    lens: Events and public surface
+    severity: 2
+    title: "Retry payload `wpId` has no rule when `wpId` is empty or disagrees with `workPackage.wpId`"
+    evidence:
+      - artifact: "data-model.md § Events (wpId of a retry is the host property; 'the two must agree ... never reconciles'); contracts/sk-work-package-screen.md § Properties (`wpId` default '')"
+      - code: "<#4>/packages/mission-ui/src/elements/sk-work-package-board/sk-work-package-board.ts: SkSelectWorkPackageDetail { missionId, wpId } (the payload shape the retry mirrors)"
+    claim: "`wpId` defaults to '' and a host that passes `workPackage` (the contract-shaped data the plan wants hosts to rely on) may omit `wp-id`, so a retry from `ready`/`detailStatus: error` emits `wpId: ''`. During a selection change the host may update `wpId` before `workPackage` arrives, so the header shows the old id while the retry asks for the new one. The data-model leaves both unspecified, and FR-026 and EV-7 test only the null-workPackage case."
+    remediation: "FORK. (A) `wpId` is authoritative for every payload and the not-found header, the header shows `workPackage.wpId` only when `status` is `ready`, and a test fixes the empty case (retry disabled or labelled with an error state when `wpId` is ''). (B) The payload uses `workPackage?.wpId ?? wpId` in one place (`retryDetail`), with a test for each branch. Pick one and state it in P-3."

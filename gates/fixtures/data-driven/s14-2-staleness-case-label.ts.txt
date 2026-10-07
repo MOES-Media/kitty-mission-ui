@@ -1,0 +1,9 @@
+// expect: S14.2
+export function f(s: string): number {
+  switch (s) {
+    case 'stale':
+      return 1;
+    default:
+      return 0;
+  }
+}

@@ -1,0 +1,30 @@
+schema: review-refute/v1
+complete: true
+phase: plan
+batch: 2
+verdicts:
+  - id: PLAN-CORRECT-009
+    verdict: confirmed
+    reason: 'plan.md line 104 lists only check.test.mjs and overlays.test.mjs, yet registry.test.mjs hard-codes 22 fixtures and the 15/4/3 kind split. checkPin already compares PIN.files with the directory, so a count derived from Object.keys(PIN.files) adds no independent guard. Severity 3 is right.'
+  - id: PLAN-CORRECT-011
+    verdict: confirmed
+    reason: 'The Shared files table says IC-03b writes literal dispatchEvent calls, but also that IC-07 writes the event methods in the screen file. The IC-04, IC-05 and IC-06 traceability rows name EV-4, EV-6, EV-1 and EV-5 tests, and IC-04 to IC-06 are not downstream of IC-07. The ownership contradiction is real, severity 3.'
+  - id: PLAN-CORRECT-012
+    verdict: confirmed
+    reason: 'D-15 and the story catalogue make every baseline a whole-screen shellFrame capture. IC-03b leaves the regions as titled empty panels, so each region WP changes earlier owners PNGs. The plan lets only the title owner touch a baseline and IC-08 edit only its own stories, so nobody owns regeneration. This is a real fork, and severity 4 is defensible.'
+  - id: PLAN-CORRECT-013
+    verdict: confirmed
+    reason: 'contract-pin.md records branch "mission-status-contract-1-1-01M42XJC", the mission slug. The lane checkout is on kitty/mission-mission-status-contract-1-1-01M42XJC-lane-a, tip 80840298d, and no branch with the recorded name exists. Severity 2 is right.'
+  - id: PLAN-CORRECT-014
+    verdict: confirmed
+    reason: 'defaults.md types filesView(files: ResolvedFile[]) and calls the constant UNKNOWN_CHANGE_STATE. data-model.md names the derived type RenderedFile and the key UNKNOWN. ChangeStateView is defined but WorkPackageDetailView does not use it, and STALENESS_STATUS_ROLE has no stated result for an unknown status. Severity 2 is right.'
+  - id: PLAN-CORRECT-015
+    verdict: confirmed
+    reason: 'research D-12 limits E-17 to history-parts.ts and facts-parts.ts. gates.md E-17 adds work-parts.ts, and the contract puts the Workspace region in work-parts.ts. The two documents therefore present different exception scopes. The tracer-design-decisions.md G-10 citation did not check out (grep found no G-10 there), but the research/gates mismatch holds, so the principal claim stands. Severity 2 is right.'
+  - id: PLAN-ARCH-002
+    verdict: confirmed
+    reason: 'The #4 code has STALE_BADGE typed StateBadge with the same literal as STALENESS_BADGE, LANE_COUNT_TEXT and SUBTASK_PROGRESS_TEXT, and StateBadge/BadgeTone. The new defaults.md duplicates the first three and returns tone: string. No Dependencies on #4 entry in plan.md names any of them. The PROGRESS_LABEL_SUBTASKS equivalence is plausible but not provable from the text. Severity 3 is acceptable.'
+  - id: PLAN-ARCH-003
+    verdict: confirmed
+    reason: 'In #4 the screen imports the library sheets and composes the parts files styles, and library-sheets.ts has no facts or event-timeline sheet. The Shared files table has no library-sheets.ts row, and IC-03b ships only empty panels and stubs. Research G-09/G-10 put the adopted sheets in the parts files while gates.md E-17 puts them in library-sheets.ts. The wiring has no owner, so severity 4 is right.'
+

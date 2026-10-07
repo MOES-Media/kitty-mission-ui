@@ -1,0 +1,74 @@
+schema: review-findings/v1
+complete: true
+phase: plan
+lens_group: FRESH
+mission: work-package-screen-01M44DSJ
+findings:
+  - id: PLAN-FRESH-001
+    lens: correspondence
+    severity: 3
+    title: Story catalogue and pairing table disagree on the WorkPackage side of WP-29
+    evidence:
+      - artifact: 'contracts/sk-work-package-screen.md, Story catalogue: WP-02 and WP-29 are both listed as wpReviewNone + detailNoCycles'
+      - artifact: 'contracts/contract-pin.md, Pairing: the row for WP-26, 29, 30, 32 ... says wpPopulated; WP-02 says wpReviewNone'
+      - artifact: 'contract-pin.md, WorkPackage fixtures table: wpReviewNone is mapped to WP-02 only'
+    claim: 'The catalogue makes WP-02 and WP-29 pixel-identical stories (same fixtures, same lane, same state), so two baselines prove one thing and the spec row WP-29 (empty cycle list) has no distinct capture. The pairing table, which the IC-09 node test takes as input, says WP-29 is wpPopulated + detailNoCycles. The IC-09 pairing test and the row-to-story test would be checked against two different definitions.'
+    remediation: 'FORK: (a) make the catalogue say WP-29 = wpPopulated + detailNoCycles (matches the pairing table; also differs visually from WP-02); (b) keep wpReviewNone for WP-29 and amend the pairing table, then add a differentiator so WP-02 and WP-29 are not identical. Either way list WP-29 in the wpReviewNone or wpPopulated rows column of the fixture table.'
+  - id: PLAN-FRESH-002
+    lens: correspondence
+    severity: 3
+    title: WP-01 pairing (wpPopulated + detailPopulated) cannot show the review panel in empty form that the spec row requires
+    evidence:
+      - artifact: 'spec.md WP-01: "review panel in empty form", "no review yet"'
+      - artifact: 'contracts/contract-pin.md: wpPopulated has review.latestResult null and override null, lane in_progress; detailPopulated has two review cycles (changes_requested then approved) with artifactPath'
+      - code: 'contracts/mission-status/examples/WorkPackageDetail.populated.yaml: reviewCycles has two entries, the second approved'
+    claim: 'Paired by pairDetail, WP-01 (and WP-46 to WP-49, WP-11, 14, 25, 31, 34) draws two review cycles incl. an approved one under a Work Package that is in_progress with no review result. The WP-01 acceptance ("review panel in empty form") is unreachable, and the baseline shows an incoherent narrative that later reviewers will either reject or silently accept. The pairing rule only checks wpId and dependency agreement.'
+    remediation: 'FORK: (a) pair WP-01 with a detail whose reviewCycles is [] (detailNoCycles-like derivative) and keep detailPopulated for stories that need cycles; (b) amend the spec WP-01 acceptance via a P-n proposal to "review panel shows the cycles the detail carries"; (c) add a pairing assertion that the two sides agree on review state and fix wpPopulated accordingly.'
+  - id: PLAN-FRESH-003
+    lens: architecture
+    severity: 3
+    title: 'FORK: the not-found header crumb (WP-42, IC-07) has no drawable owner in chain Y and no E-17 class allowance'
+    evidence:
+      - artifact: 'plan.md Implementation Concern Map: IC-07 depends on IC-06 (chain Y); header-parts.ts belongs to IC-04 (chain X); IC-08 merges them only afterwards'
+      - artifact: 'contracts/sk-work-package-screen.md Rendering by status: not-found draws "header: crumb and wpId"; EV-3/EV-4 owned by IC-04 and IC-07'
+      - artifact: 'contracts/gates.md E-17: sk-breadcrumbs* is allowed in header-parts.ts only; state-parts.ts gets sk-empty-state* and sk-progress* only'
+    claim: 'IC-07 must draw the not-found state (crumb with sk-open-mission, wpId crumb) and its stories WP-42 and its focus and EV-3 tests, but the breadcrumb markup lives in IC-04''s header-parts.ts, which does not exist in IC-07''s lane (only IC-03b stubs), and state-parts.ts has no breadcrumb class allowance. So IC-07 either edits out of its map, duplicates the crumb (leak under ESLint), or asserts against a stub (which research D-04 forbids).'
+    remediation: 'FORK: (a) IC-03b writes the shared crumb renderer (and its E-17 override) in a file both chains import; (b) make IC-07 depend on IC-04 (serialises chains); (c) widen E-17 so state-parts.ts may carry sk-breadcrumbs* and IC-07 owns a second crumb.'
+  - id: PLAN-FRESH-004
+    lens: scope
+    severity: 2
+    title: Amendment count is stated as P-1 to P-4 in two places while P-6 (and reserved P-5) exist
+    evidence:
+      - artifact: 'plan.md Charter Check last row: "proposals P-1 to P-4"'
+      - artifact: 'plan.md IC-09: PR description inputs "amendments P-1 to P-4"'
+      - artifact: 'plan.md Spec amendment proposals: P-6 is a real proposal (DW-24, FR-029 620 versus 800 px; WP-40 wording)'
+    claim: 'P-6 is a required spec correction but is dropped from the Charter Check and from the PR-description inputs, so it could reach the PR unreported. Also P-5 is reserved for a fork option, so the numbering gap is intentional only if stated at the list sites.'
+    remediation: 'Write "P-1 to P-4 and P-6 (P-5 reserved for PLAN-CORRECT-008 option b)" in the Charter Check and IC-09.'
+  - id: PLAN-FRESH-005
+    lens: correspondence
+    severity: 2
+    title: Panel chrome is built into the plan while PLAN-ARCH-010 is open
+    evidence:
+      - artifact: 'plan.md Shared files and source tree: panel-parts.ts "IC-03b (titled panel, panelStyles)" with no [PLAN-ARCH-010] tag; IC-03b purpose "panelStyles"'
+      - artifact: 'plan.md Open forks, PLAN-ARCH-010 option A: panelStyles mostly disappear'
+    claim: 'Several untagged lines (file table, IC-03b purpose, architecture diagram parts list) presuppose flat custom panels (option B). The revision promised that affected text is tagged; these lines would be read as decided.'
+    remediation: 'Tag these lines [PLAN-ARCH-010] and word them as "panel container (chrome per the fork)".'
+  - id: PLAN-FRESH-006
+    lens: correspondence
+    severity: 1
+    title: Spike S0 is placed in IC-03a by research and in IC-01 by plan
+    evidence:
+      - artifact: 'research.md Spikes: "front-loaded in IC-03a", table row S0'
+      - artifact: 'plan.md IC-01 Purpose: "spike S0"; IC-03a lists S5 to S8 only'
+    claim: 'Owner of S0 is stated two ways; IC-03a is also described as holding the spikes before CP-1 while S0 runs earlier and is not part of the CP-1 packet.'
+    remediation: 'Change the research heading to "S0 in IC-01; S5 to S8 in IC-03a".'
+  - id: PLAN-FRESH-007
+    lens: correspondence
+    severity: 1
+    title: Fixture "Rows" column omits stories that use the fixture; resolveRefusal has no logic file
+    evidence:
+      - artifact: 'contracts/contract-pin.md: detailPopulated rows list WP-01, 03, 04, 11, 14, 25, 28, 31, 34, 49 but WP-46, 47, 48 use it (catalogue); wpPopulated rows list WP-01 only though it is the default side for about 20 stories'
+      - artifact: 'plan.md source tree lists 7 logic files; contracts/defaults.md lists 9 functions, resolveRefusal has no named file'
+    claim: 'The traceability of fixture to story is incomplete, and one logic function has no owner file, which matters because IC-02 is the only writer of src/logic.'
+    remediation: 'Add WP-46 to 48 to the detailPopulated row and say "default side of every unnamed pair" for wpPopulated; assign resolveRefusal (and resolveChangeState, resolveVerdict) to named files, for example wp-retry.ts, wp-files.ts, wp-review.ts.'
+

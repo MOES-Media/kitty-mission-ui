@@ -1,0 +1,44 @@
+schema: review-findings/v1
+complete: true
+phase: plan
+lens_group: ROUND2
+mission: work-package-screen-01M44DSJ
+findings:
+- id: PLAN-FRESH-001
+  lens: correspondence
+  severity: 3
+  title: Story catalogue and pairing table disagree on the WorkPackage side of WP-29
+  evidence:
+  - artifact: 'contracts/sk-work-package-screen.md, Story catalogue: WP-02 and WP-29 are both listed as wpReviewNone + detailNoCycles'
+  - artifact: 'contracts/contract-pin.md, Pairing: the row for WP-26, 29, 30, 32 ... says wpPopulated; WP-02 says wpReviewNone'
+  - artifact: 'contract-pin.md, WorkPackage fixtures table: wpReviewNone is mapped to WP-02 only'
+  claim: The catalogue makes WP-02 and WP-29 pixel-identical stories (same fixtures, same lane, same state), so two baselines prove one thing and the spec row WP-29 (empty cycle list) has no distinct capture.
+    The pairing table, which the IC-09 node test takes as input, says WP-29 is wpPopulated + detailNoCycles. The IC-09 pairing test and the row-to-story test would be checked against two different definitions.
+  remediation: 'FORK: (a) make the catalogue say WP-29 = wpPopulated + detailNoCycles (matches the pairing table; also differs visually from WP-02); (b) keep wpReviewNone for WP-29 and amend the pairing
+    table, then add a differentiator so WP-02 and WP-29 are not identical. Either way list WP-29 in the wpReviewNone or wpPopulated rows column of the fixture table.'
+- id: PLAN-FRESH-002
+  lens: correspondence
+  severity: 3
+  title: WP-01 pairing (wpPopulated + detailPopulated) cannot show the review panel in empty form that the spec row requires
+  evidence:
+  - artifact: 'spec.md WP-01: "review panel in empty form", "no review yet"'
+  - artifact: 'contracts/contract-pin.md: wpPopulated has review.latestResult null and override null, lane in_progress; detailPopulated has two review cycles (changes_requested then approved) with artifactPath'
+  - code: 'contracts/mission-status/examples/WorkPackageDetail.populated.yaml: reviewCycles has two entries, the second approved'
+  claim: Paired by pairDetail, WP-01 (and WP-46 to WP-49, WP-11, 14, 25, 31, 34) draws two review cycles incl. an approved one under a Work Package that is in_progress with no review result. The WP-01 acceptance
+    ("review panel in empty form") is unreachable, and the baseline shows an incoherent narrative that later reviewers will either reject or silently accept. The pairing rule only checks wpId and dependency
+    agreement.
+  remediation: 'FORK: (a) pair WP-01 with a detail whose reviewCycles is [] (detailNoCycles-like derivative) and keep detailPopulated for stories that need cycles; (b) amend the spec WP-01 acceptance via
+    a P-n proposal to "review panel shows the cycles the detail carries"; (c) add a pairing assertion that the two sides agree on review state and fix wpPopulated accordingly.'
+- id: PLAN-FRESH-003
+  lens: architecture
+  severity: 3
+  title: 'FORK: the not-found header crumb (WP-42, IC-07) has no drawable owner in chain Y and no E-17 class allowance'
+  evidence:
+  - artifact: 'plan.md Implementation Concern Map: IC-07 depends on IC-06 (chain Y); header-parts.ts belongs to IC-04 (chain X); IC-08 merges them only afterwards'
+  - artifact: 'contracts/sk-work-package-screen.md Rendering by status: not-found draws "header: crumb and wpId"; EV-3/EV-4 owned by IC-04 and IC-07'
+  - artifact: 'contracts/gates.md E-17: sk-breadcrumbs* is allowed in header-parts.ts only; state-parts.ts gets sk-empty-state* and sk-progress* only'
+  claim: IC-07 must draw the not-found state (crumb with sk-open-mission, wpId crumb) and its stories WP-42 and its focus and EV-3 tests, but the breadcrumb markup lives in IC-04's header-parts.ts, which
+    does not exist in IC-07's lane (only IC-03b stubs), and state-parts.ts has no breadcrumb class allowance. So IC-07 either edits out of its map, duplicates the crumb (leak under ESLint), or asserts against
+    a stub (which research D-04 forbids).
+  remediation: 'FORK: (a) IC-03b writes the shared crumb renderer (and its E-17 override) in a file both chains import; (b) make IC-07 depend on IC-04 (serialises chains); (c) widen E-17 so state-parts.ts
+    may carry sk-breadcrumbs* and IC-07 owns a second crumb.'

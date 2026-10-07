@@ -1,4 +1,4 @@
-// The public surface of the five Missions and Pipeline elements, frozen. The committed manifest is
+// The public surface of the Missions and Pipeline elements and of the Work Package screen, frozen. The committed manifest is
 // the contract: this test pins what it lists (tags, attributes, events) and the run-time defaults of every property,
 // so a later work package that changes the surface fails here and reports the change instead of making it.
 import { describe, expect, it } from 'vitest';
@@ -29,7 +29,7 @@ for (const mod of manifest.modules as { declarations?: ManifestDeclaration[] }[]
   }
 }
 
-const NEW_TAGS = ['sk-missions-screen', 'sk-pipeline-screen', 'sk-filter-toggle-group', 'sk-phase-bar', 'sk-work-package-board'];
+const NEW_TAGS = ['sk-missions-screen', 'sk-pipeline-screen', 'sk-filter-toggle-group', 'sk-phase-bar', 'sk-work-package-board', 'sk-work-package-screen'];
 
 /** tag, property name, attribute (undefined = property only), default as a run-time value. */
 const SURFACE: [string, string, string | undefined, unknown][] = [
@@ -62,6 +62,16 @@ const SURFACE: [string, string, string | undefined, unknown][] = [
   ['sk-work-package-board', 'missionId', 'mission-id', ''],
   ['sk-work-package-board', 'labels', undefined, null],
   ['sk-work-package-board', 'label', 'label', BOARD_LABEL],
+  ['sk-work-package-screen', 'status', 'status', 'loading'],
+  ['sk-work-package-screen', 'detailStatus', 'detail-status', 'ready'],
+  ['sk-work-package-screen', 'detailRefusalCode', undefined, null],
+  ['sk-work-package-screen', 'workPackage', undefined, null],
+  ['sk-work-package-screen', 'detail', undefined, null],
+  ['sk-work-package-screen', 'mission', undefined, null],
+  ['sk-work-package-screen', 'wpId', 'wp-id', ''],
+  ['sk-work-package-screen', 'now', 'now', null],
+  ['sk-work-package-screen', 'labels', undefined, null],
+  ['sk-work-package-screen', 'errorMessage', 'error-message', ''],
 ];
 
 /** tag, the exact set of events its manifest entry declares (own dispatches and `@fires` of child events). */
@@ -71,18 +81,19 @@ const EVENTS: [string, string[]][] = [
   ['sk-filter-toggle-group', ['sk-filter-change']],
   ['sk-phase-bar', []],
   ['sk-work-package-board', ['sk-select-work-package']],
+  ['sk-work-package-screen', ['sk-open-artifact', 'sk-open-mission', 'sk-retry-load', 'sk-select-work-package']],
 ];
 
 describe('surface freeze', () => {
-  it('registers the five tags and lists each in the committed manifest', () => {
-    expect(NEW_TAGS).toHaveLength(5);
+  it('registers the six tags and lists each in the committed manifest', () => {
+    expect(NEW_TAGS).toHaveLength(6);
     let checked = 0;
     for (const tag of NEW_TAGS) {
       expect(customElements.get(tag), tag).toBeDefined();
       expect(declarations.has(tag), tag).toBe(true);
       checked += 1;
     }
-    expect(checked).toBe(5);
+    expect(checked).toBe(6);
   });
 
   it('lists every property of the contracts with its attribute and default in the manifest', () => {
@@ -107,7 +118,7 @@ describe('surface freeze', () => {
     expect(checked).toBe(SURFACE.length);
   });
 
-  it('declares exactly the seven events of the contracts, per element', () => {
+  it('declares exactly the nine events of the contracts, per element', () => {
     let checked = 0;
     const all = new Set<string>();
     for (const [tag, expected] of EVENTS) {
@@ -116,12 +127,14 @@ describe('surface freeze', () => {
       for (const name of names) all.add(name);
       checked += 1;
     }
-    expect(checked).toBe(5);
+    expect(checked).toBe(6);
     expect([...all].sort()).toEqual([
       'sk-filter-change',
       'sk-load-more',
+      'sk-open-artifact',
       'sk-open-mission',
       'sk-open-missions',
+      'sk-retry-load',
       'sk-search',
       'sk-select-work-package',
       'sk-view-artifacts',
@@ -132,6 +145,7 @@ describe('surface freeze', () => {
     const declared: string[] = [];
     for (const declaration of declarations.values()) for (const event of declaration.events ?? []) declared.push(event.name);
     expect(declared.filter((name) => /open/.test(name) && /mission/.test(name)).sort()).toEqual([
+      'sk-open-mission',
       'sk-open-mission',
       'sk-open-mission',
       'sk-open-missions',
@@ -148,6 +162,7 @@ describe('surface freeze', () => {
     expect(NEW_TAGS.filter((tag) => declarations.get(tag)?.members?.some((m) => m.name === 'status'))).toEqual([
       'sk-missions-screen',
       'sk-pipeline-screen',
+      'sk-work-package-screen',
     ]);
   });
 
@@ -158,5 +173,88 @@ describe('surface freeze', () => {
     await (screen as unknown as { updateComplete: Promise<boolean> }).updateComplete;
     expect(screen.getAttribute('status')).toBe('ready');
     screen.remove();
+  });
+});
+
+describe('surface freeze: the Work Package screen (ten properties, four events)', () => {
+  const tag = 'sk-work-package-screen';
+  const properties = SURFACE.filter(([t]) => t === tag);
+
+  it('has exactly ten properties and four events, no slot and no part, and no property named laneGroups', () => {
+    expect(properties).toHaveLength(10);
+    const declared = (declarations.get(tag)?.members ?? []).filter((m) => m.kind === 'field');
+    expect(declared.map((m) => m.name).sort()).toEqual(properties.map(([, name]) => name).sort());
+    expect(declared).toHaveLength(10);
+    expect(declarations.get(tag)?.events).toHaveLength(4);
+    expect(declarations.get(tag)?.slots ?? []).toEqual([]);
+    expect(declarations.get(tag)?.cssParts ?? []).toEqual([]);
+    expect(declared.map((m) => m.name)).not.toContain('laneGroups');
+  });
+
+  it('declares exactly the attributes of the contract, and every other property is property-only', () => {
+    const declared = (declarations.get(tag)?.attributes ?? []).map((a) => a.name).sort();
+    expect(declared).toEqual(['detail-status', 'error-message', 'now', 'status', 'wp-id']);
+  });
+
+  it('reflects status, and not detailStatus', async () => {
+    const screen = document.createElement(tag) as HTMLElement & { status: string; detailStatus: string };
+    document.body.append(screen);
+    screen.status = 'not-found';
+    screen.detailStatus = 'error';
+    await (screen as unknown as { updateComplete: Promise<boolean> }).updateComplete;
+    expect(screen.getAttribute('status')).toBe('not-found');
+    expect(screen.hasAttribute('detail-status')).toBe(false);
+    screen.remove();
+  });
+
+  it('has ten reactive properties and exactly the five attributes at run time (the committed manifest is checked by manifest:check)', () => {
+    const ctor = customElements.get(tag) as unknown as { elementProperties: Map<string, unknown>; observedAttributes: string[] };
+    expect([...ctor.elementProperties.keys()].sort()).toEqual(properties.map(([, name]) => name).sort());
+    expect(ctor.elementProperties.size).toBe(10);
+    expect([...ctor.observedAttributes].sort()).toEqual(['detail-status', 'error-message', 'now', 'status', 'wp-id']);
+  });
+
+  it('declares no method of its own beyond the lifecycle hooks, the five dispatch methods and the private helpers', () => {
+    // The screen file is frozen after this work package: a new method, public or not, is a change of the file and shows here.
+    const proto = customElements.get(tag)?.prototype as object;
+    const own = Object.getOwnPropertyNames(proto).filter((name) => typeof Object.getOwnPropertyDescriptor(proto, name)?.value === 'function');
+    expect(own.sort()).toEqual(
+      [
+        'breadcrumbView',
+        'constructor',
+        'currentWpId',
+        'effectiveState',
+        'matchingDetail',
+        'moveFocusIntoView',
+        'openArtifact',
+        'openMission',
+        'openReview',
+        'render',
+        'renderDetailNoticeRegion',
+        'renderReady',
+        'renderStatus',
+        'retryLoad',
+        'retryPayload',
+        'selectWorkPackage',
+        'statusContentView',
+        'transitionText',
+        'updated',
+        'willUpdate',
+      ].sort(),
+    );
+    const declaredMethods = (declarations.get(tag)?.members ?? []).filter((m) => m.kind === 'method');
+    expect(declaredMethods).toEqual([]);
+  });
+});
+
+describe('the public type surface (BOUNDARY-004)', () => {
+  it('exports the Work Package record and detail view types the screen takes as properties', async () => {
+    const entry = await import('../src/index.js');
+    expect(entry.SkWorkPackageScreen).toBeDefined();
+    const screen = new entry.SkWorkPackageScreen();
+    // Compile-time: these two names must resolve from the package entry, or `tsc` fails this file.
+    const record: import('../src/index.js').WorkPackageRecordView | null = screen.workPackage;
+    const detail: import('../src/index.js').WorkPackageDetailView | null = screen.detail;
+    expect([record, detail]).toEqual([null, null]);
   });
 });

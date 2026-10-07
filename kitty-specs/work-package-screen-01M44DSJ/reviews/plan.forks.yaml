@@ -1,0 +1,327 @@
+schema: review-findings/v1
+complete: true
+phase: plan
+lens_group: CONFIRMED
+mission: work-package-screen-01M44DSJ
+findings:
+- id: PLAN-CORRECT-003
+  lens: Vendoring mechanics
+  severity: 4
+  title: '''host'' fixtures that omit staleness, reviewCycles or workspace cannot validate; stripHost only removes fields and cannot restore a required one'
+  evidence:
+  - artifact: "contracts/contract-pin.md \xA7 Fixture inventory (wpStalenessOmitted and detailOmittedProvisional are Kind host; \"registry strips before validation\")"
+  - code: 'pr6-folds/scripts/contract/validate.mjs: stripHost deletes only `stale` (document and items) and `actor` (workPackages[])'
+  - code: 'pr6-folds/scripts/contract/check.mjs: checkFixtureDoc ''host'' branch validates stripHost(doc) against the strict schema'
+  - code: lane schemas/WorkPackage.yaml required includes staleness; schemas/WorkPackageDetail.yaml required includes reviewCycles and workspace
+  - artifact: contracts/contract-pin.md, fixture inventory rows wpStalenessOmitted and detailOmittedProvisional (kind host, 'registry strips before validation')
+  - code: '<4>/scripts/contract/validate.mjs: stripHost only deletes the host-only extra fields stale (overview or page) and actor (on doc.workPackages entries); it cannot restore a removed member'
+  - code: '<4>/scripts/contract/check.mjs: checkFixtureDoc validates a host fixture against the STRICT schema after stripHost'
+  - code: '<lane-1.1>/schemas/WorkPackage.yaml: required includes staleness; schemas/WorkPackageDetail.yaml: required includes reviewCycles and workspace'
+  claim: 'All three members are required in the closed 1.1 schemas. A document with the property omitted fails the ''required'' keyword after stripHost, because stripping removes keys and never adds them.
+    So wpStalenessOmitted and detailOmittedProvisional would raise ''violates contract'' at C4, and the fixture count of 47 is not producible as described. The plan''s wording ("registry strips before validation")
+    describes a mechanism that does not exist for these cases.
+
+    [merged PLAN-VERIFY-001] The plan defines the omitted-property fixtures (WP-22 and the FR-018 unit case) as kind host. checkFixtureDoc validates a host fixture strictly after stripHost, and stripHost
+    never re-adds a member. A WorkPackage without staleness and a WorkPackageDetail without reviewCycles or workspace therefore fail the strict closed schema (required member missing). The fixtures are
+    red on arrival, or the implementer weakens the check until it validates nothing. These are the only fixtures that prove omitted differs from null or empty (FR-018, Q9).'
+  remediation: 'Declare the mechanism in contract-pin.md and in the IC-01 exit checks. For example, a registry field `omit: [''staleness'']` that makes C4 validate the document with the omitted members
+    re-inserted as null (staleness) or [] and a minimal object (reviewCycles, workspace). Add a stripHost-style extension in validate.mjs, and a check.test.mjs case that the same document with the property
+    truly missing still fails the strict schema (the reverted-must-fail proof). Alternatively list these two as not fixtures and build them in the stories by deleting the property from wpPopulated and detailPopulated
+    (single source, no registry entry). The inventory then has 45 entries. State one of the two.
+
+    [merged PLAN-VERIFY-001] FORK: (a) add named relaxations, for example provisional-omittable for WorkPackage and detail-omittable for WorkPackageDetail, whose patch removes only staleness, reviewCycles
+    and workspace from required. Give each an allowedPath and the reverted-must-fail proof the relaxed kind already has (passes relaxed, fails strict, errors only at the allowed path). (b) Add a restoreHost
+    step that re-inserts staleness null, reviewCycles [] and the workspace before strict validation, with a negative test that a fixture with any other defect still fails. Either way, contract-pin.md must
+    name the mechanism and check.test.mjs and registry.test.mjs must cover it.'
+  merged_from:
+  - PLAN-VERIFY-001
+  refuter_reason: stripHost in validate.mjs only deletes stale and actor, while schemas/WorkPackage.yaml requires staleness and WorkPackageDetail.yaml requires reviewCycles and workspace, so the host-kind
+    fixtures wpStalenessOmitted (line 85) and detailOmittedProvisional (line 116) fail strict validation.
+  fork: true
+- id: PLAN-CORRECT-004
+  lens: Spec fidelity
+  severity: 4
+  title: FR-037's SH-06 and SH-07 are defined in the repository; the plan's open item OQ-1 and amendment P-4 rest on a false premise
+  evidence:
+  - artifact: "plan.md \xA7 Technical Context (Open item OQ-1) and \xA7 Spec amendment proposals P-4; research.md \xA7 Not verified and Repository facts (\"appear nowhere in the repository\")"
+  - artifact: spec.md FR-037 (take the real screen as content, existing shell baselines unchanged)
+  - code: 'kitty-specs/app-shell-01M3V82X/research.md (in this checkout and in #4), state matrix row 5-6: MissionWorkPackageSelected1280 and MissionWorkPackageNoneSelected1280, WP tree (SH-06, 07)'
+  - code: 'pr6-folds/packages/mission-ui/src/elements/sk-mission-shell/sk-mission-shell.stories.ts: export const MissionWorkPackageSelected1280 / MissionWorkPackageNoneSelected1280 (mission(''nav-work-packages'',
+      wpSelected() | wpNone()))'
+  claim: SH-06 and SH-07 are the two shell stories whose sidebar WP tree shows one selected or none selected. Both exist with baselines. FR-037 asks that they "take the real screen as content" with "existing
+    shell baselines unchanged". Changing the content of an existing story changes its baseline, so the two parts of FR-037 conflict. The plan sidesteps this by reading FR-037 as "0 shell changes" and rewriting
+    it through P-4 on the claim that the ids are undefined. As written, FR-037 has no implementing work package.
+  remediation: 'FORK: replace the OQ-1 text and P-4 with the true finding (SH-06 and SH-07 are app-shell-01M3V82X stories) and give the orchestrator two remedies. (a) Leave the shell stories untouched and
+    satisfy FR-037''s intent through this mission''s own WP-43 (nothing-selected) and WP-01 (selected) stories in shellFrame, with the spec text amended accordingly. (b) Edit the two shell stories to host
+    the real screen (IC-03b or IC-08 owns the edit of sk-mission-shell.stories.ts) and re-baseline those two images, amending "existing shell baselines unchanged" to "except SH-06 and SH-07". Update the
+    "0 shell changes" statement and the IC-08 OQ-1 wiring check to match the chosen remedy.'
+  refuter_reason: app-shell-01M3V82X/research.md row 5-6 defines SH-06 and SH-07 (MissionWorkPackageSelected1280 and NoneSelected1280), so the plan's OQ-1 and P-4 premise that they are undefined in the
+    repository is false.
+  fork: true
+- id: PLAN-CORRECT-008
+  lens: Spec fidelity
+  severity: 4
+  title: 'FORK: the detail refusal code has no input path into the screen, so resolveRefusal and the two refusal fixtures have no consumer'
+  evidence:
+  - artifact: "data-model.md \xA7 View states (detailStatus error / not-found; \"the detail refusal itself arrives as detailStatus, not as data\") and \xA7 Vocabulary tables (refusals.ts keyed by the two\
+      \ codes); contracts/defaults.md (resolveRefusal(code), DETAIL_REFUSAL_WORDS keyed not_found / source_unreadable); contracts/sk-work-package-screen.md \xA7 Story catalogue (WP-36a/b use `detailStatus`\
+      \ values only); contracts/contract-pin.md (detailRefusalNotFound, detailRefusalUnreadable named for WP-36a/b)"
+  - artifact: spec.md Q9 (refusal code passed through, worded only through defaults/), Q7, FR-024
+  - code: 'lane schemas/WorkPackageDetailRefusalCode.yaml: values not_found, source_unreadable (snake_case); the screen''s DetailStatus value is ''not-found'' (hyphen)'
+  - artifact: "data-model.md \xA7 View states (the detail refusal itself arrives as detailStatus, not as data; DetailStatus has not-found and error, unknown collapses to error); contracts/sk-work-package-screen.md\
+      \ Properties (no refusal property; detail is WorkPackageDetailView or null); defaults.md resolveRefusal(code) and DETAIL_REFUSAL_WORDS keyed by code; contract-pin.md fixtures detailRefusalNotFound\
+      \ and detailRefusalUnreadable (WP-36a, WP-36b); spec.md Q7, Q9, FR-023, NFR-011 (refusal in words, code passed through)"
+  claim: 'The element has no property carrying the refusal code, only detailStatus. resolveRefusal takes a code string, but nothing supplies one. The code to detailStatus mapping (''not-found'' to not_found,
+    ''error'' to source_unreadable) is described in prose and is lossy: an ''error'' caused by a transport failure would be worded "A source of the Work Package detail could not be read", a contract claim
+    the host did not make. The two valid refusal fixtures are listed for WP-36a/b but the stories use detailStatus only, so those fixtures (and Q9''s "pass through") are never exercised.
+
+    [merged PLAN-VISUAL-008] Q7 and Q9 require the notice to name the refusal code in words with a raw fallback for an unknown code, and WP-36 covers both codes. The surface (frozen by IC-03b) has no property
+    for the code: detailStatus carries only not-found or error, an unknown value collapses to error, and error is also the generic fault. The screen would have to map a status value to a code (a literal)
+    or show one generic sentence, and the raw-fallback and unknown-code paths (FR-023) cannot be exercised. The two valid refusal fixtures are listed for WP-36a/36b but nothing consumes them.'
+  remediation: 'FORK, orchestrator to rule. (a) Add an optional property detailRefusalCode (attribute-less, string | null, additive before the IC-03b freeze): when set it is looked up in DETAIL_REFUSAL_WORDS
+    with raw fallback; detailStatus error / not-found without a code uses a generic regional wording; WP-36a/b take the code from the two fixtures. (b) Keep detailStatus only, key DETAIL_REFUSAL_WORDS by
+    the two detailStatus values, drop resolveRefusal''s code argument and the two refusal fixtures (45 new exports) and amend Q9 wording through a P-5, accepting that the contract code is never shown. State
+    which remedy in plan.md and update data-model.md and defaults.md.
+
+    [merged PLAN-VISUAL-008] FORK: (a) add an optional property (for example detailRefusalCode, string or null) to the frozen surface so the notice reads lookup(DETAIL_REFUSAL_WORDS, code) with a raw fallback
+    (amend FR-001 as P-2/P-3 do); (b) let detail carry the WorkPackageDetailRefusal object when detailStatus is not ready, with the same lookup; (c) drop code-level wording and amend Q7/Q9 and WP-36 to
+    two fixed sentences keyed by detailStatus. Either way make WP-36a/36b use the refusal fixtures and add an unknown-code story or test.'
+  merged_from:
+  - PLAN-VISUAL-008
+  refuter_reason: sk-work-package-screen.md Properties has only detailStatus (ready, not-found, error; unknown collapses to error) and no refusal-code property, and WP-36a and WP-36b use detailStatus values
+    only, so resolveRefusal(code) in defaults.md line 42 and the refusal fixtures at contract-pin.md lines 104 and 105 have no input path.
+  fork: true
+- id: PLAN-CORRECT-012
+  lens: Spec fidelity
+  severity: 4
+  title: Baselines of the ready-state stories of earlier WPs go stale when later WPs add regions, and no WP owns their regeneration
+  evidence:
+  - artifact: "plan.md \xA7 IC-04 (WP-01, 09, 17 to 22, 38 baselines), IC-05, IC-06, IC-09 (five clean visual runs), \xA7 Shared files (stories and baselines: the WP that owns the story title)"
+  - artifact: spec.md FR-036 and NFR-002 (every baseline stable across 5 runs; each row shows the whole screen in the shell)
+  - artifact: 'plan.md, Shared files row ''stories and baselines: the WP that owns the story title; disjoint names''; IC-03b (''titled empty panels''); IC-04 to IC-08; IC-09 (five clean visual runs)'
+  - artifact: 'contracts/sk-work-package-screen.md, Story catalogue: every story is the whole screen inside shellFrame; WP-01 (owned by IC-04) requires history, chains, workspace and links to show'
+  - code: '<4>/kitty-specs/missions-and-pipeline-screens-01M40SKZ/plan.md: #4 had one work package per screen, so the problem did not arise there'
+  claim: 'Every ready-state story renders all regions. IC-04''s ten stories are approved while history, review, chains, subtasks, files and workspace (IC-05, IC-06, IC-07) are still titled empty panels,
+    so their PNGs change when those WPs land. The same is true of chain X versus chain Y stories. IC-08 edits only its own stories and IC-09''s five clean runs would then fail or force a WP to rewrite baselines
+    it does not own.
+
+    [merged PLAN-VERIFY-004] Each baseline is a full-screen capture. The IC-04 stories (WP-01 and others) are captured with empty titled panels for history, review, chains and subtasks. When IC-05 or IC-06
+    fills those panels, every IC-04 PNG changes. Chains X and Y run in parallel lanes and each sees the other''s panels empty, so after the IC-08 merge every baseline differs from what its owner committed.
+    The plan lets only the title owner regenerate a baseline and has IC-08 edit only its own stories. Either every later WP fails its own pnpm visual on other owners'' stories, or someone silently regenerates
+    them. NFR-002, SC-006 and NFR-008 cannot be demonstrated until this is settled.'
+  remediation: 'FORK, orchestrator to rule. (a) Give IC-09 an explicit step and ownership exception to regenerate every ready-state baseline after IC-08 and have a reviewer check each against the prototype;
+    IC-04 to IC-07 commit stories and tests but no PNG for stories that show regions they do not own. (b) Each region WP commits baselines only for its own region stories rendered with the other regions
+    still empty and the final integration baselines are IC-09''s. Say which, and adjust "stories and baselines" in the Shared files table.
+
+    [merged PLAN-VERIFY-004] FORK: (a) commit baselines only in IC-09, after the chains are merged, with each WP checking its stories by uncommitted screenshots against the prototype. (b) Let any WP regenerate
+    any baseline its change alters, record the list in its hand-off, and make the IC-08 merge resolve PNG conflicts by regeneration, with a reviewer check that no baseline changed for a reason outside the
+    WP diff. (c) Make the story owner the last WP that touches the screen''s rendering of that story, regenerated at IC-09. State the chosen rule in plan.md Shared files and the WP brief rules.'
+  merged_from:
+  - PLAN-VERIFY-004
+  refuter_reason: D-15 and the story catalogue make every baseline a whole-screen shellFrame capture. IC-03b leaves the regions as titled empty panels, so each region WP changes earlier owners PNGs. The
+    plan lets only the title owner touch a baseline and IC-08 edit only its own stories, so nobody owns regeneration. This is a real fork, and severity 4 is defensible.
+  fork: true
+- id: PLAN-ARCH-003
+  lens: Boundaries and write ownership
+  severity: 4
+  title: 'No work package owns the wiring of a part into the screen: part styles, sheet adoption and render calls sit in files the part owner may not edit'
+  evidence:
+  - artifact: "plan.md \xA7 Shared files (sk-work-package-screen.ts: IC-03b then IC-07 for status switch and event methods only; panel-parts.ts: IC-03b, read-only for all; header/facts/history/review/files/chain/work/state\
+      \ parts each owned by one WP); \xA7 IC-03b (titled EMPTY panels); gates.md E-17 ('adopted sheets through library-sheets.ts additions')"
+  - artifact: research.md G-09 / G-10 ('adopted event-timeline sheet in history-parts.ts', 'facts sheet in facts-parts.ts') versus gates.md E-17 (library-sheets.ts)
+  - code: '<#4>/packages/mission-ui/src/elements/sk-pipeline-screen/sk-pipeline-screen.ts: imports { breadcrumbsSheet, emptyStateSheet } from library-sheets.js and { pipelineStyles, renderHeader, ... }
+      from pipeline-parts.js; `pipelineStyles` is a css`` export of the parts file composed in the screen''s `static styles`'
+  - code: '<#4>/packages/mission-ui/src/library-sheets.ts: only segmentedChoice, workflowBoard, workflowLane, breadcrumbs, emptyState sheets exist; no event-timeline or facts sheet'
+  - artifact: "contracts/gates.md \xA7 E-17 (adopted sheets through library-sheets.ts additions); plan.md \xA7 Shared files (no row for library-sheets.ts); IC-04 facts-parts.ts, IC-05 history-parts.ts,\
+      \ IC-06 work-parts.ts"
+  - code: 'pr6-folds/packages/mission-ui/src/library-sheets.ts: exports only segmentedChoice, workflowBoard, workflowLane, breadcrumbs and emptyState sheets; no facts or event-timeline sheet (styles package
+      ships facts/ and event-timeline/ directories)'
+  claim: 'In #4 a part file exports its css and render functions and the screen file imports and composes them, and sheets are adopted in the screen. Here IC-04 to IC-07 can make a region appear only by
+    editing the screen file (import the part, call it, add its styles, adopt sheets) or the read-only `panel-parts.ts`. IC-03b cannot pre-wire parts that do not exist yet. `library-sheets.ts` must gain
+    the event-timeline sheet (IC-05''s history) and the facts sheet (IC-04 and IC-06) but is absent from the Shared files table, so it has no owner and two or three writers. Research and gates.md also disagree
+    on where sheets are adopted.
+
+    [merged PLAN-CORRECT-010] The facts and event-timeline sheets do not exist yet and must be added to library-sheets.ts. IC-04 (facts, chain X), IC-05 (history, chain X) and IC-06 (Workspace rows via
+    the facts family, chain Y) all need them, in parallel chains with disjoint write scopes. The file has no owner, so either two WPs edit it and conflict, or an agent edits out of map.'
+  remediation: 'FORK. (A, preferred) IC-03b creates every part file as a stub with its final export signatures (`renderX(props)` returning `nothing`, `xStyles = css```) and wires all stubs, the composed
+    `static styles` and every sheet into the screen. `library-sheets.ts` gets the event-timeline and facts sheets in IC-03b only. Later WPs replace stub bodies and never touch the screen or `library-sheets.ts`.
+    Record the signatures in contracts/sk-work-package-screen.md. (B) Add `library-sheets.ts` and a marked wiring block of the screen file to a named owner per chain and accept merge conflicts, resolved
+    by the orchestrator at the IC-08 merge. Either way fix the contradiction between research G-09/G-10 and E-17.
+
+    [merged PLAN-CORRECT-010] Assign library-sheets.ts to IC-03b (add both sheets, plus the progress sheet check) in the Shared files table and in IC-03b''s purpose, before the surface freeze and before
+    the chains fork.'
+  merged_from:
+  - PLAN-CORRECT-010
+  refuter_reason: 'In #4 the screen imports the library sheets and composes the parts files styles, and library-sheets.ts has no facts or event-timeline sheet. The Shared files table has no library-sheets.ts
+    row, and IC-03b ships only empty panels and stubs. Research G-09/G-10 put the adopted sheets in the parts files while gates.md E-17 puts them in library-sheets.ts. The wiring has no owner, so severity
+    4 is right.'
+  fork: true
+- id: PLAN-ARCH-006
+  lens: Dynamic-pipeline constraint
+  severity: 4
+  title: The data-driven gate does not cover the new vocabularies the plan says it covers, and the two new self-test fixtures are vacuous
+  evidence:
+  - artifact: "plan.md \xA7 Summary / Charter Check ('existing data-driven gate applies, extended only by self-test cases'); research.md D-07, D-11, R-04; contracts/gates.md \xA7 How each gate applies (data-driven\
+      \ row), \xA7 Self-check list"
+  - code: '<#4>/eslint.data-driven.config.mjs: WORDS = MissionPhase.name enum + StatusLane enum; STATUS_WORDS = pending, complete, draft, discarded; UNDERSCORED = in_progress, for_review, in_review; IDENT_WORDS
+      excludes review and done; S1 flags any Literal equal to a WORD outside the allow-list'
+  - code: <contract 1.1>/schemas/StatusLane.yaml (approved is a lane), ReviewVerdict.yaml (approved, changes_requested), ChangeState.yaml (changed, unchanged, unknown), Staleness.yaml status enum (fresh,
+      stale, not_applicable)
+  - artifact: contracts/gates.md, data-driven row (fixtures 1 and 2; words join the list ONLY if a fixture shows an escape); plan.md IC-02 exit check 'each new case red without its fix'; research.md D-07
+  - code: '<4>/eslint.data-driven.config.mjs: WORDS = MissionPhase names plus the nine StatusLane values (approved is already a lane); STATUS_WORDS = pending, complete, draft, discarded; UNDERSCORED = in_progress,
+      for_review, in_review'
+  - code: '<4>/gates/fixtures/data-driven/s1-comparison.ts.txt: an existing positive fixture already covers a comparison with a lane literal (S1)'
+  - code: '<4>/gates/data-driven.selftest.ts: counts pinned (36 positives, readdir 36, 14 words, 31 entries)'
+  claim: 'Only `approved` is already a gate word (S1, because it is a lane). So self-test fixture (1), a verdict compared with ''approved'', is red today without any change, and fixture (2), a history marker
+    keyed on a lane value, is also S1. The exit check ''each new case red without its fix'' therefore proves nothing. The words that really are new (`changes_requested`, `fresh`, `stale`, `not_applicable`,
+    `changed`, `unchanged`, `unknown`, `not_found`, `source_unreadable`) are matched by no selector, so `=== ''stale''` or `''changes_requested''` outside defaults/ passes the gate. The plan relies on a
+    reviewer checklist, and D-07 says words are added only if a fixture shows an escape, but no fixture tests an escape. Lane-freedom of ''Current on the last array element'' is fine: S8/S9 key on `phases`
+    only and the history is positional.
+
+    [merged PLAN-VERIFY-003] Fixture 1 (a comparison with ''approved'') and fixture 2 (a marker keyed on a lane value) are both already reported by S1 or S5, so they pass today with no gate change. They
+    duplicate existing coverage and cannot be ''red without the fix'' because no fix exists. The real hazard is the words the gate does not know: changes_requested, fresh, stale, not_applicable, changed,
+    unchanged and unknown. A part that writes === ''changes_requested'' or === ''stale'' passes the gate. gates.md says words are added only if a fixture shows an escape, but the chosen fixtures can never
+    show one. FR-023 and NFR-009 for the new vocabularies are enforced only by the reviewer self-check list.'
+  remediation: 'FORK. (A) Extend `eslint.data-driven.config.mjs` to read the verdict, change-state and staleness-status enums from the vendored schemas as it already does for lanes. Add `changes_requested`,
+    `not_applicable` and `unchanged` to the underscored or whole-word lists and handle the false-positive risk of bare `unknown`, `changed`, `fresh`, `stale` (restrict to comparisons and case labels). Add
+    positive fixtures per new word, update EXPECTED_WORDS and the count guards, and make each new fixture red before the config change. (B) Leave the gate as is, drop the claim that it covers the new vocabularies,
+    and add a node test that scans the new logic and part files for these literals; plan fixtures (1) and (2) as non-vacuous only for what S1 already catches. Whichever is chosen, rewrite the plan so the
+    self-test fixtures target a word that is red without the change.
+
+    [merged PLAN-VERIFY-003] FORK: (a) extend the gate: read the verdict, change-state and staleness enums (ReviewVerdict.yaml, ChangeState.yaml, Staleness.yaml status and reason) from the vendored schemas
+    the way LANES is read. Replace fixture 1 with comparisons against each new word, update EXPECTED_WORDS, the word-count test, the 36 and 38 counts and the ''covers every selector'' test in the same change.
+    I grepped #4''s packages/*/src outside the allow-list and found no existing literal of these words, so a collision is unlikely; the self-test will confirm. (b) Keep the gate as is, state in gates.md
+    that the new vocabularies are review and behavioural-test only, drop the two fixtures and the ''red without its fix'' exit check, and rely on the foreign-vocabulary tests of PLAN-VERIFY-009.'
+  merged_from:
+  - PLAN-VERIFY-003
+  refuter_reason: 'approved is in StatusLane so S1 already flags it (and #4 has s1-comparison fixture), making fixture 1 vacuous; changes_requested, fresh, stale, not_applicable, changed, unchanged and
+    unknown match no WORDS, STATUS_WORDS or UNDERSCORED entry in eslint.data-driven.config.mjs; severity 4 is right.'
+  fork: true
+- id: PLAN-ARCH-010
+  lens: Exceptions and gaps
+  severity: 4
+  title: 'FORK: the panel (E-18, gap G-11) may be avoidable with `sk-card` plus `sk-section-header`, and flat panels depart from the prototype'
+  evidence:
+  - artifact: "contracts/gates.md E-18; research.md G-11 ('no titled panel/section container'); spec.md DW-30 (prototype: bordered panel cards; proposed: flat per N-4); plan.md \xA7 Primary Dependencies\
+      \ lists sk-card"
+  - code: '<elements 1.1.0-rc.10>/custom-elements.json: sk-card (default slot, part `card`, `inset`, `status`, `variant`) and sk-section-header (slots title, eyebrow, metadata, description, action)'
+  - code: '<prototype>/prototype.css: `.panel` is padding space-5, border width-1 solid, radius-md, background surface-card'
+  - code: '<#4>/stylelint.config.mjs: E-09 (N-4) is about board lanes; the Pipeline inspector''s flat panel is E-12'
+  - artifact: contracts/gates.md E-18 (flat, small uppercase mono panel title); research.md D-12 and G-11; spec.md DW-30 (bordered panel cards to flat panels per N-4)
+  - code: '<prototype>/prototype.css: .panel { border: 1px solid var(--sk-border-default); border-radius: var(--sk-radius-md); background: var(--sk-surface-card); padding } and .panel > h2 { margin-bottom
+      } with h2 { font-size: var(--sk-text-lg); font-family: var(--sk-font-display) }; the uppercase mono h2 rule exists only for .lane-head h2 and .sidebar-section h3'
+  - code: 'pr6-folds/kitty-specs/missions-and-pipeline-screens-01M40SKZ/tracer-design-decisions.md: N-4 (lanes are flat ... small uppercase mono title) is a ruling on Pipeline lanes'
+  claim: 'The library already ships a card surface and a titled section header, and the prototype''s `.panel` is a bordered card. The plan says G-11 ''no titled panel container'' without recording why `sk-card`
+    + `sk-section-header` cannot do it, and DW-30 reaches ''flat'' by citing N-4, which concerned board lanes. Flat panels make drift (a REJECT item unless confirmed) and require E-18. The charter says
+    a card primitive is rendered with the element, and re-implementing it with CSS is a review failure.
+
+    [merged PLAN-VISUAL-003] The prototype panel is a bordered, rounded card with a display-font h2 at text-lg. DW-30 proposes flat panels and E-18 additionally restyles the panel title (uppercase, mono,
+    small, tracking). The title restyle is in no DW item at all, and "per N-4" borrows a lane ruling for a different component. Under the charter and the CP-1 rule an unregistered or unconfirmed prototype
+    difference is a REJECT, so IC-03b/IC-04 to IC-07 would build chrome the operator may refuse, after panel-parts.ts is frozen. Also the charter makes cards sk-card; G-11 ("no titled panel container")
+    does not explain why sk-card is not the panel.'
+  remediation: 'FORK, decided at CP-1. (A) Panels are `sk-card` (inset where nested) with an `sk-section-header` title: DW-30 becomes ''keep (identical look)'', G-11 shrinks to the title typography, and
+    E-18 and PLAN-ARCH-009''s `panelStyles` mostly disappear; add a spike (in S8 or a new S9) comparing the card to the prototype `.panel`. (B) Keep flat panels as proposed and record in research why `sk-card`
+    was rejected (evidence from a render), keeping E-18 scoped as in PLAN-ARCH-009. The plan must present both to the operator.
+
+    [merged PLAN-VISUAL-003] FORK: (a) keep the prototype look: panel = bordered card using sk-card (or its closest form) with the prototype h2, no E-18 title restyle; DW-30 becomes keep. (b) Keep the proposal
+    but split DW-30 into separate register items (panel chrome: border, radius, background; panel title: font, size, case) each with prototype value, screen value and the sk-card question, so CP-1 decides
+    each; E-18 then lists only what is confirmed. Either way show the prototype panel beside the S5-S8 spike at CP-1.'
+  merged_from:
+  - PLAN-VISUAL-003
+  refuter_reason: 'DW-30 cites N-4, which in #4 tracer-design-decisions is a ruling on Pipeline lanes; prototype .panel is a bordered radius-md card, and neither G-11 nor any research text records why sk-card
+    plus sk-section-header cannot be the panel; severity 4 stands because DW-30 is marked confirm (precedent) on a misapplied precedent.'
+  fork: true
+- id: PLAN-ARCH-013
+  lens: Events and public surface
+  severity: 3
+  title: Retry payload `wpId` has no rule when `wpId` is empty or disagrees with `workPackage.wpId`
+  evidence:
+  - artifact: "data-model.md \xA7 Events (wpId of a retry is the host property; 'the two must agree ... never reconciles'); contracts/sk-work-package-screen.md \xA7 Properties (`wpId` default '')"
+  - code: '<#4>/packages/mission-ui/src/elements/sk-work-package-board/sk-work-package-board.ts: SkSelectWorkPackageDetail { missionId, wpId } (the payload shape the retry mirrors)'
+  - artifact: data-model.md Events ('missionId is mission.missionId for every payload'; retry wpId is the host property wpId); contracts/sk-work-package-screen.md Properties (mission default null, wpId
+      default '')
+  - artifact: research.md R-08 and data-model.md ('when workPackage is present the two must agree; the screen shows workPackage.wpId and never reconciles')
+  claim: '`wpId` defaults to '''' and a host that passes `workPackage` (the contract-shaped data the plan wants hosts to rely on) may omit `wp-id`, so a retry from `ready`/`detailStatus: error` emits `wpId:
+    ''''`. During a selection change the host may update `wpId` before `workPackage` arrives, so the header shows the old id while the retry asks for the new one. The data-model leaves both unspecified,
+    and FR-026 and EV-7 test only the null-workPackage case.
+
+    [merged PLAN-VERIFY-013] With status ready and the default mission null, or a host that passes workPackage but no wp-id, the crumb, dependency activation, artifact links and retry emit missionId or
+    wpId undefined or ''''. The host receives a successful event that routes nowhere. A detail for a different Work Package than workPackage is shown without notice. No test or story covers any of these.'
+  remediation: 'FORK. (A) `wpId` is authoritative for every payload and the not-found header, the header shows `workPackage.wpId` only when `status` is `ready`, and a test fixes the empty case (retry disabled
+    or labelled with an error state when `wpId` is ''''). (B) The payload uses `workPackage?.wpId ?? wpId` in one place (`retryDetail`), with a test for each branch. Pick one and state it in P-3.
+
+    [merged PLAN-VERIFY-013] FORK: (a) define fallbacks: retry wpId from the wpId property, then workPackage.wpId, then detail.wpId, and treat a detail whose wpId differs from workPackage.wpId as omitted.
+    Draw controls that need mission.missionId inert and unlinked when mission is null. (b) Keep the strict host contract, document that mission and wp-id are required in ready, and add a test that pins
+    the present behaviour for the null and empty inputs. Either way add the tests.'
+  merged_from:
+  - PLAN-VERIFY-013
+  refuter_reason: wpId defaults to empty and data-model only says the two "must agree" and are never reconciled, with no rule for an empty wpId or a ready screen without wp-id, and EV-7/FR-026 cover only
+    the null-workPackage case; the merged null-mission claim also holds.
+  fork: true
+- id: PLAN-VISUAL-001
+  lens: Prototype fidelity (breakpoints and container-query approach)
+  severity: 4
+  title: Container thresholds of 1100/800 px render the 1280 px baselines (50 of 56 stories) in TWO columns; the prototype shows THREE
+  evidence:
+  - artifact: "plan.md \xA7 Architecture (content width table: three columns at 1100 px and above); research.md D-13; spec.md FR-029, DW-24 (keep, same behaviour), WP-46 to WP-48"
+  - code: '<prototype>/04-work-package.html + prototype.css: .detail-grid (3 tracks), @media (max-width:1100px) two columns, @media (max-width:800px) one column. These are VIEWPORT queries; the prototype
+      app-shell takes 56 px rail + 240 px sidebar from the viewport (--sk-layout-personal-rail-width 3.5rem, --sk-layout-context-sidebar-width 15rem).'
+  - code: 'pr6-folds/packages/mission-ui/src/elements/sk-mission-shell/sk-mission-shell.ts: EXPANDED_QUERY ''(min-width: 1100px)'', COLLAPSED_QUERY ''(min-width: 720px)''; expanded mission layout grid is
+      rail + sidebar + minmax(0,1fr); flush removes the main padding'
+  claim: The plan turns the prototype's viewport breakpoints (1100, 800) into container-width breakpoints of the same numbers. In the real shell the content cell is the viewport minus 296 px (expanded)
+    or minus 112 px (collapsed). At the 1280 px viewport of 50 of the 56 stories the content cell is about 984 px, so the plan's table gives two columns where the prototype at 1280 shows three. At the 1100
+    px story the cell is about 804 px (only 4 px above the 800 one-column threshold, so the baseline sits on a knife edge); the 800 px and 620 px stories happen to land correctly. Operator-confirmed DW-24
+    says "same breakpoints and behaviour, keep", so this is unregistered drift in every 1280 baseline. Spike S8 would expose it, but the plan states the wrong thresholds as the design and E-19 pins the
+    lengths 1100/800/620 px. WP-46 also calls 1100 px the "collapsed tier", but at 1100 px the shell is in its expanded tier (collapsed is 720 to 1099).
+  remediation: 'FORK: pick one and state it in plan.md, research.md D-13, DW-24, E-19 and the WP-46 to WP-48 rows. (a) Keep container queries but derive the container thresholds from the shell''s real content
+    widths so each viewport tier yields the prototype''s columns (for example three columns from about 805 px content, one column below about 690 px; prove with S8 at 1280/1100/800/620 and change the E-19
+    lengths accordingly). (b) Keep the numbers 1100/800/620 as VIEWPORT media conditions (the screen then follows the window, not its cell; amend D-13 and the #4 D-30 reasoning). (c) Register the content-width
+    semantics as a new drift item for CP-1 and re-baseline expectations (three columns appear only at a content cell of 1100 px or wider; the 1280 px stories would show two). In every case add an acceptance
+    check that the 1280 px story has three columns and fix the "collapsed tier" wording of WP-46.'
+  refuter_reason: prototype.css uses viewport @media 1100/800 but plan.md table and E-19 use the same numbers as container widths, so the 1280 stories (content cell about 984 px) get two columns while the
+    prototype shows three; S8 only allows E-19 adjustment and DW-24 says keep; severity 4 is right and WP-46 "collapsed tier" wording is also off.
+  fork: true
+- id: PLAN-VISUAL-006
+  lens: Visual authority (ordering and spike disposition)
+  severity: 3
+  title: IC-03a spikes are called throwaway but nothing removes them; they would be lane-merged into IC-03b and compacted into the PR, and they cannot pass lint before the exceptions are approved
+  evidence:
+  - artifact: "plan.md \xA7 IC-03a (throwaway stories, no committed baseline); \xA7 Lane mechanics item 5 (IC-03b lane created from the approved IC-03a tip); \xA7 PR shape (slice 'spikes, skeleton and layout\
+      \ (IC-03a, IC-03b)'); contracts/gates.md E-17 to E-19 are applied by IC-03b after CP-1"
+  claim: Spike stories need class= for the event-timeline family, container-query px lengths and panel chrome, which are exactly what E-17 to E-19 permit only after CP-1 and only from IC-03b. IC-03a's lane
+    therefore either fails ESLint and Stylelint at its review gate or carries unapproved exceptions. Because IC-03b's lane is created from the approved IC-03a tip and the compaction slice list names the
+    spikes, the throwaway code (and stories with no baseline, which the visual gate and the 56-baseline count do not expect) reaches the PR. The ordering itself (spikes before CP-1, IC-03b after) is sound;
+    the disposition is not defined.
+  remediation: 'FORK: (a) spikes are never committed: they live in an untracked scratch path outside the lint, story and manifest globs, and the WP report carries the CP-1 captures; IC-03a then has no merge
+    to the lane. (b) Spikes are committed in IC-03a under an excluded path, deleted by a named final commit of IC-03a before approval, and the slice list drops the spikes. (c) E-17 to E-19 are approved
+    provisionally for the spike path. State the chosen option and the review check (no spike file on the IC-03a tip).'
+  refuter_reason: plan.md calls the IC-03a spikes throwaway with no committed baseline, but IC-03b is created from the approved IC-03a tip and the PR slice list names "spikes", and no step removes them
+    or excludes them from lint before E-17 to E-19 are approved.
+  fork: true
+- id: PLAN-VISUAL-011
+  lens: Accessibility (keyboard and focus continuity)
+  severity: 3
+  title: No rule for where focus goes when the focused control is removed (retry, dependency node, return) although FR-030 demands no trap and a documented order
+  evidence:
+  - artifact: "contracts/sk-work-package-screen.md Events (Focus and scroll emit nothing, EV-8) and Focus order; spec.md FR-030, NFR-003; plan.md \xA7 IC-08 (focus-order and tab-n tests)"
+  claim: Activating Retry (the button disappears when the screen goes error to loading), activating a dependency node (the host swaps wpId and the focused node is re-rendered or removed) or Return to Pipeline
+    leaves focus on a detached node, which resets keyboard users to the page start. WP-49 and the IC-08 tab tests walk Tab order only; there is no story or test for focus after a state change.
+  remediation: 'FORK: (a) the screen moves focus to its own h1 or a tabindex=-1 container whenever the focused element is removed by a status or wpId change (needs a documented property of the frozen surface
+    or an internal rule, no event); (b) declare it a host duty, document it in quickstart.md, and cover it with a host-composition test. Add a test for either choice.'
+  refuter_reason: The contract Focus order section and quickstart.md cover Tab order only. Nothing defines focus after Retry, a dependency-node swap or Return removes the focused control. The contract says
+    Focus emits nothing (EV-8) and no test is planned for it.
+  fork: true
+- id: PLAN-VISUAL-014
+  lens: Accessibility (text for every status, NFR-011)
+  severity: 2
+  title: Staleness not_applicable is a status with no text in the DOM; its reason is promised only as an accessible description with no element to carry it
+  evidence:
+  - artifact: 'research.md D-08 (not_applicable and absent: nothing visible; the reason goes in the Facts region''s accessible description only); spec.md WP-21, NFR-011, SC-009; contracts/defaults.md FRESH_TEXT,
+      STALENESS_REASON_WORDS'
+  claim: NFR-011 and SC-009 require 100 percent of statuses to carry a text form in the DOM. For not_applicable nothing is drawn, and the reason is attached to the 'Facts region', which is a dl (not a widget)
+    with no stated element or attribute; descriptions on a dl are not reliably announced. The WP-21b assertion therefore has no defined target.
+  remediation: 'FORK: (a) keep Q1 (nothing visible) and specify the exact mechanism, for example visually-hidden text inside the Facts panel (''Staleness: not applicable, <reason>'') via visually-hidden.ts,
+    asserted by a DOM text query in WP-21b; (b) aria-description on a named element, asserted on that attribute; (c) reopen Q1 for a quiet row. State the choice and the test.'
+  refuter_reason: research.md D-08 draws nothing for not_applicable and attaches the reason only to the Facts region's accessible description, with no named element or attribute. NFR-011 requires a text
+    form for every status, so the WP-21b assertion has no defined target.
+  fork: true

@@ -1,0 +1,175 @@
+schema_version: 1
+mission_id: 01M44DSJ10Z36HSA8JCGXZMRRF
+mission_slug: work-package-screen-01M44DSJ
+mission_number: 2
+friendly_name: Work Package detail screen
+mission_type: software-dev
+target_branch: feat/work-package-screen-5
+created_at: '2026-10-06T14:52:48.029225+00:00'
+created_by:
+  kind: runtime
+  id: spec-kitty-generator
+  display: Spec Kitty Generator
+provenance:
+  kind: runtime_post_completion
+  invoked_at: '2026-10-06T14:52:48.029225+00:00'
+  policy_resolved_from:
+    enabled: <default>
+    timing: <default>
+    failure_policy: <default>
+    write_record: <default>
+    generate_proposals: <default>
+    apply_proposals: <default>
+    permissions.write_record: <default>
+    permissions.inspect_mission_artifacts: <default>
+    permissions.propose_glossary_changes: <default>
+    permissions.propose_drg_changes: <default>
+    permissions.propose_doctrine_changes: <default>
+    permissions.apply_low_risk_changes: <default>
+    permissions.apply_structural_changes: <default>
+    precedence: <default>
+    generator: <default>
+policy_source:
+  enabled: <default>
+  timing: <default>
+  failure_policy: <default>
+  write_record: <default>
+  generate_proposals: <default>
+  apply_proposals: <default>
+  permissions.write_record: <default>
+  permissions.inspect_mission_artifacts: <default>
+  permissions.propose_glossary_changes: <default>
+  permissions.propose_drg_changes: <default>
+  permissions.propose_doctrine_changes: <default>
+  permissions.apply_low_risk_changes: <default>
+  permissions.apply_structural_changes: <default>
+  precedence: <default>
+  generator: <default>
+findings_status: has_findings
+helped:
+- id: h-001
+  category: implementation
+  summary: WP01 completed without rejection cycles
+  evidence_refs:
+  - e-015
+- id: h-002
+  category: implementation
+  summary: WP02 completed without rejection cycles
+  evidence_refs:
+  - e-015
+- id: h-003
+  category: implementation
+  summary: WP03 completed without rejection cycles
+  evidence_refs:
+  - e-015
+- id: h-004
+  category: implementation
+  summary: WP04 completed without rejection cycles
+  evidence_refs:
+  - e-015
+- id: h-005
+  category: implementation
+  summary: WP06 completed without rejection cycles
+  evidence_refs:
+  - e-015
+- id: h-006
+  category: implementation
+  summary: WP07 completed without rejection cycles
+  evidence_refs:
+  - e-015
+- id: h-007
+  category: implementation
+  summary: WP08 completed without rejection cycles
+  evidence_refs:
+  - e-015
+not_helpful:
+- id: n-004
+  category: doc
+  summary: analysis-report.md records 10 finding(s)
+  evidence_refs:
+  - e-019
+  details: The analysis-report.md artifact for this mission records 10 finding(s) in its structured frontmatter. Review
+    them to understand documented issues and decisions.
+- id: n-001
+  category: review_loop
+  summary: WP05 required 1 rejection cycle(s) before approval
+  evidence_refs:
+  - e-016
+  details: WP WP05 was sent back to an earlier lane with documented review feedback 1 time(s).
+- id: n-002
+  category: review_loop
+  summary: WP09 required 1 rejection cycle(s) before approval
+  evidence_refs:
+  - e-017
+  details: WP WP09 was sent back to an earlier lane with documented review feedback 1 time(s).
+- id: n-003
+  category: review_loop
+  summary: WP10 required 2 rejection cycle(s) before approval
+  evidence_refs:
+  - e-018
+  details: WP WP10 was sent back to an earlier lane with documented review feedback 2 time(s).
+gaps: []
+proposals: []
+evidence_refs:
+- id: e-001
+  kind: file
+  path: kitty-specs/work-package-screen-01M44DSJ/meta.json
+- id: e-002
+  kind: file
+  path: kitty-specs/work-package-screen-01M44DSJ/spec.md
+- id: e-003
+  kind: file
+  path: kitty-specs/work-package-screen-01M44DSJ/plan.md
+- id: e-004
+  kind: file
+  path: kitty-specs/work-package-screen-01M44DSJ/tasks.md
+- id: e-005
+  kind: file
+  path: kitty-specs/work-package-screen-01M44DSJ/tasks/WP01-contract-1-1-vendoring-tooling-fixtures.md
+- id: e-006
+  kind: file
+  path: kitty-specs/work-package-screen-01M44DSJ/tasks/WP02-defaults-logic-data-driven-gate.md
+- id: e-007
+  kind: file
+  path: kitty-specs/work-package-screen-01M44DSJ/tasks/WP03-spikes-s5-s9-and-cp1-evidence.md
+- id: e-008
+  kind: file
+  path: kitty-specs/work-package-screen-01M44DSJ/tasks/WP04-skeleton-layout-and-surface-freeze.md
+- id: e-009
+  kind: file
+  path: kitty-specs/work-package-screen-01M44DSJ/tasks/WP05-header-facts-assignment-frontmatter.md
+- id: e-010
+  kind: file
+  path: kitty-specs/work-package-screen-01M44DSJ/tasks/WP06-lane-history-and-review.md
+- id: e-011
+  kind: file
+  path: kitty-specs/work-package-screen-01M44DSJ/tasks/WP07-files-chains-subtasks-workspace-links.md
+- id: e-012
+  kind: file
+  path: kitty-specs/work-package-screen-01M44DSJ/tasks/WP08-states.md
+- id: e-013
+  kind: file
+  path: kitty-specs/work-package-screen-01M44DSJ/tasks/WP09-tiers-accessibility-edge-cases.md
+- id: e-014
+  kind: file
+  path: kitty-specs/work-package-screen-01M44DSJ/tasks/WP10-integration-baselines-repin-timings-docs.md
+- id: e-015
+  kind: file
+  path: kitty-specs/work-package-screen-01M44DSJ/status.events.jsonl
+- id: e-016
+  kind: event_range
+  path: kitty-specs/work-package-screen-01M44DSJ/status.events.jsonl
+  range: 01M45Y97DFCHJ601N0X6AC0K7A
+- id: e-017
+  kind: event_range
+  path: kitty-specs/work-package-screen-01M44DSJ/status.events.jsonl
+  range: 01M4685WM2RQJW2CWTST69WWXX
+- id: e-018
+  kind: event_range
+  path: kitty-specs/work-package-screen-01M44DSJ/status.events.jsonl
+  range: 01M47ZNEA7E2GCWZJ1SFDYH6FN..01M482WMFYGF5444T80PP6RRYV
+- id: e-019
+  kind: file
+  path: kitty-specs/work-package-screen-01M44DSJ/analysis-report.md
+generator_version: '1.0'
+provenance_history: []

@@ -1,0 +1,364 @@
+{
+  "event_count": 86,
+  "last_event_id": "01M48V7TDM81ACMYTME36Y7Y32",
+  "materialized_at": "2026-10-06T14:52:45.876098+00:00",
+  "mission_number": "2",
+  "mission_slug": "work-package-screen-01M44DSJ",
+  "mission_type": "software-dev",
+  "schema_version": 2,
+  "summary": {
+    "approved": 0,
+    "blocked": 0,
+    "canceled": 0,
+    "claimed": 0,
+    "done": 10,
+    "for_review": 0,
+    "in_progress": 0,
+    "in_review": 0,
+    "planned": 0
+  },
+  "work_packages": {
+    "WP01": {
+      "actor": "merge",
+      "agent": "claude",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
+      "force_count": 0,
+      "implementer_of_record": "claude",
+      "lane": "done",
+      "last_event_id": "01M48V7MFPS21SV66JKHMHA3T6",
+      "last_transition_at": "2026-10-06T14:52:39.798409+00:00",
+      "model": "__resolved_model_absent__",
+      "notes": [
+        "IC-01 done: --from-repo vendoring, provisional pin bb104f19 (provenance branch), C8 + CLI/ancestry tests + plant 4, floors 150/70, C5 WorkPackage rules, 4 relaxations, 48 fixtures, view types. All gates and gate-proof green.",
+        "Independent review approved: vendored tree byte-identical to the pin, PIN.json honest, 70 fixtures with reverted-must-fail relaxations, 7/7 own reverts killed, all gates and gate-proof green; report ui5-wp01-review.md"
+      ],
+      "provider": "__resolved_provider_absent__",
+      "review_result": {
+        "reference": "review-cycle://work-package-screen-01M44DSJ/WP01-contract-1-1-vendoring-tooling-fixtures/review-cycle-1.md",
+        "reviewer": "claude",
+        "verdict": "approved"
+      },
+      "role": "reviewer",
+      "shell_pid": 1503429,
+      "shell_pid_created_at": "1791185932.05",
+      "subtasks": {
+        "T001": "done",
+        "T002": "done",
+        "T003": "done",
+        "T004": "done",
+        "T005": "done",
+        "T006": "done",
+        "T007": "done",
+        "T008": "done"
+      }
+    },
+    "WP02": {
+      "actor": "merge",
+      "agent": "claude",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
+      "force_count": 0,
+      "implementer_of_record": "claude",
+      "lane": "done",
+      "last_event_id": "01M48V7P34B4D4K1J0G1XQMXPG",
+      "last_transition_at": "2026-10-06T14:52:41.445020+00:00",
+      "model": "__resolved_model_absent__",
+      "notes": [
+        "IC-02 defaults, nine logic functions, data-driven gate extended (7 selectors, 8 red-first fixtures); all gates green incl. gate-proof",
+        "Independent review approved: 13/13 own reverts killed, gate extension reads vendored enums, 683 tests green; preflight red classified environmental (passes on base and lane on rerun); report ui5-wp02-review.md"
+      ],
+      "provider": "__resolved_provider_absent__",
+      "review_result": {
+        "reference": "review-cycle://work-package-screen-01M44DSJ/WP02-defaults-logic-data-driven-gate/review-cycle-1.md",
+        "reviewer": "claude",
+        "verdict": "approved"
+      },
+      "role": "reviewer",
+      "shell_pid": 698639,
+      "shell_pid_created_at": "1791189396.2",
+      "subtasks": {
+        "T009": "done",
+        "T010": "done",
+        "T011": "done",
+        "T012": "done",
+        "T013": "done",
+        "T014": "done",
+        "T015": "done"
+      }
+    },
+    "WP03": {
+      "actor": "merge",
+      "agent": "claude",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
+      "force_count": 0,
+      "implementer_of_record": "claude",
+      "lane": "done",
+      "last_event_id": "01M48V7PM887T5Y8XA5HQ4XG51",
+      "last_transition_at": "2026-10-06T14:52:41.992390+00:00",
+      "model": "__resolved_model_absent__",
+      "notes": [
+        "Spikes S5-S9 and Stylelint probe done; CP-1 evidence in the scratchpad ui5-cp1; spike code removed by d5d9b16, tip tree equals base tree",
+        "Independent review approved: tip tree equals base, spike residue removed, S8/S9/probe/S6 measurements reproduced; CP-1 decisions pending with the operator; report ui5-wp03-review.md"
+      ],
+      "provider": "__resolved_provider_absent__",
+      "review_result": {
+        "reference": "review-cycle://work-package-screen-01M44DSJ/WP03-spikes-s5-s9-and-cp1-evidence/review-cycle-1.md",
+        "reviewer": "claude",
+        "verdict": "approved"
+      },
+      "role": "reviewer",
+      "shell_pid": 3379712,
+      "shell_pid_created_at": "1791191347.57",
+      "subtasks": {
+        "T016": "done",
+        "T017": "done",
+        "T018": "done",
+        "T019": "done",
+        "T020": "done",
+        "T021": "done"
+      }
+    },
+    "WP04": {
+      "actor": "merge",
+      "agent": "claude",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
+      "force_count": 0,
+      "implementer_of_record": "claude",
+      "lane": "done",
+      "last_event_id": "01M48V7Q5C2D16D4Q3107SVNJ5",
+      "last_transition_at": "2026-10-06T14:52:42.540099+00:00",
+      "model": "__resolved_model_absent__",
+      "notes": [
+        "IC-03b: screen skeleton, ten-property surface, four dispatch methods, layout 848/688, part stubs, complete crumb and empty form, E-17/E-18/E-19b, manifest frozen; gates and gate-proof green",
+        "Independent review approved: surface frozen, 12 behaviour reverts caught, rulings and carry-forward notes honoured; gate-proof visual red was a flake (visual rerun 119/119); E-18 row-gap ratified by the operator; report ui5-wp04-review.md"
+      ],
+      "provider": "__resolved_provider_absent__",
+      "review_result": {
+        "reference": "review-cycle://work-package-screen-01M44DSJ/WP04-skeleton-layout-and-surface-freeze/review-cycle-1.md",
+        "reviewer": "claude",
+        "verdict": "approved"
+      },
+      "role": "reviewer",
+      "shell_pid": 1365282,
+      "shell_pid_created_at": "1791193298.33",
+      "subtasks": {
+        "T022": "done",
+        "T023": "done",
+        "T024": "done",
+        "T025": "done",
+        "T026": "done",
+        "T027": "done",
+        "T028": "done"
+      }
+    },
+    "WP05": {
+      "actor": "merge",
+      "agent": "claude",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
+      "force_count": 1,
+      "implementer_of_record": "claude",
+      "lane": "done",
+      "last_event_id": "01M48V7QPDSHCQKRAKVGBF91G5",
+      "last_transition_at": "2026-10-06T14:52:43.085976+00:00",
+      "model": "__resolved_model_absent__",
+      "notes": [
+        "Header, Facts, Assignment, Frontmatter, 10 stories, EV-4 and part tests done. pnpm test has 3 red WP04 skeleton tests that assume stubs (patch in scratchpad); gate-proof red only for 10 missing baselines (WP10) plus those 3.",
+        "Fix cycle 1: skeleton test robust (frozen patch), crumb separator removed at source, E-21 with tests; pnpm test 782 green; gate-proof red only for the 10 un-baselined stories",
+        "Cycle 2 approved: skeleton patch byte-identical, breadcrumb fixed at source, E-21 scoped and tested, 20/20 own reverts incl. 7 panel-chrome caught, 782 tests green; unit-tests leg failed once under concurrent load, green alone; report ui5-wp05-review.md"
+      ],
+      "provider": "__resolved_provider_absent__",
+      "review": null,
+      "review_result": {
+        "reference": "review-cycle://work-package-screen-01M44DSJ/WP05-header-facts-assignment-frontmatter/review-cycle-2.md",
+        "reviewer": "claude",
+        "verdict": "approved"
+      },
+      "role": "reviewer",
+      "shell_pid": null,
+      "shell_pid_created_at": null,
+      "subtasks": {
+        "T029": "done",
+        "T030": "done",
+        "T031": "done",
+        "T032": "done",
+        "T033": "done",
+        "T034": "done"
+      }
+    },
+    "WP06": {
+      "actor": "merge",
+      "agent": "claude",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
+      "force_count": 0,
+      "implementer_of_record": "claude",
+      "lane": "done",
+      "last_event_id": "01M48V7RS7XXR951Y8S7AE7HTW",
+      "last_transition_at": "2026-10-06T14:52:44.199622+00:00",
+      "model": "__resolved_model_absent__",
+      "notes": [
+        "WP06 done: history-parts and review-parts bodies, 13 stories, EV-6 and order/omitted-vs-empty/foreign tests, revert checks run. All gates green except gate-proof visual leg (expected CORRECT-012 red, 687 passed, un-baselined stories).",
+        "Independent review approved: history and review behaviour correct, 8/10 own reverts caught, 817 tests green; visual: all baselined stories pass (one flaky timeout passes alone), only the un-baselined stories fail as expected until WP10; weak Current-by-lane check routed to WP09; report ui5-wp06-review.md"
+      ],
+      "provider": "__resolved_provider_absent__",
+      "review_result": {
+        "reference": "review-cycle://work-package-screen-01M44DSJ/WP06-lane-history-and-review/review-cycle-1.md",
+        "reviewer": "claude",
+        "verdict": "approved"
+      },
+      "role": "reviewer",
+      "shell_pid": 3700410,
+      "shell_pid_created_at": "1791203069.25",
+      "subtasks": {
+        "T035": "done",
+        "T036": "done",
+        "T037": "done",
+        "T038": "done",
+        "T039": "done"
+      }
+    },
+    "WP07": {
+      "actor": "merge",
+      "agent": "claude",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
+      "force_count": 0,
+      "implementer_of_record": "claude",
+      "lane": "done",
+      "last_event_id": "01M48V7R8BGE3H49N5RH20PTSV",
+      "last_transition_at": "2026-10-06T14:52:43.659416+00:00",
+      "model": "__resolved_model_absent__",
+      "notes": [
+        "Owned files, evidence and dependency chains, subtasks, workspace, links; 19 stories; EV-1/EV-5 tests; gates green except known visual (no baselines)",
+        "Independent review approved: 19/19 own reverts caught, skeleton patch byte-identical, workspace overflow fixed; the two baselined visual reds were flakes (rerun: 119/119 baselined pass; only the 19 un-baselined stories fail, expected until WP10); long-title wrap allowance and the subtask label hook routed to WP09; report ui5-wp07-review.md"
+      ],
+      "provider": "__resolved_provider_absent__",
+      "review_result": {
+        "reference": "review-cycle://work-package-screen-01M44DSJ/WP07-files-chains-subtasks-workspace-links/review-cycle-1.md",
+        "reviewer": "claude",
+        "verdict": "approved"
+      },
+      "role": "reviewer",
+      "shell_pid": 3747123,
+      "shell_pid_created_at": "1791198870.95",
+      "subtasks": {
+        "T040": "done",
+        "T041": "done",
+        "T042": "done",
+        "T043": "done",
+        "T044": "done",
+        "T045": "done",
+        "T046": "done"
+      }
+    },
+    "WP08": {
+      "actor": "merge",
+      "agent": "claude",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
+      "force_count": 0,
+      "implementer_of_record": "claude",
+      "lane": "done",
+      "last_event_id": "01M48V7SATF7PW98N5R444E18X",
+      "last_transition_at": "2026-10-06T14:52:44.762222+00:00",
+      "model": "__resolved_model_absent__",
+      "notes": [
+        "States: state-parts, 8 stories, EV-3/EV-7/states/parts tests. One it.fails documents a screen-file focus-timing defect (change request).",
+        "Independent review approved: 14/15 own reverts killed (one equivalent mutant), it.fails focus defect real and routed to WP09, Retry-beside-notice verified; gates green, visual reds only the un-baselined stories and parity (unrelated stories re-run alone pass); report ui5-wp08-review.md"
+      ],
+      "provider": "__resolved_provider_absent__",
+      "review_result": {
+        "reference": "review-cycle://work-package-screen-01M44DSJ/WP08-states/review-cycle-1.md",
+        "reviewer": "claude",
+        "verdict": "approved"
+      },
+      "role": "reviewer",
+      "shell_pid": 3599958,
+      "shell_pid_created_at": "1791202999.24",
+      "subtasks": {
+        "T047": "done",
+        "T048": "done",
+        "T049": "done",
+        "T050": "done",
+        "T051": "done"
+      }
+    },
+    "WP09": {
+      "actor": "merge",
+      "agent": "claude",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
+      "force_count": 1,
+      "implementer_of_record": "claude",
+      "lane": "done",
+      "last_event_id": "01M48V7SVWY7NS4ZQP4348T9BX",
+      "last_transition_at": "2026-10-06T14:52:45.308058+00:00",
+      "model": "__resolved_model_absent__",
+      "notes": [
+        "Integration of chains X and Y: focus defect fixed (microtask/updateComplete), zero it.fails, subtask lane hook, cancellation stateBadge, OPEN_REVIEW_TEXT, E-21 on chain-parts, positional Current test, tiers stories + a11y/perf/time tests. Known defects CR-1..CR-3 (nowrap pills, review-summary values) reported, not patched. Visual leg red only for un-baselined stories.",
+        "Fix round: pills ellipsize from one shared rule, review values break-word, KNOWN_DEFECTS gone, secondary file-icon artifact actions; gates green",
+        "Cycle 2 approved: pills ellipsize from one shared rule, KNOWN_DEFECTS and it.fails gone, secondary artifact actions, 16/17 own reverts caught, T057 side-by-side verified; visual reds only un-baselined stories (two baselined passed alone); report ui5-wp09-review.md"
+      ],
+      "provider": "__resolved_provider_absent__",
+      "review": null,
+      "review_result": {
+        "reference": "review-cycle://work-package-screen-01M44DSJ/WP09-tiers-accessibility-edge-cases/review-cycle-2.md",
+        "reviewer": "claude",
+        "verdict": "approved"
+      },
+      "role": "reviewer",
+      "shell_pid": 459130,
+      "shell_pid_created_at": "1791253869.33",
+      "subtasks": {
+        "T052": "done",
+        "T053": "done",
+        "T054": "done",
+        "T055": "done",
+        "T056": "done",
+        "T057": "done"
+      }
+    },
+    "WP10": {
+      "actor": "merge",
+      "agent": "claude",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
+      "force_count": 2,
+      "implementer_of_record": "claude",
+      "lane": "done",
+      "last_event_id": "01M48V7TDM81ACMYTME36Y7Y32",
+      "last_transition_at": "2026-10-06T14:52:45.876098+00:00",
+      "model": "__resolved_model_absent__",
+      "notes": [
+        "Integration: contract re-pinned to main b61d1fa33; 56 baselines committed after side-by-side review; catalogue, pairing, host-composition and style-pin tests; 5 clean visual runs; gate-proof green; docs reconciled; ci timeouts unchanged by derivation",
+        "Fix cycle 1: vh-<n> harness tag with node test; 32 stories tagged vh-2000; fixed now in chains/states/tiers stories; 40 baselines re-generated; 5 clean visual runs, gate-proof green",
+        "Fix cycle 2: shell-tier one column, vh-2000 on WP-02/07/08/10/13, dependency dedupe, composed pinned, accurate messages; 5 visual runs, gate-proof green",
+        "Cycle 3 re-review approved: mobile tier, height tags, dedupe, composed pinned; 1007 tests, visual 175, gate-proof pass"
+      ],
+      "provider": "__resolved_provider_absent__",
+      "review": null,
+      "review_result": {
+        "reference": "review-cycle://work-package-screen-01M44DSJ/WP10-integration-baselines-repin-timings-docs/review-cycle-3.md",
+        "reviewer": "user",
+        "verdict": "approved"
+      },
+      "role": "reviewer",
+      "shell_pid": null,
+      "shell_pid_created_at": null,
+      "subtasks": {
+        "T058": "done",
+        "T059": "done",
+        "T060": "done",
+        "T061": "done",
+        "T062": "done",
+        "T063": "done",
+        "T064": "done",
+        "T065": "done"
+      }
+    }
+  }
+}

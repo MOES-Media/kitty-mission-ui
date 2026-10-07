@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import { readFileSync } from 'node:fs';
 import { LAYOUT, ROOT, listFiles, readPin } from './common.mjs';
 import { PRODUCER_LANE_WEIGHTS } from './check.mjs';
-import { fetchRef } from './remote.mjs';
+import { fetchRef, isOnUpstreamMain } from './remote.mjs';
 
 const NINE = Object.keys(PRODUCER_LANE_WEIGHTS);
 
@@ -31,8 +31,29 @@ export function compareLaneWeights(extracted) {
     .map((lane) => `lane weight ${lane}: producer ${extracted[lane]}, PRODUCER_LANE_WEIGHTS ${PRODUCER_LANE_WEIGHTS[lane]}`);
 }
 
+/**
+ * Pure: what verify-remote may do with a pin. A `branch` pin is a local lane commit and cannot be compared with
+ * upstream: it prints "not verifiable upstream" and exits 0, or non-zero with `--require-main`.
+ */
+export function provenanceDecision(pin, { requireMain = false } = {}) {
+  if (pin.provenance === 'main') return { verifiable: true, exitCode: 0, message: '' };
+  const base = 'not verifiable upstream (local lane commit)';
+  return requireMain
+    ? { verifiable: false, exitCode: 1, message: `${base}; --require-main refuses a branch pin` }
+    : { verifiable: false, exitCode: 0, message: base };
+}
+
 async function main() {
   const pin = readPin(ROOT);
+  const decision = provenanceDecision(pin, { requireMain: process.argv.includes('--require-main') });
+  if (!decision.verifiable) {
+    process.stdout.write(`contract:verify-remote: ${decision.message}\n`);
+    return decision.exitCode;
+  }
+  if (!isOnUpstreamMain(pin.sha)) {
+    process.stdout.write(`contract:verify-remote: ${pin.sha} is not an ancestor of upstream main; a main pin needs a commit that is on main\n`);
+    return 1;
+  }
   const problems = [];
   const at = fetchRef(pin.sha);
   try {
