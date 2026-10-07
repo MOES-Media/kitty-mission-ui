@@ -18,7 +18,7 @@ Private Lit elements for the Spec Kitty mission screens, built on `@spec-kitty/e
   `--sk-mission-shell-content-padding` (24px, 16px at the mobile tier). Without `flush` the content is padded twice.
 - The shell's `tier` (`expanded`, `collapsed`, `mobile`) is public. A screen follows it with `ShellTierController`
   (`src/shell-tier.ts`), which sets the CSS custom state `:state(shell-mobile)` on its host; style it with
-  `:host(:state(shell-mobile))`. A browser without custom states is not supported by it.
+  `:host(:state(shell-mobile))`. A browser without custom states, or one whose `states.add` throws, degrades loudly: one `console.warn` per page, no custom state, and the container-query layout still applies.
 - A screen re-exposes the events of the pattern elements it composes (`sk-filter-change` from the filter group,
   `sk-select-work-package` from the board): those names and detail keys are part of the screen's API, listed in its
   `@fires`. The Pipeline screen's `missionsHref` has a default only for a modified click; a host sets it to its own

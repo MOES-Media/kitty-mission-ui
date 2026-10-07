@@ -15,7 +15,8 @@
   rewords a lane sets both (`#5`).
 - `ShellTierController` (`src/shell-tier.ts`): follows the enclosing `sk-mission-shell`'s public `tier` across shadow roots and
   sets the CSS custom state `:state(shell-mobile)` on its host while the tier is `mobile` (no attribute). The Work Package
-  screen is its first consumer; it needs `ElementInternals` custom states (`#5`).
+  screen is its first consumer. Without `ElementInternals` custom states (or when `states.add` throws) it warns once per page and
+  skips the state; the screen still renders (`#5`).
 - `sk-work-package-screen` `mission` has the contract's field names (`missionId`, `slug`, `friendlyName`, `wpTotal`), so the
   Pipeline screen's Mission is assignable unchanged; `sk-retry-load` carries a union keyed on `target`
   (`'work-package'` or `'detail'`). A `wpId` that differs from `workPackage.wpId` in `ready` renders `loading`; a detail of
