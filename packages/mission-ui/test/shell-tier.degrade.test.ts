@@ -52,4 +52,22 @@ describe('the tier controller degrades loudly', () => {
     expect(warn).toHaveBeenCalledTimes(1);
     expect(String(warn.mock.calls[0]?.[0])).toContain('custom states');
   });
+  it('an attachInternals() that throws (internals already attached) warns once with its own message and the screen renders', async () => {
+    await page.viewport(700, 900);
+    resetShellTierWarning();
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    vi.spyOn(HTMLElement.prototype, 'attachInternals').mockImplementation(() => {
+      throw new DOMException('ElementInternals already attached', 'NotSupportedError');
+    });
+    const screen = document.createElement('sk-work-package-screen') as SkWorkPackageScreen;
+    Object.assign(screen, pairingProps('WP-01'));
+    const box = document.createElement('div');
+    document.body.append(box);
+    render(workPackageFrame(html`${screen}`), box);
+    await screen.updateComplete;
+    expect(screen.shadowRoot?.querySelector('[data-grid]')).not.toBeNull();
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(String(warn.mock.calls[0]?.[0])).toContain('internals already attached');
+    expect(String(warn.mock.calls[0]?.[0])).not.toContain('not available in this browser');
+  });
 });

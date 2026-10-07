@@ -51,11 +51,11 @@ export class ShellTierController implements ReactiveController {
 
   constructor(private readonly host: ReactiveControllerHost & HTMLElement) {
     try {
-      this.states = (host.attachInternals().states) ?? null;
+      this.states = host.attachInternals().states ?? null;
+      if (this.states === null) warnOnce('ElementInternals custom states (:state()) are not available in this browser');
     } catch {
-      this.states = null;
+      warnOnce('attachInternals() failed (internals already attached on this host?)');
     }
-    if (this.states === null) warnOnce('ElementInternals custom states (:state()) are not available in this browser');
     host.addController(this);
   }
 
