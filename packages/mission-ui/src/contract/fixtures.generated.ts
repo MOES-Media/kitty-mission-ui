@@ -4,7 +4,7 @@
  * and the named overlays of scripts/contract/overlays.mjs. Data only: type imports and `satisfies`, so plain Node
  * loads it by type stripping. Do not edit: the contract gate regenerates and byte-compares this file.
  */
-import type { MissionDetail, MissionDetailView, MissionOverviewPage, MissionOverviewPageView, Project, WorkPackage, WorkPackageDetail, WorkPackageDetailRefusal, WorkPackageDetailView, WorkPackageRecordView } from './types.js';
+import type { ArtifactContent, ArtifactContentView, ArtifactListing, ArtifactListingView, ArtifactRefusal, ArtifactRefusalView, MissionDetail, MissionDetailView, MissionOverviewPage, MissionOverviewPageView, Project, WorkPackage, WorkPackageDetail, WorkPackageDetailRefusal, WorkPackageDetailView, WorkPackageRecordView } from './types.js';
 
 // fixture: project
 export const project = {
@@ -10900,3 +10900,600 @@ export const detailOmittedProvisional = {
     }
   }
 } satisfies WorkPackageDetailView;
+
+// fixture: listingPopulated
+export const listingPopulated = {
+  missionId: "01JZCB3C4D5E6F7G8H9JKMNPQT",
+  entries: [
+    {
+      path: "analysis-report.md",
+      kind: "analysis_report",
+      sizeBytes: 4210,
+      modifiedAt: "2026-09-22T11:05:00Z",
+      readable: true
+    },
+    {
+      path: "checklists/requirements.md",
+      kind: "checklist",
+      sizeBytes: 1388,
+      modifiedAt: "2026-09-22T10:41:00Z",
+      readable: true
+    },
+    {
+      path: "contracts/api.yaml",
+      kind: "contract",
+      sizeBytes: 9876,
+      modifiedAt: "2026-09-22T10:52:00Z",
+      readable: true
+    },
+    {
+      path: "data-model.md",
+      kind: "data_model",
+      sizeBytes: 3302,
+      modifiedAt: "2026-09-22T10:50:00Z",
+      readable: true
+    },
+    {
+      path: "notes/big-export.json",
+      kind: "other",
+      sizeBytes: 300000,
+      modifiedAt: "2026-09-23T08:00:00Z",
+      readable: false
+    },
+    {
+      path: "notes/with space.md",
+      kind: "other",
+      sizeBytes: 212,
+      modifiedAt: "2026-09-23T08:10:00Z",
+      readable: true
+    },
+    {
+      path: "plan.md",
+      kind: "plan",
+      sizeBytes: 7420,
+      modifiedAt: "2026-09-22T10:48:00Z",
+      readable: true
+    },
+    {
+      path: "research.md",
+      kind: "research",
+      sizeBytes: 6150,
+      modifiedAt: "2026-09-22T10:44:00Z",
+      readable: true
+    },
+    {
+      path: "spec.md",
+      kind: "spec",
+      sizeBytes: 5120,
+      modifiedAt: "2026-09-22T10:35:00Z",
+      readable: true
+    },
+    {
+      path: "tasks.md",
+      kind: "tasks",
+      sizeBytes: 8890,
+      modifiedAt: "2026-09-22T10:58:00Z",
+      readable: true
+    },
+    {
+      path: "tasks/WP01-example.md",
+      kind: "work_package_prompt",
+      sizeBytes: 2750,
+      modifiedAt: "2026-09-22T11:00:00Z",
+      readable: true
+    },
+    {
+      path: "tasks/WP01-example/review-cycle-1.md",
+      kind: "review_cycle",
+      sizeBytes: 960,
+      modifiedAt: "2026-09-24T09:15:00Z",
+      readable: true
+    }
+  ],
+  truncated: false
+} satisfies ArtifactListing;
+
+// fixture: listingTruncated
+export const listingTruncated = {
+  missionId: "01JZCB3C4D5E6F7G8H9JKMNPQT",
+  entries: [
+    {
+      path: "notes/a-000.md",
+      kind: "other",
+      sizeBytes: 10,
+      modifiedAt: "2026-09-23T08:00:00Z",
+      readable: true
+    },
+    {
+      path: "notes/a-001.md",
+      kind: "other",
+      sizeBytes: 11,
+      modifiedAt: "2026-09-23T08:00:00Z",
+      readable: true
+    },
+    {
+      path: "notes/a-002.md",
+      kind: "other",
+      sizeBytes: 12,
+      modifiedAt: "2026-09-23T08:00:00Z",
+      readable: true
+    }
+  ],
+  truncated: true
+} satisfies ArtifactListing;
+
+// fixture: contentMarkdown
+export const contentMarkdown = {
+  path: "spec.md",
+  kind: "spec",
+  mediaType: "text/markdown",
+  encoding: "utf-8",
+  sizeBytes: 64,
+  redacted: false,
+  content: "# Example Mission\n\nA short specification of an example Mission.\n"
+} satisfies ArtifactContent;
+
+// fixture: contentRedacted
+export const contentRedacted = {
+  path: "notes/handoff.md",
+  kind: "other",
+  mediaType: "text/markdown",
+  encoding: "utf-8",
+  sizeBytes: 81,
+  redacted: true,
+  content: "Work happened in [path] and the question went to [email].\n\nNothing else is open.\n"
+} satisfies ArtifactContent;
+
+// fixture: contentJson
+export const contentJson = {
+  path: "contracts/schema.json",
+  kind: "contract",
+  mediaType: "application/json",
+  encoding: "utf-8",
+  sizeBytes: 28,
+  redacted: false,
+  content: "{\"name\": \"example\", \"v\": 1}\n"
+} satisfies ArtifactContent;
+
+// fixture: contentEmpty
+export const contentEmpty = {
+  path: "notes/empty.txt",
+  kind: "other",
+  mediaType: "text/plain",
+  encoding: "utf-8",
+  sizeBytes: 0,
+  redacted: false,
+  content: ""
+} satisfies ArtifactContent;
+
+// fixture: refusalInvalidPath
+export const refusalInvalidPath = {
+  type: "about:blank",
+  title: "The artifact path was refused",
+  status: 400,
+  code: "invalid_artifact_path",
+  detail: "The path is not a relative path of forward-slash segments."
+} satisfies ArtifactRefusal;
+
+// fixture: refusalNotFound
+export const refusalNotFound = {
+  type: "about:blank",
+  title: "The artifact was not found",
+  status: 404,
+  code: "not_found",
+  detail: "No eligible artifact has this path in the Mission."
+} satisfies ArtifactRefusal;
+
+// fixture: refusalTooLarge
+export const refusalTooLarge = {
+  type: "about:blank",
+  title: "The artifact is too large",
+  status: 413,
+  code: "artifact_too_large",
+  detail: "The file is larger than 262144 bytes."
+} satisfies ArtifactRefusal;
+
+// fixture: refusalNotText
+export const refusalNotText = {
+  type: "about:blank",
+  title: "The artifact is not text",
+  status: 415,
+  code: "artifact_not_text",
+  detail: "The file holds a NUL byte or is not valid UTF-8."
+} satisfies ArtifactRefusal;
+
+// fixture: refusalSecret
+export const refusalSecret = {
+  type: "about:blank",
+  title: "The artifact holds a credential",
+  status: 422,
+  code: "artifact_secret",
+  detail: "The file holds a credential, so its content is not served."
+} satisfies ArtifactRefusal;
+
+// fixture: refusalUnreadable
+export const refusalUnreadable = {
+  type: "about:blank",
+  title: "The artifact could not be read",
+  status: 500,
+  code: "artifact_unreadable",
+  detail: "The file could not be read."
+} satisfies ArtifactRefusal;
+
+// fixture: refusalListingUnreadable
+export const refusalListingUnreadable = {
+  type: "about:blank",
+  title: "The artifacts could not be listed",
+  status: 500,
+  code: "artifact_listing_unreadable",
+  detail: "The Mission directory could not be listed."
+} satisfies ArtifactRefusal;
+
+// fixture: listingWithOpenFiles
+export const listingWithOpenFiles = {
+  missionId: "01JZCB3C4D5E6F7G8H9JKMNPQT",
+  entries: [
+    {
+      path: "analysis-report.md",
+      kind: "analysis_report",
+      sizeBytes: 4210,
+      modifiedAt: "2026-09-22T11:05:00Z",
+      readable: true
+    },
+    {
+      path: "checklists/requirements.md",
+      kind: "checklist",
+      sizeBytes: 1388,
+      modifiedAt: "2026-09-22T10:41:00Z",
+      readable: true
+    },
+    {
+      path: "contracts/api.yaml",
+      kind: "contract",
+      sizeBytes: 9876,
+      modifiedAt: "2026-09-22T10:52:00Z",
+      readable: true
+    },
+    {
+      path: "contracts/schema.json",
+      kind: "contract",
+      sizeBytes: 28,
+      modifiedAt: "2026-09-23T08:21:00Z",
+      readable: true
+    },
+    {
+      path: "data-model.md",
+      kind: "data_model",
+      sizeBytes: 3302,
+      modifiedAt: "2026-09-22T10:50:00Z",
+      readable: true
+    },
+    {
+      path: "notes/big-export.json",
+      kind: "other",
+      sizeBytes: 300000,
+      modifiedAt: "2026-09-23T08:00:00Z",
+      readable: false
+    },
+    {
+      path: "notes/empty.txt",
+      kind: "other",
+      sizeBytes: 0,
+      modifiedAt: "2026-09-23T08:22:00Z",
+      readable: true
+    },
+    {
+      path: "notes/events.jsonl",
+      kind: "other",
+      sizeBytes: 94,
+      modifiedAt: "2026-09-23T08:23:00Z",
+      readable: true
+    },
+    {
+      path: "notes/handoff.md",
+      kind: "other",
+      sizeBytes: 81,
+      modifiedAt: "2026-09-23T08:20:00Z",
+      readable: true
+    },
+    {
+      path: "notes/readme.txt",
+      kind: "other",
+      sizeBytes: 43,
+      modifiedAt: "2026-09-23T08:25:00Z",
+      readable: true
+    },
+    {
+      path: "notes/table.csv",
+      kind: "other",
+      sizeBytes: 41,
+      modifiedAt: "2026-09-23T08:24:00Z",
+      readable: true
+    },
+    {
+      path: "notes/with space.md",
+      kind: "other",
+      sizeBytes: 212,
+      modifiedAt: "2026-09-23T08:10:00Z",
+      readable: true
+    },
+    {
+      path: "plan.md",
+      kind: "plan",
+      sizeBytes: 7420,
+      modifiedAt: "2026-09-22T10:48:00Z",
+      readable: true
+    },
+    {
+      path: "research.md",
+      kind: "research",
+      sizeBytes: 6150,
+      modifiedAt: "2026-09-22T10:44:00Z",
+      readable: true
+    },
+    {
+      path: "spec.md",
+      kind: "spec",
+      sizeBytes: 5120,
+      modifiedAt: "2026-09-22T10:35:00Z",
+      readable: true
+    },
+    {
+      path: "tasks.md",
+      kind: "tasks",
+      sizeBytes: 8890,
+      modifiedAt: "2026-09-22T10:58:00Z",
+      readable: true
+    },
+    {
+      path: "tasks/WP01-example.md",
+      kind: "work_package_prompt",
+      sizeBytes: 2750,
+      modifiedAt: "2026-09-22T11:00:00Z",
+      readable: true
+    },
+    {
+      path: "tasks/WP01-example/review-cycle-1.md",
+      kind: "review_cycle",
+      sizeBytes: 960,
+      modifiedAt: "2026-09-24T09:15:00Z",
+      readable: true
+    }
+  ],
+  truncated: false
+} satisfies ArtifactListing;
+
+// fixture: listingEmpty
+export const listingEmpty = {
+  missionId: "01JZCB3C4D5E6F7G8H9JKMNPQT",
+  entries: [],
+  truncated: false
+} satisfies ArtifactListing;
+
+// fixture: listingUnreadableRows
+export const listingUnreadableRows = {
+  missionId: "01JZCB3C4D5E6F7G8H9JKMNPQT",
+  entries: [
+    {
+      path: "notes/big-export.json",
+      kind: "other",
+      sizeBytes: 300000,
+      modifiedAt: "2026-09-23T08:00:00Z",
+      readable: false
+    },
+    {
+      path: "notes/binary-dump.dat",
+      kind: "other",
+      sizeBytes: 2048,
+      modifiedAt: "2026-09-23T08:01:00Z",
+      readable: false
+    },
+    {
+      path: "notes/secret-notes.txt",
+      kind: "other",
+      sizeBytes: 512,
+      modifiedAt: "2026-09-23T08:02:00Z",
+      readable: false
+    }
+  ],
+  truncated: false
+} satisfies ArtifactListing;
+
+// fixture: listingUnknownKind
+export const listingUnknownKind = {
+  missionId: "01JZCB3C4D5E6F7G8H9JKMNPQT",
+  entries: [
+    {
+      path: "diagrams/overview.md",
+      kind: "diagram",
+      sizeBytes: 640,
+      modifiedAt: "2026-09-23T09:00:00Z",
+      readable: true
+    }
+  ],
+  truncated: false
+} satisfies ArtifactListingView;
+
+// fixture: contentUnknownKind
+export const contentUnknownKind = {
+  path: "diagrams/overview.md",
+  kind: "diagram",
+  mediaType: "text/markdown",
+  encoding: "utf-8",
+  sizeBytes: 62,
+  redacted: false,
+  content: "# Overview\n\nA document whose kind this screen has never seen.\n"
+} satisfies ArtifactContentView;
+
+// fixture: refusalUnknownCode
+export const refusalUnknownCode = {
+  type: "about:blank",
+  title: "The artifact read was refused",
+  status: 500,
+  code: "artifact_quarantined",
+  detail: "The file is held back for a reason this screen has never seen."
+} satisfies ArtifactRefusalView;
+
+// fixture: listingLongNames
+export const listingLongNames = {
+  missionId: "01JZCB3C4D5E6F7G8H9JKMNPQT",
+  entries: [
+    {
+      path: "notes/a-very-long-file-name-a-very-long-file-name-a-very-long-file-name-a-very-long-file-name-a-very-long-file-name-a-very-long-file-name-a-very-long-file-name-a-very-long-file-name-a-very-long-file-name.md",
+      kind: "other",
+      sizeBytes: 1200,
+      modifiedAt: "2026-09-23T08:30:00Z",
+      readable: true
+    },
+    {
+      path: "segment-01/segment-02/segment-03/segment-04/segment-05/segment-06/segment-07/segment-08/segment-09/segment-10/segment-11/segment-12/segment-13/segment-14/segment-15/segment-16/segment-17/segment-18/segment-19/segment-20/segment-21/segment-22/segment-23/segment-24/segment-25/segment-26/segment-27/segment-28/segment-29/segment-30/segment-31/segment-32/segment-33/segment-34/segment-35/segment-36/segment-37/segment-38/segment-39/segment-40/segment-41/segment-42/segment-43/segment-44/final-note.md",
+      kind: "other",
+      sizeBytes: 880,
+      modifiedAt: "2026-09-23T08:31:00Z",
+      readable: true
+    },
+    {
+      path: "spec.md",
+      kind: "spec",
+      sizeBytes: 5120,
+      modifiedAt: "2026-09-22T10:35:00Z",
+      readable: true
+    }
+  ],
+  truncated: false
+} satisfies ArtifactListing;
+
+// fixture: listingDeep
+export const listingDeep = {
+  missionId: "01JZCB3C4D5E6F7G8H9JKMNPQT",
+  entries: [
+    {
+      path: "level-01/level-02/level-03/level-04/level-05/level-06/level-07/level-08/level-09/level-10/deep-note.md",
+      kind: "other",
+      sizeBytes: 520,
+      modifiedAt: "2026-09-23T08:42:00Z",
+      readable: true
+    },
+    {
+      path: "level-01/level-02/level-03/mid-note.md",
+      kind: "other",
+      sizeBytes: 410,
+      modifiedAt: "2026-09-23T08:41:00Z",
+      readable: true
+    },
+    {
+      path: "level-01/top-note.md",
+      kind: "other",
+      sizeBytes: 300,
+      modifiedAt: "2026-09-23T08:40:00Z",
+      readable: true
+    },
+    {
+      path: "spec.md",
+      kind: "spec",
+      sizeBytes: 5120,
+      modifiedAt: "2026-09-22T10:35:00Z",
+      readable: true
+    }
+  ],
+  truncated: false
+} satisfies ArtifactListing;
+
+// fixture: contentFeatures
+export const contentFeatures = {
+  path: "plan.md",
+  kind: "plan",
+  mediaType: "text/markdown",
+  encoding: "utf-8",
+  sizeBytes: 1325,
+  redacted: false,
+  content: "# Mission plan\n\nA short introduction with *emphasis*, **strong text**, ~~struck text~~ and `inline code`. Read the [data model](data-model.md) and the [first work package](tasks/WP01-example.md), then the [review cycle](tasks/WP01-example/review-cycle-1.md). The outside reference is [the project site](https://example.org/docs/plan).\n\n## Requirements table\n\n| Id | Name | Owner | Status | Size | Risk | Updated | Reviewer | Notes |\n|---|:---:|---:|---|---|---|---|---|---|\n| R-01 | Load the listing | team-a | done | small | low | 2026-09-22 | reviewer | A deliberately wide table so that it has to scroll sideways inside its own box |\n| R-02 | Open a document | team-b | in progress | medium | medium | 2026-09-23 | reviewer | The second row of the same table, with a long note to keep the width up |\n\n### Lists\n\n1. First step\n2. Second step\n   - nested bullet\n     1. deeper ordered item\n   - another nested bullet\n3. Third step\n\n- plain bullet\n- another plain bullet\n\n#### Quotes\n\n> A quoted paragraph that explains why the plan looks the way it does.\n>\n> > A quote inside the quote.\n\n##### Code\n\n```text\nfenced code\n  keeps its indentation\n```\n\nIndented code follows this line.\n\n    indented code line\n    second indented line\n\n###### Rules and images\n\n***\n\n![A diagram of the plan](https://example.org/images/plan.png)\n"
+} satisfies ArtifactContent;
+
+// fixture: contentHostile
+export const contentHostile = {
+  path: "research.md",
+  kind: "research",
+  mediaType: "text/markdown",
+  encoding: "utf-8",
+  sizeBytes: 564,
+  redacted: false,
+  content: "# Hostile notes\n\n<script>alert('x')</script>\n\n<iframe src=\"https://example.invalid/frame\"></iframe>\n\n<img src=\"https://example.invalid/pixel.png\" onerror=\"alert(1)\">\n\n[click me](javascript:alert(1))\n\n[a data link](data:text/html;base64,PGgxPmhpPC9oMT4=)\n\n![a remote image](https://example.invalid/tracker.png)\n\n![a remote image with a title](https://example.invalid/other.png \"a title\")\n\n<div class=\"never-closed\" style=\"position:fixed\"\n\n[an unclosed link](https://example.invalid/never-closed\n\n**strong that is never closed\n\n```\na code fence that is never closed\n"
+} satisfies ArtifactContent;
+
+// fixture: contentYaml
+export const contentYaml = {
+  path: "contracts/api.yaml",
+  kind: "contract",
+  mediaType: "application/yaml",
+  encoding: "utf-8",
+  sizeBytes: 73,
+  redacted: false,
+  content: "openapi: 3.1.0\ninfo:\n  title: Example service\n  version: 1.0.0\npaths: {}\n"
+} satisfies ArtifactContent;
+
+// fixture: contentJsonl
+export const contentJsonl = {
+  path: "notes/events.jsonl",
+  kind: "other",
+  mediaType: "application/x-ndjson",
+  encoding: "utf-8",
+  sizeBytes: 94,
+  redacted: false,
+  content: "{\"event\":\"opened\",\"at\":\"2026-09-23T08:00:00Z\"}\n{\"event\":\"closed\",\"at\":\"2026-09-23T08:05:00Z\"}\n"
+} satisfies ArtifactContent;
+
+// fixture: contentCsv
+export const contentCsv = {
+  path: "notes/table.csv",
+  kind: "other",
+  mediaType: "text/csv",
+  encoding: "utf-8",
+  sizeBytes: 41,
+  redacted: false,
+  content: "id,name,state\n1,first,done\n2,second,open\n"
+} satisfies ArtifactContent;
+
+// fixture: contentPlain
+export const contentPlain = {
+  path: "notes/readme.txt",
+  kind: "other",
+  mediaType: "text/plain",
+  encoding: "utf-8",
+  sizeBytes: 43,
+  redacted: false,
+  content: "A plain text note.\nIt has two short lines.\n"
+} satisfies ArtifactContent;
+
+// fixture: contentBom
+export const contentBom = {
+  path: "notes/with space.md",
+  kind: "other",
+  mediaType: "text/markdown",
+  encoding: "utf-8",
+  sizeBytes: 76,
+  redacted: false,
+  content: "\uFEFF# A note whose name has a space\n\nThe file starts with a byte order mark.\n"
+} satisfies ArtifactContent;
+
+// fixture: contentPrompt
+export const contentPrompt = {
+  path: "tasks/WP01-example.md",
+  kind: "work_package_prompt",
+  mediaType: "text/markdown",
+  encoding: "utf-8",
+  sizeBytes: 141,
+  redacted: false,
+  content: "# Work package prompt\n\nBuild the first slice of the example Mission.\n\n## Subtasks\n\n- [x] T001 Set up the project\n- [ ] T002 Write the loader\n"
+} satisfies ArtifactContent;
+
+// fixture: contentReviewCycle
+export const contentReviewCycle = {
+  path: "tasks/WP01-example/review-cycle-1.md",
+  kind: "review_cycle",
+  mediaType: "text/markdown",
+  encoding: "utf-8",
+  sizeBytes: 91,
+  redacted: false,
+  content: "# Review cycle 1\n\nVerdict: changes requested.\n\n1. Fix the loader.\n2. Add the missing test.\n"
+} satisfies ArtifactContent;
