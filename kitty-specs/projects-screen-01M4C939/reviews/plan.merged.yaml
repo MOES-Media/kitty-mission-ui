@@ -1,0 +1,49 @@
+schema: review-merged/v1
+phase: plan
+mission: projects-screen-01M4C939
+raw_count: 13
+findings:
+- id: plan-arch-001
+  severity: 3
+  title: IC-03 changes the shell layout description but the manifest is regenerated only in IC-04b and IC-08
+- id: plan-arch-002
+  severity: 2
+  title: The manifest gate requires an @screen JSDoc line on the screen; the plan does not state it
+- id: plan-arch-003
+  severity: 2
+  title: IC-02 and IC-03 run in parallel and both append to the same CHANGELOG
+- id: plan-correct-001
+  severity: 4
+  title: Widening the retry union breaks typecheck in sk-work-package-screen.ts and the exhaustive switch in wp-retry-union.test.ts;
+    neither file is in IC-02
+- id: plan-correct-002
+  severity: 2
+  title: D-05 says a re-vendor widens the data-driven gate with no edit; adding healthy as a bare word does need
+    a config edit
+- id: plan-correct-003
+  severity: 1
+  title: D-15 describes focus capture as conditional on content-kind changes; the shipped rule captures on every
+    update
+- id: plan-correct-004
+  severity: 2
+  title: The dialog folder field is a read-only sk-form-input, but no spike checks that the library input supports
+    readonly
+- id: plan-visual-001
+  severity: 3
+  title: PR-29 and FR-020 say the header button is full width at 620 px; the prototype has no such rule
+- id: plan-visual-002
+  severity: 3
+  title: The openable row is an <a href> in the prototype and a button here; the semantics change is not in the
+    register
+- id: plan-visual-003
+  severity: 2
+  title: No existing screen puts an action in sk-page-header; the plan presumes an action slot
+- id: plan-verify-001
+  severity: 2
+  title: PR-26 (keyboard order and focus ring) is assigned to no implementation concern
+- id: plan-verify-002
+  severity: 2
+  title: Plan counts disagree with its own lists
+- id: plan-verify-003
+  severity: 2
+  title: No per-change revert-must-fail rule

@@ -14,8 +14,8 @@ import {
 import type { ShellMission, ShellNavItem, ShellProject } from '../shell-types.js';
 
 export interface ShellFrameOptions {
-  /** `project` frames the Missions screen, `mission` frames the Pipeline screen (rail plus mission sidebar). */
-  layout?: 'project' | 'mission';
+  /** `project` frames the Missions screen, `mission` frames the Pipeline screen (rail plus mission sidebar), `picker` the top bar only. */
+  layout?: 'project' | 'mission' | 'picker';
   /** The marked navigation item id; the default marks the screen the layout hosts. */
   current?: string;
   project?: ShellProject | null;

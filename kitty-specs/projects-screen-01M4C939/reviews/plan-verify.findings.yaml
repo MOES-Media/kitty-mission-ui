@@ -1,0 +1,32 @@
+schema: review-findings/v1
+complete: true
+phase: plan
+lens_group: verify
+mission: projects-screen-01M4C939
+findings:
+- id: plan-verify-001
+  lens: Coverage
+  severity: 2
+  title: PR-26 (keyboard order and focus ring) is assigned to no implementation concern
+  evidence:
+  - artifact: plan.md IC-05..IC-07; spec.md PR-26
+  claim: IC-05 lists PR-01..PR-19, PR-24, PR-25 and PR-30; IC-07 lists PR-27..PR-29 and PR-31.
+  remediation: Name PR-26 in IC-07 (screen controls) and IC-06 (dialog focus).
+- id: plan-verify-002
+  lens: Accuracy
+  severity: 2
+  title: Plan counts disagree with its own lists
+  evidence:
+  - artifact: 'plan.md Scale/Scope: 5 private part files, 3 logic modules; IC-01 exit 174-plus baselines;
+      IC-03 118-plus baselines'
+  claim: The lists show 4 part files and 2 logic modules (3 once project-retry is added); two different
+    existing-baseline counts are asserted without a source.
+  remediation: Correct the counts; refer to the count recorded in the IC-01 baseline step.
+- id: plan-verify-003
+  lens: Revert discipline
+  severity: 2
+  title: No per-change revert-must-fail rule
+  evidence:
+  - artifact: plan.md Gates; contracts/gates.md
+  claim: The spec-kitty overlay asks for a test that fails when the change is reverted.
+  remediation: Add the rule to the gates checklist.

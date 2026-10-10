@@ -12,8 +12,8 @@
 //  - phases.at(-1) and phases.slice(i) with a negative or non-literal argument are legitimate and not flagged.
 //  - A padded literal (' blocked', 'blocked ') is not the whole word and is not flagged: the selectors are anchored.
 //  - Class-name fragments such as `is-blocked` that are neither whole words nor underscored are not flagged.
-//  - The verdict, change-state and staleness words (read from the vendored 1.1 schemas) are gated the same way, with one
-//    difference: the bare words that are common identifiers (changed, unknown, fresh, stale) are matched only in a
+//  - The verdict, change-state, staleness and project health words (read from the vendored schemas) are gated the same way, with one
+//    difference: the bare words that are common identifiers (changed, unknown, fresh, stale, healthy) are matched only in a
 //    comparison (=== !== == !=) and a case label, so a property, key, variable or type member of that name stays clean;
 //    a bare word held in a plain string (const x = 'fresh') is therefore not seen. An expression-free template literal
 //    (s === `fresh`, case `fresh`:) is the same comparison and is matched (S14.3, S14.4). The underscored and whole-word
@@ -41,9 +41,11 @@ export const CHANGE_STATE_WORDS = schema('ChangeState.yaml').enum;
 export const STALENESS_STATUS_WORDS = schema('Staleness.yaml').properties.status.enum;
 // The reason enum lists null as its last member; only the codes are words.
 export const STALENESS_REASON_WORDS = schema('Staleness.yaml').properties.reason.enum.filter((w) => typeof w === 'string');
-const NEW_ALL = [...new Set([...VERDICT_WORDS, ...CHANGE_STATE_WORDS, ...STALENESS_STATUS_WORDS, ...STALENESS_REASON_WORDS])].filter((w) => !WORDS.includes(w));
+// The project health enum (mission-ui#9, NFR-009): `schema_drift` is an underscored literal, `healthy` a comparison-only bare word.
+export const HEALTH_WORDS = schema('ProjectHealth.yaml').enum;
+const NEW_ALL = [...new Set([...VERDICT_WORDS, ...CHANGE_STATE_WORDS, ...STALENESS_STATUS_WORDS, ...STALENESS_REASON_WORDS, ...HEALTH_WORDS])].filter((w) => !WORDS.includes(w));
 // Matched anywhere as a literal: underscored members and whole words that are not everyday identifiers.
-export const NEW_BARE_WORDS = ['changed', 'unknown', 'fresh', 'stale'].filter((w) => NEW_ALL.includes(w));
+export const NEW_BARE_WORDS = ['changed', 'unknown', 'fresh', 'stale', 'healthy'].filter((w) => NEW_ALL.includes(w));
 export const NEW_WORDS = NEW_ALL.filter((w) => !NEW_BARE_WORDS.includes(w));
 export const NEW_UNDERSCORED = NEW_WORDS.filter((w) => w.includes('_'));
 const LANE_ONLY = LANES.filter((w) => w !== 'done');

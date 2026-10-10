@@ -96,6 +96,67 @@ Retry ownership: the shell owns a whole-page failure (`sk-shell-retry`); a scree
 (`sk-retry-load`). The `sk-retry-load` payload is a union keyed on `target`; this screen's members are `'work-package'` and
 `'detail'`, and a later screen adds its own member to the union instead of declaring the event again.
 
+## The Projects screen
+
+`sk-projects-screen` lists the projects a host knows about and reports which one to open. The optional widget
+`sk-open-project-dialog` is a host-placed modal folder picker. The host does the real folder picking, listing and
+routing; both elements only draw and report, and neither performs I/O. Every health and time word comes from
+`src/defaults/`, and the host's order is the display order.
+
+`sk-projects-screen`:
+
+| Property | Attribute | Type | Default | Notes |
+|---|---|---|---|---|
+| `status` | `status` | `ViewState` | `loading` | an unknown value collapses to `empty` |
+| `entries` | none | `ProjectEntry[]` | `[]` | `{ key, location, project }`, never sorted or filtered |
+| `now` | `now` | `string \| null` | `null` | ISO instant for relative times |
+| `labels` | none | `ProjectLabelHooks \| null` | `null` | optional `time` and `health` hooks |
+| `errorMessage` | `error-message` | `string` | `''` | overrides the default list-error body |
+
+| Event | Detail | When |
+|---|---|---|
+| `sk-open-project` | `{ key }` | an openable row is activated (click, Enter, Space) |
+| `sk-request-open-project` | none | the header "Open project" button, which is also the empty state's action (one button, shown once) |
+| `sk-retry-load` | `{ target: 'project', key }` or `{ target: 'projects' }` | retry of a failed row or a failed list |
+
+`sk-open-project-dialog`:
+
+| Property | Attribute | Type | Default | Notes |
+|---|---|---|---|---|
+| `open` | `open` | `boolean` | `false` | the element sets it false on Cancel, Escape and a backdrop click |
+| `location` | `location` | `string` | `''` | shown in the read-only folder field |
+| `folders` | none | `FolderEntry[]` | `[]` | host order |
+| `selected` | none | `string \| null` | `null` | the `location` of the selected folder, controlled by the host |
+| `status` | `status` | `ViewState` | `ready` | the folder listing |
+
+| Event | Detail | When |
+|---|---|---|
+| `sk-browse-folder` | `{ location }` | a folder option is selected |
+| `sk-confirm-open-project` | `{ location }` | Open, only when the selected folder is valid |
+| `sk-retry-load` | `{ target: 'folders' }` | retry of a failed listing |
+
+All events have `bubbles` and `composed` true. The `sk-retry-load` payload stays one union keyed on `target`; this
+mission adds the members `'project'`, `'projects'` and `'folders'`.
+
+The shell gains a third layout, `picker`: `sk-mission-shell layout="picker"` draws the skip link, the top bar and the
+content slot only, with no sidebar, rail, hamburger or drawer at any tier, and ignores the navigation properties. Any
+other unknown layout still falls back to `project`.
+
+```html
+<sk-mission-shell layout="picker" status="ready">
+  <sk-projects-screen status="ready"></sk-projects-screen>
+</sk-mission-shell>
+<sk-open-project-dialog></sk-open-project-dialog>
+```
+
+```js
+screen.entries = [{ key: 'a1', location: '<folder>', project: { name: 'example-app' /* the GET /project body */ } }];
+screen.addEventListener('sk-open-project', (e) => route(e.detail.key));
+screen.addEventListener('sk-request-open-project', () => (dialog.open = true));
+```
+
+Its stories are under `Screens/Projects/Screen`, `Screens/Projects/Tiers` and `Screens/Projects/Open project dialog`.
+
 ## Gates
 
 One workflow, `.github/workflows/ci.yml`; the job ids are the gate ids and the check names are `Gate: <id>`. The list
@@ -113,9 +174,9 @@ packages, never only the changed files.
 | `Gate: hygiene` | `pnpm hygiene` and `pnpm test:scripts` | no token, no absolute user path (CLI state files included), no agent scratchpad path, no tooling-ledger id, no username of the running account, no e-mail address in the contract and fixture paths, pinned dependencies and actions, safe workflow triggers, baseline PNG checks; then the `node:test` suites of the gate scripts (hygiene, gate-proof, preflight, manifest-screen, settle, the stylelint exception scope proofs and the terminology scan: the word "feature" never appears in `packages/*/src` or the mission quickstart, the canonical term is "mission") |
 | `Gate: contract` | `pnpm contract:check` and `pnpm test:contract` | the vendored Mission Status contract equals its pin, the generated types and fixtures are fresh, every fixture is a valid and coherent contract document (closed shapes), no event-stream identifier in `packages/*/src` |
 | `Gate: data-driven` | `pnpm lint:data-driven` and `pnpm test:data-driven` | no phase name, status lane or other contract status word (`pending`, `complete`, `draft`, `discarded`) hard-coded in `packages/*/src` outside `src/defaults/`, `src/contract/`, stories, fixtures and `src/story-support/`; 31 selectors, a self-test with 36 positive fixtures and inline `eslint-disable` comments ignored |
-| `Gate: storybook-build` | `pnpm build-storybook` | the static Storybook builds (118 stories), then the output is scanned for tokens |
+| `Gate: storybook-build` | `pnpm build-storybook` | the static Storybook builds (210 stories), then the output is scanned for tokens |
 | `Gate: unit-tests` | `pnpm test` | Vitest browser-mode tests: one per emitted event and payload, plus the host composition test (both screens rendered from contract-shaped data with no I/O) |
-| `Gate: visual` | `pnpm visual` | screenshots of every story (118) against the committed baselines (118, one per story), inside the pinned Playwright container |
+| `Gate: visual` | `pnpm visual` | screenshots of every story (210) against the committed baselines (210, one per story), inside the pinned Playwright container |
 | `Gate: proof (<gate>)` | `pnpm gate-proof` | one leg per gate: passes clean, fails with the plant (see below) |
 | `Gate: proof` | (CI only) | checks coverage, assembles and schema-validates the proof record |
 | `Gate: all` | (CI only) | fails unless every job above succeeded; skipped or cancelled counts as failed |
@@ -129,6 +190,12 @@ Baselines live in `apps/storybook/tests/visual/__snapshots__/` and are produced 
 digest-pinned Playwright image. `pnpm visual` builds Storybook then runs `scripts/visual.sh`, which FAILS (never
 skips) if podman or docker cannot start the container. After an intentional visual change run `pnpm visual:update`
 and review the PNG diff in the PR. CI repeats each screenshot 5 times to catch flakiness.
+
+CI timeouts for the visual gate are derived from measured runs. Main run 37584109220 (174 stories) took 674 s for the
+`visual` job and 1528 s for `proof (visual)`. Scaled by 210/174 = 1.207 that is about 813 s (674 x 210/174) and 1844 s; the
+28-minute job timeout is about 2.07x the job estimate and the 47-minute proof leg timeout about 1.53x its estimate, in line with
+the 2.1x and 1.5x margins of the earlier derivation. `unit-tests` (150 s,
+219 s) keeps 8 and 10.
 
 ### Installs are frozen
 

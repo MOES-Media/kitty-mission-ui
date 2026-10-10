@@ -9,6 +9,11 @@ const f = (schema, kind, satisfies, relaxation) => ({ schema, kind, satisfies, .
 export const FIXTURES = {
   project: f('Project', 'valid', 'Project'),
   projectEmpty: f('Project', 'valid', 'Project'),
+  // ---- Projects screen (mission-ui#9): two host overlays the contract examples do not give ----
+  projectUnknownHealth: f('Project', 'relaxed', 'ProjectView', 'health-open'),
+  projectLong: f('Project', 'valid', 'Project'),
+  projectSchemaDrift: f('Project', 'valid', 'Project'),
+  projectAllNull: f('Project', 'valid', 'Project'),
   pageMixed: f('MissionOverviewPage', 'host', 'MissionOverviewPageView'),
   pageFull: f('MissionOverviewPage', 'host', 'MissionOverviewPageView'),
   pageLast: f('MissionOverviewPage', 'host', 'MissionOverviewPageView'),
@@ -151,6 +156,15 @@ export const RELAXATIONS = {
     allowedMissing: ['reviewCycles', 'workspace'],
     patch(schema) {
       schema.required = schema.required.filter((k) => k !== 'reviewCycles' && k !== 'workspace');
+    },
+  },
+  // ---- mission-ui#9: ProjectHealth is provisional and a client must tolerate a value it does not know ----
+  'health-open': {
+    schema: 'Project',
+    description: 'Project.health becomes an open string; nothing else changes',
+    allowedPath: /^\/health$/,
+    patch(schema) {
+      schema.properties.health = { type: 'string' };
     },
   },
 };

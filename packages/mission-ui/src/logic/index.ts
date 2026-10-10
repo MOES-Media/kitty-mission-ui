@@ -15,3 +15,6 @@ export * from './wp-files.js';
 export * from './wp-staleness.js';
 export * from './wp-history.js';
 export * from './wp-retry.js';
+export * from './project-entry.js';
+export * from './project-row.js';
+export * from './project-retry.js';

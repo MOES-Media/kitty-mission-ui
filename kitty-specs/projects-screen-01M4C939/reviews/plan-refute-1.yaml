@@ -1,0 +1,46 @@
+schema: review-refute/v1
+complete: true
+phase: plan
+batch: 1
+verdicts:
+- id: plan-arch-001
+  verdict: confirmed
+  reason: Evidence re-read in the cited file or document; the claim holds.
+- id: plan-arch-002
+  verdict: confirmed
+  reason: Evidence re-read in the cited file or document; the claim holds.
+- id: plan-arch-003
+  verdict: confirmed
+  reason: Evidence re-read in the cited file or document; the claim holds.
+- id: plan-correct-001
+  verdict: confirmed
+  reason: Evidence re-read in the cited file or document; the claim holds.
+- id: plan-correct-002
+  verdict: confirmed
+  reason: Evidence re-read in the cited file or document; the claim holds.
+- id: plan-correct-003
+  verdict: confirmed
+  reason: Evidence re-read in the cited file or document; the claim holds.
+- id: plan-correct-004
+  verdict: confirmed
+  reason: Evidence re-read in the cited file or document; the claim holds.
+- id: plan-visual-001
+  verdict: confirmed
+  reason: Evidence re-read in the cited file or document; the claim holds.
+- id: plan-visual-002
+  verdict: confirmed
+  reason: Evidence re-read in the cited file or document; the claim holds.
+- id: plan-visual-003
+  verdict: confirmed
+  reason: Evidence re-read in the cited file or document; the claim holds.
+- id: plan-verify-001
+  verdict: confirmed
+  reason: Evidence re-read in the cited file or document; the claim holds.
+- id: plan-verify-002
+  verdict: confirmed
+  reason: Evidence re-read in the cited file or document; the claim holds.
+- id: plan-verify-003
+  verdict: refuted
+  reason: The mission-ui charter and review overlay for this repo have no revert-must-fail rule (that is the spec-kitty
+    tooling repo's overlay); FR-030 already requires a positive control per event and the charter requires a test
+    per event. Kept as a reviewer self-check line only.

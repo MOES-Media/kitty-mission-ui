@@ -1,0 +1,56 @@
+schema: review-findings/v1
+complete: true
+phase: plan
+lens_group: correct
+mission: projects-screen-01M4C939
+findings:
+- id: plan-correct-001
+  lens: Types
+  severity: 4
+  title: Widening the retry union breaks typecheck in sk-work-package-screen.ts and the exhaustive switch
+    in wp-retry-union.test.ts; neither file is in IC-02
+  evidence:
+  - code: packages/mission-ui/src/elements/sk-work-package-screen/sk-work-package-screen.ts:306-315 (retryLoad
+      and retryPayload take SkRetryLoadDetail['target'] and call retryDetail)
+  - code: packages/mission-ui/src/logic/wp-retry.ts:retryDetail parameter is the two Work Package members
+      only
+  - code: 'packages/mission-ui/test/wp-retry-union.test.ts: switch ending in `never`'
+  claim: SkRetryLoadDetail is an alias of RetryLoadDetail. Adding three members widens `target`, so retryPayload(target)
+    no longer type-checks against retryDetail, and the never branch in the test fails. The plan says the
+    union gains three members in one file and lists neither knock-on.
+  remediation: 'IC-02 owns two named edits: narrow the private parameter types to the Work Package members,
+    and add one case per new member to the test. Builders go in a new logic/project-retry.ts. Add the
+    files to the shared-files table.'
+- id: plan-correct-002
+  lens: Gates
+  severity: 2
+  title: D-05 says a re-vendor widens the data-driven gate with no edit; adding healthy as a bare word
+    does need a config edit
+  evidence:
+  - code: 'eslint.data-driven.config.mjs: NEW_BARE_WORDS = [''changed'',''unknown'',''fresh'',''stale''].filter(...)
+      is a literal list'
+  - artifact: research.md D-05
+  claim: Reading ProjectHealth.yaml puts healthy into NEW_WORDS (matched anywhere as a literal). The comparison-only
+    treatment the plan intends needs healthy added to the literal bare list.
+  remediation: State the edit in D-05, gates.md and IC-02.
+- id: plan-correct-003
+  lens: Precedent
+  severity: 1
+  title: D-15 describes focus capture as conditional on content-kind changes; the shipped rule captures
+    on every update
+  evidence:
+  - code: sk-work-package-screen.ts:353-355 and 397-414
+  - artifact: research.md D-15
+  claim: Wording differs from the precedent the brief binds ("focus is captured on every update").
+  remediation: Reword D-15 to the shipped rule.
+- id: plan-correct-004
+  lens: Capability
+  severity: 2
+  title: The dialog folder field is a read-only sk-form-input, but no spike checks that the library input
+    supports readonly
+  evidence:
+  - artifact: spec.md DP-12; research.md Spikes S1-S8
+  - code: packages/mission-ui/src/elements/sk-missions-screen/sk-missions-screen.ts:<sk-form-input type="search">
+      is the only use
+  claim: The only existing use is a search input. readonly is assumed.
+  remediation: Add to S2 with a fallback (labelled static text) and amend DP-12 conditionally.

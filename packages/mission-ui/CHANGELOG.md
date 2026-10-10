@@ -4,6 +4,14 @@
 
 ### Added
 
+- `sk-projects-screen` (screen): the projects a host knows. Five properties (`status`, `entries`, `now`, `labels`,
+  `errorMessage`) and three events (`sk-open-project`, `sk-request-open-project`, `sk-retry-load`). Health, time and
+  screen words are read from `src/defaults/` (`#9`).
+- `sk-open-project-dialog` (widget): a modal folder picker. Five properties (`open`, `location`, `folders`, `selected`,
+  `status`) and three events (`sk-browse-folder`, `sk-confirm-open-project`, `sk-retry-load`); the host lists and picks
+  folders (`#9`).
+- `sk-mission-shell` `layout="picker"`: the top bar and the content slot only, with no sidebar, rail, hamburger or drawer
+  at any tier. `sk-retry-load` gains the targets `'project'`, `'projects'` and `'folders'` (`#9`).
 - `sk-work-package-screen` (screen): one Work Package of a Mission. Ten properties (`status`, `detailStatus`,
   `detailRefusalCode`, `workPackage`, `detail`, `mission`, `wpId`, `now`, `labels`, `errorMessage`) and four events
   (`sk-select-work-package`, `sk-open-mission`, `sk-open-artifact`, `sk-retry-load`). Regions: header, facts, lane history,

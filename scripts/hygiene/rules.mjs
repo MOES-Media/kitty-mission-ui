@@ -65,6 +65,54 @@ function emailAllowed(domain) {
   return d.endsWith('.invalid') || EMAIL_ALLOWED.some((a) => d === a || d.endsWith('.' + a));
 }
 
+// CLI-written identity (kitty-specs). The username rule above only knows the account running the gate; these rules do
+// not depend on it. In a mission's `meta.json` and `status.events.jsonl` an actor-like field (`accepted_by`, `actor`,
+// `actor_id`, `agent`, `author`, any `*_by`) may hold only a neutral value: the `<user>` placeholder, `claude` (or `claude:<model>`), `user`,
+// the CLI's own actors (`cli`, `merge`, `finalize-tasks`, a `spec-kitty ...` command line, empty) or a noreply address.
+const KITTY_RECORD = /^kitty-specs\/[^/]+\/(?:meta\.json|status\.events\.jsonl)$/;
+const KITTY_FILE = /^kitty-specs\//;
+const ACTOR_KEY = /^(?:actor|actor_id|accepted_by|agent|author|[a-z][a-z_]*_by)$/;
+const NEUTRAL_ACTORS = new Set(['<user>', 'claude', 'user', 'cli', 'merge', 'finalize-tasks', '']);
+const PATH_KEY = /^(?:record_path|feedback_path)$/;
+const JSON_STRING_FIELD = /"([A-Za-z_]+)"\s*:\s*"((?:[^"\\]|\\.)*)"/g;
+const EMAIL_WITH_LOCAL = new RegExp('([A-Za-z0-9._%+-]+)' + '@' + '([A-Za-z0-9-]+(?:\\.[A-Za-z0-9-]+)*\\.[A-Za-z]{2,})', 'g');
+
+function neutralActor(value) {
+  return NEUTRAL_ACTORS.has(value) || /^claude:[a-z0-9.-]+$/.test(value) || /^spec-kitty(?: [a-z][a-z-]*)+$/.test(value) || noreplyAddress(value);
+}
+
+function noreplyAddress(value) {
+  const m = /^([^@\s]+)@([^@\s]+)$/.exec(value);
+  return m !== null && (/^no-?reply$/i.test(m[1]) || /(?:^|\.)noreply\./i.test(m[2]));
+}
+
+function absolutePath(value) {
+  const v = value.replace(/\\\//g, '/');
+  return v.startsWith('/') || /^[A-Za-z]:[\\/]/.test(v) || v.startsWith('\\\\');
+}
+
+function kittyLineFindings(file, n, lineText) {
+  const out = [];
+  if (KITTY_RECORD.test(file)) {
+    for (const m of lineText.matchAll(JSON_STRING_FIELD)) {
+      if (ACTOR_KEY.test(m[1]) && !neutralActor(m[2])) {
+        out.push(finding('cli-identity', file, n, `${m[1]} holds a name that is not <user> or a neutral actor (value withheld)`));
+      }
+      if (PATH_KEY.test(m[1]) && absolutePath(m[2])) {
+        out.push(finding('cli-absolute-path', file, n, `${m[1]} is an absolute path (value withheld)`));
+      }
+    }
+  }
+  if (KITTY_FILE.test(file)) {
+    for (const m of lineText.matchAll(EMAIL_WITH_LOCAL)) {
+      if (!noreplyAddress(`${m[1]}@${m[2]}`) && !emailAllowed(m[2])) {
+        out.push(finding('email-address', file, n, 'e-mail address that is not a noreply address (value withheld)'));
+      }
+    }
+  }
+  return out;
+}
+
 const finding = (rule, file, line, message) => ({ rule, file, line, message });
 
 function isPlaceholderName(seg) {
@@ -179,6 +227,7 @@ export function scanText(file, text, options = {}) {
         if (!emailAllowed(m[1])) out.push(finding('email-address', file, n, 'e-mail address (value withheld)'));
       }
     }
+    out.push(...kittyLineFindings(file, n, lineText));
     if (!options.skipPaths) {
       for (const f of pathFindings(file, n, lineText, options.strictCi === true)) {
         if (!isAllowed(file, lineText)) out.push(f);
