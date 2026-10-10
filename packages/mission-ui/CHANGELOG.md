@@ -4,6 +4,28 @@
 
 ### Added
 
+- `sk-artifact-screen` (screen): the artifacts of one Mission. Thirteen properties (`status`, `contentStatus`, `listing`,
+  `content`, `refusalCode`, `selectedPath`, `mission`, `workPackages`, `view`, `now`, `labels`, `errorMessage`,
+  `vocabulary`) and five events (`sk-select-artifact`, `sk-open-link`, `sk-select-work-package`, `sk-open-mission`,
+  `sk-retry-load`); `sk-retry-load` gains the members `'listing'` and `'content'` in `src/retry-types.ts` (`#7`). Slices:
+  - Contract re-vendor and fixtures: the artifact listing and content reads from the pinned contract, 13 example fixtures and
+    17 overlays, two relaxations and four bulk generators.
+  - Markdown-it dependency: `markdown-it` 15.0.2, exact, MIT.
+  - Defaults, logic and gate cases: `src/defaults/` and `src/logic/` for kinds, refusals, facts, sizes, the tree and the view
+    resolver, with the data-driven gate extended to the kind enum and the seven refusal codes.
+  - Markdown model: a token model with a size and block budget and a fallback to escaped source.
+  - Renderer, corpus, lint rules and plants: a closed allow-list renderer, the hostile-input corpus, ESLint rules R1 to R5 and
+    the plants that prove them.
+  - Exceptions, Stylelint grant and lint configuration: E-23 to E-30 and E-44 and E-45 as ruled, with the `ch` grant, the
+    table-cell floor (`min-width: 12ch`) and their leak tests.
+  - Skeleton, layout and surface freeze: the screen's regions, three tiers and the frozen surface.
+  - Document pane: the Rendered and Raw tabs, the eyebrow, links, tables that scroll in their own box and the raw block.
+  - Refusals and states: the seven refusals, loading, empty, not-found and error states and their announcements.
+  - Inspector, tree and Work Package links: file and Mission facts, the shell tree carrier and the linked Work Packages.
+  - Tiers, accessibility and edge cases: focus order and rings, forced colors, reduced motion, target size, scroll regions
+    that are tab stops only while they overflow, long paths, deep nesting, 1000 entries and a 256 KiB document.
+  - Integration and baselines: the 45 dark-theme baselines (219 in total), the row-to-story test in `test:scripts`, the host
+    composition test and NFR-006 timings (best of three after a warm-up).
 - `sk-work-package-screen` (screen): one Work Package of a Mission. Ten properties (`status`, `detailStatus`,
   `detailRefusalCode`, `workPackage`, `detail`, `mission`, `wpId`, `now`, `labels`, `errorMessage`) and four events
   (`sk-select-work-package`, `sk-open-mission`, `sk-open-artifact`, `sk-retry-load`). Regions: header, facts, lane history,

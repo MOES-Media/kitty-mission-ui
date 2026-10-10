@@ -88,6 +88,21 @@ Retry ownership: the shell owns a whole-page failure (`sk-shell-retry`); a scree
 (`sk-retry-load`). The `sk-retry-load` payload is a union keyed on `target`; this screen's members are `'work-package'` and
 `'detail'`, and a later screen adds its own member to the union instead of declaring the event again.
 
+## The Artifact screen
+
+`sk-artifact-screen` shows the artifacts of one Mission: the file tree (carried by the shell's own tree), one document in a
+Rendered or Raw tab, and an inspector with the file facts, the Mission facts and the linked Work Packages. A host passes
+contract-shaped data only. Thirteen properties: `status` (`loading`, `error`, `empty`, `ready`, `not-found`,
+`nothing-selected`), `contentStatus` (`loading`, `ready`, `refused`, `error`), `listing`, `content`, `refusalCode`,
+`selectedPath`, `mission`, `workPackages`, `view`, `now`, `labels`, `errorMessage` and `vocabulary`. Five events, each with
+`bubbles` and `composed` true: `sk-select-artifact`, `sk-open-link`, `sk-select-work-package`, `sk-open-mission` and
+`sk-retry-load` (target `'listing'` or `'content'`, a member added to the union in `src/retry-types.ts`). The screen performs no
+I/O. Markdown is rendered by a closed-allow-list renderer over `markdown-it` (15.0.2, pinned, no raw HTML, no remote
+image, no script URL; the lint rules R1 to R5 and the hostile corpus guard it); a document over the size or block budget
+falls back to its escaped source with a notice. Its 45 stories are under `Document`, `Refusals and states`,
+`Inspector and tree` and `Tiers and edge cases`, with one visual baseline each. The walkthrough and every ruling are in
+`kitty-specs/artifact-viewer-screen-01M47VP5/`.
+
 ## Gates
 
 One workflow, `.github/workflows/ci.yml`; the job ids are the gate ids and the check names are `Gate: <id>`. The list
@@ -105,9 +120,9 @@ packages, never only the changed files.
 | `Gate: hygiene` | `pnpm hygiene` and `pnpm test:scripts` | no token, no absolute user path, no e-mail address in the contract and fixture paths, pinned dependencies and actions, safe workflow triggers, baseline PNG checks; then the `node:test` suites of the gate scripts (hygiene, gate-proof, preflight, manifest-screen, settle, the stylelint exception scope proofs and the terminology scan: the word "feature" never appears in `packages/*/src` or the mission quickstart, the canonical term is "mission") |
 | `Gate: contract` | `pnpm contract:check` and `pnpm test:contract` | the vendored Mission Status contract equals its pin, the generated types and fixtures are fresh, every fixture is a valid and coherent contract document (closed shapes), no event-stream identifier in `packages/*/src` |
 | `Gate: data-driven` | `pnpm lint:data-driven` and `pnpm test:data-driven` | no phase name, status lane or other contract status word (`pending`, `complete`, `draft`, `discarded`) hard-coded in `packages/*/src` outside `src/defaults/`, `src/contract/`, stories, fixtures and `src/story-support/`; 31 selectors, a self-test with 36 positive fixtures and inline `eslint-disable` comments ignored |
-| `Gate: storybook-build` | `pnpm build-storybook` | the static Storybook builds (118 stories), then the output is scanned for tokens |
+| `Gate: storybook-build` | `pnpm build-storybook` | the static Storybook builds (219 stories), then the output is scanned for tokens |
 | `Gate: unit-tests` | `pnpm test` | Vitest browser-mode tests: one per emitted event and payload, plus the host composition test (both screens rendered from contract-shaped data with no I/O) |
-| `Gate: visual` | `pnpm visual` | screenshots of every story (118) against the committed baselines (118, one per story), inside the pinned Playwright container |
+| `Gate: visual` | `pnpm visual` | screenshots of every story (219) against the committed baselines (219, one per story), inside the pinned Playwright container |
 | `Gate: proof (<gate>)` | `pnpm gate-proof` | one leg per gate: passes clean, fails with the plant (see below) |
 | `Gate: proof` | (CI only) | checks coverage, assembles and schema-validates the proof record |
 | `Gate: all` | (CI only) | fails unless every job above succeeded; skipped or cancelled counts as failed |

@@ -6,6 +6,14 @@ All user-visible changes to this repository. Per-package notes live in `packages
 
 ### Added
 
+- **An Artifact screen: the documents of one Mission, drawn from the pinned Mission Status contract** (`#7`).
+  `sk-artifact-screen` shows the Mission's artifact tree, one document as rendered markdown or raw source, and an inspector
+  with the file facts, the Mission facts and the linked Work Packages. A host passes only contract-shaped data, the
+  Mission, the view states, `now` and labels; the screen performs no I/O and emits five events (`sk-select-artifact`,
+  `sk-open-link`, `sk-select-work-package`, `sk-open-mission`, `sk-retry-load`). Markdown goes through a closed allow-list
+  renderer over `markdown-it` 15.0.2 (a new dependency) with lint rules and a hostile-input corpus that keep raw HTML,
+  remote images and script URLs out. 45 new Storybook stories with one visual baseline each (219 in total).
+
 - **A Work Package screen: one Work Package of a Mission, drawn from the pinned Mission Status contract** (`#5`).
   `sk-work-package-screen` shows the header and facts, lane history, review summary and cycles, the evidence and dependency
   chains, subtasks, owned files, workspace and links to the spec, prompt and review files. A host passes only
