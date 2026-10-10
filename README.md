@@ -1,4 +1,4 @@
-# spec-kitty-mission-ui
+# kitty-mission-ui
 
 Shared Spec Kitty mission screens (Lit web components) for the dashboard and Kitty Desktop.
 Storybook is the workbench and the visual source of truth. The package is `@moes-media/mission-ui`.
@@ -9,12 +9,16 @@ Prerequisites (one-time):
 
 - Node 22.22.2, as pinned in `.nvmrc` (for example `nvm install` or `fnm use`).
 - pnpm 11.18.0, installed directly (for example `npm install -g pnpm@11.18.0`). corepack is not used.
-- A GitHub token with `read:packages` and access to the `spec-kitty` organisation (SSO authorised), see the next section.
+- A GitHub token that can read the `spec-kitty` organisation's GitHub Packages (`read:packages`, SSO authorised), see the
+  next section.
 - For the visual gate only: podman or docker.
 
 ### Credential
 
-`@spec-kitty/tokens`, `@spec-kitty/styles` and `@spec-kitty/elements` come from GitHub Packages, which needs a token.
+This repository is public, but the Spec Kitty design library it builds on is not: `@spec-kitty/tokens`,
+`@spec-kitty/styles` and `@spec-kitty/elements` are installed from the spec-kitty organisation's GitHub Packages
+registry (`.npmrc` maps the `@spec-kitty` scope to `https://npm.pkg.github.com`), and every install needs a read token.
+The token must belong to an account that can read those packages; a token scoped to another organisation is not enough.
 Add this line to your own user-level `~/.npmrc`, replacing `<token>` with your token:
 
 ```
@@ -29,8 +33,12 @@ Add this line to your own user-level `~/.npmrc`, replacing `<token>` with your t
 - `pnpm preflight` runs the same offline check, then asks the registry. Exit codes: 9 credential missing,
   10 token rejected or expired (401), 11 token cannot read `@spec-kitty/elements` (403/404: needs `read:packages`
   and org access, SSO authorised), 12 registry unreachable. The token is never printed.
-- CI reads the repository secret `NPM_TOKEN` (a token with `read:packages` and org access). Pull requests from forks
-  and from Dependabot receive no secrets, so they fail `Gate: preflight` with the `NPM_TOKEN` message by design.
+- CI reads the repository secret `NPM_TOKEN`. The workflow does not use the built-in `GITHUB_TOKEN`: that token is
+  scoped to the repository's own organisation and cannot read the spec-kitty packages. `NPM_TOKEN` must be a
+  personal access token (classic, `read:packages`, SSO authorised for the spec-kitty organisation) of an account
+  with read access to the design-library packages; create it as a repository secret before the first CI run. Pull
+  requests from forks and from Dependabot receive no secrets, so they fail `Gate: preflight` with the `NPM_TOKEN`
+  message by design.
 
 ## Run the workbench
 
@@ -235,3 +243,13 @@ No lint gate is complete. These are documented, not gated; reviewers must catch 
   `kitty-specs/*/status.json` and `status.events.jsonl`, the review `feedback_path` value and the retrospective
   `record_path` value. Nothing else is exempt; `pnpm hygiene --list-allowed` prints the two entries (the status entry
   covers both status-record keys).
+
+## Licence
+
+`kitty-mission-ui`, including `@moes-media/mission-ui` and `@moes-media/storybook-app`, is free
+software: you can redistribute it and modify it under the terms of the GNU Affero General Public License as published
+by the Free Software Foundation, either version 3 of the License, or (at your option) any later version
+(SPDX: `AGPL-3.0-or-later`). The full text is in [`LICENSE`](LICENSE).
+
+The Spec Kitty design library (`@spec-kitty/elements`, `@spec-kitty/styles`, `@spec-kitty/tokens`) is a separate,
+MIT-licensed dependency installed from spec-kitty's GitHub Packages registry; it is not part of this repository.

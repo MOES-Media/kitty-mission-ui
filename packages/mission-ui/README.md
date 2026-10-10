@@ -1,6 +1,6 @@
 # @moes-media/mission-ui
 
-Private Lit elements for the Spec Kitty mission screens, built on `@spec-kitty/elements`. The repository README
+Lit elements for the Spec Kitty mission screens, built on `@spec-kitty/elements`. The repository README
 (setup, credential, gates, "Add an element") applies; this note covers the package itself.
 
 - `src/index.ts` is the only place custom elements are registered (guarded `customElements.define`). Element modules
