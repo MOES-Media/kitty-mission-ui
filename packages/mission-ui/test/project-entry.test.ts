@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { project, projectUnknownHealth } from '../src/contract/fixtures.generated.js';
 import { LOCAL_ONLY_TEXT, UNNAMED_PROJECT_TEXT } from '../src/defaults/index.js';
-import { resolveEntry } from '../src/logic/index.js';
+import { buildRow, resolveEntry } from '../src/logic/index.js';
 import type { ProjectEntry } from '../src/project-types.js';
 
 const base: ProjectEntry = { key: 'k1', location: '~/work/alpha' };
@@ -43,6 +43,20 @@ describe('resolveEntry', () => {
   it('treats an empty project name as an error, and a non-empty one as a row', () => {
     expect(resolveEntry({ ...base, project: { ...project, name: '' } }).kind).toBe('error');
     expect(resolveEntry({ ...base, project: { ...project, name: 'x' } }).kind).toBe('row');
+  });
+
+  it('treats a project whose name is missing or null as an error, never as a row that reads "undefined"', () => {
+    const nameless: Record<string, unknown> = { ...project };
+    delete nameless.name;
+    for (const broken of [nameless, { ...project, name: null }]) {
+      const view = resolveEntry({ ...base, project: broken } as unknown as ProjectEntry);
+      expect(view.kind).toBe('error');
+      expect(JSON.stringify(view)).not.toContain('undefined');
+      const built = buildRow({ ...base, project: broken } as unknown as ProjectEntry, null, null);
+      expect(built.kind).toBe('error');
+      expect('announcementText' in built).toBe(false);
+    }
+    expect(buildRow({ ...base, project: { ...project, name: 'x' } }, null, null).kind).toBe('row');
   });
 
   it('treats a state outside the closed set as an error, never as a row', () => {

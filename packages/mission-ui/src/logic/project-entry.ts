@@ -39,11 +39,11 @@ function stub(entry: ProjectEntry, kind: ProjectEntryState): EntryStub {
 
 /**
  * Which view an entry gets (research D-04). An entry `state` wins over a present `project`; an entry with neither, a state
- * outside the closed set, or a project whose name is empty is an `error` (mismatched or late data counts as not loaded).
+ * outside the closed set, or a project whose name is not a non-empty string is an `error` (mismatched or late data counts as not loaded).
  */
 export function resolveEntry(entry: ProjectEntry): ResolvedEntry {
   if (entry.state !== undefined) return stub(entry, STATES.find((s) => s === entry.state) ?? 'error');
   const project = entry.project;
-  if (project === undefined || project === null || project.name === '') return stub(entry, 'error');
+  if (project === undefined || project === null || typeof project.name !== 'string' || project.name === '') return stub(entry, 'error');
   return { kind: 'row', key: entry.key, project };
 }
