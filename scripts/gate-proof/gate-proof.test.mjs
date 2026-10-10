@@ -1,12 +1,12 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { parse } from 'yaml';
-import { ALL_NEEDS_ENV, ALL_RUN, NON_GATE_JOBS, assemble, coverageProblems, invariantOk, sanitise } from './lib.mjs';
+import { ALL_NEEDS_ENV, ALL_RUN, NON_GATE_JOBS, assemble, coverageProblems, invariantOk, restorePlant, sanitise } from './lib.mjs';
 
 // Every path-, token- and credential-shaped string is assembled at run time from fragments.
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -423,6 +423,19 @@ test('a failing clean run reports a sanitised output excerpt in the problems', a
     assert.ok(msg, problems.join('|'));
     assert.ok(msg.includes('clean-boom at <home>/f.ts'), msg);
     assert.ok(!msg.includes(HOME_DIR), msg);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('restorePlant throws and keeps the file when git cannot say whether it is tracked', () => {
+  // Not a repository: `git ls-files` fails (exit 128), as it does in a container whose checkout belongs to another
+  // user ("dubious ownership"). The old restore read that failure as "untracked" and deleted the tracked file.
+  const dir = mkdtempSync(join(tmpdir(), 'gp-test-'));
+  try {
+    writeFileSync(join(dir, 'tracked.ts'), 'planted\n');
+    assert.throws(() => restorePlant(dir, ['tracked.ts']), /cannot restore tracked\.ts/);
+    assert.ok(existsSync(join(dir, 'tracked.ts')), 'the file must survive a git failure');
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
