@@ -4,12 +4,13 @@
 //        [--record path]... [--stories-index file]
 import { execFileSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
+import { userInfo } from 'node:os';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   ALLOW_LIST, checkBaselines, checkGateJobNames, checkGateScripts, checkLockfile, checkNpmrc, checkPackageJson, checkPlantFiles,
   checkPlaywrightTag, checkPng, checkTypecheckScripts, checkVitestFamily, checkWorkflow, checkWorkflowTriggers,
-  scanText,
+  forbiddenNames, scanText,
 } from './hygiene/rules.mjs';
 
 const SNAPSHOTS = 'apps/storybook/tests/visual/__snapshots__';
@@ -37,6 +38,18 @@ function listFiles(root) {
     cwd: root, encoding: 'utf8', maxBuffer: 1 << 28,
   });
   return out.split('\0').filter(Boolean);
+}
+
+// The username rule: the OS username of the account running the gate, plus HYGIENE_FORBIDDEN_NAMES (comma separated,
+// for example from a CI secret, since a CI runner's own account name is not the one that leaks).
+function currentNames() {
+  let name = '';
+  try {
+    name = userInfo().username;
+  } catch {
+    name = '';
+  }
+  return forbiddenNames(name, process.env.HYGIENE_FORBIDDEN_NAMES ?? '');
 }
 
 function readText(path) {
@@ -165,6 +178,7 @@ async function main() {
     return 0;
   }
   const { root } = opts;
+  const names = currentNames();
   const findings = [];
   const staticPaths = (dir) => (existsSync(dir) ? walkDir(dir) : []);
   if (opts.staticDir) {
@@ -177,18 +191,18 @@ async function main() {
     for (const p of built.filter((f) => f.split(/[\\/]/).pop() === 'project.json')) {
       findings.push({ rule: 'storybook-project-json', file: relative(root, p), line: 0, message: 'build metadata with a machine fingerprint (userSince) must not be published; delete it after the build' });
     }
-    findings.push(...scanFiles(built, (p) => relative(root, p), { strictCi: true }));
+    findings.push(...scanFiles(built, (p) => relative(root, p), { strictCi: true, names }));
   } else {
     const files = listFiles(root);
-    findings.push(...scanFiles(files.map((f) => join(root, f)), (p) => relative(root, p)));
-    findings.push(...scanFiles(staticPaths(join(root, DEFAULT_STATIC)), (p) => relative(root, p)));
+    findings.push(...scanFiles(files.map((f) => join(root, f)), (p) => relative(root, p), { names }));
+    findings.push(...scanFiles(staticPaths(join(root, DEFAULT_STATIC)), (p) => relative(root, p), { names }));
     findings.push(...configFindings(root, files), ...pngFindings(root, files, opts.storiesIndex));
     findings.push(...await workflowFindings(root, files));
   }
   for (const rec of opts.records) {
     const text = readText(resolve(root, rec));
     if (text === null) findings.push({ rule: 'unreadable', file: rec, line: 0, message: 'record not found' });
-    else findings.push(...scanText(rec, text, { strictCi: Boolean(opts.staticDir) }));
+    else findings.push(...scanText(rec, text, { strictCi: Boolean(opts.staticDir), names }));
   }
   print(findings);
   return findings.length === 0 ? 0 : 1;
