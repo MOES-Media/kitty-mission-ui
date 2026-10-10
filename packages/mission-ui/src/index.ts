@@ -1,5 +1,6 @@
 // The single place custom elements are registered. Element modules do not self-register, so importing one (from a
 // test, a story or another package) never throws on a duplicate definition; the guard makes this entry idempotent.
+import { SkArtifactScreen } from './elements/sk-artifact-screen/sk-artifact-screen.js';
 import { SkFilterToggleGroup } from './elements/sk-filter-toggle-group/sk-filter-toggle-group.js';
 import { SkMissionSample } from './elements/sk-mission-sample/sk-mission-sample.js';
 import { SkMissionShell } from './elements/sk-mission-shell/sk-mission-shell.js';
@@ -41,8 +42,12 @@ if (!customElements.get('sk-work-package-board')) {
 if (!customElements.get('sk-work-package-screen')) {
   customElements.define('sk-work-package-screen', SkWorkPackageScreen);
 }
+if (!customElements.get('sk-artifact-screen')) {
+  customElements.define('sk-artifact-screen', SkArtifactScreen);
+}
 
 export {
+  SkArtifactScreen,
   SkFilterToggleGroup,
   SkMissionSample,
   SkMissionShell,
@@ -55,6 +60,19 @@ export {
   SkWorkPackageScreen,
 };
 export { SHELL_MOBILE_STATE, ShellTierController } from './shell-tier.js';
+export { buildArtifactTree, pathOfArtifactNode } from './logic/artifact-tree.js';
+export type { ArtifactTreeOptions, ArtifactTreeResult } from './logic/artifact-tree.js';
+export type {
+  ArtifactContentStatus,
+  ArtifactLabelHooks,
+  ArtifactScreenMission,
+  ArtifactScreenWorkPackage,
+  ArtifactStatus,
+  ArtifactTab,
+  ArtifactVocabulary,
+} from './logic/artifact-types.js';
+export type { SkArtifactRetryLoadDetail, SkOpenLinkDetail, SkSelectArtifactDetail } from './elements/sk-artifact-screen/sk-artifact-screen.js';
+export type { RetryLoadDetail, RetryLoadEventDetail, SkArtifactRetryDetail } from './retry-types.js';
 export type { SkFilterChangeDetail } from './elements/sk-filter-toggle-group/sk-filter-toggle-group.js';
 export type { SkLoadMoreDetail, SkOpenMissionDetail, SkSearchDetail } from './elements/sk-missions-screen/sk-missions-screen.js';
 export type { SkOpenMissionsDetail, SkViewArtifactsDetail } from './elements/sk-pipeline-screen/sk-pipeline-screen.js';
@@ -74,6 +92,9 @@ export type {
   StateBadge,
 } from './logic/types.js';
 export type {
+  ArtifactContentView,
+  ArtifactEntryView,
+  ArtifactListingView,
   MissionDetailView,
   MissionOverviewView,
   PageInfo,

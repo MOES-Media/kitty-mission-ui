@@ -4,6 +4,300 @@
   "modules": [
     {
       "kind": "javascript-module",
+      "path": "src/elements/sk-artifact-screen/document-parts.ts",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/elements/sk-artifact-screen/inspector-parts.ts",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/elements/sk-artifact-screen/prose-styles.ts",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/elements/sk-artifact-screen/refusal-parts.ts",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/elements/sk-artifact-screen/sk-artifact-screen.ts",
+      "declarations": [
+        {
+          "kind": "class",
+          "description": "The Artifact Viewer. Read-only (C-003): it only asks the host to read again, to open another artifact or Work Package, or to open a link.",
+          "name": "SkArtifactScreen",
+          "members": [
+            {
+              "kind": "field",
+              "name": "status",
+              "type": {
+                "text": "ArtifactStatus"
+              },
+              "default": "'loading'",
+              "description": "The state of the listing and the screen; an unknown value collapses to `empty`.",
+              "attribute": "status",
+              "reflects": true
+            },
+            {
+              "kind": "field",
+              "name": "contentStatus",
+              "type": {
+                "text": "ArtifactContentStatus"
+              },
+              "default": "'ready'",
+              "description": "The state of the open document only; an unknown value collapses to `ready`.",
+              "attribute": "content-status"
+            },
+            {
+              "kind": "field",
+              "name": "listing",
+              "type": {
+                "text": "ArtifactListingView | null"
+              },
+              "default": "null",
+              "description": "The listing: tree data, sizes, kinds, link targets and `truncated`."
+            },
+            {
+              "kind": "field",
+              "name": "content",
+              "type": {
+                "text": "ArtifactContentView | null"
+              },
+              "default": "null",
+              "description": "The open document."
+            },
+            {
+              "kind": "field",
+              "name": "refusalCode",
+              "type": {
+                "text": "string | null"
+              },
+              "default": "null",
+              "description": "The `code` of a refused content read (any string; an unknown code shows raw)."
+            },
+            {
+              "kind": "field",
+              "name": "selectedPath",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "description": "The open path.",
+              "attribute": "selected-path"
+            },
+            {
+              "kind": "field",
+              "name": "mission",
+              "type": {
+                "text": "ArtifactScreenMission | null"
+              },
+              "default": "null",
+              "description": "The Mission: host data. Controls that need its id are drawn inert while this is null."
+            },
+            {
+              "kind": "field",
+              "name": "workPackages",
+              "type": {
+                "text": "ArtifactScreenWorkPackage[]"
+              },
+              "default": "[]",
+              "description": "The host's Work Package ids, for matching and for the linked Work Packages."
+            },
+            {
+              "kind": "field",
+              "name": "view",
+              "type": {
+                "text": "ArtifactTab"
+              },
+              "default": "'rendered'",
+              "description": "Seeds the selected tab; a tab change is internal and emits nothing. An unknown value collapses to `rendered`.",
+              "attribute": "view"
+            },
+            {
+              "kind": "field",
+              "name": "now",
+              "type": {
+                "text": "string | null"
+              },
+              "default": "null",
+              "description": "RFC 3339 instant for \"modified\"; null shows the ISO text as given.",
+              "attribute": "now"
+            },
+            {
+              "kind": "field",
+              "name": "labels",
+              "type": {
+                "text": "ArtifactLabelHooks | null"
+              },
+              "default": "null",
+              "description": "Label hooks: the shared `time` hook plus `kind`, `refusal`, `mediaType` and `size`."
+            },
+            {
+              "kind": "field",
+              "name": "errorMessage",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "description": "Overrides the default error text of `status: error` and `contentStatus: error`.",
+              "attribute": "error-message"
+            },
+            {
+              "kind": "field",
+              "name": "vocabulary",
+              "type": {
+                "text": "ArtifactVocabulary | null"
+              },
+              "default": "null",
+              "description": "The one optional structural input; null means the `defaults/` values."
+            }
+          ],
+          "events": [
+            {
+              "name": "sk-select-artifact",
+              "type": {
+                "text": "CustomEvent<SkSelectArtifactDetail>"
+              },
+              "description": "an internal link of the rendered document was activated; `path` and `kind` are the target entry's"
+            },
+            {
+              "name": "sk-open-link",
+              "type": {
+                "text": "CustomEvent<SkOpenLinkDetail>"
+              },
+              "description": "an external link of the rendered document was activated. The `href` is untrusted document content, already limited to http, https and mailto: the host MUST re-validate the scheme (case-insensitively) before acting, MUST NOT navigate the host window or webview to it, and SHOULD show the destination to the user before opening it"
+            },
+            {
+              "name": "sk-select-work-package",
+              "type": {
+                "text": "CustomEvent<SkSelectWorkPackageDetail>"
+              },
+              "description": "a linked Work Package control or \"Open Work Package\" was activated"
+            },
+            {
+              "name": "sk-open-mission",
+              "type": {
+                "text": "CustomEvent<SkOpenMissionDetail>"
+              },
+              "description": "\"Return to Pipeline\" was activated"
+            },
+            {
+              "name": "sk-retry-load",
+              "type": {
+                "text": "CustomEvent<SkArtifactRetryLoadDetail>"
+              },
+              "description": "Retry was activated on the listing error (`listing`) or on a failed or refused content (`content`)"
+            }
+          ],
+          "attributes": [
+            {
+              "name": "status",
+              "type": {
+                "text": "ArtifactStatus"
+              },
+              "default": "'loading'",
+              "description": "The state of the listing and the screen; an unknown value collapses to `empty`.",
+              "fieldName": "status"
+            },
+            {
+              "name": "content-status",
+              "type": {
+                "text": "ArtifactContentStatus"
+              },
+              "default": "'ready'",
+              "description": "The state of the open document only; an unknown value collapses to `ready`.",
+              "fieldName": "contentStatus"
+            },
+            {
+              "name": "selected-path",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "description": "The open path.",
+              "fieldName": "selectedPath"
+            },
+            {
+              "name": "view",
+              "type": {
+                "text": "ArtifactTab"
+              },
+              "default": "'rendered'",
+              "description": "Seeds the selected tab; a tab change is internal and emits nothing. An unknown value collapses to `rendered`.",
+              "fieldName": "view"
+            },
+            {
+              "name": "now",
+              "type": {
+                "text": "string | null"
+              },
+              "default": "null",
+              "description": "RFC 3339 instant for \"modified\"; null shows the ISO text as given.",
+              "fieldName": "now"
+            },
+            {
+              "name": "error-message",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "description": "Overrides the default error text of `status: error` and `contentStatus: error`.",
+              "fieldName": "errorMessage"
+            }
+          ],
+          "superclass": {
+            "name": "LitElement",
+            "package": "lit"
+          },
+          "tagName": "sk-artifact-screen",
+          "customElement": true
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "SkArtifactScreen",
+          "declaration": {
+            "name": "SkArtifactScreen",
+            "module": "src/elements/sk-artifact-screen/sk-artifact-screen.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/elements/sk-artifact-screen/source-parts.ts",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/elements/sk-artifact-screen/state-parts.ts",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/elements/sk-artifact-screen/tab-parts.ts",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/elements/sk-artifact-screen/toolbar-parts.ts",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
       "path": "src/elements/sk-filter-toggle-group/sk-filter-toggle-group.ts",
       "declarations": [
         {

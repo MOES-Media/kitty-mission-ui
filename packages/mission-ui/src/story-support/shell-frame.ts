@@ -1,7 +1,7 @@
 // Story-only helper: composes a story's content inside the accepted `sk-mission-shell`, so a screen baseline shows the
 // frame the prototype shows around it. It is NOT part of the element manifest (it lives outside `src/elements/**` and
 // `src/screens/**`), is not exported from `src/index.ts` and holds no behaviour of its own. Synthetic data only.
-import { html } from 'lit';
+import { html, nothing } from 'lit';
 import type { TemplateResult } from 'lit';
 import '@spec-kitty/elements';
 import {
@@ -11,7 +11,17 @@ import {
   projectNavItems,
   railItems,
 } from '../elements/sk-mission-shell/fixtures.js';
-import type { ShellMission, ShellNavItem, ShellProject } from '../shell-types.js';
+import type { ShellMission, ShellNavItem, ShellProject, TreeNode } from '../shell-types.js';
+
+/** One `sk-shell-tree` section in the sidebar, for the stories whose host draws a tree (the Artifact Viewer). */
+export interface ShellFrameTree {
+  items: TreeNode[];
+  current: string;
+  /** The section title; default `Artifacts`. */
+  heading?: string;
+  /** The accessible name of the tree; default `Artifacts`. */
+  label?: string;
+}
 
 export interface ShellFrameOptions {
   /** `project` frames the Missions screen, `mission` frames the Pipeline screen (rail plus mission sidebar). */
@@ -23,6 +33,10 @@ export interface ShellFrameOptions {
   mission?: ShellMission | null;
   /** `sk-mission-shell flush`: the screen pads its own inset parts (the Pipeline screen). */
   flush?: boolean;
+  /** An optional sidebar tree (`items`, `current`); omitted, no tree is drawn and no existing baseline moves. */
+  tree?: ShellFrameTree;
+  /** The skip link text; the default `Skip to the content` is unchanged, the Artifact Viewer's stories pass `Skip to artifact`. */
+  skipLink?: string;
 }
 
 // The prototype's gear icon, drawn locally: the library ships no icon set. The literal width/height/stroke-width are the
@@ -60,8 +74,17 @@ export function shellFrame(content: TemplateResult, options: ShellFrameOptions =
     .project=${layout === 'mission' ? null : (options.project ?? { ...sampleProject, ...frameProject })}
     .mission=${layout === 'mission' ? (options.mission === undefined ? frameMission : options.mission) : null}
   >
-    <span slot="skip-link">Skip to the content</span>
+    <span slot="skip-link">${options.skipLink ?? 'Skip to the content'}</span>
     <sk-button slot="top-bar-actions" size="icon" variant="ghost" label="Settings">${settingsIcon}</sk-button>
+    ${options.tree === undefined
+      ? nothing
+      : html`<sk-shell-tree
+          slot="sidebar-section"
+          .heading=${options.tree.heading ?? 'Artifacts'}
+          label=${options.tree.label ?? 'Artifacts'}
+          .items=${options.tree.items}
+          current=${options.tree.current}
+        ></sk-shell-tree>`}
     ${content}
   </sk-mission-shell>`;
 }

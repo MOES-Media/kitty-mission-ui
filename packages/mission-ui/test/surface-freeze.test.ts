@@ -148,6 +148,7 @@ describe('surface freeze', () => {
       'sk-open-mission',
       'sk-open-mission',
       'sk-open-mission',
+      'sk-open-mission',
       'sk-open-missions',
     ]);
     expect(declared).not.toContain('sk-mission-open');
@@ -256,5 +257,114 @@ describe('the public type surface (BOUNDARY-004)', () => {
     const record: import('../src/index.js').WorkPackageRecordView | null = screen.workPackage;
     const detail: import('../src/index.js').WorkPackageDetailView | null = screen.detail;
     expect([record, detail]).toEqual([null, null]);
+  });
+});
+
+describe('the public type surface of the Artifact Viewer (BOUNDARY-001, BOUNDARY-002, BOUNDARY-003)', () => {
+  it('exports the two tree helpers from the package entry', async () => {
+    const entry = await import('../src/index.js');
+    expect(typeof entry.buildArtifactTree).toBe('function');
+    expect(typeof entry.pathOfArtifactNode).toBe('function');
+  });
+
+  it('resolves every type a host needs to fill the properties and listen to the events (compile-time: tsc fails this file otherwise)', async () => {
+    const entry = await import('../src/index.js');
+    const screen = new entry.SkArtifactScreen();
+    // Compile-time: each name must resolve from the package entry. The assignments pin the property types they describe.
+    const listing: import('../src/index.js').ArtifactListingView | null = screen.listing;
+    const content: import('../src/index.js').ArtifactContentView | null = screen.content;
+    const entries: import('../src/index.js').ArtifactEntryView[] = listing?.entries ?? [];
+    const status: import('../src/index.js').ArtifactStatus = screen.status;
+    const contentStatus: import('../src/index.js').ArtifactContentStatus = screen.contentStatus;
+    const tab: import('../src/index.js').ArtifactTab = screen.view;
+    const mission: import('../src/index.js').ArtifactScreenMission | null = screen.mission;
+    const workPackages: import('../src/index.js').ArtifactScreenWorkPackage[] = screen.workPackages;
+    const labels: import('../src/index.js').ArtifactLabelHooks | null = screen.labels;
+    const vocabulary: import('../src/index.js').ArtifactVocabulary | null = screen.vocabulary;
+    const options: import('../src/index.js').ArtifactTreeOptions | null = null;
+    const result: import('../src/index.js').ArtifactTreeResult | null = null;
+    expect([listing, content, entries, status, contentStatus, tab, mission, workPackages, labels, vocabulary, options, result]).toEqual([
+      null, null, [], 'loading', 'ready', 'rendered', null, [], null, null, null, null,
+    ]);
+  });
+
+  it('types the two link events on addEventListener (compile-time: a missing HTMLElementEventMap entry makes e.detail an error)', () => {
+    const screen = document.createElement('sk-artifact-screen');
+    const seen: string[] = [];
+    screen.addEventListener('sk-select-artifact', (e) => seen.push(e.detail.path));
+    screen.addEventListener('sk-open-link', (e) => seen.push(e.detail.href));
+    screen.dispatchEvent(new CustomEvent('sk-select-artifact', { detail: { path: 'spec.md' } }));
+    screen.dispatchEvent(new CustomEvent('sk-open-link', { detail: { href: 'https://example.invalid/' } }));
+    expect(seen).toEqual(['spec.md', 'https://example.invalid/']);
+  });
+});
+
+describe('surface freeze: the Artifact Viewer (thirteen properties, five events)', () => {
+  const tag = 'sk-artifact-screen';
+  /** property name, attribute (undefined = property only), default as a run-time value. */
+  const ARTIFACT_SURFACE: [string, string | undefined, unknown][] = [
+    ['status', 'status', 'loading'],
+    ['contentStatus', 'content-status', 'ready'],
+    ['listing', undefined, null],
+    ['content', undefined, null],
+    ['refusalCode', undefined, null],
+    ['selectedPath', 'selected-path', ''],
+    ['mission', undefined, null],
+    ['workPackages', undefined, []],
+    ['view', 'view', 'rendered'],
+    ['now', 'now', null],
+    ['labels', undefined, null],
+    ['errorMessage', 'error-message', ''],
+    ['vocabulary', undefined, null],
+  ];
+  const ARTIFACT_EVENTS = ['sk-open-link', 'sk-open-mission', 'sk-retry-load', 'sk-select-artifact', 'sk-select-work-package'];
+
+  it('is registered and listed in the committed manifest', () => {
+    expect(customElements.get(tag)).toBeDefined();
+    expect(declarations.has(tag)).toBe(true);
+  });
+
+  it('lists exactly thirteen properties, each with its attribute and default in the manifest', () => {
+    expect(ARTIFACT_SURFACE).toHaveLength(13);
+    const declared = (declarations.get(tag)?.members ?? []).filter((m) => m.kind === 'field' && m.privacy !== 'private');
+    expect(declared.map((m) => m.name).sort()).toEqual(ARTIFACT_SURFACE.map(([name]) => name).sort());
+    let checked = 0;
+    for (const [name, attribute] of ARTIFACT_SURFACE) {
+      const member = declared.find((m) => m.name === name);
+      expect(member?.attribute, `${name} attribute`).toBe(attribute);
+      expect(member?.default, `${name} default`).toBeDefined();
+      checked += 1;
+    }
+    expect(checked).toBe(13);
+  });
+
+  it('gives every property its contract default at run time', () => {
+    const el = document.createElement(tag) as unknown as Record<string, unknown>;
+    let checked = 0;
+    for (const [name, , expected] of ARTIFACT_SURFACE) {
+      expect(el[name], name).toEqual(expected);
+      checked += 1;
+    }
+    expect(checked).toBe(13);
+  });
+
+  it('declares exactly the attributes of the contract and no slot and no part', () => {
+    const declared = (declarations.get(tag)?.attributes ?? []).map((a) => a.name).sort();
+    expect(declared).toEqual(['content-status', 'error-message', 'now', 'selected-path', 'status', 'view']);
+    expect(declarations.get(tag)?.slots ?? []).toEqual([]);
+    expect(declarations.get(tag)?.cssParts ?? []).toEqual([]);
+  });
+
+  it('declares exactly the five events of the contract', () => {
+    const names = (declarations.get(tag)?.events ?? []).map((e) => e.name).sort();
+    expect(names).toEqual(ARTIFACT_EVENTS);
+  });
+
+  it('states the host obligation of sk-open-link in the manifest text: the href is untrusted', () => {
+    const event = (declarations.get(tag)?.events ?? []).find((e) => e.name === 'sk-open-link') as { name: string; description?: string } | undefined;
+    expect(event?.description ?? '').toContain('untrusted');
+    // Positive control: the other events do not carry the word, so the assertion is about this event's own text.
+    const other = (declarations.get(tag)?.events ?? []).find((e) => e.name === 'sk-open-mission') as { description?: string } | undefined;
+    expect(other?.description ?? '').not.toContain('untrusted');
   });
 });
