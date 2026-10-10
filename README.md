@@ -1,7 +1,7 @@
-# spec-kitty-mission-ui
+# kitty-mission-ui
 
 Shared Spec Kitty mission screens (Lit web components) for the dashboard and Kitty Desktop.
-Storybook is the workbench and the visual source of truth. The package is `@spec-kitty/mission-ui`.
+Storybook is the workbench and the visual source of truth. The package is `@moes-media/mission-ui`.
 
 ## Setup
 
@@ -9,12 +9,16 @@ Prerequisites (one-time):
 
 - Node 22.22.2, as pinned in `.nvmrc` (for example `nvm install` or `fnm use`).
 - pnpm 11.18.0, installed directly (for example `npm install -g pnpm@11.18.0`). corepack is not used.
-- A GitHub token with `read:packages` and access to the `spec-kitty` organisation (SSO authorised), see the next section.
+- A GitHub token that can read the `spec-kitty` organisation's GitHub Packages (`read:packages`, SSO authorised), see the
+  next section.
 - For the visual gate only: podman or docker.
 
 ### Credential
 
-`@spec-kitty/tokens`, `@spec-kitty/styles` and `@spec-kitty/elements` come from GitHub Packages, which needs a token.
+This repository is public, but the Spec Kitty design library it builds on is not: `@spec-kitty/tokens`,
+`@spec-kitty/styles` and `@spec-kitty/elements` are installed from the spec-kitty organisation's GitHub Packages
+registry (`.npmrc` maps the `@spec-kitty` scope to `https://npm.pkg.github.com`), and every install needs a read token.
+The token must belong to an account that can read those packages; a token scoped to another organisation is not enough.
 Add this line to your own user-level `~/.npmrc`, replacing `<token>` with your token:
 
 ```
@@ -29,8 +33,12 @@ Add this line to your own user-level `~/.npmrc`, replacing `<token>` with your t
 - `pnpm preflight` runs the same offline check, then asks the registry. Exit codes: 9 credential missing,
   10 token rejected or expired (401), 11 token cannot read `@spec-kitty/elements` (403/404: needs `read:packages`
   and org access, SSO authorised), 12 registry unreachable. The token is never printed.
-- CI reads the repository secret `NPM_TOKEN` (a token with `read:packages` and org access). Pull requests from forks
-  and from Dependabot receive no secrets, so they fail `Gate: preflight` with the `NPM_TOKEN` message by design.
+- CI reads the repository secret `NPM_TOKEN`. The workflow does not use the built-in `GITHUB_TOKEN`: that token is
+  scoped to the repository's own organisation and cannot read the spec-kitty packages. `NPM_TOKEN` must be a
+  personal access token (classic, `read:packages`, SSO authorised for the spec-kitty organisation) of an account
+  with read access to the design-library packages; create it as a repository secret before the first CI run. Pull
+  requests from forks and from Dependabot receive no secrets, so they fail `Gate: preflight` with the `NPM_TOKEN`
+  message by design.
 
 ## Run the workbench
 
@@ -117,7 +125,7 @@ packages, never only the changed files.
 | `Gate: stylelint` | `pnpm lint:styles` | layout-only CSS, `--sk-*` tokens, no colour, font or size literals; the operator-approved exceptions E-04 and E-08 to E-16 are scoped to named element files in `stylelint.config.mjs`, token values only (each sunsets on a spec-kitty-design issue) |
 | `Gate: no-io` | `pnpm lint:no-io` and `pnpm test:no-io` | no network, desktop-bridge or browser-storage I/O in `packages/*/src`; the self-test asserts one fixture per rule |
 | `Gate: manifest` | `pnpm manifest:check` | `custom-elements.json` equals a fresh regeneration and declares every property and event |
-| `Gate: hygiene` | `pnpm hygiene` and `pnpm test:scripts` | no token, no absolute user path, no e-mail address in the contract and fixture paths, pinned dependencies and actions, safe workflow triggers, baseline PNG checks; then the `node:test` suites of the gate scripts (hygiene, gate-proof, preflight, manifest-screen, settle, the stylelint exception scope proofs and the terminology scan: the word "feature" never appears in `packages/*/src` or the mission quickstart, the canonical term is "mission") |
+| `Gate: hygiene` | `pnpm hygiene` and `pnpm test:scripts` | no token, no absolute user path (CLI state files included), no agent scratchpad path, no tooling-ledger id, no username of the running account, no e-mail address in the contract and fixture paths, pinned dependencies and actions, safe workflow triggers, baseline PNG checks; then the `node:test` suites of the gate scripts (hygiene, gate-proof, preflight, manifest-screen, settle, the stylelint exception scope proofs and the terminology scan: the word "feature" never appears in `packages/*/src` or the mission quickstart, the canonical term is "mission") |
 | `Gate: contract` | `pnpm contract:check` and `pnpm test:contract` | the vendored Mission Status contract equals its pin, the generated types and fixtures are fresh, every fixture is a valid and coherent contract document (closed shapes), no event-stream identifier in `packages/*/src` |
 | `Gate: data-driven` | `pnpm lint:data-driven` and `pnpm test:data-driven` | no phase name, status lane or other contract status word (`pending`, `complete`, `draft`, `discarded`) hard-coded in `packages/*/src` outside `src/defaults/`, `src/contract/`, stories, fixtures and `src/story-support/`; 31 selectors, a self-test with 36 positive fixtures and inline `eslint-disable` comments ignored |
 | `Gate: storybook-build` | `pnpm build-storybook` | the static Storybook builds (219 stories), then the output is scanned for tokens |
@@ -244,9 +252,23 @@ No lint gate is complete. These are documented, not gated; reviewers must catch 
   scanned for it. C1 compares `PIN.json` with the files, so editing both together passes C1; the comparison with
   upstream is `pnpm contract:verify-remote`, which needs the network and is not a CI gate. The producer's lane weights
   are the one value copied from spec-kitty (`PRODUCER_LANE_WEIGHTS`); `contract:verify-remote` re-verifies them.
-- **CLI-record-path allow-list: two entries, three CLI record-path classes.** The spec-kitty CLI writes absolute paths into
-  its own records, and operator policy keeps them un-scrubbed. Hygiene therefore exempts exactly three kinds of
-  CLI-written path: the charter's `source_path:` line in `.kittify/charter/charter.yaml`, and, in
-  `kitty-specs/*/status.json` and `status.events.jsonl`, the review `feedback_path` value and the retrospective
-  `record_path` value. Nothing else is exempt; `pnpm hygiene --list-allowed` prints the two entries (the status entry
-  covers both status-record keys).
+- **No allow-list; CLI state files are scanned like everything else.** The spec-kitty CLI writes absolute paths into
+  its own records (the charter's `source_path:` line, and the review `feedback_path` and retrospective `record_path`
+  values in `kitty-specs/*/status.json` and `status.events.jsonl`). Hygiene exempts none of them: scrub such a value
+  (for example to `~/...`) before committing. `pnpm hygiene --list-allowed` prints nothing.
+- **`hygiene` private-workspace rules**: an agent scratchpad path (`/tmp/claude-<uid>/...`), a three-or-more-digit
+  `SK-` tooling-ledger id (two-digit `SK-NN` finding codes pass), and the username of the account running the gate
+  (whole word, case-insensitive, 4 characters or more; shared accounts such as `runner` and `root` are skipped) are
+  reported in every tracked and untracked file. In CI the runner's own account name is not the one that leaks, so set
+  `HYGIENE_FORBIDDEN_NAMES` (comma separated) to cover other names; without it CI checks only paths, scratchpads and
+  ledger ids. A username glued to other letters (`<name>dev`) is not matched.
+
+## Licence
+
+`kitty-mission-ui`, including `@moes-media/mission-ui` and `@moes-media/storybook-app`, is free
+software: you can redistribute it and modify it under the terms of the GNU Affero General Public License as published
+by the Free Software Foundation, either version 3 of the License, or (at your option) any later version
+(SPDX: `AGPL-3.0-or-later`). The full text is in [`LICENSE`](LICENSE).
+
+The Spec Kitty design library (`@spec-kitty/elements`, `@spec-kitty/styles`, `@spec-kitty/tokens`) is a separate,
+MIT-licensed dependency installed from spec-kitty's GitHub Packages registry; it is not part of this repository.

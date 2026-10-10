@@ -82,12 +82,12 @@ importers:
 
   apps/storybook:
     dependencies:
+      '@moes-media/mission-ui':
+        specifier: workspace:*
+        version: link:../../packages/mission-ui
       '@spec-kitty/elements':
         specifier: 1.1.0-rc.10
         version: 1.1.0-rc.10(@spec-kitty/styles@1.1.0-rc.10(@spec-kitty/tokens@1.1.0-rc.10))(@spec-kitty/tokens@1.1.0-rc.10)(lit@3.3.3)
-      '@spec-kitty/mission-ui':
-        specifier: workspace:*
-        version: link:../../packages/mission-ui
       '@spec-kitty/styles':
         specifier: 1.1.0-rc.10
         version: 1.1.0-rc.10(@spec-kitty/tokens@1.1.0-rc.10)

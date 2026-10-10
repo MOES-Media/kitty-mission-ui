@@ -10,7 +10,7 @@ import { parse } from 'yaml';
 import {
   ALLOW_LIST, checkBaselines, checkGateJobNames, checkGateScripts, checkLockfile, checkNpmrc, checkPackageJson, checkPlantFiles,
   checkPlaywrightTag, checkPng, checkTypecheckScripts, checkVitestFamily, checkWorkflow, checkWorkflowTriggers,
-  scanText,
+  forbiddenNames, scanText,
 } from './rules.mjs';
 
 // Every token-, path- and credential-shaped string is assembled at run time from fragments.
@@ -155,21 +155,20 @@ test('JSON slash-escaped home paths are flagged', () => {
   assert.deepEqual(rules('a.json', esc), ['user-path']);
 });
 
-test('a second path on the charter source_path line is not hidden', () => {
-  const ok = `    source_path: ${HOME}someone/.local/share/uv/tools/spec-kitty-cli/lib/packs/built-in/missions/software-dev/mission.yaml`;
+test('the charter source_path line is flagged like any other path', () => {
+  const line = `    source_path: ${HOME}exampleuser/.local/share/uv/tools/spec-kitty-cli/lib/packs/built-in/missions/software-dev/mission.yaml`;
   const f = '.kittify/charter/charter.yaml';
-  assert.deepEqual(rules(f, ok), []);
-  assert.ok(flagged(f, `${ok} ${HOME}other/x`));
-  assert.ok(flagged(f, `${ok}/../${HOME}other`));
+  assert.deepEqual(rules(f, line), ['user-path']);
+  assert.deepEqual(rules(f, `    source_path: ~/.local/share/uv/tools/spec-kitty-cli/lib/packs/built-in/missions/software-dev/mission.yaml`), []);
 });
 
-test('feedback_path strip covers only a CLI review-feedback path value', () => {
-  const ev = 'kitty-specs/m/status.events.jsonl';
+test('a CLI review feedback_path with a home path is flagged in the status files', () => {
   const val = (v) => `{"feedback_path": "${v}"}`;
-  const good = `${HOME}someone/r/kitty-specs/m/tasks/WP01-x/review-cycle-1.md`;
-  assert.deepEqual(rules(ev, val(good)), []);
-  assert.ok(flagged(ev, val(`${good} ${HOME}other/y`)));
-  assert.ok(flagged(ev, val(`${HOME}someone/secret/notes.txt`)));
+  const good = `${HOME}exampleuser/r/kitty-specs/m/tasks/WP01-x/review-cycle-1.md`;
+  for (const f of ['kitty-specs/m/status.events.jsonl', 'kitty-specs/m/status.json']) {
+    assert.deepEqual(rules(f, val(good)), ['user-path'], f);
+    assert.deepEqual(rules(f, val('~/r/kitty-specs/m/tasks/WP01-x/review-cycle-1.md')), [], f);
+  }
 });
 
 test('CI roots and placeholder segments pass', () => {
@@ -185,36 +184,59 @@ test('a name glued to a placeholder is still flagged', () => {
   assert.deepEqual(rules('a.md', `${HOME}runnerx/x`), ['user-path']);
 });
 
-test('allow-list has exactly two entries; the charter entry exempts only the CLI-written line in its file', () => {
-  assert.equal(ALLOW_LIST.length, 2);
-  const line = `    source_path: ${HOME}someone/.local/share/uv/tools/spec-kitty-cli/lib/packs/built-in/missions/software-dev/mission.yaml`;
-  assert.deepEqual(rules('.kittify/charter/charter.yaml', line), []);
-  assert.deepEqual(rules('.kittify/charter/other.yaml', line), ['user-path']);
-  assert.deepEqual(rules('.kittify/charter/charter.yaml', `note: ${HOME}someone/x`), ['user-path']);
-  assert.deepEqual(rules('.kittify/charter/charter.yaml', `    source_path: ${HOME}someone/elsewhere/x`), ['user-path']);
+test('the allow-list is empty: nothing is exempt from the path rules', () => {
+  assert.equal(ALLOW_LIST.length, 0);
+  assert.ok(Object.isFrozen(ALLOW_LIST));
+  const fb = `{"review_result": {"feedback_path": "${HOME}exampleuser/r/kitty-specs/m/tasks/WP01-x/review-cycle-1.md",`;
+  for (const f of ['kitty-specs/m/status.events.jsonl', 'kitty-specs/m/status.json', 'kitty-specs/m/meta.json', 'docs/status.json']) {
+    assert.deepEqual(rules(f, fb), ['user-path'], f);
+  }
 });
 
-test('feedback_path home paths are allowed only under that key in the status files', () => {
-  const events = 'kitty-specs/m/status.events.jsonl';
-  const fb = `{"review_result": {"feedback_path": "${HOME}someone/r/kitty-specs/m/tasks/WP01-x/review-cycle-1.md",`;
-  assert.deepEqual(rules(events, fb), []);
-  assert.deepEqual(rules('kitty-specs/m/status.json', `        "feedback_path": "${HOME}someone/r/kitty-specs/m/tasks/WP01-x/review-cycle-1.md",`), []);
-  assert.deepEqual(rules(events, `{"other_path": "${HOME}someone/r/x.md",`), ['user-path']);
-  assert.deepEqual(rules(events, `${fb} "note": "${HOME}someone/y"`), ['user-path']);
-  assert.deepEqual(rules('kitty-specs/m/other.json', fb), ['user-path']);
-  assert.deepEqual(rules('docs/status.json', fb), ['user-path']);
+test('plant: a status-file retrospective record_path with a home path is flagged', () => {
+  const rec = (v) => `{"provenance_kind": "runtime_post_completion", "record_path": "${v}"}`;
+  const planted = `${HOME}exampleuser/dev/r/kitty-specs/m/retrospective.yaml`;
+  for (const f of ['kitty-specs/m/status.events.jsonl', 'kitty-specs/m/status.json']) {
+    assert.deepEqual(rules(f, rec(planted)), ['user-path'], f);
+    assert.deepEqual(rules(f, rec(`\\/${'home'}\\/exampleuser\\/r\\/kitty-specs\\/m\\/retrospective.yaml`)), ['user-path'], f);
+    assert.deepEqual(rules(f, rec('~/dev/r/kitty-specs/m/retrospective.yaml')), [], f);
+  }
 });
 
-test('retrospective record_path is allowed only in the exact CLI shape', () => {
-  const ev = 'kitty-specs/m/status.events.jsonl';
-  const rec = (v) => `{"record_path": "${v}"}`;
-  const good = `${HOME}someone/r/kitty-specs/m/retrospective.yaml`;
-  assert.deepEqual(rules(ev, rec(good)), []);
-  assert.deepEqual(rules('kitty-specs/m/status.json', rec(good)), []);
-  assert.ok(flagged(ev, rec(`${HOME}someone/r/kitty-specs/m/notes.yaml`)));
-  assert.ok(flagged(ev, rec(`${HOME}someone/elsewhere/retrospective.yaml`)));
-  assert.ok(flagged(ev, `${rec(good)} ${HOME}other/y`));
-  assert.ok(flagged('kitty-specs/m/other.json', rec(good)));
+// Private-workspace markers, assembled from fragments so this file never carries one.
+const SCRATCH = '/' + 'tmp/' + 'claude-';
+const LEDGER = (n) => 'S' + `K-${n}`;
+
+test('an agent scratchpad path is flagged', () => {
+  assert.deepEqual(rules('a.md', `see ${SCRATCH}1000/-proj/sess/scratchpad/x.txt`), ['scratchpad-path']);
+  assert.deepEqual(rules('kitty-specs/m/status.events.jsonl', `{"p": "${SCRATCH}1000/x"}`), ['scratchpad-path']);
+  assert.deepEqual(rules('a.md', 'see <scratchpad>/x.txt and /tmp/other'), []);
+});
+
+test('a private ledger id is flagged; two-digit finding codes pass', () => {
+  assert.deepEqual(rules('a.md', `tracked as ${LEDGER(223)}`), ['ledger-id']);
+  assert.deepEqual(rules('kitty-specs/m/status.events.jsonl', `{"reason": "PASS; ${LEDGER(306)} false positive"}`), ['ledger-id']);
+  assert.deepEqual(rules('kitty-specs/m/meta.json', `{"note": "(${LEDGER(1042)})"}`), ['ledger-id']);
+  assert.deepEqual(rules('a.ts', `const codes = ['${LEDGER('02')}', '${LEDGER(91)}'];`), []);
+  assert.deepEqual(rules('a.md', `${LEDGER('nnn')} entries and sk-missions-screen`), []);
+});
+
+test('the username of the running account is flagged as a whole word, case-insensitively', () => {
+  const names = forbiddenNames('exampleuser');
+  const r = (file, text) => scanText(file, text, { names }).map((f) => f.rule);
+  assert.deepEqual(r('kitty-specs/m/meta.json', '{"accepted_by": "exampleuser"}'), ['os-username']);
+  assert.deepEqual(r('a.md', 'by ExampleUser.'), ['os-username']);
+  assert.deepEqual(r('a.md', 'see -dev-exampleuser-x'), ['os-username']);
+  assert.deepEqual(r('a.md', 'exampleusers and myexampleuser'), []);
+  assert.deepEqual(rules('kitty-specs/m/meta.json', '{"accepted_by": "exampleuser"}'), []);
+});
+
+test('forbiddenNames skips short names and shared accounts and adds the extra list', () => {
+  assert.deepEqual(forbiddenNames('runner'), []);
+  assert.deepEqual(forbiddenNames('root', ''), []);
+  assert.deepEqual(forbiddenNames('abc'), []);
+  assert.deepEqual(forbiddenNames('Exampleuser', 'other-person, runner,,exampleuser'), ['exampleuser', 'other-person']);
+  assert.deepEqual(forbiddenNames(undefined, undefined), []);
 });
 
 test('package specs must be exact', () => {
@@ -501,10 +523,34 @@ test('the plant descriptor names the unique label and commits no token literal',
   assert.ok(!/[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+\.[A-Za-z]{2,}/.test(text.replaceAll("'@'", '')));
 });
 
-test('--list-allowed prints exactly the two CLI-record-path entries', () => {
+test('--list-allowed prints nothing', () => {
   const r = spawnSync('node', [SCRIPT, '--list-allowed'], { encoding: 'utf8' });
-  assert.equal(r.stdout.trim().split('\n').length, 2);
-  assert.match(r.stdout, /CLI record path/);
+  assert.equal(r.status, 0);
+  assert.equal(r.stdout, '');
+});
+
+test('plant: the gate fails on a tracked status-file record_path, scratchpad path, ledger id and username', () => {
+  const plants = {
+    'kitty-specs/m/status.events.jsonl': `{"record_path": "${HOME}exampleuser/r/kitty-specs/m/retrospective.yaml"}\n`,
+    'kitty-specs/m/status.json': `{"note": "${SCRATCH}1000/x"}\n`,
+    'kitty-specs/m/plan.md': `see ${LEDGER(342)}\n`,
+    'kitty-specs/m/meta.json': '{"accepted_by": "exampleuser"}\n',
+  };
+  const expected = {
+    'kitty-specs/m/status.events.jsonl': 'user-path',
+    'kitty-specs/m/status.json': 'scratchpad-path',
+    'kitty-specs/m/plan.md': 'ledger-id',
+    'kitty-specs/m/meta.json': 'os-username',
+  };
+  const dir = repo(plants);
+  try {
+    const r = spawnSync('node', [SCRIPT, '--root', dir], {
+      encoding: 'utf8', env: { ...process.env, HYGIENE_FORBIDDEN_NAMES: 'exampleuser' },
+    });
+    assert.notEqual(r.status, 0);
+    for (const [file, rule] of Object.entries(expected)) assert.match(r.stdout, new RegExp(`\\[${rule}\\] ${file}:1`), file);
+    assert.ok(!r.stdout.includes('exampleuser'));
+  } finally { rmSync(dir, { recursive: true, force: true }); }
 });
 
 test("a job named 'Gate: ...' is rejected outside ci.yml (rule), allowed in no other workflow", () => {
