@@ -21,7 +21,7 @@
 - `sk-work-package-screen` `labels`: a lane has two kinds of word. The `state` hook draws the state badge, the dependency and
   subtask lane words and the cancellation badge; the `lane` hook draws the lane history's "from" and "to" words. A host that
   rewords a lane sets both (`#5`).
-- `ShellTierController` and `SHELL_MOBILE_STATE` are exported from the package entry (`@spec-kitty/mission-ui`) (`#5`).
+- `ShellTierController` and `SHELL_MOBILE_STATE` are exported from the package entry (`@moes-media/mission-ui`) (`#5`).
 - `ShellTierController` (`src/shell-tier.ts`): follows the enclosing `sk-mission-shell`'s public `tier` across shadow roots and
   sets the CSS custom state `:state(shell-mobile)` on its host while the tier is `mobile` (no attribute). The Work Package
   screen is its first consumer. Without `ElementInternals` custom states (or when `states.add` throws) it warns once per page and
@@ -105,6 +105,8 @@ design library are filed by the orchestrator at pull-request time, not from this
 | G-15 | `sk-context-sidebar` flips at 720px and its padding crowds a 3.5rem column | `compact` or icon-column mode | local icon column removed |
 
 ### Changed
+
+- The package is renamed from `@spec-kitty/mission-ui` to `@moes-media/mission-ui` and is licensed AGPL-3.0-or-later.
 
 - `sk-mission-sample` no longer self-registers (`src/index.ts` defines the tag once), composes `sk-notice` and
   `sk-section-header` through their slots, and exports `SkMissionRetryDetail` (typed events in

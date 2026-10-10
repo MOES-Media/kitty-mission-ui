@@ -5,7 +5,7 @@
 
 ## Summary
 
-Add TWO public elements to `@spec-kitty/mission-ui`: `sk-projects-screen` (5 properties, 3 events) and the optional `sk-open-project-dialog` (5 properties, 3 events), plus ONE additive value on the shell's existing `layout` property (`picker`: top bar only, no sidebar, no rail, no hamburger). Both elements take contract-shaped and host-built data as properties, emit `sk-*` verb-noun events, read-only, no I/O. The contract is re-vendored once, first (IC-01), after spec-kitty PR #5881 has merged; the Drift and Ops missions start from `main` after that. Everything else reuses #4 and #5: `defaults/`, `logic/`, `lookup`, `relativeTime`, `missionCountText`, `ViewState`, `shellFrame`, the gates, the exception mechanism, the visual harness tags.
+Add TWO public elements to `@moes-media/mission-ui`: `sk-projects-screen` (5 properties, 3 events) and the optional `sk-open-project-dialog` (5 properties, 3 events), plus ONE additive value on the shell's existing `layout` property (`picker`: top bar only, no sidebar, no rail, no hamburger). Both elements take contract-shaped and host-built data as properties, emit `sk-*` verb-noun events, read-only, no I/O. The contract is re-vendored once, first (IC-01), after spec-kitty PR #5881 has merged; the Drift and Ops missions start from `main` after that. Everything else reuses #4 and #5: `defaults/`, `logic/`, `lookup`, `relativeTime`, `missionCountText`, `ViewState`, `shellFrame`, the gates, the exception mechanism, the visual harness tags.
 
 ## Technical Context
 

@@ -1,11 +1,12 @@
 {
-  "name": "@spec-kitty/storybook-app",
+  "name": "@moes-media/storybook-app",
   "version": "0.0.0",
   "private": true,
+  "license": "AGPL-3.0-or-later",
   "type": "module",
   "dependencies": {
+    "@moes-media/mission-ui": "workspace:*",
     "@spec-kitty/elements": "1.1.0-rc.10",
-    "@spec-kitty/mission-ui": "workspace:*",
     "@spec-kitty/styles": "1.1.0-rc.10",
     "@spec-kitty/tokens": "1.1.0-rc.10",
     "lit": "3.3.3"

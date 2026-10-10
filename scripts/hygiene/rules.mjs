@@ -13,26 +13,39 @@ const CI_ROOTS = [
   /\/github\/home(?![^/\s"'`\\])/g,
 ];
 
-/** CLI-written record path, operator policy. File AND line pattern; nothing else is exempt. */
-export const ALLOW_LIST = [
-  {
-    file: '.kittify/charter/charter.yaml',
-    linePattern: new RegExp(
-      '^\\s*source_path: ' + HOME + '[^/]+/\\.local/share/uv/tools/spec-kitty-cli/\\S*/packs/built-in/missions/\\S+\\.ya?ml\\s*$',
-    ),
-    reason: 'CLI record path: the CLI writes its own install path; operator policy keeps it un-scrubbed',
-  },
-  {
-    // Only the key/value text is exempt; any other path on the same line is still scanned.
-    filePattern: /^kitty-specs\/[^/]+\/status(?:\.json|\.events\.jsonl)$/,
-    stripPattern: new RegExp(
-      '"(?:feedback_path":\\s*"' + HOME + '[^/"]+/(?:[^"\\s]*/)?kitty-specs/[^/"]+/tasks/WP[^/"]*/review-[^/"]*\\.md' +
-        '|record_path":\\s*"' + HOME + '[^/"]+/(?:[^"\\s]*/)?kitty-specs/[^/"]+/retrospective\\.yaml)"',
-      'g',
-    ),
-    reason: 'CLI record path: the CLI writes absolute review feedback_path and retrospective record_path values into the status record',
-  },
-];
+/**
+ * Nothing is exempt. The spec-kitty CLI writes absolute paths (`source_path` in the charter, `feedback_path` and
+ * `record_path` in a mission's `status.json` and `status.events.jsonl`); in a public repository they are scrubbed
+ * before commit like any other path, so the path rules apply to every tracked file, CLI state files included.
+ * The list and its consumers stay so `--list-allowed` keeps working and prints nothing.
+ */
+export const ALLOW_LIST = Object.freeze([]);
+
+// Private-workspace markers. Assembled from fragments so this file never matches its own rules.
+// An agent scratchpad path embeds the OS user id; a three-or-more-digit `SK-` id is a private tooling-ledger reference
+// (two-digit `SK-NN` codes are prototype finding codes and pass).
+const SCRATCHPAD = new RegExp('/' + 'tmp/' + 'claude-' + '\\d+', 'g');
+const LEDGER_ID = new RegExp('\\b' + 'S' + 'K-' + '\\d{3,}\\b', 'g');
+
+// Shared CI and service accounts: their names are ordinary words in workflow text and are not personal.
+const GENERIC_ACCOUNTS = new Set([
+  'admin', 'build', 'circleci', 'codespace', 'docker', 'github', 'jenkins', 'node', 'root', 'runner', 'ubuntu', 'user',
+  'vscode',
+]);
+
+/**
+ * The names the username rule looks for: the OS username of the account running the gate and any names in `extra`
+ * (comma or whitespace separated, for example from a CI secret). Names under 4 characters and shared accounts are
+ * skipped. Lower-cased and de-duplicated.
+ */
+export function forbiddenNames(username, extra = '') {
+  const all = [username ?? '', ...String(extra ?? '').split(/[\s,]+/)].map((n) => n.trim().toLowerCase());
+  return [...new Set(all.filter((n) => n.length >= 4 && !GENERIC_ACCOUNTS.has(n)))];
+}
+
+function nameRegex(name) {
+  return new RegExp(`(?<![A-Za-z0-9])${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?![A-Za-z0-9])`, 'i');
+}
 
 // E-mail rule (NFR-007, research D-13). Path scoped: the vendored contract, the contract directory of a package, and
 // authored fixtures and stories. Elsewhere an address is legitimate (the CLI's own event log carries a noreply actor).
@@ -122,12 +135,14 @@ function pathFindings(file, lineNo, lineText, strictCi = false) {
 }
 
 /**
- * Token, credential-assignment and path rules over one file's text. `options.strictCi` (scan-dir / built-output mode)
- * flags CI runner roots instead of stripping them; the repository scan strips them because workflow text names them.
+ * Token, credential-assignment, path, scratchpad, ledger-id and username rules over one file's text. `options.strictCi`
+ * (scan-dir / built-output mode) flags CI runner roots instead of stripping them; the repository scan strips them because
+ * workflow text names them. `options.names` (from `forbiddenNames`) are matched case-insensitively as whole words.
  */
 export function scanText(file, text, options = {}) {
   const out = [];
   const isNpmrc = file === '.npmrc' || file.endsWith('/.npmrc');
+  const nameMatchers = (options.names ?? []).map(nameRegex);
   const lines = text.split(/\r?\n/);
   lines.forEach((lineText, i) => {
     const n = i + 1;
@@ -168,6 +183,15 @@ export function scanText(file, text, options = {}) {
       for (const f of pathFindings(file, n, lineText, options.strictCi === true)) {
         if (!isAllowed(file, lineText)) out.push(f);
       }
+      if ([...lineText.matchAll(SCRATCHPAD)].length > 0) {
+        out.push(finding('scratchpad-path', file, n, 'agent scratchpad path (embeds the OS user id)'));
+      }
+    }
+    if ([...lineText.matchAll(LEDGER_ID)].length > 0) {
+      out.push(finding('ledger-id', file, n, 'private tooling-ledger id (value withheld)'));
+    }
+    for (const re of nameMatchers) {
+      if (re.test(lineText)) out.push(finding('os-username', file, n, 'username of a forbidden account (value withheld)'));
     }
   });
   return out;
