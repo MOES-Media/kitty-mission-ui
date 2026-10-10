@@ -66,6 +66,9 @@ async function mountScreen(): Promise<Harness> {
   Object.assign(screen, { status: 'ready', contentStatus: 'ready', listing, content: contentOf('x'), selectedPath: OPEN_PATH, mission: missionFacts, workPackages: [], view: 'rendered' });
   const box = document.createElement('div');
   document.body.append(box);
+  // A control that is (wrongly) a real link must not navigate the test page: it would end the whole run, and the escape would
+  // never be reported. The walk reports it instead.
+  box.addEventListener('click', (event) => event.preventDefault());
   render(artifactFrame(html`${screen}`), box);
   await screen.updateComplete;
   const events: CustomEvent[] = [];
