@@ -61,6 +61,9 @@ function expectedRowHeight(row: HTMLElement): { expected: number; floor: number 
   const triggerStyle = getComputedStyle(trigger);
   const parts = Array.from(trigger.children).map((child) => child.getBoundingClientRect()).filter((box) => box.height > 0);
   const span = Math.max(...parts.map((box) => box.bottom)) - Math.min(...parts.map((box) => box.top));
+  // The geometry inputs are pinned to the prototype's literals, so the expected height is not an identity of the element's own box.
+  expect([triggerStyle.paddingTop, triggerStyle.paddingRight, triggerStyle.paddingBottom, triggerStyle.paddingLeft]).toEqual(['16px', '16px', '16px', '16px']);
+  expect([frame.borderTopWidth, frame.borderRightWidth, frame.borderBottomWidth, frame.borderLeftWidth]).toEqual(['1px', '1px', '1px', '1px']);
   const chrome = px(frame.borderTopWidth) + px(frame.borderBottomWidth) + px(triggerStyle.paddingTop) + px(triggerStyle.paddingBottom);
   // The floor: the chrome around the title line and the pill, whichever column they sit in.
   const title = px(getComputedStyle(part('title')).lineHeight);
@@ -168,6 +171,7 @@ describe('PR-29: about 620px and below, each row is one column and the side bloc
     // One column: the parts are stacked, the row is the span they cover plus the trigger's padding and the row's borders (the mono lines vary by machine).
     const row = one<HTMLElement>(root(screen), 'li sk-action-row');
     const { expected, floor } = expectedRowHeight(row);
+    expect(getComputedStyle(one<HTMLElement>(row.shadowRoot as ShadowRoot, '[part="metadata"]')).marginTop).toBe('20px');
     expect(m.rowBox.height).toBeCloseTo(expected, 0);
     expect(m.rowBox.height).toBeGreaterThan(floor + 24 + 46);
     const host = one<HTMLElement>(screen.shadowRoot as ShadowRoot, 'sk-pill-tag');
@@ -176,7 +180,8 @@ describe('PR-29: about 620px and below, each row is one column and the side bloc
     const pill = tag.getBoundingClientRect();
     // The pill is its own explicit line (1.2 x 12px) + 4px + 4px + the 1px outline; its width is the text it holds + 8px + 8px + the outline.
     expect(style.lineHeight).toBe('14.4px');
-    expect([style.paddingTop, style.paddingLeft, style.borderTopWidth]).toEqual(['4px', '8px', '1px']);
+    expect([style.paddingTop, style.paddingRight, style.paddingBottom, style.paddingLeft]).toEqual(['4px', '8px', '4px', '8px']);
+    expect([style.borderTopWidth, style.borderRightWidth, style.borderBottomWidth, style.borderLeftWidth]).toEqual(['1px', '1px', '1px', '1px']);
     expect(pill.height).toBeCloseTo(px(style.lineHeight) + px(style.paddingTop) + px(style.paddingBottom) + px(style.borderTopWidth) + px(style.borderBottomWidth), 1);
     expect(pill.height).toBeCloseTo(24.4, 1);
     const text = document.createRange();

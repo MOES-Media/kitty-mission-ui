@@ -236,7 +236,8 @@ describe('the prototype measures: the pill, the footer buttons, the field and th
     // The pill is mono, which is not bundled: its height is its own explicit line (1.2 x 12px) + 4px + 4px + the 1px outline, and
     // its width is the text it holds + 8px + 8px + the outline, whatever face the text falls back to.
     expect(tagStyle.lineHeight).toBe('14.4px');
-    expect([tagStyle.paddingTop, tagStyle.paddingLeft, tagStyle.borderTopWidth]).toEqual(['4px', '8px', '1px']);
+    expect([tagStyle.paddingTop, tagStyle.paddingRight, tagStyle.paddingBottom, tagStyle.paddingLeft]).toEqual(['4px', '8px', '4px', '8px']);
+    expect([tagStyle.borderTopWidth, tagStyle.borderRightWidth, tagStyle.borderBottomWidth, tagStyle.borderLeftWidth]).toEqual(['1px', '1px', '1px', '1px']);
     expect(pill.height).toBeCloseTo(px(tagStyle.lineHeight) + px(tagStyle.paddingTop) + px(tagStyle.paddingBottom) + px(tagStyle.borderTopWidth) + px(tagStyle.borderBottomWidth), 1);
     expect(pill.height).toBeCloseTo(24.4, 1);
     const text = document.createRange();
@@ -257,6 +258,7 @@ describe('the prototype measures: the pill, the footer buttons, the field and th
     expect(px(getComputedStyle(control).minHeight)).toBe(46);
     expect(control.getBoundingClientRect().height).toBeGreaterThanOrEqual(46);
     expect(px(label.lineHeight)).toBe(21);
+    expect([label.marginTop, label.marginRight, label.marginBottom, label.marginLeft]).toEqual(['0px', '0px', '4px', '0px']);
     expect(stacked.length).toBeGreaterThanOrEqual(2);
     const gap = px(getComputedStyle(fieldPart).rowGap);
     expect(gap).toBe(8);
@@ -264,6 +266,13 @@ describe('the prototype measures: the pill, the footer buttons, the field and th
     // The dialog is its three regions inside the 1px border.
     const box = one<HTMLElement>(root(dialog), 'dialog');
     const boxStyle = getComputedStyle(box);
+    const padding = (name: string): string[] => {
+      const region = getComputedStyle(one<HTMLElement>(root(dialog), `[data-region="${name}"]`));
+      return [region.paddingTop, region.paddingRight, region.paddingBottom, region.paddingLeft];
+    };
+    expect(padding('header')).toEqual(['16px', '20px', '16px', '20px']);
+    expect(padding('body')).toEqual(['20px', '20px', '20px', '20px']);
+    expect(padding('actions')).toEqual(['16px', '20px', '16px', '20px']);
     const regions = ['header', 'body', 'actions'].map((name) => one<HTMLElement>(root(dialog), `[data-region="${name}"]`).getBoundingClientRect().height);
     expect(box.getBoundingClientRect().height).toBeCloseTo(regions.reduce((a, b) => a + b, 0) + px(boxStyle.borderTopWidth) + px(boxStyle.borderBottomWidth), 0);
     const seen = getComputedStyle(one<HTMLElement>(root(dialog), '[data-cancel]'));
