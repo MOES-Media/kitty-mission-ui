@@ -226,17 +226,46 @@ describe('the measured box of the options (the prototype: 46px minimum, 8px and 
 });
 
 describe('the prototype measures: the pill, the footer buttons, the field and the dialog (E-31 (d), E-32 (f))', () => {
-  it('the pill is 111.6x24.4, the footer buttons 81x44 and 71x44, the field 79px tall and the dialog 541.4px at 1280', async () => {
+  it('the pill, the footer buttons, the field and the dialog have the prototype geometry, derived from their own computed styles', async () => {
     const dialog = await mount({ folders: readyFolders });
-    const pill = one<HTMLElement>(option(dialog, validProject.location), 'sk-pill-tag').getBoundingClientRect();
-    expect(pill.width).toBeCloseTo(111.6, 0);
+    const host = one<HTMLElement>(option(dialog, validProject.location), 'sk-pill-tag');
+    const tag = one<HTMLElement>(host.shadowRoot as ShadowRoot, '[part="tag"]');
+    const tagStyle = getComputedStyle(tag);
+    const px = (value: string): number => Number.parseFloat(value);
+    const pill = tag.getBoundingClientRect();
+    // The pill is mono, which is not bundled: its height is its own explicit line (1.2 x 12px) + 4px + 4px + the 1px outline, and
+    // its width is the text it holds + 8px + 8px + the outline, whatever face the text falls back to.
+    expect(tagStyle.lineHeight).toBe('14.4px');
+    expect([tagStyle.paddingTop, tagStyle.paddingLeft, tagStyle.borderTopWidth]).toEqual(['4px', '8px', '1px']);
+    expect(pill.height).toBeCloseTo(px(tagStyle.lineHeight) + px(tagStyle.paddingTop) + px(tagStyle.paddingBottom) + px(tagStyle.borderTopWidth) + px(tagStyle.borderBottomWidth), 1);
     expect(pill.height).toBeCloseTo(24.4, 1);
+    const text = document.createRange();
+    text.selectNodeContents(host);
+    expect(pill.width).toBeCloseTo(text.getBoundingClientRect().width + px(tagStyle.paddingLeft) + px(tagStyle.paddingRight) + px(tagStyle.borderLeftWidth) + px(tagStyle.borderRightWidth), 0);
     const cancel = one<HTMLElement>(root(dialog), '[data-cancel]').getBoundingClientRect();
     const open = one<HTMLElement>(root(dialog), 'sk-button[variant="primary"]').getBoundingClientRect();
+    // Both footer buttons are the 44px minimum, and Inter (bundled, guarded above) sets their widths.
     expect([Math.round(cancel.width), cancel.height]).toEqual([81, 44]);
     expect([Math.round(open.width), open.height]).toEqual([71, 44]);
-    expect(one<HTMLElement>(root(dialog), 'sk-form-input').getBoundingClientRect().height).toBeCloseTo(79, 0);
-    expect(one<HTMLElement>(root(dialog), 'dialog').getBoundingClientRect().height).toBeCloseTo(541.4, 0);
+    expect(cancel.height).toBe(open.height);
+    // The field is its parts stacked with their margins and the 8px gap: the label is one 21px line and the control keeps its 46px minimum.
+    const field = one<HTMLElement>(root(dialog), 'sk-form-input');
+    const fieldPart = one<HTMLElement>(field.shadowRoot as ShadowRoot, '[part="field"]');
+    const stacked = Array.from(fieldPart.children).filter((child) => getComputedStyle(child).display !== 'none');
+    const label = getComputedStyle(one<HTMLElement>(field.shadowRoot as ShadowRoot, '[part="label"]'));
+    const control = one<HTMLElement>(field.shadowRoot as ShadowRoot, '[part="control"]');
+    expect(px(getComputedStyle(control).minHeight)).toBe(46);
+    expect(control.getBoundingClientRect().height).toBeGreaterThanOrEqual(46);
+    expect(px(label.lineHeight)).toBe(21);
+    expect(stacked.length).toBeGreaterThanOrEqual(2);
+    const gap = px(getComputedStyle(fieldPart).rowGap);
+    expect(gap).toBe(8);
+    expect(field.getBoundingClientRect().height).toBeCloseTo(stacked.reduce((sum, child) => sum + child.getBoundingClientRect().height + px(getComputedStyle(child).marginTop) + px(getComputedStyle(child).marginBottom), 0) + gap * (stacked.length - 1), 0);
+    // The dialog is its three regions inside the 1px border.
+    const box = one<HTMLElement>(root(dialog), 'dialog');
+    const boxStyle = getComputedStyle(box);
+    const regions = ['header', 'body', 'actions'].map((name) => one<HTMLElement>(root(dialog), `[data-region="${name}"]`).getBoundingClientRect().height);
+    expect(box.getBoundingClientRect().height).toBeCloseTo(regions.reduce((a, b) => a + b, 0) + px(boxStyle.borderTopWidth) + px(boxStyle.borderBottomWidth), 0);
     const seen = getComputedStyle(one<HTMLElement>(root(dialog), '[data-cancel]'));
     expect(seen.fontSize).toBe('14px');
   });

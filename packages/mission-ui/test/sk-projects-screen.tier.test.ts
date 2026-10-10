@@ -51,6 +51,22 @@ function one<T extends Element>(scope: ParentNode, selector: string): T {
   return found;
 }
 
+const px = (value: string): number => Number.parseFloat(value);
+
+/** The height a row must have, from its own computed styles: the trigger's padding plus the span its visible parts cover, inside the row's borders. The parts' own heights carry the text (mono falls back differently per machine), the padding and borders carry the geometry. */
+function expectedRowHeight(row: HTMLElement): { expected: number; floor: number } {
+  const part = (name: string): HTMLElement => one<HTMLElement>(row.shadowRoot as ShadowRoot, `[part="${name}"]`);
+  const frame = getComputedStyle(part('row'));
+  const trigger = part('trigger');
+  const triggerStyle = getComputedStyle(trigger);
+  const parts = Array.from(trigger.children).map((child) => child.getBoundingClientRect()).filter((box) => box.height > 0);
+  const span = Math.max(...parts.map((box) => box.bottom)) - Math.min(...parts.map((box) => box.top));
+  const chrome = px(frame.borderTopWidth) + px(frame.borderBottomWidth) + px(triggerStyle.paddingTop) + px(triggerStyle.paddingBottom);
+  // The floor: the chrome around the title line and the pill, whichever column they sit in.
+  const title = px(getComputedStyle(part('title')).lineHeight);
+  return { expected: span + chrome, floor: chrome + title };
+}
+
 /** The geometry that decides each tier, read from the rendered boxes. */
 function measure(screen: SkProjectsScreen) {
   const scope = root(screen);
@@ -81,12 +97,17 @@ function measure(screen: SkProjectsScreen) {
 
 describe('PR-27: about 1100px, the rows keep two columns and the header stays on one line', () => {
   it('puts the side block to the right of the title and level with the location, with the header button beside the copy', async () => {
-    const m = measure(await mount(1100));
+    const screen = await mount(1100);
+    const m = measure(screen);
     expect(m.headerDirection).toBe('row');
     expect(m.button.left).toBeGreaterThanOrEqual(m.copy.right - 1);
     expect(m.side.left).toBeGreaterThan(m.location.right - 1);
     expect(m.side.top).toBeLessThan(m.location.bottom);
-    expect(m.rowBox.height).toBeCloseTo(89.4, 0);
+    // The row is its parts inside the trigger's 16px padding and the row's 1px borders; the text lines are whatever the machine's mono makes them.
+    const { expected, floor } = expectedRowHeight(one<HTMLElement>(root(screen), 'li sk-action-row'));
+    expect(m.rowBox.height).toBeCloseTo(expected, 0);
+    expect(m.rowBox.height).toBeGreaterThanOrEqual(floor + 24);
+    expect(m.rowBox.height).toBeLessThan(floor + 24 + 2 * 21 + 8);
     expect(m.narrow.width).toBe(900);
     expect(m.pageScroll).toBeLessThanOrEqual(m.pageClient);
   });
@@ -140,14 +161,27 @@ describe('PR-29: about 620px and below, each row is one column and the side bloc
     expect(wide.side.left).toBeGreaterThan(wide.title.left + 100);
   });
 
-  it('matches the prototype row at 620: 588px wide, 155.4px high, the pill 24.4px high', async () => {
+  it('matches the prototype row at 620: 588px wide, one column of parts inside its padding and borders, the pill 24.4px high', async () => {
     const screen = await mount(620);
     const m = measure(screen);
     expect(m.rowBox.width).toBe(588);
-    expect(m.rowBox.height).toBeCloseTo(155.4, 0);
-    const pill = one<HTMLElement>(root(one<HTMLElement>(screen.shadowRoot as ShadowRoot, 'sk-pill-tag')), '[part="tag"]').getBoundingClientRect();
+    // One column: the parts are stacked, the row is the span they cover plus the trigger's padding and the row's borders (the mono lines vary by machine).
+    const row = one<HTMLElement>(root(screen), 'li sk-action-row');
+    const { expected, floor } = expectedRowHeight(row);
+    expect(m.rowBox.height).toBeCloseTo(expected, 0);
+    expect(m.rowBox.height).toBeGreaterThan(floor + 24 + 46);
+    const host = one<HTMLElement>(screen.shadowRoot as ShadowRoot, 'sk-pill-tag');
+    const tag = one<HTMLElement>(root(host), '[part="tag"]');
+    const style = getComputedStyle(tag);
+    const pill = tag.getBoundingClientRect();
+    // The pill is its own explicit line (1.2 x 12px) + 4px + 4px + the 1px outline; its width is the text it holds + 8px + 8px + the outline.
+    expect(style.lineHeight).toBe('14.4px');
+    expect([style.paddingTop, style.paddingLeft, style.borderTopWidth]).toEqual(['4px', '8px', '1px']);
+    expect(pill.height).toBeCloseTo(px(style.lineHeight) + px(style.paddingTop) + px(style.paddingBottom) + px(style.borderTopWidth) + px(style.borderBottomWidth), 1);
     expect(pill.height).toBeCloseTo(24.4, 1);
-    expect(pill.width).toBeCloseTo(68.4, 1);
+    const text = document.createRange();
+    text.selectNodeContents(host);
+    expect(pill.width).toBeCloseTo(text.getBoundingClientRect().width + px(style.paddingLeft) + px(style.paddingRight) + px(style.borderLeftWidth) + px(style.borderRightWidth), 0);
   });
 
   it('keeps the header button its own size: not full width at 620 (DP-27), with a 44px minimum height', async () => {
