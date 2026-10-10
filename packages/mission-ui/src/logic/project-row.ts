@@ -31,6 +31,11 @@ export function resolveHealth(value: string, hooks: ProjectLabelHooks | null): S
   return hooks?.health?.(value) ?? lookup(HEALTH_BADGES, value) ?? { label: value, tone: UNKNOWN_HEALTH_TONE };
 }
 
+/** A key the host can be told about: a non-empty string (the same test as the retry control's). */
+export function hasUsableKey(key: unknown): key is string {
+  return typeof key === 'string' && key !== '';
+}
+
 function rowOf(entry: ProjectEntry, key: string, project: ProjectView, now: string | null, hooks: ProjectLabelHooks | null): ProjectRowView {
   const health = resolveHealth(project.health, hooks);
   const count = missionCountText(project.missionCount);
@@ -53,7 +58,8 @@ function rowOf(entry: ProjectEntry, key: string, project: ProjectView, now: stri
     activityText,
     announcementText: `${project.name}, ${health.label}, ${count}`,
     description,
-    openable: entry.openable !== false,
+    // A row without a usable key cannot name itself in `sk-open-project`, so it is not openable.
+    openable: entry.openable !== false && hasUsableKey(key),
   };
 }
 

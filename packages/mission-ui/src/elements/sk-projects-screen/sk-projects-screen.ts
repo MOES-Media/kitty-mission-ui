@@ -22,7 +22,7 @@ import {
   LIST_LOADING_TEXT,
   projectCountText,
 } from '../../defaults/index.js';
-import { buildRow, projectRetryDetail, projectsRetryDetail } from '../../logic/index.js';
+import { buildRow, hasUsableKey, projectRetryDetail, projectsRetryDetail } from '../../logic/index.js';
 import type { EntryView, ProjectRowView, RetryLoadDetail } from '../../logic/index.js';
 import type { ProjectEntry, ProjectLabelHooks } from '../../project-types.js';
 import { normaliseViewState } from '../../view-state.js';
@@ -244,8 +244,9 @@ export class SkProjectsScreen extends LitElement {
 
   /** A row was activated; only a shown, openable row opens (loading, error and unavailable entries are plain). */
   protected openProject(view: ProjectRowView): void {
-    if (!view.openable) return;
-    const detail: SkOpenProjectDetail = { key: view.key };
+    const key: unknown = view.key;
+    if (!view.openable || !hasUsableKey(key)) return;
+    const detail: SkOpenProjectDetail = { key };
     this.dispatchEvent(new CustomEvent<SkOpenProjectDetail>('sk-open-project', { detail, bubbles: true, composed: true }));
   }
 

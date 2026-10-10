@@ -188,6 +188,32 @@ describe('Edge cases of the specification', () => {
     }
   });
 
+  it('keyless row: an empty or non-string key is not openable (no selectable, no arrow, no event), and the keyed sibling is (control)', async () => {
+    const forged = { key: 7, location: '~/work/numeric', project: { ...(base().project as object), name: 'numeric' } } as unknown as ProjectEntry;
+    const screen = await mount({ entries: [entry('', { name: 'empty' }), forged, entry('keyed', {})] });
+    const seen: Array<CustomEvent<unknown>> = [];
+    screen.addEventListener('sk-open-project', (event) => seen.push(event as CustomEvent<unknown>));
+    const rows = Array.from(root(screen).querySelectorAll('sk-action-row'));
+    expect(rows).toHaveLength(3);
+    for (const row of rows.slice(0, 2)) {
+      expect(row.hasAttribute('selectable')).toBe(false);
+      expect(row.querySelector('[data-arrow]')).toBeNull();
+      row.dispatchEvent(new CustomEvent('sk-action-row-activate', { bubbles: true, composed: true }));
+    }
+    expect(seen).toHaveLength(0);
+    // The dispatch method itself refuses a row view without a usable key.
+    const open = (screen as unknown as { openProject(view: unknown): void }).openProject.bind(screen);
+    open({ kind: 'row', key: '', openable: true });
+    open({ kind: 'row', key: 7, openable: true });
+    expect(seen).toHaveLength(0);
+    // Control: the keyed sibling is selectable, shows the arrow and opens.
+    const keyed = rows[2] as HTMLElement;
+    expect(keyed.hasAttribute('selectable')).toBe(true);
+    expect(keyed.querySelector('[data-arrow]')).not.toBeNull();
+    one<HTMLButtonElement>(root(keyed), 'button').click();
+    expect(seen.map((event) => event.detail)).toStrictEqual([{ key: 'keyed' }]);
+  });
+
   it('repeated-key retry: Retry on the second of two error rows with the key twin emits exactly { target: project, key: twin }', async () => {
     const screen = await mount({ entries: [entry('twin', {}, { state: 'error', name: 'twin-first' }), entry('twin', {}, { state: 'error', name: 'twin-second' })] });
     const seen: Array<CustomEvent<unknown>> = [];
