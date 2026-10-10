@@ -23,7 +23,7 @@ import {
   projectCountText,
 } from '../../defaults/index.js';
 import { buildRow, projectRetryDetail, projectsRetryDetail } from '../../logic/index.js';
-import type { EntryView, RetryLoadDetail } from '../../logic/index.js';
+import type { EntryView, ProjectRowView, RetryLoadDetail } from '../../logic/index.js';
 import type { ProjectEntry, ProjectLabelHooks } from '../../project-types.js';
 import { normaliseViewState } from '../../view-state.js';
 import type { ViewState } from '../../view-state.js';
@@ -243,10 +243,9 @@ export class SkProjectsScreen extends LitElement {
   // ---- Dispatch methods: the only places this screen builds an event.
 
   /** A row was activated; only a shown, openable row opens (loading, error and unavailable entries are plain). */
-  protected openProject(key: string): void {
-    const view = this.views.find((candidate) => candidate.key === key);
-    if (view === undefined || view.kind !== 'row' || !view.openable) return;
-    const detail: SkOpenProjectDetail = { key };
+  protected openProject(view: ProjectRowView): void {
+    if (!view.openable) return;
+    const detail: SkOpenProjectDetail = { key: view.key };
     this.dispatchEvent(new CustomEvent<SkOpenProjectDetail>('sk-open-project', { detail, bubbles: true, composed: true }));
   }
 
@@ -277,7 +276,7 @@ export class SkProjectsScreen extends LitElement {
         })}
       </div>`;
     }
-    const ctx = { onOpen: (key: string) => this.openProject(key), onRetry: (key: string) => this.retryProject(key) };
+    const ctx = { onOpen: (view: ProjectRowView) => this.openProject(view), onRetry: (key: string) => this.retryProject(key) };
     return html`<ul data-region="list">
       ${repeat(
         this.views,

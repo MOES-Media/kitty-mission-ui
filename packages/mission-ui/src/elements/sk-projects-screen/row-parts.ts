@@ -11,7 +11,7 @@ import type { EntryStub } from '../../logic/project-entry.js';
 
 /** What a row needs from the screen: the open handler (openable rows) and the retry handler (error rows), both keyed by the entry key. */
 export interface RowContext {
-  onOpen(key: string): void;
+  onOpen(view: ProjectRowView): void;
   onRetry(key: string): void;
 }
 
@@ -153,7 +153,7 @@ function renderProject(view: ProjectRowView, ctx: RowContext): TemplateResult {
     data-row-kind="row"
     @sk-action-row-activate=${(event: Event) => {
       event.stopPropagation();
-      ctx.onOpen(view.key);
+      ctx.onOpen(view);
     }}
     >${content}</sk-action-row
   >`;

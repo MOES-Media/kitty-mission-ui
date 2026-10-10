@@ -175,6 +175,19 @@ describe('Edge cases of the specification', () => {
     covered.push('repeated-key');
   });
 
+  it('repeated-key twin: an openable row after a loading twin, or after a not-openable twin, still opens with exactly { key: dup }', async () => {
+    for (const first of [entry('dup', {}, { state: 'loading' }), entry('dup', {}, { openable: false })]) {
+      const screen = await mount({ entries: [first, entry('dup', { name: 'dup-openable' })] });
+      const seen: Array<CustomEvent<unknown>> = [];
+      screen.addEventListener('sk-open-project', (event) => seen.push(event as CustomEvent<unknown>));
+      const rows = Array.from(root(screen).querySelectorAll('sk-action-row'));
+      expect(rows).toHaveLength(2);
+      one<HTMLButtonElement>(root(rows[1] as HTMLElement), 'button').click();
+      expect(seen.map((event) => event.detail)).toStrictEqual([{ key: 'dup' }]);
+      document.body.replaceChildren();
+    }
+  });
+
   it('repeated-key retry: Retry on the second of two error rows with the key twin emits exactly { target: project, key: twin }', async () => {
     const screen = await mount({ entries: [entry('twin', {}, { state: 'error', name: 'twin-first' }), entry('twin', {}, { state: 'error', name: 'twin-second' })] });
     const seen: Array<CustomEvent<unknown>> = [];

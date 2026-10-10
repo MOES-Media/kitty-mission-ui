@@ -20,7 +20,8 @@ import type { ProjectEntry } from '../src/project-types.js';
 import { shellFrame } from '../src/story-support/shell-frame.js';
 
 interface Handlers {
-  openProject(key: string): void;
+  openProject(view: unknown): void;
+  views: Array<{ key: string }>;
   requestOpenProject(): void;
   retryProject(key: string): void;
   retryProjects(): void;
@@ -91,16 +92,17 @@ function expectEvent(event: CustomEvent | undefined, name: string, detail: unkno
 }
 
 describe('events: exactly one event with the exact payload (handlers called through a type cast, no test-only hook)', () => {
-  it('sk-open-project { key } for a shown, openable row; nothing for a plain row, a loading row or an unknown key', async () => {
+  it('sk-open-project { key } for a shown, openable row; nothing for a plain row, a loading row or a view without a usable key', async () => {
     const screen = await mount({ entries: [entry('alpha'), entry('beta', { openable: false }), { key: 'gamma', location: '~/work/gamma', state: 'loading' }] });
     const seen = collect(screen);
-    handlersOf(screen).openProject('alpha');
+    const viewOf = (key: string): unknown => handlersOf(screen).views.find((view) => view.key === key);
+    handlersOf(screen).openProject(viewOf('alpha'));
     expect(seen).toHaveLength(1);
     expectEvent(seen[0], 'sk-open-project', { key: 'alpha' });
-    // The positive control above proves the listener works; the plain, loading and unknown cases emit nothing.
+    // The positive control above proves the listener works; the plain and loading rows and a view without a usable key emit nothing.
     let ran = 0;
-    for (const key of ['beta', 'gamma', 'missing', '']) {
-      handlersOf(screen).openProject(key);
+    for (const view of [viewOf('beta'), viewOf('gamma'), { kind: 'row', key: 'missing', openable: false }, { kind: 'row', key: '', openable: true }]) {
+      handlersOf(screen).openProject(view);
       ran += 1;
     }
     expect(ran).toBe(4);
