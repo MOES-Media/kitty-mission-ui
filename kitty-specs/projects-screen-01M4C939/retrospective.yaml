@@ -1,0 +1,177 @@
+schema_version: 1
+mission_id: 01M4C9392Q27E917WWF6BC3NB9
+mission_slug: projects-screen-01M4C939
+mission_number: 3
+friendly_name: Projects screen
+mission_type: software-dev
+target_branch: feat/projects-screen-9
+created_at: '2026-10-10T06:48:17.884018+00:00'
+created_by:
+  kind: runtime
+  id: spec-kitty-generator
+  display: Spec Kitty Generator
+provenance:
+  kind: runtime_post_completion
+  invoked_at: '2026-10-10T06:48:17.884018+00:00'
+  policy_resolved_from:
+    enabled: <default>
+    timing: <default>
+    failure_policy: <default>
+    write_record: <default>
+    generate_proposals: <default>
+    apply_proposals: <default>
+    permissions.write_record: <default>
+    permissions.inspect_mission_artifacts: <default>
+    permissions.propose_glossary_changes: <default>
+    permissions.propose_drg_changes: <default>
+    permissions.propose_doctrine_changes: <default>
+    permissions.apply_low_risk_changes: <default>
+    permissions.apply_structural_changes: <default>
+    precedence: <default>
+    generator: <default>
+policy_source:
+  enabled: <default>
+  timing: <default>
+  failure_policy: <default>
+  write_record: <default>
+  generate_proposals: <default>
+  apply_proposals: <default>
+  permissions.write_record: <default>
+  permissions.inspect_mission_artifacts: <default>
+  permissions.propose_glossary_changes: <default>
+  permissions.propose_drg_changes: <default>
+  permissions.propose_doctrine_changes: <default>
+  permissions.apply_low_risk_changes: <default>
+  permissions.apply_structural_changes: <default>
+  precedence: <default>
+  generator: <default>
+findings_status: has_findings
+helped:
+- id: h-005
+  category: doc
+  summary: analysis-report.md present with no recorded findings
+  evidence_refs:
+  - e-020
+  details: An analysis-report.md artifact is present and its frontmatter records zero findings with a resolved verdict —
+    the analysis raised nothing.
+- id: h-001
+  category: implementation
+  summary: WP01 completed without rejection cycles
+  evidence_refs:
+  - e-014
+- id: h-002
+  category: implementation
+  summary: WP02 completed without rejection cycles
+  evidence_refs:
+  - e-014
+- id: h-003
+  category: implementation
+  summary: WP04 completed without rejection cycles
+  evidence_refs:
+  - e-014
+- id: h-004
+  category: implementation
+  summary: WP09 completed without rejection cycles
+  evidence_refs:
+  - e-014
+not_helpful:
+- id: n-001
+  category: review_loop
+  summary: WP03 required 2 rejection cycle(s) before approval
+  evidence_refs:
+  - e-015
+  details: WP WP03 was sent back to an earlier lane with documented review feedback 2 time(s).
+- id: n-002
+  category: review_loop
+  summary: WP05 required 2 rejection cycle(s) before approval
+  evidence_refs:
+  - e-016
+  details: WP WP05 was sent back to an earlier lane with documented review feedback 2 time(s).
+- id: n-003
+  category: review_loop
+  summary: WP06 required 2 rejection cycle(s) before approval
+  evidence_refs:
+  - e-017
+  details: WP WP06 was sent back to an earlier lane with documented review feedback 2 time(s).
+- id: n-004
+  category: review_loop
+  summary: WP07 required 1 rejection cycle(s) before approval
+  evidence_refs:
+  - e-018
+  details: WP WP07 was sent back to an earlier lane with documented review feedback 1 time(s).
+- id: n-005
+  category: review_loop
+  summary: WP08 required 1 rejection cycle(s) before approval
+  evidence_refs:
+  - e-019
+  details: WP WP08 was sent back to an earlier lane with documented review feedback 1 time(s).
+gaps: []
+proposals: []
+evidence_refs:
+- id: e-001
+  kind: file
+  path: kitty-specs/projects-screen-01M4C939/meta.json
+- id: e-002
+  kind: file
+  path: kitty-specs/projects-screen-01M4C939/spec.md
+- id: e-003
+  kind: file
+  path: kitty-specs/projects-screen-01M4C939/plan.md
+- id: e-004
+  kind: file
+  path: kitty-specs/projects-screen-01M4C939/tasks.md
+- id: e-005
+  kind: file
+  path: kitty-specs/projects-screen-01M4C939/tasks/WP01-contract-re-vendor.md
+- id: e-006
+  kind: file
+  path: kitty-specs/projects-screen-01M4C939/tasks/WP02-defaults-logic-retry-union-data-driven.md
+- id: e-007
+  kind: file
+  path: kitty-specs/projects-screen-01M4C939/tasks/WP03-shell-picker-layout.md
+- id: e-008
+  kind: file
+  path: kitty-specs/projects-screen-01M4C939/tasks/WP04-foundation-spikes.md
+- id: e-009
+  kind: file
+  path: kitty-specs/projects-screen-01M4C939/tasks/WP05-skeletons-layout-surface-freeze.md
+- id: e-010
+  kind: file
+  path: kitty-specs/projects-screen-01M4C939/tasks/WP06-screen-regions.md
+- id: e-011
+  kind: file
+  path: kitty-specs/projects-screen-01M4C939/tasks/WP07-open-project-dialog-parts.md
+- id: e-012
+  kind: file
+  path: kitty-specs/projects-screen-01M4C939/tasks/WP08-tiers-accessibility-edge-cases.md
+- id: e-013
+  kind: file
+  path: kitty-specs/projects-screen-01M4C939/tasks/WP09-integration-baselines-docs.md
+- id: e-014
+  kind: file
+  path: kitty-specs/projects-screen-01M4C939/status.events.jsonl
+- id: e-015
+  kind: event_range
+  path: kitty-specs/projects-screen-01M4C939/status.events.jsonl
+  range: 01M4DAK5KH3AT3ANV9FZYS21SM..01M4DAQ14STQ0HC4RSE1VNW9JX
+- id: e-016
+  kind: event_range
+  path: kitty-specs/projects-screen-01M4C939/status.events.jsonl
+  range: 01M4DER3SZ8E5KVEYW92P4M84X..01M4DFCDQWXSEF8V4Q53HSMZMG
+- id: e-017
+  kind: event_range
+  path: kitty-specs/projects-screen-01M4C939/status.events.jsonl
+  range: 01M4DK0EW40GK8EG2RH98T7BSG..01M4DKV2XV9HNHKQ2P9SF4K4W5
+- id: e-018
+  kind: event_range
+  path: kitty-specs/projects-screen-01M4C939/status.events.jsonl
+  range: 01M4DH1N7DVTVG2B3HG1X26ZZB
+- id: e-019
+  kind: event_range
+  path: kitty-specs/projects-screen-01M4C939/status.events.jsonl
+  range: 01M4DNNQ6GNWVEG8K5HF8W9JZR
+- id: e-020
+  kind: file
+  path: kitty-specs/projects-screen-01M4C939/analysis-report.md
+generator_version: '1.0'
+provenance_history: []

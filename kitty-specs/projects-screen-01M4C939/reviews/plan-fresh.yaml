@@ -1,0 +1,24 @@
+schema: review-findings/v1
+complete: true
+phase: plan
+lens_group: fresh
+mission: projects-screen-01M4C939
+findings:
+- id: plan-fresh-001
+  lens: Consistency
+  severity: 2
+  title: The source tree lists logic modules and tests without project-retry after round 1 added it
+  evidence:
+  - artifact: plan.md Source code tree
+  claim: Round 1 introduced logic/project-retry.ts and a wp-retry-union.test.ts extension but the tree
+    still omits them.
+  remediation: Add both to the tree.
+- id: plan-fresh-002
+  lens: Consistency
+  severity: 2
+  title: The spec's accessibility requirement covers the screen's live region only; the plan adds a dialog
+    live region with no requirement behind it
+  evidence:
+  - artifact: spec.md FR-022, NFR-012; plan.md Architecture (dialog composition)
+  claim: A plan element without a requirement is untraceable and untestable against the spec.
+  remediation: State the dialog announcement in FR-022.

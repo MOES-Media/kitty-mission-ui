@@ -1,0 +1,339 @@
+{
+  "mission_slug": "projects-screen-01M4C939",
+  "mission_number": "",
+  "mission_type": "software-dev",
+  "overall_verdict": "pass",
+  "criteria": [
+    {
+      "criterion_id": "FR-001",
+      "description": "Verify FR-001 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-projects-screen.skeleton.test.ts, packages/mission-ui/test/surface-freeze.test.ts: one element, entries/status/now/labels/errorMessage only",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-09T21:30:35.197375+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-002",
+      "description": "Verify FR-002 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/project-entry.test.ts, packages/mission-ui/test/sk-projects-screen.rows.test.ts: wrapper key/location/localOnly/openable/project|state",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-09T21:30:36.785826+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-003",
+      "description": "Verify FR-003 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/project-row.test.ts, packages/mission-ui/test/sk-projects-screen.rows.test.ts, packages/mission-ui/test/sk-projects-screen.a11y.test.ts: facts, hiding of null parts, accessible name in reading order",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-09T21:30:38.344910+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-004",
+      "description": "Verify FR-004 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/project-row.test.ts, packages/mission-ui/test/sk-projects-screen.rows.test.ts, stories Health healthy/schema drift/unknown: sk-pill-tag word and tone from defaults, unknown neutral",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-09T21:30:39.997933+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-005",
+      "description": "Verify FR-005 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/project-row.test.ts, packages/mission-ui/test/sk-projects-screen.rows.test.ts, stories Null version/Null branch: prefix word, served strings, null hides",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-09T21:30:41.562196+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-006",
+      "description": "Verify FR-006 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/project-row.test.ts, packages/mission-ui/test/projects-defaults.test.ts, story Mission counts: plural from defaults",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-09T21:30:43.144096+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-007",
+      "description": "Verify FR-007 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/project-row.test.ts, packages/mission-ui/test/time.test.ts: relative text via helper, ISO without now, no-activity text for null",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-09T21:30:44.724879+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-008",
+      "description": "Verify FR-008 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-projects-screen.rows.test.ts, story Location line: verbatim location, branch and local-only segments only when present",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-09T21:30:46.348613+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-009",
+      "description": "Verify FR-009 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-projects-screen.events.test.ts: sk-open-project on pointer/Enter/Space with {key}; plain rows for not-openable/loading/unavailable",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-09T21:30:47.901338+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-010",
+      "description": "Verify FR-010 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-projects-screen.events.test.ts, packages/mission-ui/test/sk-projects-screen.header.test.ts: sk-request-open-project from header button and empty state",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-09T21:30:49.473477+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-011",
+      "description": "Verify FR-011 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-projects-screen.states.test.ts, packages/mission-ui/test/project-retry.test.ts: loading/error/unavailable entries, retry {target:'project',key}, generic wording",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-09T21:30:51.015800+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-012",
+      "description": "Verify FR-012 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-projects-screen.states.test.ts: whole-list loading/error/empty, retry {target:'projects'}",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-09T21:30:52.647341+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-013",
+      "description": "Verify FR-013 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-projects-screen.header.test.ts: eyebrow, title, copy, button, toolbar count, hidden while loading",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-09T21:30:54.248310+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-014",
+      "description": "Verify FR-014 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-projects-screen.header.test.ts, packages/mission-ui/test/sk-projects-screen.states.test.ts: sk-notice read-only copy; no write control",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-09T21:30:55.838487+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-015",
+      "description": "Verify FR-015 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/host-composition.test.ts, packages/mission-ui/test/sk-mission-shell.test.ts: top-bar-only layout value, no sidebar or hamburger",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-09T21:30:57.411545+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-016",
+      "description": "Verify FR-016 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-open-project-dialog.skeleton.test.ts, packages/mission-ui/test/sk-open-project-dialog.states.test.ts: native modal dialog, public surface, closes on Cancel/Escape/backdrop",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-09T21:30:58.985102+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-017",
+      "description": "Verify FR-017 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-open-project-dialog.events.test.ts: sk-browse-folder {location}, sk-confirm-open-project {location}, Open disabled unless valid",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-09T21:31:00.593305+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-018",
+      "description": "Verify FR-018 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-open-project-dialog.focus.test.ts, packages/mission-ui/test/sk-open-project-dialog.keyboard.test.ts: focus in, trap, return to opener, listbox roving focus and aria-selected",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-09T21:31:05.720029+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-019",
+      "description": "Verify FR-019 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/projects-defaults.test.ts, gates lint:data-driven and test:data-driven: vocabulary from defaults/labels, no per-project literals",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-09T21:31:07.422419+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-020",
+      "description": "Verify FR-020 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-projects-screen.tier.test.ts, stories Tiers 1100/800/620, README tier notes: container thresholds from shell widths, DP-22 narrow column",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-09T21:31:09.063584+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-021",
+      "description": "Verify FR-021 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-projects-screen.a11y.test.ts, packages/mission-ui/test/sk-open-project-dialog.keyboard.test.ts: Tab/Enter/Space operability, tab-NN order tags in sk-projects-screen.tiers.stories.ts, focus capture on update",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-09T21:31:10.719225+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-022",
+      "description": "Verify FR-022 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-projects-screen.liveregion.test.ts, packages/mission-ui/test/sk-projects-screen.a11y.test.ts, packages/mission-ui/test/sk-open-project-dialog.states.test.ts: list semantics, live region follows what is shown, listbox, no colour-only status",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-09T21:31:12.334911+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-023",
+      "description": "Verify FR-023 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-projects-screen.skeleton.test.ts, packages/mission-ui/test/host-composition.test.ts: skip link text through shell skip-link slot, main landmark",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-09T21:31:13.942307+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-024",
+      "description": "Verify FR-024 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/project-row.test.ts, packages/mission-ui/test/project-entry.test.ts: pure logic helpers build row view-model without vocabulary literals",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-09T21:31:15.553511+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-025",
+      "description": "Verify FR-025 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/project-retry.test.ts, packages/mission-ui/test/wp-retry-union.test.ts, packages/mission-ui/src/logic/project-retry.ts: one union with project/projects/folders targets",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-09T21:31:17.154010+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-026",
+      "description": "Verify FR-026 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/surface-freeze.test.ts, gate manifest:check: custom-elements.json declares every property and event",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-09T21:31:18.812889+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-027",
+      "description": "Verify FR-027 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "scripts/contract/*.test.mjs, gate contract:check: contract re-vendored by WP01 with pin check",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-09T21:31:20.408431+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-028",
+      "description": "Verify FR-028 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/src/elements/sk-projects-screen/fixtures.ts, packages/mission-ui/src/elements/sk-open-project-dialog/fixtures.ts, gate hygiene: fixtures derived from Project.example/schema-drift/all-null with overlays",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-09T21:31:22.205362+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-029",
+      "description": "Verify FR-029 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "gate set (typecheck, lint, lint:styles, lint:no-io, lint:data-driven, manifest:check, hygiene, test:contract, contract:check, pnpm test, visual, gate-proof) run on the final lane-i tip in the wrap-up",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-09T21:31:25.462952+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-030",
+      "description": "Verify FR-030 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-projects-screen.events.test.ts, packages/mission-ui/test/sk-open-project-dialog.events.test.ts: every event asserted with exact payload and positive controls",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-09T21:31:27.108683+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-031",
+      "description": "Verify FR-031 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "PR-01..PR-30 as stories with visual baselines (Screens/Projects/*); PR-31 proven by the interaction test sk-projects-screen.a11y.test.ts (forced-colours emulation and light theme), operator waiver 2026-10-10",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-10T06:18:44.405204+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-032",
+      "description": "Verify FR-032 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "scripts/stylelint-exceptions.test.mjs, stylelint.config.mjs: E-31..E-34 numbered exceptions, library elements rendered, gaps recorded in tracer-design-decisions.md",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-09T21:31:30.789994+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-033",
+      "description": "Verify FR-033 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/src/index.ts, packages/mission-ui/src/defaults/index.ts: one export line each, packages/mission-ui/test/surface-freeze.test.ts",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-09T21:31:32.402392+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    }
+  ],
+  "negative_invariants": []
+}
