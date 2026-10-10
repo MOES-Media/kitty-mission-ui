@@ -116,7 +116,7 @@ routing; both elements only draw and report, and neither performs I/O. Every hea
 | Event | Detail | When |
 |---|---|---|
 | `sk-open-project` | `{ key }` | an openable row is activated (click, Enter, Space) |
-| `sk-request-open-project` | none | the header "Open project" button or the empty state's action |
+| `sk-request-open-project` | none | the header "Open project" button, which is also the empty state's action (one button, shown once) |
 | `sk-retry-load` | `{ target: 'project', key }` or `{ target: 'projects' }` | retry of a failed row or a failed list |
 
 `sk-open-project-dialog`:
