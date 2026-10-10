@@ -1,0 +1,58 @@
+schema: review-findings/v1
+complete: true
+phase: tasks
+lens_group: seq
+mission: artifact-viewer-screen-01M47VP5
+profile: planner-priti
+conduct_note: 'Run in-session by the orchestrator (the operator constraint for this phase is no sub-agents),
+  as one lens group after the other, from commit 74d3147. Profile resolved from the installed catalog
+  with `spec-kitty agent profile show` (squad-delegate mode); no profile data was edited. Mechanical checks
+  (dependency edges, requirement ids, story ids, verbatim embeds, owned-file overlap) were scripted, not
+  judged. Lenses: dependency graph against the plan, phasing, write scopes disjoint across concurrent
+  WPs and against open PRs, chokepoints.'
+findings:
+- id: TASKS-SEQ-001
+  lens: Baseline honesty (sequencing)
+  severity: 3
+  title: The green baseline is recorded only in WP01's report, so later WPs and reviewers have no durable
+    reference
+  evidence:
+  - artifact: 'tasks/WP01-contract-re-vendor-and-fixtures.md subtask 1: ''WP report only (no file)'''
+  - artifact: 'every WP prompt, ''Gates this work package must pass'': reds are to be classed against
+      the WP01 baseline; plan.md Gates: ''IC-01a records the green baseline of every gate command on main'''
+  claim: Every later WP and reviewer is told to class a red as pre-existing or introduced against a record
+    that lives only in one WP report. After WP01's context ends nothing in the tree or in the dispatch
+    names it, so a pre-existing red can be attributed to a later WP (the failure the sk overlay's baseline
+    rule exists to prevent).
+  remediation: WP01 hands the baseline table to the orchestrator in its report; the orchestrator writes
+    it into `tracer-approach.md` (orchestrator-owned) and names it in every dispatch. State this in WP01,
+    in the shared gates text of every WP and in tasks-notes.md.
+- id: TASKS-SEQ-002
+  lens: Chokepoints
+  severity: 3
+  title: tasks-notes.md does not call out the chokepoint WPs (shared gates, shared event contract, shared
+    config)
+  evidence:
+  - artifact: 'sk review-overlay Tasks seq lens: ''any WP touching ... the event contract or a shared
+      CI gate is called out'''
+  - artifact: 'WP03 (data-driven gate), WP05 (eslint rules, no-io script, plants, unit-tests timeout),
+      WP07 (Stylelint grant), WP08 (`sk-retry-load` shared event typing with #5, manifest freeze), WP13
+      (`ci.yml`, root `package.json`) own shared gates and contracts; tasks-notes.md has no such section'
+  claim: These five WPs serialise the mission whether or not the plan admits it; the notes name chains
+    X and Y but not the chokepoints, so the orchestrator is not reminded that a change request against
+    any of them blocks every later WP.
+  remediation: Add a 'Chokepoints' section to tasks-notes.md naming WP03, WP05, WP07, WP08 and WP13 with
+    the shared surface each owns and the rule that a change request to them is raised before the chains
+    start.
+- id: TASKS-SEQ-003
+  lens: Dispatch order of WP12
+  severity: 2
+  title: WP12 is dependency-unordered with WP11, so the tool will allow its dispatch before chain Y is
+    approved
+  evidence:
+  - artifact: 'wps.yaml: WP12 dependencies [WP10] (the plan''s shape); tasks-notes.md ''Dependency graph''
+      describes the merge but no dispatch gate'
+  claim: Only WP12's first subtask stops it; nothing in the orchestrator notes says 'do not run `implement
+    WP12` until WP10 and WP11 are both approved and the merge and disjointness checks are done'.
+  remediation: Add the explicit dispatch rule to tasks-notes.md (the plan's lane mechanics item 3 already
+    implies it).

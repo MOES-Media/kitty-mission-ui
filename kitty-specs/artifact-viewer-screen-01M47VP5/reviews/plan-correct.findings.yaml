@@ -1,0 +1,486 @@
+schema: review-findings/v1
+complete: true
+phase: plan
+lens_group: correct
+mission: artifact-viewer-screen-01M47VP5
+findings:
+  - id: PLAN-CORRECT-001
+    lens: correctness-and-contract-fidelity
+    severity: 4
+    title: "Renderer lint rule 2 bans .set( / .use( / .enable( / .disable( across packages/*/src and would fail existing code"
+    evidence:
+      - artifact: "contracts/gates.md § Lint rules for the renderer (rule 2: '.enable(, .set(, .disable( only in parse.ts ... Rules apply to packages/*/src/**')"
+      - artifact: "research.md D-06 (2)"
+      - code: "packages/mission-ui/src/elements/sk-shell-tree/sk-shell-tree.ts:155 and :181 (this.openState.set(...))"
+      - code: "packages/mission-ui/src/logic/summary.ts:14 (owner.set(lane, group))"
+    claim: >-
+      FORK: the rule as written is a name-based no-restricted-syntax selector on member calls named set, use, enable
+      and disable, scoped to every file under packages/*/src except parse.ts. Map.prototype.set is called in existing,
+      merged code (sk-shell-tree.ts:155 and :181, logic/summary.ts:14), so the rule turns pnpm lint red on the base
+      before this mission writes a line, and every future Map.set in buildArtifactTree or the link resolver. An
+      implementer would have to narrow the rule ad hoc, which is exactly the kind of un-reviewed weakening of a
+      security gate the plan wants to prevent. A selector cannot tell a markdown-it instance from a Map.
+    remediation: >-
+      Two valid options, pick one in the plan. (a) Scope rule 2's set/use/enable/disable selectors by file glob to
+      src/logic/markdown/** (minus parse.ts) and src/elements/sk-artifact-screen/**, and keep render/renderInline/
+      renderToken/renderAttrs/.renderer repo-wide; add a leak case that proves the narrowed glob still refuses
+      .use( in model.ts. (b) Drop set/use/enable/disable from the lint list and make the guarantee structural:
+      parse.ts exports only parseTokens(source) and never the MarkdownIt instance, which rule 1 (import allowed only in
+      parse.ts) plus an export-shape test (parse.ts has exactly one export) enforce. Either way, add an IC-04 exit
+      check that pnpm lint is green on the unchanged base files.
+
+  - id: PLAN-CORRECT-002
+    lens: correctness-and-contract-fidelity
+    severity: 4
+    title: "'noInlineConfig stays on' is false for the general ESLint config, so the new security rules can be disabled in-source"
+    evidence:
+      - artifact: "research.md D-06 ('scoped to packages/*/src/** with noInlineConfig') and contracts/gates.md ('noInlineConfig stays on')"
+      - code: "eslint.config.mjs:21 (export default tseslint.config(...) has no linterOptions.noInlineConfig anywhere in the file)"
+      - code: "eslint.no-io.config.mjs:149 and eslint.data-driven.config.mjs:97 (the only two configs that set noInlineConfig: true; eslint.no-io.config.mjs:12 and :4 explain why)"
+    claim: >-
+      The plan places the markdown-renderer rules (D-06 rules 1 to 5, the FR-005 proof that no innerHTML, unsafeHTML or
+      DOMParser path exists) in eslint.config.mjs and says noInlineConfig 'stays on'. It is not on there: it is set
+      only in the no-io and data-driven configs. A single eslint-disable-next-line comment above a violating line in
+      render.ts therefore silences all five rules; the no-io config comment records that this bypass was reproduced
+      (E-07). The ESLint plant only plants a DOMParser use without a disable comment, so it would not catch the
+      bypass. The corpus test is the backstop, but FR-005 names the lint rule as the proof.
+    remediation: >-
+      State that IC-04 adds linterOptions: { noInlineConfig: true } in an eslint.config.mjs block that covers
+      packages/*/src/** (grep shows no eslint-disable in packages today, so nothing existing breaks), and add a
+      self-test case in which an eslint-disable-next-line above a banned construct still reports (a leak case, as the
+      no-io selftest has). Correct the 'stays on' wording in research D-06 and gates.md.
+
+  - id: PLAN-CORRECT-003
+    lens: correctness-and-contract-fidelity
+    severity: 3
+    title: "refusal-code-open relaxation is specified against the wrong part of the ArtifactRefusal schema (code IS an enum)"
+    evidence:
+      - artifact: "research.md Evidence ('code is NOT an enum property of its own, which is why the unknown-code fixture needs a relaxation, D-10')"
+      - artifact: "contracts/contract-pin.md step 5 ('the ArtifactRefusal if/then branches are not applied to a fixture whose code is not one of the seven')"
+      - code: "contract (spec-kitty main 2261ad5) contracts/mission-status/schemas/ArtifactRefusal.yaml last allOf entry: properties.code $ref ArtifactRefusalCode.yaml; schemas/ArtifactRefusalCode.yaml is a 7-value enum"
+      - code: "scripts/contract/registry.mjs (RELAXATIONS: patch(schema) + allowedPath regex checked against STRICT errors) and scripts/contract/check.mjs checkFixtureDoc (relaxed branch)"
+    claim: >-
+      ArtifactRefusal.code is $ref ArtifactRefusalCode, a closed seven-value enum, in the last allOf branch. The
+      if/then branches (const code -> const status) never fire for an unknown code, because their 'if' is false. So
+      the only strict error for an unknown-code fixture is /code (enum), and the relaxation must patch that
+      property. The plan's stated rationale and mechanism ('if/then branches are not applied') are wrong; an
+      implementer following contract-pin.md would write a patch that leaves the strict validator error in place, so
+      the relaxed validator still fails and check C4 reports 'fails even the refusal-code-open schema'.
+    remediation: >-
+      Rewrite research.md Evidence and contract-pin.md step 5: the relaxation patches the code property of the
+      ArtifactRefusal schema (the last allOf entry) to { type: string, minLength: 1 }, with allowedPath /^\/code$/
+      (the only strict error an unknown code produces) and the reverted-must-fail proof of the existing relaxations'
+      shape. Name the status for the unknown-code fixture (any 4xx or 5xx integer satisfies Problem).
+
+  - id: PLAN-CORRECT-004
+    lens: correctness-and-contract-fidelity
+    severity: 3
+    title: "IC-01 verification figures are wrong against the real tree (151 files, 13 artifact examples) and would refuse a correct sha"
+    evidence:
+      - artifact: "plan.md header, Summary, Scale/Scope, IC-01; research.md Evidence ('161 files', 'fourteen examples'); contracts/contract-pin.md step 1 ('the fourteen artifact examples; a sha that lacks them is refused')"
+      - code: "contract (spec-kitty main 2261ad5, git tree, blobs only): contracts/mission-status 142 + contracts/_shared 9 = 151 files; Artifact examples = ArtifactContent x4 + ArtifactListing x2 + ArtifactRefusal x7 = 13"
+      - code: "contract schemas/ArtifactRefusalCode.yaml, ArtifactReference.yaml, ArtifactReferences.yaml (nine schemas/Artifact*.yaml, not six or seven)"
+    claim: >-
+      161 is the count of git tree entries including directories (148 + 13); the vendorable file count at 2261ad5 is
+      151. There are 13 artifact examples (the plan's own fixture list says 13), not 14. contract-pin.md step 1
+      makes 'fourteen artifact examples' an acceptance condition of the sha, so a correct main sha fails the check
+      the plan prescribes. The schema list in step 1 also omits ArtifactRefusalCode, the schema that defines the
+      seven codes, and lists no ArtifactReference(s).
+    remediation: >-
+      Replace 161 with 151 everywhere (plan.md header, Summary, Scale/Scope, IC-01 and Merge-order paragraph;
+      research.md; contract-pin.md) or better, state the figures as 'read from the pinned tree'. Change step 1 to
+      '13 artifact examples' and add schemas/ArtifactRefusalCode.yaml to the required list; verify with a blobs-only
+      count (git ls-tree -r) and not the tree-entry count.
+
+  - id: PLAN-CORRECT-005
+    lens: correctness-and-contract-fidelity
+    severity: 3
+    title: "Supply-chain record lists @types packages that markdown-it 15.0.2 does not pull and omits the second uc.micro"
+    evidence:
+      - artifact: "plan.md Technical Context ('@types/mdurl 2 and @types/linkify-it 5' as transitive) and contracts/contract-pin.md step 6 ('new entries are exactly the transitive set of plan.md')"
+      - code: "npm registry metadata: markdown-it@15.0.2 dependencies = mdurl ^2.1.0, argparse ^3.0.0, entities ^8.0.0, uc.micro ^3.0.0, linkify-it ^6.0.0, punycode.js ^2.3.1; linkify-it@6.0.0 depends on uc.micro ^2.0.0; mdurl 2.1.0 and linkify-it 6.0.0 ship their own types"
+    claim: >-
+      @types/mdurl and @types/linkify-it are not in the dependency tree of 15.0.2 (the two packages ship their own
+      declarations), while linkify-it 6.0.0 brings uc.micro ^2.0.0, so the lockfile holds two uc.micro majors (2.x
+      and 3.0.0). The IC-01 exit check 'lockfile reviewed, the new entries are exactly the transitive set of plan.md'
+      therefore cannot be satisfied as written, and the FR-043 licence list that goes into the PR description would
+      name two packages that are not installed and omit one that is.
+    remediation: >-
+      Replace the transitive list with the one read from the lockfile after pnpm install (mdurl 2.1.0, argparse 3.0.0,
+      entities 8.0.0, uc.micro 3.0.0 and uc.micro 2.x, linkify-it 6.0.0, punycode.js 2.3.1) with the licence of each,
+      drop the two @types entries, and make the IC-01 check 'lockfile additions equal the set printed by pnpm why
+      markdown-it' instead of a hard-coded list.
+
+  - id: PLAN-CORRECT-006
+    lens: correctness-and-contract-fidelity
+    severity: 3
+    title: "The shell tree renders no 'unavailable' word for a leaf, and D-16 does not say who supplies it (FR-020, AV-16)"
+    evidence:
+      - artifact: "spec.md FR-020, US3 AC2, AV-16 ('row disabled and the word present'); plan.md D-16 ('unavailable is !readable'); spec Assumptions ('the shell tree needs no change for ... an unavailable row')"
+      - code: "packages/mission-ui/src/elements/sk-shell-tree/sk-shell-tree.ts:190 (route is false when unavailable) and :189-200 (leaf draws icon, label and node.meta only; no word)"
+      - code: "packages/mission-ui/src/elements/sk-shell-tree/fixtures.ts:8 (the existing unavailable leaf carries meta: 'planned' as its visible word)"
+    claim: >-
+      For unavailable === true the shell only drops the link and the selected state; the only visible text beside the
+      label is node.meta. buildArtifactTree as designed (D-16, defaults.md) sets unavailable from !readable and a
+      folder meta count, but no step sets the leaf meta to the word 'unavailable' (UNAVAILABLE_TEXT exists in
+      artifact-copy.ts but nothing consumes it for the tree). As specified the unreadable row would be silently
+      inert with no word, failing AV-16 and NFR-011 (state never colour-only).
+    remediation: >-
+      Add to D-16 and to the IC-02 tests: for a leaf with readable false, buildArtifactTree sets unavailable: true and
+      meta: UNAVAILABLE_TEXT (through the kind/refusal-independent label hook, raw fallback), and a unit test asserts
+      it. Correct the spec assumption wording in the plan's traceability (the shell needs no change, the helper must
+      supply the word).
+
+  - id: PLAN-CORRECT-007
+    lens: correctness-and-contract-fidelity
+    severity: 3
+    title: "Contract says unknown status collapses to the default via normaliseViewState, but that helper maps unknowns to 'empty' and knows only four values"
+    evidence:
+      - artifact: "contracts/sk-artifact-screen.md § Properties ('An unknown status, contentStatus or view value collapses to the default (the shell's normaliseViewState pattern)') and § Dependencies (normaliseViewState listed as an imported #4 symbol)"
+      - artifact: "data-model.md Screen properties (status default loading; six status values)"
+      - code: "packages/mission-ui/src/view-state.ts:2-9 (VIEW_STATES has four values; normaliseViewState returns 'empty' for anything else)"
+    claim: >-
+      Imported as listed, normaliseViewState would turn the screen's two extra statuses (not-found, nothing-selected)
+      into 'empty', and would send an unknown status to 'empty', not to the declared default 'loading'. The 'pattern'
+      wording and the 'imported symbol' list contradict each other and neither matches the stated default. The
+      contentStatus and view properties have no normaliser at all in #4.
+    remediation: >-
+      State that IC-06 writes the screen's own normalisers (a closed list per property and an explicit fallback:
+      status -> loading, contentStatus -> ready, view -> rendered) in a small logic module (tested with an unknown
+      value per property), and remove normaliseViewState from the imported-symbols list. Add the unknown-value case
+      to the surface-freeze or skeleton tests.
+
+  - id: PLAN-CORRECT-008
+    lens: correctness-and-contract-fidelity
+    severity: 3
+    title: "Plan assumes a node-environment vitest project for pnpm test; the repo has only browser mode, and the bundle-budget and source-scan tests cannot run there"
+    evidence:
+      - artifact: "plan.md Technical Context ('vitest node environment for the pure logic/markdown/ model'), IC-03 exit ('pnpm test node-environment files'), IC-04 ('test/bundle-budget.test.ts'), IC-03 source-level scan test"
+      - artifact: "research.md D-05 and 'Not verified' (bundler importable from packages/mission-ui; fallback to a scripts/ node test)"
+      - code: "packages/mission-ui/vitest.config.ts:4-16 (test/**/*.test.ts, browser.enabled true, chromium only; no node project)"
+      - code: "gates/vitest.config.ts:7-9 (the node environment exists only for gates/*.selftest.ts)"
+      - code: "package.json scripts: test = pnpm --filter @spec-kitty/mission-ui test; test:scripts does not include the package tests"
+    claim: >-
+      Every file under packages/mission-ui/test runs in Chromium. A test that builds a bundle (esbuild or vite API),
+      reads files with node:fs (the 'markdown-it is imported by parse.ts alone / no .render( call' text scan) or
+      times S-A0-style parses in node cannot run there, and IC-03/IC-04 give no file or script change that adds a
+      node project (vitest.config.ts is not in any WP's write scope in the Shared files table). The existing
+      defaults.test.ts shows the available workaround (?raw imports), which the plan does not use.
+    remediation: >-
+      Decide and write down one mechanism. (1) Keep everything in browser mode: the source scan uses
+      import.meta.glob('../src/**/*.ts', { query: '?raw' }); the bundle-budget check moves to a node script under
+      scripts/ with a node:test file wired into an existing CI gate (name the gate) and the plan stops calling it a
+      unit-tests test. Or (2) add a second vitest project (environment node) and assign vitest.config.ts and the
+      test script to IC-01 in the Shared files table. Update IC-03 and IC-04 exit checks accordingly.
+
+  - id: PLAN-CORRECT-009
+    lens: correctness-and-contract-fidelity
+    severity: 3
+    title: "Proposed exceptions E-22 to E-24 cannot express the renderer's CSS: ch unit unsupported, text-align, code white-space and list properties missing"
+    evidence:
+      - artifact: "contracts/gates.md E-22 ('max-width: 68ch'), E-23, E-24; contracts/markdown-renderer.md (data-align keyword attribute, pre/code blocks, ul/ol/li, hr)"
+      - code: "stylelint.config.mjs:414 ('unit-allowed-list': ['%', 'fr']) and :355-361 (exceptions can unlock only px and em through pxProperties and emProperties)"
+      - code: "stylelint.config.mjs:60-148 (property-allowed-list is LAYOUT_PROPERTIES only; text-align, white-space, list-style, vertical-align, font-style, text-decoration, cursor are not in it)"
+    claim: >-
+      FORK: (1) E-22 pins 'max-width: 68ch', but the exception machinery has no way to allow the ch unit (only px and
+      em exist as unit grants), so E-22 as approved at CP-1 cannot be encoded without a tooling change the plan does
+      not mention. (2) The renderer emits data-align (left, center, right) on table cells, which needs text-align,
+      absent from E-23's allowed properties and from LAYOUT_PROPERTIES. (3) Rendered fenced and indented code (pre
+      code in prose-styles.ts) needs white-space and overflow handling, but E-24 grants white-space only to
+      source-parts.ts. (4) lists and block quotes need list-style, padding-inline-start, font-style, which are not
+      listed. An exception discovered after CP-1 is a new operator decision mid-implementation.
+    remediation: >-
+      Complete the E-22 to E-24 tables before CP-1 from the markdown-renderer.md element list (add text-align with
+      keyword values left, center, right; white-space and overflow-wrap keywords for code in prose-styles.ts; the list
+      and quote properties actually needed; vertical-align if kept). For 68ch choose one: (a) add a chProperties grant
+      to exceptionOverrides() (IC-06 tooling edit with proof cases, named in the plan) or (b) express the paragraph
+      measure without the ch unit (for example a token-based max-width, S-A1 decides) and drop 68ch from E-22.
+
+  - id: PLAN-CORRECT-010
+    lens: correctness-and-contract-fidelity
+    severity: 3
+    title: "G-16/E-25 say the library has no segmented-choice; #4 already adopts the library's segmented-choice stylesheet, and E-25 hand-writes the look"
+    evidence:
+      - artifact: "research.md G-16 and D-13 (b); contracts/gates.md E-25 ('native button role=tab with a segmented look ... token border, border-radius per corner (E-14 pattern), background, color, padding ...')"
+      - code: "packages/mission-ui/src/library-sheets.ts:4 and :13 (segmentedChoiceSheet adopted from @spec-kitty/styles/segmented-choice)"
+      - code: "packages/mission-ui/src/elements/sk-filter-toggle-group/sk-filter-toggle-group.ts:1-3 and eslint.config.mjs (E-01: raw button allowed only with class sk-segmented-choice__item via classOnly(['sk-segmented-choice']))"
+      - artifact: "charter.md 'Elements over CSS' (re-implementing a primitive the library provides with hand-written CSS is a review failure)"
+    claim: >-
+      The library provides the segmented-choice family (as a styles-only sheet, exactly how #4 uses it for its
+      toggle group), and the prototype's Rendered/Raw control is a segmented control. The plan's E-25 proposes the
+      same raw button but with newly hand-written token CSS for border, radius per corner, background and padding,
+      i.e. a second local re-implementation of a family that is already adopted, and claims in G-16 that no
+      segmented-choice exists. That is the failure mode the charter names, and it enlarges the exception set the
+      operator must approve at CP-1.
+    remediation: >-
+      Rework D-13 and E-25: variant (b) adopts segmentedChoiceSheet in tab-parts.ts with a classOnly(['sk-segmented-choice'])
+      override and a raw-button allowance limited to type="button" role="tab" class="sk-segmented-choice__item", so
+      E-25 shrinks to the ESLint allowance (no Stylelint paint exception), shares #4's E-01 sunset (design-library
+      #501), and G-16 is reworded to 'no tabs element with tablist semantics'. Have S-A5 compare (a) sk-button
+      role=tab and (b') the adopted sheet.
+
+  - id: PLAN-CORRECT-011
+    lens: internal-consistency-and-feasibility
+    severity: 3
+    title: "Build base misstates #5: planning branch has no code, but 9 of 10 work packages are approved on lane branches and WP10 is in progress"
+    evidence:
+      - artifact: "plan.md header ('planned and tasked, NOT implemented'), § Build base ('its branch holds planning artifacts only ... no implementation code exists on it'), spec.md Input line"
+      - code: "<spec-kitty-mission-ui clone>: git show feat/work-package-screen-5:kitty-specs/work-package-screen-01M44DSJ/status.json (WP01 to WP09 approved, WP10 in_progress; commit cd29bc5 at 2026-10-06 08:09 +0200, about one minute before this plan's commit c3e14e5)"
+      - code: "<spec-kitty-mission-ui clone>: branch kitty/mission-work-package-screen-01M44DSJ-lane-j holds elements/sk-work-package-screen/*, defaults/review.ts (REVIEW_CYCLE_ARTIFACT_KIND), logic/wp-retry.ts (RetryLoadDetail), library-sheets.ts with factsSheet"
+    claim: >-
+      The sentence is true only of the target branch feat/work-package-screen-5 itself: the implementation lives in
+      the mission and lane branches (kitty/mission-work-package-screen-01M44DSJ and its lane-a to lane-j) and is
+      nearly finished (9 of 10 approved). The plan therefore tells the operator that Base B is distant and that every
+      dependency in the 'what this mission needs from #5' table is hypothetical, when each row can already be
+      verified against real code. The table also uses names that differ from the code: #5's type is
+      RetryLoadDetail in logic/wp-retry.ts, aliased as SkRetryLoadDetail at sk-work-package-screen.ts:91 of lane-j,
+      and nothing named SkWorkPackageRetryDetail exists.
+    remediation: >-
+      Restate the status as of the verification date (planning branch: artifacts only; implementation: lane branches,
+      WP01 to WP09 approved, WP10 in progress, nothing merged to the target branch yet) with the commit read, and
+      keep 'the orchestrator re-verifies at dispatch'. Replace hypothetical rows with the verified symbols
+      (RetryLoadDetail / SkRetryLoadDetail, REVIEW_CYCLE_ARTIFACT_KIND typed as ArtifactKind in defaults/review.ts,
+      factsSheet, the sk-open-artifact payload) and rename SkWorkPackageRetryDetail to the alias that exists.
+
+  - id: PLAN-CORRECT-012
+    lens: internal-consistency-and-feasibility
+    severity: 3
+    title: "Shared-file and merge-order lists omit files #5 already changed (data-driven config and self-test, library-sheets facts, contract tooling, defaults/logic indexes)"
+    evidence:
+      - artifact: "plan.md § Build base 'Merge-order consequence' (lists index.ts, custom-elements.json, package.json, both lint configs, both CHANGELOGs, library-sheets.ts) and § Shared files (library-sheets.ts 'IC-06 only (the facts sheet ...)'; data-driven files 'IC-02')"
+      - code: "<clone> lane-j eslint.data-driven.config.mjs: 38 selector entries including S13.x and S14.x (verdict, change-state and staleness words; bare words matched only in comparisons), versus this checkout eslint.data-driven.config.mjs:57-90 (31 entries) and gates/data-driven.selftest.ts:60-69 (hard-coded 31)"
+      - code: "<clone> lane-j library-sheets.ts:6 and :22 (factsCss, factsSheet); this checkout packages/mission-ui/src/library-sheets.ts has no facts sheet"
+      - code: "this checkout scripts/contract/registry.test.mjs:11-25, overlays.test.mjs:33, check.test.mjs:79 and :386 (hard-coded counts #5 also edits)"
+    claim: >-
+      With #5 present (base A or B), IC-02's edit of the data-driven config collides with #5's S13/S14 (EXPECTED_WORDS,
+      selector-count and distinct-id guards, new self-test fixtures), and the plan's own design (bare words matched
+      only in comparisons) is #5's S14 pattern, which it does not cite or reuse. IC-06 'adds the facts sheet' to
+      library-sheets.ts although #5 already exports factsSheet (a duplicate export, or a silent second import of the
+      same CSS). The facts family is listed among the 'adopted' families in plan Technical Context, but this checkout
+      (the #4 merge) has no facts sheet. The merge-order paragraph and the dependency table name none of these.
+    remediation: >-
+      Add to the Build-base table: factsSheet (library-sheets.ts), the data-driven config as extended by #5 (S13/S14,
+      38 entries, NB bare-word comparison selectors) with the instruction to extend that shape and to update the
+      counts relative to the base, the shared contract test literals, defaults/index.ts, logic/types.ts and
+      contract/types.ts. Make IC-06's library-sheets step conditional ('import factsSheet if present, else add it')
+      and say in plan Technical Context that the facts sheet comes from #5.
+
+  - id: PLAN-CORRECT-013
+    lens: internal-consistency-and-feasibility
+    severity: 3
+    title: "Write-scope disjointness broken: the truncation note lives in document-parts.ts (IC-07, chain X) but is assigned to IC-09 (chain Y)"
+    evidence:
+      - artifact: "plan.md IC-09 ('the truncation note (DA-10) in the document pane header band. FR-021') versus IC-07 ('toolbar-parts, tab-parts, document-parts, source-parts, prose-styles') and § Shared files ('every *-parts.ts: the owning WP replaces stub bodies')"
+      - artifact: "contracts/sk-artifact-screen.md § Part signatures (renderDocument(...) 'rendered body, the redaction line, the truncation note') and § Regions (document-pane: truncation note)"
+    claim: >-
+      FORK: renderDocument in document-parts.ts owns the truncation note, and that file is IC-07's. IC-09 is declared
+      parallel to chain X with disjoint writes and its affected surface is inspector-parts.ts only, yet it must make
+      AV-17 pass, whose note renders in the document pane. Either IC-09 edits document-parts.ts (breaking
+      disjointness and risking the merge the orchestrator performs before IC-10) or AV-17 cannot pass in chain Y.
+    remediation: >-
+      Two valid options. (a) Move the truncation note into IC-07's scope (it already owns renderDocument and the
+      redaction line), leaving IC-09 only the AV-17 story and its test, which reads the note through the screen. (b)
+      Create a separate stub part (for example listing-note-parts.ts, signature in 'Part signatures') in IC-06 and
+      assign it to IC-09. Update IC-07/IC-09 text, FR mapping and the Shared files table to match.
+
+  - id: PLAN-CORRECT-014
+    lens: internal-consistency-and-feasibility
+    severity: 3
+    title: "Stories owned by chain X have pass conditions that need chain Y's inspector (AV-01, AV-08), so IC-07 cannot be reviewed against them"
+    evidence:
+      - artifact: "spec.md AV-01 ('inspector facts filled') and AV-08 ('one quiet line above the document and one in the inspector')"
+      - artifact: "plan.md IC-07 (stories AV-01 to AV-08; 'uncommitted side-by-side screenshot per story against the prototype'), IC-09 (inspector-parts.ts), chain diagram (IC-07 and IC-09 both depend only on IC-06)"
+    claim: >-
+      IC-07 owns AV-01 and AV-08 and its exit evidence is a prototype-versus-story comparison, but the inspector half of
+      those rows is written by IC-09 in a parallel lane that IC-07 never sees (inspector-parts.ts stays a stub in
+      IC-07's tree). The IC-07 reviewer must either reject on visible drift (empty inspector) or accept a partial
+      story, and the redaction-in-inspector clause of AV-08 has no owner in chain X.
+    remediation: >-
+      State in IC-07 which clauses of AV-01 and AV-08 are checked at IC-07 (document pane, redaction line above the
+      document) and which are deferred to the orchestrator-merged IC-10 review (inspector facts, inspector
+      redaction line), and record that the side-by-side review for those two stories is repeated at IC-10 with the
+      merged chains. Alternatively order IC-09 before IC-07 for the inspector skeleton.
+
+  - id: PLAN-CORRECT-015
+    lens: internal-consistency-and-feasibility
+    severity: 3
+    title: "Pairing rule (entry must exist in the listing) is violated by three of the four content examples against listingPopulated; unknown-kind 'listing and content' cannot be one fixture"
+    evidence:
+      - artifact: "contracts/contract-pin.md § Pairing ('where both a listing and a content are given, content.path must equal selectedPath, and the entry for that path must exist in the listing') and fixture inventory (listingUnknownKind 'one entry and its content')"
+      - code: "contract (spec-kitty main 2261ad5) examples: ArtifactContent.redacted path notes/handoff.md, ArtifactContent.json path contracts/schema.json, ArtifactContent.empty path notes/empty.txt; ArtifactListing.populated has none of those paths (it has contracts/api.yaml, notes/big-export.json, notes/with space.md)"
+      - code: "scripts/contract/registry.mjs:9-26 (one fixture = one document validated against one schema)"
+    claim: >-
+      AV-06, AV-07 and AV-08 use contentJson, contentEmpty and contentRedacted. With listingPopulated their paths are
+      not entries, so the plan's own constraint forces either the 'selected path not in the listing' edge case (wrong
+      for those rows: size and modified facts fall back, AV-24/R-12) or a paired listing the inventory does not
+      contain. Separately, the registry holds one document per fixture, so 'listingUnknownKind: one entry and its
+      content' is two fixtures (a listing and a content), only one of which is named.
+    remediation: >-
+      Add to the inventory a listing overlay that includes the three open paths (for example listingWithOpenFiles,
+      valid against ArtifactListing, sorted in byte order) and use it for AV-06 to AV-08; split the unknown-kind
+      overlay into listingUnknownKind and contentUnknownKind (both under artifact-kind-open); recount the fixtures
+      and update registry.test.mjs and overlays.test.mjs literals in IC-01 accordingly.
+
+  - id: PLAN-CORRECT-016
+    lens: internal-consistency-and-feasibility
+    severity: 3
+    title: "Fixture inventory lists bulk-generated documents as generated export names while saying they are never stored"
+    evidence:
+      - artifact: "contracts/contract-pin.md § Fixture inventory ('names are the generated export names': listingThousand, contentLarge, contentLongLine, contentFallback) and the sentence 'Generated documents ... are produced at import time by bulk.ts functions, never stored (size, FR-044)'"
+      - code: "scripts/contract/generate.mjs:41-57 (every registry entry is written as a literal into fixtures.generated.ts by JSON.stringify)"
+      - code: "scripts/contract/check.mjs:296-309 and packages/mission-ui/src/contract/bulk.ts:1-3 (bulk pages are validated in checkBulk and are NOT registry fixtures; the registered pageLong holds 40 items and is stored)"
+    claim: >-
+      A name in the registry is stored: a 1000-entry listing and a 256 KiB document would add hundreds of KiB to
+      fixtures.generated.ts and be byte-compared by C3. The plan wants the opposite, but its mechanism (registered
+      fixtures) cannot do it, and it names no change to checkBulk, which is the only place generated documents are
+      validated against the contract today. As written, the large documents are either stored (contradicting FR-044
+      and the plan) or never validated by the contract gate.
+    remediation: >-
+      Split the inventory: (1) registered, stored fixtures; (2) bulk generators in bulk.ts (makeArtifactListing(n),
+      makeLargeMarkdown(bytes), makeLongLine(bytes), makeOverBudgetMarkdown()) validated in checkBulk (state the
+      schema each is validated against and extend checkBulk in IC-01), imported by element fixtures.ts builders.
+      Keep the 40-entry style stored fixtures only for small cases.
+
+  - id: PLAN-CORRECT-017
+    lens: spec-fidelity
+    severity: 3
+    title: "resolveArtifactView has no rule for a ready listing with a selected path, contentStatus 'ready' (the default) and no content"
+    evidence:
+      - artifact: "spec.md Edge Cases ('Listing present but content and contentStatus absent: nothing-selected if selectedPath is empty, else the content-loading state')"
+      - artifact: "data-model.md Screen properties (contentStatus default 'ready', content default null) and § ArtifactView rules; contracts/sk-artifact-screen.md § Rendering (contentStatus 'ready': toolbar, tabs and the body per resolveArtifactView)"
+    claim: >-
+      The default contentStatus is 'ready' and the default content is null, so the exact situation the spec calls
+      out (host sets a listing and a selectedPath and has not yet passed content) arrives as ready-with-null-content.
+      The resolver rules list panes (nothing-selected, loading, refusal, error, empty-file, document) but never say
+      that ready with content null maps to loading, nor what 'refused' with refusalCode null or 'error' with an empty
+      errorMessage shows. IC-02's unit tests would have to invent these cases.
+    remediation: >-
+      Add to the data-model.md ArtifactView rules a total table over (status, contentStatus, selectedPath empty,
+      content null, refusalCode null): ready with content null maps to pane 'loading' (spec edge case), refused with a
+      null code to the generic refusal sentence (resolveArtifactRefusal(null) is defined), error with empty
+      errorMessage to CONTENT_ERROR_DEFAULT; require one IC-02 test per row.
+
+  - id: PLAN-CORRECT-018
+    lens: spec-fidelity
+    severity: 2
+    title: "FR-032 and most constraints are missing from the Traceability table"
+    evidence:
+      - artifact: "plan.md § Traceability (rows for FR-001..FR-044 skip FR-032; C-001 to C-005, C-009 to C-011 and SC-001, SC-002, SC-005 to SC-008, SC-010 are absent)"
+      - artifact: "spec.md FR-032 (events declared once, typed, dispatched from the screen file) and EV-1 to EV-10"
+    claim: >-
+      FR-032 (the event surface) is named only inside IC-06's 'Relevant requirements'; the Traceability table, which
+      the plan presents as the FR coverage map, has no row for it. Eight constraints and seven success criteria have no
+      mapping either, although IC-11's exit text relies on SC-001 (row-to-story) and SC-002 (every event asserted).
+    remediation: >-
+      Add rows: FR-032, SC-002 -> IC-06 (dispatch methods, skeleton tests) and IC-07 to IC-10 (EV tests) with proof
+      'event tests, manifest @fires'; C-001 to C-005, C-009 to C-011 -> the gate rows already named (no-io, elements
+      over CSS, terminology); SC-001, SC-005 to SC-008, SC-010 -> IC-11 and the per-WP tests.
+
+  - id: PLAN-CORRECT-019
+    lens: spec-fidelity
+    severity: 2
+    title: "DA-3 / FR-018 'kind icon' is reduced to one icon, and the plan keeps this outside the amendment list"
+    evidence:
+      - artifact: "spec.md FR-018 ('kind icon and word from defaults/'), US3 AC1, DA-3 ('An icon per kind ... confirm'); plan.md § Spec amendments ('Also noted for CP-1, not amendments: DA-3 per-kind icons collapse to one document icon')"
+      - code: "packages/mission-ui/src/shell-types.ts:15-27 (ShellIcon already has file, folder, artifacts, work-packages, pipeline, drift, ops, projects, missions)"
+    claim: >-
+      FORK: the plan makes every kind icon 'file' (defaults.md) and says the closed icon set has no magnifier or
+      table glyph, but a spec requirement (FR-018 and an AV-15 pass condition) says each file carries a kind icon and
+      the register says kind-driven. Collapsing them is a change of requirement text, which the plan elsewhere
+      routes through numbered amendments, yet it is only 'noted'. The closed set also has other glyphs usable for a
+      few kinds (for example work-packages for a prompt).
+    remediation: >-
+      Two valid options. (a) Promote it to amendment A-5 (FR-018, US3 AC1, DA-3, AV-15 wording: one document icon for
+      every kind until the design library adds glyphs, G-17) so the operator rules on it at CP-1. (b) Map the kinds that
+      have a fitting glyph in ShellIcon (for example work_package_prompt -> work-packages) in ARTIFACT_KIND_WORDS and
+      keep 'file' for the rest; then correct the 'no glyph' claim.
+
+  - id: PLAN-CORRECT-020
+    lens: spec-fidelity
+    severity: 2
+    title: "Layout table conflates the prototype's 620 px breakpoint with the shell's mobile tier (the shell is mobile below 720 px)"
+    evidence:
+      - artifact: "plan.md § Architecture layout table, third row ('below the shell's mobile tier width (about 620 px viewport; the cell width is measured by S-A6)') and contracts/sk-artifact-screen.md § Layout"
+      - code: "packages/mission-ui/src/elements/sk-mission-shell/sk-mission-shell.ts:33-34 (EXPANDED_QUERY min-width 1100px, COLLAPSED_QUERY min-width 720px) and :352-354 (mobile tier padding)"
+      - code: "packages/mission-ui/src/elements/sk-mission-shell/sk-mission-shell.ts:150-168 (mobile tier: single column, no rail, so the content cell equals the viewport)"
+    claim: >-
+      The shell's mobile tier starts below 720 px, not 620 px; 620 px is the prototype's own toolbar and table
+      breakpoint, which lies inside the mobile tier. In the mobile tier the cell width equals the viewport, while at
+      720 to 732 px (collapsed tier, viewport minus 112) the cell is 608 to 620 px, so cell width is not monotonic in
+      viewport width across the 720 px edge. A container threshold 'max-width: 620px' therefore stacks the toolbar at
+      720 to 732 px where the prototype does not. The text also gives no number for this row, although FR-036 asks for
+      thresholds 'derived at plan'.
+    remediation: >-
+      Correct the row to 'viewport 620 px (mobile tier, cell = viewport)', record in S-A6's brief that cell widths must
+      be measured per tier (mobile, collapsed, expanded) and that the toolbar-stack threshold has to be chosen with the
+      720 px edge in mind (or derived from tier-independent content measure), and state the provisional figure like the
+      other two rows.
+
+  - id: PLAN-CORRECT-021
+    lens: internal-consistency-and-feasibility
+    severity: 2
+    title: "Ownership of the status renderers and the tab state is ambiguous between IC-06 and IC-07/IC-08"
+    evidence:
+      - artifact: "contracts/sk-artifact-screen.md § Part signatures (state-parts.ts: 'renderStatus, renderEmptyForm (complete in IC-06; ...)') versus plan.md IC-08 (state-parts.ts owned by IC-08) and IC-09 (AV-18, empty listing)"
+      - artifact: "contracts/sk-artifact-screen.md § Behaviour rules 1 and 8 (tab resets to view on a path change; focus moves to the pane) versus plan.md § Shared files (sk-artifact-screen.ts: 'IC-06 only ... Region WPs fill part bodies only') and IC-06 purpose"
+    claim: >-
+      The parenthesis 'complete in IC-06' can be read as covering renderStatus (every status) or only
+      renderEmptyForm; if the former, IC-08's AV-20 to AV-23 duplicate IC-06; if the latter, IC-09's AV-18 story
+      depends on IC-08's chain-X work or on an unstated IC-06 deliverable. The selected-tab state and its reset rule
+      live only in the screen file (IC-06 only), but IC-06's purpose paragraph lists the focus rule and the parse
+      cache and not the tab state, while IC-07 owns the tests for it and cannot change the file.
+    remediation: >-
+      Say precisely: IC-06 delivers renderEmptyForm and the status switches, IC-08 delivers the bodies of
+      renderStatus for loading, error, not-found, nothing-selected; AV-18 uses the IC-06 empty form. Add the
+      selected-tab state, its seed from view, the path-change reset and the onSelect handler to IC-06's list, with the
+      skeleton test, and name IC-07's tablist keyboard tests as consumers.
+
+  - id: PLAN-CORRECT-022
+    lens: internal-consistency-and-feasibility
+    severity: 2
+    title: "LabelHooks extension is described three different ways (two hooks, four hooks, a separate type)"
+    evidence:
+      - artifact: "plan.md IC-02 ('LabelHooks gains the optional kind and refusal hooks')"
+      - artifact: "contracts/defaults.md last paragraph ('LabelHooks gains optional kind, refusal, mediaType, size')"
+      - artifact: "data-model.md Screen properties (labels: ArtifactLabelHooks 'LabelHooks plus optional kind(kind), refusal(code), mediaType(type), size(bytes)')"
+      - code: "packages/mission-ui/src/logic/types.ts:24-30 (LabelHooks: phase, lane, state, time)"
+    claim: >-
+      Two hooks, four hooks, or a new ArtifactLabelHooks type: the three documents disagree, and each choice changes a
+      different file (logic/types.ts edited vs a new type in contract/types.ts or logic). IC-02 writes the code and its
+      tests, so the reviewer cannot tell which is right.
+    remediation: >-
+      Pick one: extend LabelHooks additively with the four optional hooks and define ArtifactLabelHooks as an alias
+      (or drop it), and make IC-02, defaults.md and data-model.md say the same; list logic/types.ts in IC-02's affected
+      files.
+
+  - id: PLAN-CORRECT-023
+    lens: internal-consistency-and-feasibility
+    severity: 2
+    title: "D-11 reads the seven refusal codes from example files although the contract has an authoritative enum schema"
+    evidence:
+      - artifact: "research.md D-11 and contracts/gates.md ('the seven codes from the code: fields of examples/ArtifactRefusal.*.yaml; a guard asserts exactly 7 files and 7 codes')"
+      - code: "contract (spec-kitty main 2261ad5) schemas/ArtifactRefusalCode.yaml (enum of the seven codes); examples/ArtifactRefusal.*.yaml are examples, one per code today"
+      - code: "eslint.data-driven.config.mjs:24-28 (existing words are read from schemas: MissionPhase.yaml, StatusLane.yaml)"
+    claim: >-
+      The existing gate reads vocabulary from schema enums. Reading refusal codes from the example files ties the gate
+      to the number and naming of examples (an eighth code with no example, or a renamed example, widens or narrows the
+      gate silently, and the 'exactly 7 files' guard would then fail for the wrong reason). The enum exists.
+    remediation: >-
+      Read the codes from schemas/ArtifactRefusalCode.yaml (enum) and ArtifactKind from schemas/ArtifactKind.yaml, with
+      count guards 7 and 12; keep the examples out of the gate. Update the IC-02 text, D-11 and gates.md.
+
+  - id: PLAN-CORRECT-024
+    lens: internal-consistency-and-feasibility
+    severity: 1
+    title: "Stated counts do not match the file lists (six default modules, five logic/markdown files, two renderer files)"
+    evidence:
+      - artifact: "plan.md Scale/Scope ('6 new default modules', 'about 12 logic functions plus 5 files under logic/markdown/', '8 private part files plus 2 renderer files') and IC-02 ('the six default modules')"
+      - artifact: "contracts/defaults.md (five modules: artifact-kinds, artifact-media, artifact-refusals, artifact-copy, markdown) and plan.md Project Structure (defaults/ lists those five plus index.ts; logic/markdown/ lists parse, model, links, budget, render, index = six)"
+    claim: >-
+      The sixth default module is the re-export index (not a module of content), the logic/markdown directory has six
+      files in the structure and in contracts/markdown-renderer.md, and 'two renderer files' does not match any list
+      (render.ts and prose-styles.ts are the only candidates and prose-styles.ts is already counted among the eight
+      parts). IC-02's 'six default modules' invites an implementer to look for a sixth content module.
+    remediation: >-
+      State 5 default modules plus the index, 6 files under logic/markdown/, and drop or define 'renderer files';
+      make IC-02 say 'the five default modules of defaults.md'.

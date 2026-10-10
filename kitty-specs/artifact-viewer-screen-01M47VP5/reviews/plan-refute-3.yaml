@@ -1,0 +1,29 @@
+schema: review-refute/v1
+complete: true
+phase: plan
+batch: 3
+verdicts:
+  - id: PLAN-CORRECT-017
+    verdict: confirmed
+    reason: data-model.md ArtifactView rules and defaults.md resolveArtifactView list no rule mapping contentStatus 'ready' (the default) with null content and a selected path to the loading pane, although the spec edge case requires it.
+  - id: PLAN-CORRECT-018
+    verdict: confirmed
+    reason: The plan.md Traceability table has no FR-032 row (nor most C-/SC- rows), FR-032 appearing only in IC-06's relevant-requirements line.
+  - id: PLAN-CORRECT-019
+    verdict: refuted
+    reason: Every kind still carries a kind icon field (value 'file'), and plan.md lists the single-icon collapse among the DA-3 items the operator confirms at CP-1, so the requirement change is surfaced rather than hidden; the FORK is a routing preference, not a defect.
+  - id: PLAN-CORRECT-020
+    verdict: confirmed
+    reason: The shell's mobile tier is below 720 px (COLLAPSED_QUERY min-width 720px) while plan.md layout row 3 ties the mobile tier to about 620 px and gives no tier-aware derivation, so the cell width is non-monotonic across 720 px (608 to 620 px just above, viewport width just below).
+  - id: PLAN-CORRECT-021
+    verdict: confirmed
+    reason: contracts/sk-artifact-screen.md says state-parts 'complete in IC-06' beside both renderStatus and renderEmptyForm while IC-08 owns the status stories, and the tab state and reset rule are not named in IC-06's purpose paragraph.
+  - id: PLAN-CORRECT-022
+    verdict: confirmed
+    reason: plan.md IC-02 says LabelHooks gains two hooks, defaults.md says four hooks on LabelHooks, and data-model.md uses a separate ArtifactLabelHooks type, so the three documents disagree.
+  - id: PLAN-CORRECT-023
+    verdict: confirmed
+    reason: The contract has schemas/ArtifactRefusalCode.yaml with the seven-value enum, yet research.md D-11 and gates.md read the codes from examples/ArtifactRefusal.*.yaml, which couples the gate to example files unlike the existing schema-enum reads.
+  - id: PLAN-CORRECT-024
+    verdict: confirmed
+    reason: plan.md Scale/Scope and IC-02 say six default modules, but defaults.md defines five content modules (plus the index), so the stated count is off (nit).

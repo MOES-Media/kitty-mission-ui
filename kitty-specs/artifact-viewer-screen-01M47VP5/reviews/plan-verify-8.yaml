@@ -1,0 +1,17 @@
+schema: review-verify/v1
+complete: true
+phase: plan
+results:
+  - id: PLAN-FRESH4-002
+    status: resolved
+    reason: "Rule 8 in contracts/sk-artifact-screen.md now specifies a screen-side willUpdate boolean plus updateComplete and one animation frame with a body-or-null guard, the public surface stays at 13 properties and 5 events, and IC-08 (Retry and link swap) and IC-09 (tree-driven swap in the shell host composition) both have writable tests with positive controls (focus elsewhere kept, body focus not moved); the slot sidebar-section fact matches the app-shell contract."
+  - id: PLAN-FRESH4-003
+    status: resolved
+    reason: "A word-boundary grep for axe over every non-review file finds only the 'no axe' statements (plan.md lines 13, 291 and 294, research.md S-A3 to S-A5, sk-artifact-screen.md lines 51 and 107, spec.md and tracer-design-decisions.md rulings), the replacement role, name, landmark and idref assertions plus ariaSnapshot are in IC-10 and the spikes (which Playwright drives), and no new devDependency is claimed while @playwright/test is already in the root package.json."
+  - id: PLAN-FRESH4-007
+    status: resolved
+    reason: "Every vocabulary composition text (plan.md line 223, research.md D-17, data-model.md line 34, defaults.md line 18 and line 51, sk-artifact-screen.md lines 7 and 99) says five groups with copy not a member and a type-level case for it, no 'six groups', 'copy group' or 'vocabulary.copy' remains outside reviews, and the 13-property count is unchanged."
+  - id: PLAN-FRESH4-008
+    status: unresolved
+    remaining_severity: 1
+    reason: "The content table, the refused row, the data-model row 5, IC-08 (table test and plan exit check) and the listing Retry target 'listing' are all consistent, but spec.md edge-case line 216 still reads 'a code other than artifact_unreadable and artifact_listing_unreadable is final (no retry)', which wrongly implies artifact_listing_unreadable may retry in the content block and is left unreconciled with FR-015 and the new ruling."

@@ -1,0 +1,31 @@
+schema: review-verify/v1
+complete: true
+phase: plan
+results:
+  - id: PLAN-FRESH3-001
+    status: resolved
+    reason: "plan.md, research.md D-02 and the contract all reuse the package OverflowRegion with ONE named additive edit (several targets, both axes, horizontal single-target default) and a content-only-growth test with a content-that-fits control; the plan's description of overflow-region.ts (single target, optional also and edges, horizontal only, measure in hostUpdated and on ResizeObserver and after fonts.ready plus a frame, used by the board and the Pipeline screen, commit d336fde) matches the source."
+  - id: PLAN-FRESH3-004
+    status: resolved
+    reason: "The vocabulary claim is narrowed to the functions that read a member in defaults.md, data-model.md, research.md and plan.md IC-02; formatArtifactSize, resolveArtifactRefusal and countBidiControls take no vocabulary, a foreign refusal code goes through labels.refusal (eyebrow only, generic sentence, no retry), per-group completion is stated identically in four files with {} equal to null, and the only surviving 'eighth code' text is research D-11's legitimate reason for not reading example files."
+  - id: PLAN-FRESH3-005
+    status: resolved
+    reason: "plan.md (tree, ownership table, IC-06a and IC-06b purposes) and the IC-06a and IC-06b test lines of the contract consistently make IC-06a land only the R4 options schema with an empty list and IC-06b derive the named list from its stubs, with a lint-green-and-red-when-removed exit check."
+  - id: PLAN-FRESH3-006
+    status: resolved
+    reason: "The truncation note, redaction line and bidi notice are all drawn with sk-notice of tone info (the tone used elsewhere in the package) in research, data-model, plan, the part-signature table and gates.md line 87, E-26 grants no class allowance to document-parts.ts or source-parts.ts, E-24 covers only the pre block, and no stale exception wording remains."
+  - id: PLAN-FRESH3-008
+    status: resolved
+    reason: "plan.md, research.md, data-model.md, quickstart.md and the IC-09 contract line all say the host keeps a read-only Set from sk-tree-toggle passed as expandedIds on the next rebuild while never writing back to the shell tree or rebuilding on a toggle, so there is no contradiction with the earlier no-write-back text, and the {id, expanded} payload and the shell tree's node.expanded behaviour match the source."
+  - id: PLAN-FRESH3-010
+    status: resolved
+    reason: "The AV-17 test sits in IC-10 (plan.md and contracts IC-10 line, with 'moved from IC-09'), IC-09 keeps only the story title in both files, the chain summary in plan.md says the same, and no NEW FORK marker remains in any non-review file."
+  - id: AV-17
+    status: resolved
+    reason: "Ownership of AV-17 is single and consistent across plan.md lines 159, 264, 270 and 273, contracts/sk-artifact-screen.md lines 104, 106 and 107 and the spec row: render body IC-07, story title IC-09, test IC-10 on the merged chains."
+  - id: A-8-ROW-NUMBERS
+    status: resolved
+    reason: "The A-8b row references (row 1 over-length, row 5 userinfo, row 6 mailto query or fragment) match the link table of contracts/markdown-renderer.md and the IC-03 and A-8 traceability row now says rows 1, 5 and 6."
+  - id: MARKERS-AND-CROSS-FILE
+    status: resolved
+    reason: "A grep of every non-review file for NEW FORK and HELD finds none (matches exist only in the review yaml files), and the fix introduced no wrong fact or contradiction in the property count (13 everywhere), IC ids (IC-06a, IC-06b, IC-07 to IC-10), exception ids (E-22, E-24 to E-28 unchanged, no new exception) or the seven-fork count of the rulings."

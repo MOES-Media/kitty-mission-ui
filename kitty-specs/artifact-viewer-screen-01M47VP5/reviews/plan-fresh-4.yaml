@@ -1,0 +1,122 @@
+schema: "review-findings/v1"
+complete: true
+phase: "plan"
+lens_group: "fresh4"
+mission: "artifact-viewer-screen-01M47VP5"
+findings:
+  - id: "PLAN-FRESH4-001"
+    lens: "debugger-debbie: ownership matrix (which part draws what, which lane can assert it)"
+    severity: 3
+    title: "The document eyebrow (kind word above the title) has no owning part or WP, and IC-09's AV-29 asserts it in a lane that cannot render it"
+    evidence:
+      - artifact: "spec.md, State Matrix AV-01 pass condition ('eyebrow is the kind word') and DA-14 (eyebrow 'Specification', 'factual' dropped); AV-29 pass condition ('raw value as the word in the tree, eyebrow and inspector')"
+      - artifact: "contracts/sk-artifact-screen.md, 'Part signatures': renderToolbar (icon and file name), renderDocument (rendered body, empty-file body, redaction line, truncation note), renderInspector; no signature, view field or sentence draws the document eyebrow"
+      - artifact: "plan.md, IC-07 (document pane, lists toolbar-parts, tab-parts, document-parts, source-parts, prose-styles and AV-01 to AV-08) never mentions the eyebrow; the word 'eyebrow' appears only for the refusal eyebrow, IC-02 vocabulary text, IC-09 ('unknown kind with its raw word in the tree data, the eyebrow and the inspector') and IC-10"
+      - artifact: "plan.md, Implementation Concern Map: IC-09 (chain Y) is parented on IC-06b and merges with chain X (IC-07, IC-08) only at IC-10"
+    claim: "FRESH3-010 already recognised that a lane-Y test cannot pass against chain-X stubs (AV-17). The same trap exists for AV-29: its eyebrow assertion is listed under IC-09 (and in the IC-09 test obligations of contracts/sk-artifact-screen.md), but the eyebrow is part of the document pane that IC-07 builds on chain X, so in IC-09's lane the part is still the IC-06b stub and the assertion cannot pass. Worse, no part signature or WP text assigns the eyebrow at all, so AV-01's pass condition and DA-14 have no owner and the part signatures (frozen by IC-06b) would not carry the data (kind word) to draw it."
+    remediation: "Name the part that draws the eyebrow (renderDocument or renderToolbar, both IC-07) in contracts/sk-artifact-screen.md 'Part signatures', add the kind word to that part's view type, and list it in IC-07's text and exit evidence. Move the eyebrow half of the AV-29 assertion from IC-09 to IC-10 (as AV-17 was moved), keeping the tree-data and inspector halves in IC-09."
+  - id: "PLAN-FRESH4-002"
+    lens: "debugger-debbie: dormant masks (focus loss across the shell boundary)"
+    severity: 3
+    title: "Behaviour rule 8 cannot be implemented as written for the commonest flow, a tree-driven selection: the focused row lives in another element and is re-created by a different update"
+    evidence:
+      - artifact: "contracts/sk-artifact-screen.md, 'Behaviour rules' 8: 'When the focused control is removed by a state change (Retry activated, a link activation that swaps the content, a tree-driven content swap) the screen moves focus to the document pane'; plan.md IC-08 (focus tests of rule 8) and IC-09 (a test that DOCUMENTS that on a selection change focus lands on the pane, never on the body)"
+      - artifact: "packages/mission-ui/src/elements/sk-shell-tree/sk-shell-tree.ts:235 (`keyed(this.items, ...)` re-creates every row when the items array changes) and :160-164 (willUpdate resets the open state on an items change); the tree is a sibling in the shell's sidebar slot, not part of sk-artifact-screen"
+      - artifact: "quickstart.md host script: 'a selection change rebuilds the tree, the shell tree re-creates its rows and the focused row is gone: focus lands on the pane, not the body'"
+    claim: "The screen only knows that selectedPath (and content) changed. The focused control that disappears is a row of the shell tree, removed in the tree's own update, which is scheduled separately from the screen's update, so the order of the two is not defined by the plan. If the screen checks document.activeElement in its own update it still sees the old row and leaves focus alone; the row is then removed and focus falls to body, which is exactly what the tests of IC-08 and IC-09 say must not happen. No mechanism (what is observed, when, with which positive control) is specified, so the tests are either unwritable or order-dependent."
+    remediation: "FORK: (a) specify a screen-side mechanism: in willUpdate record whether the active element was inside the sidebar tree when selectedPath changes, and after updateComplete plus one animation frame move focus to the pane if document.activeElement is body or null (positive control: focus elsewhere is untouched); or (b) make it a host obligation with one documented public method on the screen (a surface change: 14th member, needs an amendment and a surface-freeze edit) and drop the tree-driven case from rule 8 and from the IC-08/IC-09 tests. State the chosen mechanism in rule 8."
+  - id: "PLAN-FRESH4-003"
+    lens: "debugger-debbie: assumptions against the real tree (dependencies)"
+    severity: 3
+    title: "The plan relies on axe in three spikes and in IC-10's exit checks, but no axe package exists in the repository or in #5, and the plan states there is no new devDependency"
+    evidence:
+      - artifact: "plan.md, Technical Context ('No other runtime dependency; no new devDependency'); IC-10 text ('... announcement tests and axe')"
+      - artifact: "contracts/sk-artifact-screen.md 'Semantics' (landmarks 'checked by axe in S-A4 and S-A5') and 'Test obligations by owner', IC-10 ('axe'); research.md spikes S-A3, S-A4, S-A5 ('axe on the landmark structure', 'axe on the inspector', 'axe and the accessibility tree dump')"
+      - artifact: "package.json (root devDependencies, lines 40-66): no axe-core, @axe-core/playwright or vitest-axe; @storybook/addon-docs is the only addon (apps/storybook/.storybook/main.ts:6); the #5 lane-j package.json has none either"
+    claim: "An exit check (IC-10) and three spike methods name a tool that is not installed and that the plan forbids adding. A WP agent cannot pass 'axe green' without adding a devDependency (lockfile, supply-chain record, approval), which the plan neither budgets nor routes through CP-1; C-013 only covers runtime dependencies, so the approval path is unclear."
+    remediation: "FORK: (a) add exactly one exact-pinned devDependency (axe-core) with the same DIRECTIVE_051 record as markdown-it in IC-01b, an operator ruling at the start of the plan-to-tasks hand-off, and a shared test helper owned by IC-06b; or (b) drop axe and replace it with explicit role, accessible-name, landmark and idref assertions plus an accessibility-tree dump (Playwright ariaSnapshot in the spikes), which need no dependency. Update 'no new devDependency' in Technical Context accordingly."
+  - id: "PLAN-FRESH4-004"
+    lens: "debugger-debbie: assumptions against the real tree (test harness)"
+    severity: 2
+    title: "IC-10's forced-colors and reduced-motion assertions have no harness: the unit-tests project is a single Chromium instance with no media emulation, and no file that could change that is in IC-10's surfaces"
+    evidence:
+      - artifact: "contracts/sk-artifact-screen.md, IC-10 test obligations: 'a Playwright context with forcedColors: active ... with reducedMotion: reduce'; plan.md IC-10 ('forced-colors and reduced-motion assertions')"
+      - artifact: "packages/mission-ui/vitest.config.ts:13 (`instances: [{ browser: 'chromium' }]`, no context options); plan.md 'Shared files: who may write them' lists no row for vitest.config.ts and IC-10 names no such surface"
+      - artifact: "apps/storybook/tests/visual/stories.visual.spec.ts only drives viewport width and Tab counts per story tag; baselines are forbidden before IC-11"
+    claim: "The assertion text assumes a Playwright context option that the project's test runner does not expose per test. As written the IC-10 agent must either edit an unowned config file or silently weaken the check to a screenshot in the WP report, so NFR-014 (A-7) is not provably met by the stated gate."
+    remediation: "Name the mechanism in IC-10: in the Chromium browser test, use the Vitest browser cdp() session with Emulation.setEmulatedMedia (features forced-colors: active and prefers-reduced-motion: reduce) and assert the computed outline and animation values, with a positive control that the same element differs without the emulation. Add that test file to IC-10's affected surfaces; if a config change is preferred, add vitest.config.ts to the shared-files table with IC-10 as its only writer."
+  - id: "PLAN-FRESH4-005"
+    lens: "debugger-debbie: drift chains (spec text versus the amendments that supersede it)"
+    severity: 2
+    title: "The CP-1 write-back list covers only A-8, A-9, A-10 and five spec rows; other accepted amendments leave the spec contradicting the plan"
+    evidence:
+      - artifact: "plan.md, 'Spec amendments' closing paragraphs: the five 'Spec rows read as amended' (AV-32, FR-035, NFR-003, FR-012/DA-23, NFR-005) and the write-back list items (1) to (4)"
+      - artifact: "spec.md FR-043 ('markdown-it and its types are added') against plan.md A-2 (types wording dropped, ACCEPTED); spec.md C-012 ('implementation starts once #5 lands or stacks on its branch') against plan.md 'Build base' (Base A only, operator ruling PLAN-DESIGN-017); spec.md 'Sum of non-functional requirements: 13' and NFR-004/NFR-011 against plan.md A-7 (new NFR-014 and NFR-015, reflow clause, NFR-011 list); spec.md 'Sum of drift-register items: 38' against plan.md A-6 and DA-41 (DA-39 to DA-41)"
+      - artifact: "plan.md Traceability table cites NFR-014 and NFR-015 ('A-7, accepted'); tracer-design-decisions.md 'Drift register status' still says 'DA-1 to DA-38 are PROPOSED'"
+    claim: "Mission review and accept check the spec, not the plan. NFR-014, NFR-015 and DA-39 to DA-41 exist only in plan.md, FR-043 and C-012 say the opposite of accepted amendments, and the write-back list (the one mechanism that reconciles them) omits A-2, A-3, A-6, A-7 and Base A. A reader of the spec alone will count 13 NFRs and 38 DA items and will find C-012 permitting a stack the plan forbids."
+    remediation: "Extend the write-back list with: (5) A-2 (FR-043 wording), (6) A-6 and DA-41 (register entries and the 'Sum' line, plus the tracer 'Drift register status' text), (7) A-7 (NFR-004 clause, NFR-011 list, new NFR-014 and NFR-015 and the 'Sum' line), (8) Base A (C-012 and the Assumptions bullet on stacking), (9) A-3 (a note on FR-032's retry payload union). Mark each as orchestrator-owned and checked at CP-1."
+  - id: "PLAN-FRESH4-006"
+    lens: "debugger-debbie: task-readiness"
+    severity: 2
+    title: "The Implementation Concern Map is not uniformly task-ready: several ICs lack an Affected-surfaces bullet, two lack an Exit-checks bullet and IC-11 lacks requirements"
+    evidence:
+      - artifact: "plan.md IC-01a, IC-01b, IC-02, IC-06a carry the full set (Purpose, Relevant requirements, Affected surfaces, Exit checks, Depends on)"
+      - artifact: "plan.md IC-03 and IC-04 have no 'Affected surfaces'; IC-05 has no 'Affected surfaces' and no 'Exit checks' bullet (its only check, an empty spikes/ tree, sits inside Purpose); IC-06b has neither bullet (surfaces and checks are inline in one paragraph); IC-07 to IC-11 are single prose paragraphs; IC-11 names no requirements (FR-041, FR-037, FR-038, NFR-002, SC-001 are only implied)"
+    claim: "The tasks phase derives each WP's owned files and its acceptance checks from these bullets. Where they are embedded in prose (IC-06b is the longest paragraph of the plan and carries the freeze) or missing (IC-05 exit checks, IC-11 requirements), the WP author has to infer the write scope and the pass condition, which is where overlapping owned_files and unpassable exit checks come from."
+    remediation: "Give every IC the same five labelled bullets. IC-05: add 'Exit checks' (spikes/ empty on the tip and tip tree equal to its base tree; the CP-1 screenshots listed in the report; no committed PNG). IC-06b: split Purpose into Purpose, Affected surfaces (files from the shared-files table) and Exit checks. IC-03, IC-04, IC-07 to IC-11: add 'Affected surfaces' from the source tree and the shared-files table; IC-11: add 'Relevant requirements'."
+  - id: "PLAN-FRESH4-007"
+    lens: "debugger-debbie: divergence matrix (claim versus reader)"
+    severity: 2
+    title: "The vocabulary's 'copy' group has no function that reads it, so the 'later pipeline changes props, not the element' claim is unproven for one of the six groups"
+    evidence:
+      - artifact: "plan.md IC-02 and contracts/defaults.md 'Vocabulary argument': the readers are buildArtifactTree and resolveArtifactFacts (kind table), markdownFor (media type), buildMarkdownModel (budget), matchWorkPackage (link kinds, container segment, token separator), resolveArtifactView 'for any member IC-02 finds it reads'; no reader of the copy group is named"
+      - artifact: "data-model.md property table, vocabulary row, and contracts/defaults.md ArtifactVocabulary paragraph: six groups, the sixth being 'the copy of artifact-copy.ts' (tab labels, notices, fact labels, announcements, TABLE_LABEL, BIDI_NOTICE)"
+      - artifact: "plan.md IC-10 and research.md D-20: the foreign-vocabulary test varies a kind, an icon, a container segment, folder names, a tab label 'from labels' and a refusal code through labels.refusal; nothing varies a copy member through vocabulary"
+    claim: "FRESH3-004 (b) narrowed the claim to 'functions that read a member', which is sound, but it leaves the copy group as a member with no reader and no test: the parts and the screen file read artifact-copy.ts directly, so a vocabulary.copy override would be accepted by the type and silently ignored, the exact 'accepted but inert' defect the narrowing was meant to remove."
+    remediation: "FORK: (a) state that the screen file resolves the copy group once per update and hands the resolved strings to the parts through their view types, name the functions (toolbar, tabs, inspector, state builders) that take it, and add a copy-override case to IC-10's composition test; or (b) remove copy from ArtifactVocabulary (five groups) and leave string-level override to labels, as for the refusal table."
+  - id: "PLAN-FRESH4-008"
+    lens: "debugger-debbie: divergence matrix (refusal codes by consumer)"
+    severity: 2
+    title: "The refusal table marks artifact_listing_unreadable retryable in the content block, contradicting FR-015 and leaving its Retry payload undefined"
+    evidence:
+      - artifact: "contracts/defaults.md, ARTIFACT_REFUSALS: 'artifact_listing_unreadable ... / true'; data-model.md row 5 (refusalCode set, known or unknown, gives a refusal block)"
+      - artifact: "spec.md FR-015 ('Retry only for artifact_unreadable (Q4)') and SC-005 ('retry exists for exactly the codes of Q4'); Q4 allows retry on artifact_unreadable and on the listing error (status error, AV-14)"
+      - artifact: "plan.md IC-08: the seven-code table test asserts 'Retry present exactly when the row is retryable' over all seven codes; contracts/sk-artifact-screen.md: renderRefusal(view, onRetry) has one handler and EV-6 is `{ missionId, target: 'content', path }`"
+    claim: "With contentStatus 'refused' and refusalCode 'artifact_listing_unreadable' (the table-driven test feeds exactly this), the block shows Retry, and the only wired handler emits the content-target event for a listing failure, so the host re-reads the wrong resource. The plan's own test cannot detect it because it checks only that Retry exists."
+    remediation: "FORK: (a) set retryable false for artifact_listing_unreadable in the content-refusal table (the listing failure is expressed by status 'error', AV-14) and say so in FR-015's reading; or (b) keep it true and make the refusal block's Retry emit target 'listing' for that code, adding the payload to the IC-08 table test."
+  - id: "PLAN-FRESH4-009"
+    lens: "debugger-debbie: exit checks versus lane ownership"
+    severity: 2
+    title: "IC-01b's exit check requires research.md D-05 to hold the gzip figure and timing table, a file the WP does not own and cannot write"
+    evidence:
+      - artifact: "plan.md IC-01b: 'Exit checks: ... research.md D-05 holds the gzip figure and the node timing table', and Purpose: 'written into research.md D-05 by the orchestrator from the WP report'; Affected surfaces list 'research.md D-05 (by the orchestrator)'"
+      - artifact: "plan.md 'Shared files: who may write them': 'tracer-*.md, spec.md Clarifications: the orchestrator only'; the planning artifacts are on the orchestrator's partition, not in the lane workspace"
+    claim: "A reviewer of the IC-01b diff cannot see D-05 change in the lane, so the exit check is unpassable in its own lane and unverifiable by the lane reviewer; it only becomes true after an orchestrator step the plan does not sequence before IC-02 (IC-04 consumes the figures to set the budget)."
+    remediation: "Reword the exit check to 'the WP report contains the gzip figure and the timing table' and add an orchestrator step 'copy the figures into research.md D-05 and commit on the target branch before IC-04 is dispatched' to the lane mechanics list."
+  - id: "PLAN-FRESH4-010"
+    lens: "debugger-debbie: facts against the real tree"
+    severity: 1
+    title: "Two statements about existing tooling are inexact: test:contract is a glob, and #5's row-to-story test does not run under test:scripts"
+    evidence:
+      - artifact: "plan.md IC-01a 'Affected surfaces' and shared-files table ('the test:contract list of the root package.json (a named edit)'); package.json:35 (`\"test:contract\": \"node --test scripts/contract/*.test.mjs\"`, a glob; identical on the #5 lane-j tip)"
+      - artifact: "research.md D-19 and contracts/gates.md hygiene row ('the repo's own pattern: #5's scripts/wp-story-catalogue.test.mjs', run by test:scripts in the hygiene gate); on the #5 lane-j tip package.json that file runs under test:terminology (`node scripts/terminology.mjs && node --test scripts/terminology.test.mjs scripts/wp-story-catalogue.test.mjs scripts/visual-tags.test.mjs`), which CI does not run"
+    claim: "No edit of test:contract is needed (the glob already matches new test files), so the named edit and its surface entry are a no-op, and the premise that the model for artifact-story-catalogue.test.mjs already runs in the CI hygiene gate is wrong; this mission's choice to add its file to test:scripts is right but is a new CI behaviour, not precedent."
+    remediation: "Drop the test:contract edit from IC-01a and the shared-files table (keep 'new *.test.mjs files under scripts/contract/ are picked up by the glob'); reword D-19 and the hygiene row to say #5's test runs under test:terminology and that this mission deliberately places its test in test:scripts so CI runs it."
+  - id: "PLAN-FRESH4-011"
+    lens: "debugger-debbie: drift register against the story frame"
+    severity: 1
+    title: "shellFrame hard-codes the skip-link text 'Skip to the content', while DA-2 and C-010 promise 'Skip to artifact' and IC-06b gives shellFrame only a tree option"
+    evidence:
+      - artifact: "packages/mission-ui/src/story-support/shell-frame.ts:63 (`<span slot=\"skip-link\">Skip to the content</span>`) and ShellFrameOptions (layout, current, project, mission, flush only)"
+      - artifact: "spec.md DA-2 ('The shell's skip-link slot with that text', 'Skip to artifact') and C-010; plan.md IC-06b ('story-support/shell-frame.ts gains an optional sidebar tree')"
+    claim: "Every story renders the frame's text, so a baseline that shows the skip link (a Tab-tagged story such as AV-32a) shows different words from the register item marked 'keep', which a side-by-side review would flag as unregistered drift."
+    remediation: "Add an optional skipLink text to the shellFrame edit owned by IC-06b and pass 'Skip to artifact' from this screen's stories, or record the frame text as a CP-1 note under DA-2."
+  - id: "PLAN-FRESH4-012"
+    lens: "debugger-debbie: self-check list versus its own contracts"
+    severity: 1
+    title: "The reviewer self-check 'no document string in any attribute other than title' contradicts the contract's own attributes, and plan.md paraphrases R2 as 'render*' member calls"
+    evidence:
+      - artifact: "contracts/gates.md 'Self-check list': 'No document string is placed in an attribute other than the title of an external link, an inert link or an image placeholder'; contracts/sk-artifact-screen.md 'Semantics' (pane aria-label = DOCUMENT_LABEL(name), toolbar path in title per FR-003, pills named by title and id)"
+      - artifact: "plan.md IC-04 ('R2 now only the render* member calls and the .renderer access') against contracts/gates.md R2 (exactly render, renderInline, renderToken, renderAttrs); packages/mission-ui/src/elements/sk-shell-tree/sk-shell-tree.ts:235 calls this.renderNode(...)"
+    claim: "A reviewer applying the checklist literally rejects the file name in the pane's aria-label and the path in the toolbar title, which come from the listing, not from document content; and a reader of plan.md's wording of R2 could implement a glob that fails pnpm lint on existing code such as this.renderNode."
+    remediation: "Reword the checklist to 'no markdown document text (content of ArtifactContent) in any attribute other than...; listing paths and file names may appear in title and aria-label from defaults templates', and reword plan.md IC-04 to list the four R2 names exactly."

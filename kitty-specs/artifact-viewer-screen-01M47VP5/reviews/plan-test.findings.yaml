@@ -1,0 +1,340 @@
+schema: review-findings/v1
+complete: true
+phase: plan
+lens_group: test
+mission: artifact-viewer-screen-01M47VP5
+findings:
+  - id: PLAN-TEST-001
+    lens: gate-plans / feasibility
+    severity: 4
+    title: Tests that need Node (bundle budget, row-to-story, source scans, "node twin") have no runner; packages/mission-ui vitest is browser-only
+    evidence:
+      - artifact: "plan.md IC-03 exit checks: 'pnpm test node-environment files for each module'; 'a source-level test that markdown-it is imported by parse.ts alone and that no file calls .render('"
+      - artifact: "plan.md IC-04: 'test/bundle-budget.test.ts (number from S-A0)'; 'node-level twin on the model'; contracts/gates.md: unit-tests 'gains markdown-corpus.test.ts (browser) and its node twin, bundle-budget.test.ts'"
+      - artifact: "plan.md IC-11: row-to-story node test reading 35 spec rows and 42 stories, 'run against a temp copy with a row deleted'"
+      - artifact: "research.md line 146: esbuild or bundler API importable from packages/mission-ui is listed as UNVERIFIED; fallback only named as 'a scripts/ node test run by test:scripts'"
+      - code: "packages/mission-ui/vitest.config.ts:1-15 (single config, browser.enabled true, one chromium instance, include test/**/*.test.ts, no node project)"
+      - code: "package.json (root): devDependencies list vite 7.3.6 but no esbuild; packages/mission-ui/package.json declares neither; root 'test' script is 'pnpm --filter @spec-kitty/mission-ui test' = 'vitest run'"
+      - code: "package.json 'test:scripts' lists explicit files (node --test scripts/hygiene scripts/gate-proof ...); CI gate 'hygiene' runs 'pnpm hygiene && pnpm test:scripts' (ci.yml:299-300)"
+    claim: >-
+      Every file under packages/mission-ui/test runs in Chromium. A test there cannot import node:fs, vite, esbuild
+      or spawn a bundler, so `test/bundle-budget.test.ts` (NFR-013 "a gate fails above it"), the row-to-story test
+      with a temp-copy mutation, the "markdown-it imported by parse.ts alone / no .render(" scan and the
+      "no spec.md literal" grep test cannot be written where the plan puts them. There is no node-environment
+      project, so "node twin" and "node-environment files" are browser tests, and the S-A0 node timings are
+      calibrated on a different engine than the corpus ceiling that uses them. The only fallback (scripts/ node test)
+      is mentioned in research as a contingency, and the file that would wire it (root package.json test:scripts) is
+      owned by IC-11 alone (plan Shared files table), so IC-04 could not land it. NFR-013 and the FR-041 row-to-story
+      proof are therefore untestable as planned.
+    remediation: >-
+      FORK: (a) convert packages/mission-ui/vitest.config.ts to two `projects` (browser as today; node environment for
+      `test/**/*.node.test.ts`), assigned to IC-01 as a named edit, with bundle budget via vite's programmatic
+      `build` (resolvable from the root) or a dependency-free `esbuild`-less size of the built parse.ts chunk; the
+      change alters what `pnpm test` (the unit-tests gate and its plant ciCommand) runs, so re-run `gate-proof --only
+      unit-tests` in IC-01. (b) Put bundle-budget, row-to-story and the source scans as `node:test` files under
+      scripts/ (the repo's own pattern), add them to `test:scripts` in IC-01 (named exception to the IC-11 package.json
+      ownership rule), and state that the gate is `hygiene`, not `unit-tests`. (c) Keep scans in browser mode via
+      `import.meta.glob(..., { query: '?raw' })` (precedent: defaults.test.ts imports contract YAML with `?raw`) and
+      drop the bundle test in favour of (b). Whichever is chosen, move the S-A0 verification of "bundler importable"
+      into IC-01 exit checks and delete the "node-environment" wording where it is not true.
+
+  - id: PLAN-TEST-002
+    lens: gate-plans / ordering
+    severity: 3
+    title: S-A0 is specified against files that do not exist until IC-03, has no exit check, and its node timings set browser ceilings
+    evidence:
+      - artifact: "research.md line 116: S-A0 'build parse.ts with the workspace bundler, minify, gzip; time each corpus shape at 256 KiB in node' (runs in IC-01)"
+      - artifact: "plan.md IC-03 creates logic/markdown/parse.ts; IC-01 exit checks list contract, relaxations, tsc, hygiene, frozen install but nothing about S-A0; IC-01 purpose says S-A0 is 'written into research.md D-05 by the orchestrator from the WP report'"
+      - artifact: "research.md D-19: 'The corpus timing ceiling ... the figure is set from S-A0'; plan.md IC-04: 'bundle-budget test (number from S-A0)'; contracts/markdown-renderer.md budget 'tuned by S-A0'"
+    claim: >-
+      The budget limits (maxTokens, maxNodes, maxTableCells), the bundle number and the per-entry ceilings all derive
+      from S-A0, but S-A0 runs in IC-01 and is told to build parse.ts, which IC-03 creates. The measurement either
+      uses a throwaway entry that then differs from parse.ts (different options: html false, linkify off, disables) or
+      cannot happen. Timings are taken in node while the ceiling is asserted in Chromium. IC-01's exit checks do not
+      require the S-A0 numbers, so IC-02..IC-04 can start without the figures they consume.
+    remediation: >-
+      Split S-A0: IC-01 measures raw markdown-it with the exact option table from contracts/markdown-renderer.md in a
+      scratch script (no parse.ts) and writes the first numbers; IC-04 re-measures the real parse.ts chunk and sets the
+      bundle budget and corpus ceilings, measured in Chromium (the environment that asserts them). Add an IC-01 exit
+      check "D-05 contains the gzip figure and the node timing table, and `pnpm install --frozen-lockfile
+      --ignore-scripts` leaves allowBuilds unchanged" and an IC-04 exit check "budget and ceiling constants cite the
+      measurement".
+
+  - id: PLAN-TEST-003
+    lens: vacuity
+    severity: 3
+    title: '"No request" assertion by PerformanceObserver cannot prove absence and conflicts with the no-wait rule'
+    evidence:
+      - artifact: "contracts/markdown-renderer.md assertion (4): 'a PerformanceObserver records no resource load during render and a settle'"
+      - artifact: "research.md D-19: 'no setTimeout waits (updateComplete)'; R-08: every 'no X' paired with a control rendering"
+      - artifact: "spec.md NFR-005: 'the document causes 0 network requests (asserted in the corpus test by observing resource loads)'"
+      - code: "packages/mission-ui/test (grep): no existing use of PerformanceObserver; only performance.now() in sk-missions-screen.test.ts:823-840"
+    claim: >-
+      Resource Timing entries are queued when a fetch COMPLETES (or fails), asynchronously; data: and blob: URLs
+      produce no entry at all; a request to an unroutable remote host stays pending for seconds in CI, so a test that
+      settles on `updateComplete` and then asserts "no entry" passes whether or not an `<img src>` was created. The
+      plan has no positive control for this observer (R-08 is only applied to visible text), and the settle is
+      unspecified. As written it is vacuous exactly for the regression it targets (an image renderer weakened to emit
+      `<img>`), and the structural allowlist walk is the only real protection.
+    remediation: >-
+      FORK: (a) replace the observer by a synchronous detector: a `<meta http-equiv="Content-Security-Policy"
+      content="img-src 'none'; frame-src 'none'; object-src 'none'">` inserted in the test document before rendering
+      plus a `securitypolicyviolation` listener (fires without network), with a positive control that a hand-built
+      `<img src="http://example.invalid/x.png">` triggers it. (b) Keep the observer only as a secondary signal, using
+      `buffered: true`, a documented settle (await a load/error on a planted control image rendered in the same
+      harness), and a positive control with a same-origin URL that is known to exist; record that it is not the
+      primary proof. Either way state in the corpus contract that assertion (1) and (3) (no img/src/href elements) are
+      the proof of NFR-005 and (4) is corroboration.
+
+  - id: PLAN-TEST-004
+    lens: vacuity
+    severity: 3
+    title: Corpus allowlist walk can pass on an empty or non-descended render (shadow DOM, custom elements, no count guard)
+    evidence:
+      - artifact: "contracts/markdown-renderer.md: assertion (1) 'every element in the screen's document subtree is in the element allowlist'; IC-04: 'renders each entry into a container, walks the whole subtree'"
+      - artifact: "plan.md R-08: 'every entry also asserts its expected visible text'"
+      - artifact: "contracts/sk-artifact-screen.md Semantics: tabpanel, table scroll box role=region, fallback uses sk-notice (a custom element with its own shadow root)"
+    claim: >-
+      The walk's reach is unspecified. If it uses `container.querySelectorAll('*')` on the light DOM it sees zero
+      elements when the output sits in a shadow root (the screen), and an allowlist that contains only the
+      renderer's tags would reject the fallback's `sk-notice`/`sk-button` or, if loosened, accept anything. R-08's
+      visible-text check helps only when text is read through the same boundary; there is no guard that the walker
+      visited N > 0 elements, no equality between the walked element count and the model's node count, and no
+      self-test that the walker itself fails on a planted `<img>`, `<a href>`, `<script>` or `on*` attribute.
+    remediation: >-
+      Specify the walker as one exported helper (`walkAllowed(root)`) that descends open shadow roots, returns the
+      visited element count, and is used by every corpus entry with `expect(count).toBeGreaterThan(0)` and, for valid
+      documents, an exact count derived from the node model. Add a walker self-test: for each disallowed construct
+      (img, a[href], script, style, iframe, svg, `onclick`, `class`, `style` attribute) a hand-built subtree makes the
+      walker report a violation (red), and a clean subtree reports none (green). State the allowlist for the fallback
+      composition (`sk-notice`, its slot content) explicitly.
+
+  - id: PLAN-TEST-005
+    lens: gate-plans / ordering
+    severity: 3
+    title: The corpus runs only against renderMarkdown in IC-04; the screen composition (entryPaths, event dispatch, fallback notice, tabs) is never run through it
+    evidence:
+      - artifact: "plan.md IC-04 (before IC-06): corpus 'renders each entry into a container'; assertion (5) 'activation of every link emits exactly the expected event or none'; the screen element is created in IC-06"
+      - artifact: "plan.md IC-07: only 'AV-04 hostile' fixture (contentHostile) and the listed link tests; Test obligations table lists 'IC-04: corpus' as the only corpus owner"
+      - artifact: "spec.md SC-003: 'The hostile corpus yields 0 escapes' and NFR-012 'no disallowed element, attribute or request'"
+    claim: >-
+      The things that make a document dangerous in the product are assembled in the screen: the `entryPaths` set from
+      the listing, the five literal dispatch sites, the fallback notice with the reason in `title`, the raw tab, the
+      parse cache. At IC-04 none of those exist, so assertion (5) is exercised with handler spies, not with the
+      screen's events (EV-1..EV-3 payload and `bubbles/composed` are only proven for a handful of links in IC-07).
+      After IC-06 nothing re-runs the corpus through `sk-artifact-screen`, so a regression in the screen (for
+      example writing the destination into `title` untruncated, or rendering the escaped source with an unsafe
+      binding in the fallback pane) passes the security gate.
+    remediation: >-
+      Export the corpus entries and the walker from a shared module in IC-04 and have IC-07 add a second pass
+      (`markdown-corpus.screen.test.ts`) that mounts `sk-artifact-screen` inside `shellFrame` for every entry, runs the
+      same walker over the pane (including the Raw tab and fallback source block), and records every `sk-*` event;
+      add it to the IC-07 exit checks and to the plant-1 expectation (the weakened renderer must also fail the screen
+      pass). A cheap first cut: guard `entries.length` equals the node-twin count.
+
+  - id: PLAN-TEST-006
+    lens: gate-plans
+    severity: 3
+    title: NFR-012 requires a mutation for raw HTML, href AND img; only the href plant exists
+    evidence:
+      - artifact: "spec.md NFR-012: 'a mutation of the renderer that allows a raw HTML node, an href or an img is proven to fail it (a planted case ...)'; SC-003 'a planted renderer weakening is caught by it'"
+      - artifact: "contracts/gates.md Plants (new): unit-tests plant = link destination into an `href`; eslint plant = DOMParser"
+      - code: "scripts/gate-proof/lib.mjs:166-181 applyEdit (one anchored find/replace per edit; edits array per overlay) and loadPlants (array of plants allowed)"
+    claim: >-
+      Only one of the three mutations the spec names is proven red. The image path (an `<img src>` for the image
+      placeholder, the one that causes a network request) and a raw HTML node (for example an `unsafeHTML`-style
+      render of an html token, or `html: true` combined with a permissive model) have no revert evidence. Note that
+      `html: true` alone fails closed (the model throws on html_block and falls back), so it would not turn the corpus
+      red and is not an effective mutation. The ESLint plant proves the lint rule, not the corpus.
+    remediation: >-
+      Add a second unit-tests plant (anchored edit of render.ts: image placeholder emits `<img src=${destination}>`,
+      expect pattern e.g. `corpus escape: img`), or, to avoid a third full Chromium run in proof-leg, prove img and raw
+      HTML through the walker self-test of PLAN-TEST-004 and state in contracts/gates.md that NFR-012 is split that
+      way. If the second plant is added, re-derive the unit-tests proof-leg timeout in IC-04, not IC-11 (three full
+      `pnpm test` runs: clean plus two planted).
+
+  - id: PLAN-TEST-007
+    lens: gate-plans
+    severity: 3
+    title: ESLint rule self-tests (D-06 rules 1 to 5) have no harness, no owner for the wiring, and the lint plant has no concrete expectFailPattern
+    evidence:
+      - artifact: "plan.md IC-04: 'ESLint rules of D-06 ... with a self-test (gates/-style fixtures or scripts/ node test) and a leak case each'; exit 'each ESLint rule has a positive (violating) and negative case'"
+      - artifact: "contracts/gates.md plants: eslint plant expects 'the rule's message from research D-06 rule 3' (no literal string); research D-06 gives no message text"
+      - code: "gates/ contains only data-driven.selftest.ts and no-io.selftest.ts (each lints against its own config via the Linter API); no test references eslint.config.mjs rules; root test scripts: test:no-io, test:data-driven, test:scripts (explicit file list)"
+      - code: "scripts/gate-proof/lib.mjs:228-240 runLeg: clean run must not contain any plant's expectFailPattern, planted run must exit non-zero AND contain it"
+    claim: >-
+      The existing main eslint config has no self-test at all; its rules are proven only by the gate-proof plant. The
+      plan's "gates/-style fixtures" would need a new selftest file, a new script in package.json, and a gate job
+      that runs it. `gates/*.selftest.ts` and `eslint.config.mjs` self-tests are not in the Shared-files ownership
+      table (only data-driven's are), and `package.json` scripts belong to IC-11. As written the five rules' positive
+      and negative cases may be written and then never executed by any CI gate (vacuous coverage), and a later edit
+      can silently remove a rule while the single DOMParser plant stays green. The plant's pattern cannot be written
+      before the rule message exists, and it must be a string absent from clean output.
+    remediation: >-
+      Decide in the plan: (a) a new `gates/markdown-lint.selftest.ts` (node vitest, `gates/vitest.config.ts` already
+      matches `gates/*.selftest.ts`) wired as an addition to the `eslint` gate's `ciCommand` is NOT allowed
+      (gate-proof binds ciCommand to ci.yml), so wire it into the existing `test:no-io` or `test:scripts` command
+      chain and name that edit in IC-04's ownership; (b) a table-driven case list, one violating, one clean, one leak
+      (inline-disable) case per rule, with a guard that exactly 5 rules (and their ids) are exercised; (c) fix the
+      rule message strings in D-06 now (for example prefix `markdown-renderer: R3`) and use that literal as the
+      plant's expectFailPattern. Note the existing plant-eslint plant stays untouched.
+
+  - id: PLAN-TEST-008
+    lens: timing / determinism
+    severity: 3
+    title: NFR-006 can pass vacuously on the fallback and its numbers are not testable as written in shared CI
+    evidence:
+      - artifact: "spec.md NFR-006: '256 KiB markdown document renders to the fallback or the document ... 1000-entry tree builds and renders, each in 500 ms or less ...; a re-render ... 200 ms or less'"
+      - artifact: "plan.md IC-10: 'NFR-006 timing tests (256 KiB, 1000 entries, re-render)'; IC-02: 'buildArtifactTree ... 1000 entries under the NFR-006 bound'; contracts/markdown-renderer.md maxSourceChars 270000, maxTokens 60000, maxNodes 40000"
+      - artifact: "contracts/contract-pin.md: contentLarge = '256 KiB valid markdown document' (shape unspecified), contentFallback = exceeds the token budget"
+      - artifact: "contracts/sk-artifact-screen.md Behaviour rule 7: parse cache proved by 'node identity of an unchanged rendered block and a coarse timing test'"
+    claim: >-
+      (1) The pass condition accepts the fallback, which is always fast, so if `contentLarge` is accidentally over
+      budget (a 256 KiB list-heavy document can exceed 60000 tokens or 40000 nodes) the timing test and the AV-30f
+      baseline pass while showing the fallback. (2) A wall-clock 500 ms ceiling around parse plus Lit render of up to
+      40000 nodes in shared-runner Chromium is within noise of the real figure; no repetition, warm-up, or median is
+      stated, and the S-A0 figure is node-measured (PLAN-TEST-002). (3) "builds and renders" a 1000-entry tree: the
+      tree render is the shell's `sk-shell-tree`, but IC-02's check times only the pure helper; the render half is
+      only in IC-10, after the shell frame exists. (4) The 200 ms re-render claim has no revert test: nothing forces
+      a failure if the cache is removed for a small document (a re-parse of a small document is well under 200 ms),
+      so only the identity assertion carries it.
+    remediation: >-
+      Pin the expected branch per fixture: contentLarge must resolve to `{ kind: 'ok' }` (assert in IC-03 and in the
+      timing test), contentFallback to `fallback` with the stated reason, and assert block count > 0 and pane
+      non-empty before reading the clock. FORK on flakiness: (a) keep 500/200 ms as hard ceilings but measure the
+      best of 3 after a warm-up and run the timing file with a generous documented multiplier recorded beside the
+      spec numbers; (b) assert algorithmic proxies in the gate (token, node and call counts, parse invoked once per
+      content identity via a counted `parseTokens` wrapper) and keep the wall-clock check as an advisory test with the
+      spec numbers x a CI factor. For the cache, add a revert-able assertion: spy on `parseTokens` call count after N
+      property changes with an unchanged `content`.
+
+  - id: PLAN-TEST-009
+    lens: test-obligations
+    severity: 3
+    title: Test obligations table does not cover several AV pass conditions or SC-005's per-code retry rule with functional tests (stories alone are visual baselines)
+    evidence:
+      - artifact: "contracts/sk-artifact-screen.md 'Test obligations by owner': lists skeleton, tablist keys, escaped-source equality, redaction line, link activation, EV-5..EV-7, unknown-code, no-content, payload rules, announcements, EV-4/EV-9, matchWorkPackage, NFR-003/004/006, EV-8, semantics, SC-004, corpus, tree/logic units"
+      - artifact: "spec.md AV-06 (no Rendered tab, no notice), AV-09..AV-12 (sentence names the size; no retry), AV-16 (row disabled and the word present), AV-17 (note present ONLY when truncated), AV-24 ('modified on this host'; each fact from ArtifactContent and ArtifactEntry), AV-25/26 absent states, AV-29 (raw word in tree, eyebrow and inspector), AV-33..35, SC-005 'retry exists for exactly the codes of Q4'"
+      - artifact: "plan.md: baselines are 'committed only in IC-11'; IC-07..IC-09 exit evidence is 'uncommitted side-by-side screenshot per story'"
+    claim: >-
+      Pass conditions that are assertions about content, absence or emitted behaviour (not appearance) have no named
+      test in the table; the plan relies on stories whose only automated check is a pixel baseline made in IC-11,
+      and those baselines are reviewed by a human for drift, not asserted for `retry button absent for 404`,
+      `truncation note absent when truncated is false`, `size sentence contains the entry's size`, `unknown kind word
+      appears in all three places`. SC-005 ("exactly the codes of Q4") needs a table-driven test over the seven
+      codes read from the vendored contract; "Retry only when the code's table row is retryable" appears as a
+      rendering rule but not as an owned test. The layout rows AV-33..AV-35 have track-count tests at IC-06 but at
+      that time the inspector and toolbar are stubs, so the "toolbar stacks / inspector first" outcomes are
+      unasserted until a story baseline.
+    remediation: >-
+      Add to the Test obligations table, per owner: IC-07: AV-06 (no Rendered tab, no notice) with control (a
+      markdown fixture shows the tab); IC-08: a test iterating the seven refusal codes from the vendored contract
+      (guard `codes.length === 7`) asserting cause word, sentence, retry present iff in the retryable set (positive
+      control: both outcomes exist), no `content` text in the pane; the too-large sentence names the entry size;
+      IC-09: AV-16 disabled and word, AV-17 note present when `truncated` and absent otherwise, AV-24 facts from entry
+      versus content fallbacks, AV-25/26 absent state, AV-29 raw word in tree data, eyebrow and inspector; IC-10:
+      AV-33..AV-35 outcome assertions (order of inspector, toolbar stacking) at the S-A6 widths with a control width
+      where the outcome flips.
+
+  - id: PLAN-TEST-010
+    lens: vacuity
+    severity: 3
+    title: 'Absence assertions for events (EV-9, EV-10, SC-002) lack positive controls and the emitted-subset-of-declared check is unowned'
+    evidence:
+      - artifact: "spec.md EV-9: 'not emitted by this screen (asserted that the screen emits neither)'; EV-10: tab change, focus, scroll emit none; SC-002: 'and 0 events are emitted that are not declared in the manifest'"
+      - artifact: "plan.md IC-09: 'EV-4 and EV-9 (this screen emits neither sk-navigate nor sk-tree-toggle)'; contracts/sk-artifact-screen.md: 'Not emitted: sk-navigate, sk-tree-toggle, sk-open-artifact, any tab event'"
+      - code: "packages/mission-ui/test/surface-freeze.test.ts:1-60 (pins manifest names, attributes and defaults only; no run-time event audit)"
+    claim: >-
+      The screen draws no tree, so a test that clicks nothing it owns and observes no `sk-navigate` passes
+      trivially. Without a host composition in which the shell tree emits `sk-navigate` and `sk-tree-toggle` and the
+      screen's own listener count stays zero for re-emission (target/composedPath checks, exactly-one-event), the
+      assertion cannot fail. Likewise SC-002's "0 undeclared events" has no owner: surface-freeze pins the declared
+      list, and nothing records emitted events across all interactions and compares them to it.
+    remediation: >-
+      IC-09: mount `sk-mission-shell` with the tree fed by `buildArtifactTree` and the screen in its slot; click a
+      leaf and a toggle; assert the host sees exactly one `sk-navigate`/`sk-tree-toggle` each, originating at the
+      shell tree (`composedPath()[0]` inside the shell), and zero from the screen host. IC-10 (host composition,
+      SC-009): attach a capture-phase listener for every `sk-*` name on document during all interactions of the
+      suite's composition test, assert the set of seen names is a subset of the manifest's `events` AND that at least
+      the five declared events were seen (count guard), so the subset check cannot pass on silence.
+
+  - id: PLAN-TEST-011
+    lens: gate-plans
+    severity: 2
+    title: Plant token and timing hygiene for the new unit-tests plant (token in titles, three full Chromium runs, timeouts re-derived late)
+    evidence:
+      - code: "scripts/gate-proof/lib.mjs:228-231 (clean output must not contain any plant token; every plant runs the full ciCommand)"
+      - code: "gates/plants/unit-tests/plant.json (single object today, ciCommand 'pnpm test'); ci.yml:429-433 unit-tests job timeout 8 min; proof-leg matrix timeout for unit-tests 10 (ci.yml:562-563)"
+      - artifact: "contracts/gates.md: 'expect: the corpus test fails with corpus escape'; plan.md IC-11: 'timeouts re-derived'; IC-04 exit: 'pnpm gate-proof --only unit-tests ... green by the orchestrator'"
+    claim: >-
+      If `corpus escape` appears in a `describe`/`it` title or a passing log line, the clean run contains the token
+      and `runLeg` reports "a plant token appears in the clean output" even though the gate is correct. Adding the
+      new plant to the existing plant.json (converted from object to array) means clean plus two planted full runs of
+      a suite that now includes a 40-entry corpus with 256 KiB shapes, against a 10-minute proof-leg limit that is
+      only re-derived in IC-11, after IC-04's own exit check has already run it.
+    remediation: >-
+      Define the token as a constant used only inside the failing assertion message (never in titles or console
+      output) and add a clean-output check to IC-04 exit ("clean `pnpm test` output does not contain `corpus
+      escape`"). Measure the unit-tests suite wall time at IC-04 and adjust the proof-leg timeout in IC-04's named
+      ci.yml edit (add it to the Shared files table) instead of IC-11.
+
+  - id: PLAN-TEST-012
+    lens: gate-plans
+    severity: 2
+    title: 'Data-driven extension: red-before-green is a process claim with no recorded artifact; kind count has no guard'
+    evidence:
+      - artifact: "contracts/gates.md: new self-test cases 'are shown RED against the UNCHANGED config before the change makes them pass'; 'a guard asserts exactly 7 files and 7 codes'"
+      - code: "gates/data-driven.selftest.ts:59-70, 79-100 (counts 31 selector entries, 36 positive fixtures; EXPECTED_WORDS list at :49; positives assert exact selector ids)"
+      - code: "eslint.data-driven.config.mjs:30-45 (vocabulary read from vendored YAML; `plan` and `tasks` are already WORDS)"
+    claim: >-
+      The positive fixtures assert exact selector ids, so the final self-test does fail when the config change is
+      reverted (revert test satisfied). But "shown red first" leaves no trace and the gate-proof harness does not
+      check it; a case that happens to pass on the unchanged config (for example `plan`/`tasks` kinds, already gate
+      words) would not be noticed. The seven-code count is guarded; the twelve-kind count is not.
+    remediation: >-
+      Require IC-02 to land the new fixtures first (commit "test: red") with the self-test run output in the WP
+      report, then the config change; add `expect(KINDS.length).toBe(12)` next to the 7-code guard; and list in the
+      self-test, per kind word, which family it belongs to (underscored, bare in comparison, bare in `case`) so a
+      kind that is already caught by WORDS (`plan`, `tasks`) is explicitly marked as not counting toward the red-first
+      requirement.
+
+  - id: PLAN-TEST-013
+    lens: timing / determinism
+    severity: 2
+    title: NFR-002 "five consecutive clean visual runs", NFR-003 and NFR-004 detectors lack stated controls; CI already repeats visual 5 times
+    evidence:
+      - code: ".github/workflows/ci.yml:515 (`bash scripts/visual.sh -- --repeat-each=5` is the gate command)"
+      - artifact: "plan.md IC-11: 'five consecutive clean pnpm visual runs in the pinned container'; IC-10: 'NFR-004 test (root font size 200% ...)', 'NFR-003 (tab stops equal controls shown, scroll regions count as controls)'"
+      - artifact: "contracts/sk-artifact-screen.md Story catalogue: AV-30d 1000-entry tree and AV-30f 256 KiB document each get a baseline"
+    claim: >-
+      The visual gate already repeats every story five times per CI run, so the extra local five-run exit check is
+      redundant but harmless; what matters is that NFR-002 is evidenced by the CI result on the final tip, which IC-11
+      does not say. The two largest stories (1000 tree rows, a 256 KiB rendered document) are the likeliest
+      nondeterminism and snapshot-size hazards (`settleNested` has a 10 s per element bound) and are not named as such.
+      The NFR-004 overflow check and the NFR-003 tab-stop count have no positive control (a deliberately wide child
+      that the detector must flag; an extra focusable control that must raise the stop count).
+    remediation: >-
+      IC-11 exit: cite the green CI `visual` job (repeat-each 5) on the final tip, keep the local run as pre-check,
+      and record snapshot sizes and settle time for AV-30d and AV-30f (consider clipping the 256 KiB story to its first
+      screen via story height or a documented viewport crop). IC-10: write the NFR-004 and NFR-003 checks as helpers
+      with a one-line control each (wide element flips overflow detection; added `button` flips the stop count).
+
+  - id: PLAN-TEST-014
+    lens: test-obligations
+    severity: 2
+    title: Row-to-story test placement, count anchors and the A-3 event typing change have no revert-proof
+    evidence:
+      - artifact: "plan.md IC-11: 'row-to-story node test (exactly 35 rows, 42 stories discovered, trailing-letter normalisation, ... temp copy with a row deleted)'; contracts/contract-pin.md 'Pairing': IC-02 or IC-06 creates the pairing table, IC-11 reads it"
+      - artifact: "plan.md Spec amendments A-3: HTMLElementEventMap entry for sk-retry-load becomes a union with #5's type; D-04 'one additive edit of #5's event typing'"
+      - artifact: "plan.md Build base: without #5, this mission 'introduces the event and #5 would widen it later'"
+    claim: >-
+      The row-to-story test needs the file system (spec.md and story sources or storybook index.json), so it belongs to
+      the node runner of PLAN-TEST-001 and has no gate named. The hard-coded 35 and 42 are right today (35 rows; 32
+      single plus AV-30 x6 plus AV-25/26 x4 = 42) but the spec rows are rewritten by amendment A-1 at CP-1, so the
+      anchor must be re-derived after CP-1. The A-3 union is a type-level change: a runtime test cannot see it, and
+      tsc covers it only if a typed listener or dispatch site uses both members.
+    remediation: >-
+      Name the runner and the gate (see PLAN-TEST-001) and assert the counts from the CP-1-amended spec (the test
+      reads rows; the 42 comes from the pairing table length, with a guard that it equals the catalogue). Add a
+      type-level assertion file (`expectTypeOf` or a `tsc`-checked `.ts` with `// @ts-expect-error` for a payload with
+      the wrong `target`) that compiles only with the union, so reverting D-04 fails `pnpm typecheck`.

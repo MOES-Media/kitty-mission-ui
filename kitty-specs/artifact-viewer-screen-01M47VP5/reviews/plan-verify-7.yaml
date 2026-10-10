@@ -1,0 +1,28 @@
+schema: review-verify/v1
+complete: true
+phase: plan
+results:
+  - id: PLAN-FRESH4-001
+    status: resolved
+    reason: "The eyebrow now has an owner (renderDocument, IC-07, via DocumentView.eyebrow, in the contract part table, data-model, IC-07 purpose, surfaces and exit checks), and the eyebrow half of AV-29 moved to IC-10 in plan.md IC-09 and IC-10 and in the contract test obligations with no remaining IC-09 claim."
+  - id: PLAN-FRESH4-004
+    status: resolved
+    reason: "IC-10 and the contract now name one mechanism (Vitest browser cdp() with Emulation.setEmulatedMedia, computed values, positive controls, a new IC-10-owned test file, vitest.config.ts explicitly not edited), consistent with vitest 4.1.11 and the single-chromium config, and no Playwright-context wording remains."
+  - id: PLAN-FRESH4-005
+    status: resolved
+    reason: "The CP-1 write-back list now carries items (5) to (9) for A-2, A-6/DA-41 (including the tracer Drift register status text), A-7 (NFR-014/015, sum 13 to 15), Base A (C-012 and the stacking assumption) and A-3, each checked against the real spec lines (FR-043, C-012, the 13 and 38 sums, tracer line 41) and marked orchestrator-owned."
+  - id: PLAN-FRESH4-006
+    status: resolved
+    reason: "A scripted check of plan.md shows all 13 ICs (01a, 01b, 02, 03, 04, 05, 06a, 06b, 07, 08, 09, 10, 11) carry Purpose, Relevant requirements, Affected surfaces, Exit checks and Depends on bullets, IC-05 has real exit checks, IC-06b has split surfaces and checks, and IC-11 has requirements."
+  - id: PLAN-FRESH4-009
+    status: resolved
+    reason: "The IC-01b exit check now requires the figure and timing table in the WP report, D-05 is stated as not a lane file, and lane mechanics step (6) sequences the orchestrator copy and commit before IC-04 dispatch, consistent with the shared-files table."
+  - id: PLAN-FRESH4-010
+    status: resolved
+    reason: "The test:contract edit is dropped everywhere (glob confirmed in package.json line 35) and research D-19 and the gates hygiene row now say #5's test runs under test:terminology (confirmed on lane-j tip d15cb5d) and that this mission deliberately adds its file to test:scripts; the plan.md traceability row at line 38 was not re-read in full."
+  - id: PLAN-FRESH4-011
+    status: resolved
+    reason: "IC-06b now adds a skipLink option to shellFrame (default 'Skip to the content' confirmed at shell-frame.ts:63, so no baseline moves), this screen's stories pass 'Skip to artifact', and the contract and IC-06b surfaces agree; only the source-tree comment on plan.md line 132 still names just the sidebar tree option, a nit."
+  - id: PLAN-FRESH4-012
+    status: resolved
+    reason: "The gates.md self-check now limits the rule to markdown document text and explicitly allows listing paths and file names in title and aria-label via defaults templates, and plan.md IC-04 now lists the four exact R2 member names and says no render* glob, matching gates.md R2."

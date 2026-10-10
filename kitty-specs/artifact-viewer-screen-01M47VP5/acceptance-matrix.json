@@ -1,0 +1,449 @@
+{
+  "mission_slug": "artifact-viewer-screen-01M47VP5",
+  "mission_number": "",
+  "mission_type": "software-dev",
+  "overall_verdict": "pass",
+  "criteria": [
+    {
+      "criterion_id": "FR-001",
+      "description": "Verify FR-001 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/surface-freeze.test.ts + sk-artifact-screen.skeleton.test.ts: 13 properties, defaults, events; pnpm test lane-m 115 files/1632 tests green; WP08 review approved",
+      "pass_fail": "pass",
+      "verified_by": "claude (wrap-up executor)",
+      "verified_at": "2026-10-08T13:07:01.326689+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-002",
+      "description": "Verify FR-002 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-artifact-screen.layout.test.ts, sk-artifact-screen.inspector.test.ts ; lane-m 8c3a5f2+folds: pnpm test 115 files/1632 tests, test:scripts 416, gates green",
+      "pass_fail": "pass",
+      "verified_by": "claude (wrap-up executor)",
+      "verified_at": "2026-10-08T13:07:21.688188+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-003",
+      "description": "Verify FR-003 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-artifact-screen.document.test.ts (toolbar icon, name, title), WP09 review ; lane-m 8c3a5f2+folds: pnpm test 115 files/1632 tests, test:scripts 416, gates green",
+      "pass_fail": "pass",
+      "verified_by": "claude (wrap-up executor)",
+      "verified_at": "2026-10-08T13:07:24.170532+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-004",
+      "description": "Verify FR-004 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-artifact-screen.tabs.test.ts (roving tabindex, arrows, Home/End, aria-controls, state-only) ; lane-m 8c3a5f2+folds: pnpm test 115 files/1632 tests, test:scripts 416, gates green",
+      "pass_fail": "pass",
+      "verified_by": "claude (wrap-up executor)",
+      "verified_at": "2026-10-08T13:07:26.645776+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-005",
+      "description": "Verify FR-005 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/markdown-corpus.test.ts, markdown-source.test.ts; R1-R5 selftest gates/markdown-lint.selftest.ts (test:no-io 165 green) ; lane-m 8c3a5f2+folds: pnpm test 115 files/1632 tests, test:scripts 416, gates green",
+      "pass_fail": "pass",
+      "verified_by": "claude (wrap-up executor)",
+      "verified_at": "2026-10-08T13:07:28.828551+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-006",
+      "description": "Verify FR-006 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/markdown-model.test.ts, markdown-corpus.screen.test.ts, sk-artifact-screen.table.test.ts ; lane-m 8c3a5f2+folds: pnpm test 115 files/1632 tests, test:scripts 416, gates green",
+      "pass_fail": "pass",
+      "verified_by": "claude (wrap-up executor)",
+      "verified_at": "2026-10-08T13:07:31.139659+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-007",
+      "description": "Verify FR-007 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/markdown-links.test.ts, sk-artifact-screen.links.test.ts (select-artifact, open-link, inert) ; lane-m 8c3a5f2+folds: pnpm test 115 files/1632 tests, test:scripts 416, gates green",
+      "pass_fail": "pass",
+      "verified_by": "claude (wrap-up executor)",
+      "verified_at": "2026-10-08T13:07:37.911702+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-008",
+      "description": "Verify FR-008 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/markdown-corpus.test.ts request-absence policy listener with positive control; sk-artifact-screen.media.test.ts ; lane-m 8c3a5f2+folds: pnpm test 115 files/1632 tests, test:scripts 416, gates green",
+      "pass_fail": "pass",
+      "verified_by": "claude (wrap-up executor)",
+      "verified_at": "2026-10-08T13:07:40.010366+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-009",
+      "description": "Verify FR-009 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/markdown-corpus.test.ts, markdown-budget.test.ts, markdown-corpus-model.test.ts (hostile corpus, budget, fallback) ; lane-m 8c3a5f2+folds: pnpm test 115 files/1632 tests, test:scripts 416, gates green",
+      "pass_fail": "pass",
+      "verified_by": "claude (wrap-up executor)",
+      "verified_at": "2026-10-08T13:07:42.063673+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-010",
+      "description": "Verify FR-010 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-artifact-screen.notices.test.ts, markdown-corpus.screen.test.ts (fallback notice, escaped source) ; lane-m 8c3a5f2+folds: pnpm test 115 files/1632 tests, test:scripts 416, gates green",
+      "pass_fail": "pass",
+      "verified_by": "claude (wrap-up executor)",
+      "verified_at": "2026-10-08T13:07:44.188801+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-011",
+      "description": "Verify FR-011 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-artifact-screen.source.test.ts, artifact-view.test.ts (raw-only by mediaType) ; lane-m 8c3a5f2+folds: pnpm test 115 files/1632 tests, test:scripts 416, gates green",
+      "pass_fail": "pass",
+      "verified_by": "claude (wrap-up executor)",
+      "verified_at": "2026-10-08T13:07:46.436443+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-012",
+      "description": "Verify FR-012 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-artifact-screen.source.test.ts, sk-artifact-screen.overflow.test.ts (raw view, focusable only while overflowing) ; lane-m 8c3a5f2+folds: pnpm test 115 files/1632 tests, test:scripts 416, gates green",
+      "pass_fail": "pass",
+      "verified_by": "claude (wrap-up executor)",
+      "verified_at": "2026-10-08T13:07:48.550860+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-013",
+      "description": "Verify FR-013 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/artifact-view.test.ts, sk-artifact-screen.states.test.ts (empty file) ; lane-m 8c3a5f2+folds: pnpm test 115 files/1632 tests, test:scripts 416, gates green",
+      "pass_fail": "pass",
+      "verified_by": "claude (wrap-up executor)",
+      "verified_at": "2026-10-08T13:07:50.837809+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-014",
+      "description": "Verify FR-014 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-artifact-screen.notices.test.ts, artifact-facts.test.ts (redaction line and inspector row) ; lane-m 8c3a5f2+folds: pnpm test 115 files/1632 tests, test:scripts 416, gates green",
+      "pass_fail": "pass",
+      "verified_by": "claude (wrap-up executor)",
+      "verified_at": "2026-10-08T13:07:52.933107+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-015",
+      "description": "Verify FR-015 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/artifact-refusal.test.ts, sk-artifact-screen.refusal.test.ts, sk-artifact-screen.media.test.ts (seven codes, unknown code, no content) ; lane-m 8c3a5f2+folds: pnpm test 115 files/1632 tests, test:scripts 416, gates green",
+      "pass_fail": "pass",
+      "verified_by": "claude (wrap-up executor)",
+      "verified_at": "2026-10-08T13:07:54.974109+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-016",
+      "description": "Verify FR-016 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-artifact-screen.refusal.test.ts, sk-artifact-screen.payload.test.ts (Retry emits sk-retry-load target content) ; lane-m 8c3a5f2+folds: pnpm test 115 files/1632 tests, test:scripts 416, gates green",
+      "pass_fail": "pass",
+      "verified_by": "claude (wrap-up executor)",
+      "verified_at": "2026-10-08T13:07:57.054616+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-017",
+      "description": "Verify FR-017 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-artifact-screen.states.test.ts, sk-artifact-screen.payload.test.ts (listing error Retry, not-found Return to Pipeline) ; lane-m 8c3a5f2+folds: pnpm test 115 files/1632 tests, test:scripts 416, gates green",
+      "pass_fail": "pass",
+      "verified_by": "claude (wrap-up executor)",
+      "verified_at": "2026-10-08T13:07:59.069638+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-018",
+      "description": "Verify FR-018 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/artifact-tree.test.ts, artifact-path.test.ts (buildArtifactTree, 1000-entry cross-check) ; lane-m 8c3a5f2+folds: pnpm test 115 files/1632 tests, test:scripts 416, gates green",
+      "pass_fail": "pass",
+      "verified_by": "claude (wrap-up executor)",
+      "verified_at": "2026-10-08T13:08:01.113087+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-019",
+      "description": "Verify FR-019 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-artifact-screen.treehost.test.ts, sk-artifact-screen.tree.test.ts (shell sk-shell-tree host composition, screen emits neither event) ; lane-m 8c3a5f2+folds: pnpm test 115 files/1632 tests, test:scripts 416, gates green",
+      "pass_fail": "pass",
+      "verified_by": "claude (wrap-up executor)",
+      "verified_at": "2026-10-08T13:08:03.431576+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-020",
+      "description": "Verify FR-020 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/artifact-tree.test.ts, sk-artifact-screen.tree.test.ts (unavailable rows disabled) ; lane-m 8c3a5f2+folds: pnpm test 115 files/1632 tests, test:scripts 416, gates green",
+      "pass_fail": "pass",
+      "verified_by": "claude (wrap-up executor)",
+      "verified_at": "2026-10-08T13:08:05.547246+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-021",
+      "description": "Verify FR-021 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-artifact-screen.truncation.test.ts, artifact-defaults.test.ts (truncation note, LISTING_MAX_ENTRIES) ; lane-m 8c3a5f2+folds: pnpm test 115 files/1632 tests, test:scripts 416, gates green",
+      "pass_fail": "pass",
+      "verified_by": "claude (wrap-up executor)",
+      "verified_at": "2026-10-08T13:08:07.660140+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-022",
+      "description": "Verify FR-022 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/artifact-tree.test.ts, sk-artifact-screen.states.test.ts (empty listing, expanded path) ; lane-m 8c3a5f2+folds: pnpm test 115 files/1632 tests, test:scripts 416, gates green",
+      "pass_fail": "pass",
+      "verified_by": "claude (wrap-up executor)",
+      "verified_at": "2026-10-08T13:08:11.288044+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-023",
+      "description": "Verify FR-023 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-artifact-screen.states.test.ts, artifact-status.test.ts (view states and content states) ; lane-m 8c3a5f2+folds: pnpm test 115 files/1632 tests, test:scripts 416, gates green",
+      "pass_fail": "pass",
+      "verified_by": "claude (wrap-up executor)",
+      "verified_at": "2026-10-08T13:08:13.334976+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-024",
+      "description": "Verify FR-024 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-artifact-screen.states.test.ts (Choose an artifact) ; lane-m 8c3a5f2+folds: pnpm test 115 files/1632 tests, test:scripts 416, gates green",
+      "pass_fail": "pass",
+      "verified_by": "claude (wrap-up executor)",
+      "verified_at": "2026-10-08T13:08:15.365981+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-025",
+      "description": "Verify FR-025 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/artifact-facts.test.ts, sk-artifact-screen.inspector.test.ts ; lane-m 8c3a5f2+folds: pnpm test 115 files/1632 tests, test:scripts 416, gates green",
+      "pass_fail": "pass",
+      "verified_by": "claude (wrap-up executor)",
+      "verified_at": "2026-10-08T13:08:17.456510+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-026",
+      "description": "Verify FR-026 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/artifact-facts.test.ts, sk-artifact-screen.inspector.test.ts (Mission facts, hidden when none) ; lane-m 8c3a5f2+folds: pnpm test 115 files/1632 tests, test:scripts 416, gates green",
+      "pass_fail": "pass",
+      "verified_by": "claude (wrap-up executor)",
+      "verified_at": "2026-10-08T13:08:19.497653+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-027",
+      "description": "Verify FR-027 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/artifact-wp.test.ts, sk-artifact-screen.inspector.test.ts, sk-artifact-screen.dynamic.test.ts (linked Work Packages, sk-select-work-package) ; lane-m 8c3a5f2+folds: pnpm test 115 files/1632 tests, test:scripts 416, gates green",
+      "pass_fail": "pass",
+      "verified_by": "claude (wrap-up executor)",
+      "verified_at": "2026-10-08T13:08:21.666286+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-028",
+      "description": "Verify FR-028 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-artifact-screen.inspector.test.ts, sk-artifact-screen.dynamic.test.ts (Open Work Package present/absent) ; lane-m 8c3a5f2+folds: pnpm test 115 files/1632 tests, test:scripts 416, gates green",
+      "pass_fail": "pass",
+      "verified_by": "claude (wrap-up executor)",
+      "verified_at": "2026-10-08T13:08:23.820503+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-029",
+      "description": "Verify FR-029 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-artifact-screen.inspector.test.ts, sk-artifact-screen.notices.test.ts (read-only note) ; lane-m 8c3a5f2+folds: pnpm test 115 files/1632 tests, test:scripts 416, gates green",
+      "pass_fail": "pass",
+      "verified_by": "claude (wrap-up executor)",
+      "verified_at": "2026-10-08T13:08:26.004141+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-030",
+      "description": "Verify FR-030 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-artifact-screen.dynamic.test.ts, artifact-types.test.ts, artifact-defaults.test.ts (unknown kind rendered as given, neutral icon); gates/data-driven.selftest.ts ; lane-m 8c3a5f2+folds: pnpm test 115 files/1632 tests, test:scripts 416, gates green",
+      "pass_fail": "pass",
+      "verified_by": "claude (wrap-up executor)",
+      "verified_at": "2026-10-08T13:08:27.973598+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-031",
+      "description": "Verify FR-031 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/artifact-defaults.test.ts, vocabulary-homes.test.ts, sk-artifact-screen.dynamic.test.ts; lint:data-driven 0 findings ; lane-m 8c3a5f2+folds: pnpm test 115 files/1632 tests, test:scripts 416, gates green",
+      "pass_fail": "pass",
+      "verified_by": "claude (wrap-up executor)",
+      "verified_at": "2026-10-08T13:08:30.100648+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-032",
+      "description": "Verify FR-032 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/surface-freeze.test.ts, sk-artifact-screen.payload.test.ts, retry-types.test.ts, wp-retry-union.test.ts (EV events, union on target) ; lane-m 8c3a5f2+folds: pnpm test 115 files/1632 tests, test:scripts 416, gates green",
+      "pass_fail": "pass",
+      "verified_by": "claude (wrap-up executor)",
+      "verified_at": "2026-10-08T13:08:32.114220+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-033",
+      "description": "Verify FR-033 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-artifact-screen.composition.test.ts (sk-open-artifact consumed via selectedPath, never re-emitted) ; lane-m 8c3a5f2+folds: pnpm test 115 files/1632 tests, test:scripts 416, gates green",
+      "pass_fail": "pass",
+      "verified_by": "claude (wrap-up executor)",
+      "verified_at": "2026-10-08T13:08:34.184902+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-034",
+      "description": "Verify FR-034 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-artifact-screen.overflow.test.ts, sk-artifact-screen.document.test.ts, scripts/stylelint-exceptions.test.mjs (test:scripts 416 green) ; lane-m 8c3a5f2+folds: pnpm test 115 files/1632 tests, test:scripts 416, gates green",
+      "pass_fail": "pass",
+      "verified_by": "claude (wrap-up executor)",
+      "verified_at": "2026-10-08T13:08:36.270843+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-035",
+      "description": "Verify FR-035 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-artifact-screen.a11y.test.ts, sk-artifact-screen.announce.test.ts, sk-artifact-screen.focus.test.ts ; lane-m 8c3a5f2+folds: pnpm test 115 files/1632 tests, test:scripts 416, gates green",
+      "pass_fail": "pass",
+      "verified_by": "claude (wrap-up executor)",
+      "verified_at": "2026-10-08T13:08:38.386004+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-036",
+      "description": "Verify FR-036 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-artifact-screen.tier.test.ts, sk-artifact-screen.layout.test.ts; baselines at 800/620 px reviewed in WP12/WP13 ; lane-m 8c3a5f2+folds: pnpm test 115 files/1632 tests, test:scripts 416, gates green",
+      "pass_fail": "pass",
+      "verified_by": "claude (wrap-up executor)",
+      "verified_at": "2026-10-08T13:08:40.565147+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-037",
+      "description": "Verify FR-037 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-artifact-screen.integration.test.ts, sk-artifact-screen.treehost.test.ts; sk-mission-shell baselines unchanged (WP13 review) ; lane-m 8c3a5f2+folds: pnpm test 115 files/1632 tests, test:scripts 416, gates green",
+      "pass_fail": "pass",
+      "verified_by": "claude (wrap-up executor)",
+      "verified_at": "2026-10-08T13:08:43.210452+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-038",
+      "description": "Verify FR-038 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "pnpm test:contract + contract:check green (scripts/contract/*.test.mjs overlays.test.mjs registers the thirty documents); pin kept at b61d1fa ; lane-m 8c3a5f2+folds: pnpm test 115 files/1632 tests, test:scripts 416, gates green",
+      "pass_fail": "pass",
+      "verified_by": "claude (wrap-up executor)",
+      "verified_at": "2026-10-08T13:08:45.548255+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-039",
+      "description": "Verify FR-039 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "pnpm manifest:check green; packages/mission-ui/test/surface-freeze.test.ts ; lane-m 8c3a5f2+folds: pnpm test 115 files/1632 tests, test:scripts 416, gates green",
+      "pass_fail": "pass",
+      "verified_by": "claude (wrap-up executor)",
+      "verified_at": "2026-10-08T13:08:47.807336+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-040",
+      "description": "Verify FR-040 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "stylelint.config.mjs exceptions E-23..E-30,E-44,E-45 with scripts/stylelint-exceptions.test.mjs (286 cases) in test:scripts; lint:styles 0 findings ; lane-m 8c3a5f2+folds: pnpm test 115 files/1632 tests, test:scripts 416, gates green",
+      "pass_fail": "pass",
+      "verified_by": "claude (wrap-up executor)",
+      "verified_at": "2026-10-08T13:08:50.147048+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-041",
+      "description": "Verify FR-041 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "scripts/artifact-story-catalogue.test.mjs (35 rows, 45 stories, 45 baselines); pnpm visual on lane-m; CP-1 rulings (scratchpad ui7-cp1-rulings.md); WP13 review ; lane-m 8c3a5f2+folds: pnpm test 115 files/1632 tests, test:scripts 416, gates green",
+      "pass_fail": "pass",
+      "verified_by": "claude (wrap-up executor)",
+      "verified_at": "2026-10-08T13:08:52.540291+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-042",
+      "description": "Verify FR-042 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/artifact-size.test.ts, artifact-facts.test.ts ; lane-m 8c3a5f2+folds: pnpm test 115 files/1632 tests, test:scripts 416, gates green",
+      "pass_fail": "pass",
+      "verified_by": "claude (wrap-up executor)",
+      "verified_at": "2026-10-08T13:08:54.691799+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-043",
+      "description": "Verify FR-043 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "scripts/bundle-budget.test.mjs; ui7-wp13-pr-inputs.md FR-043 record (markdown-it 15.0.2, MIT, advisories, corpus); WP02 review ; lane-m 8c3a5f2+folds: pnpm test 115 files/1632 tests, test:scripts 416, gates green",
+      "pass_fail": "pass",
+      "verified_by": "claude (wrap-up executor)",
+      "verified_at": "2026-10-08T13:08:56.984988+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-044",
+      "description": "Verify FR-044 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "pnpm hygiene + scripts/hygiene/hygiene.test.mjs green; scripts/contract overlays.test.mjs ; lane-m 8c3a5f2+folds: pnpm test 115 files/1632 tests, test:scripts 416, gates green",
+      "pass_fail": "pass",
+      "verified_by": "claude (wrap-up executor)",
+      "verified_at": "2026-10-08T13:08:59.300450+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    }
+  ],
+  "negative_invariants": []
+}
