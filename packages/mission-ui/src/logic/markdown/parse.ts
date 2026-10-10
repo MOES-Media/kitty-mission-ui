@@ -22,3 +22,13 @@ export function parseTokens(source: string) {
   return md.parse(source, {});
 }
 parseTokens.calls = 0;
+/** The number of label scans the library's `parseLinkLabel` has run: the counted seam of the bracket-cost guard test. */
+parseTokens.labelScans = 0;
+/** Whether a label scan that cannot succeed is skipped. On by default; the equivalence test turns it off to compare. */
+parseTokens.labelEarlyOut = true;
+
+const libraryParseLinkLabel = md.helpers.parseLinkLabel;
+md.helpers.parseLinkLabel = (state, start, disableNested) => {
+  parseTokens.labelScans += 1;
+  return libraryParseLinkLabel(state, start, disableNested);
+};
