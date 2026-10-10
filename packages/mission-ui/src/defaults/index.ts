@@ -9,3 +9,8 @@ export * from './files.js';
 export * from './refusals.js';
 export * from './staleness.js';
 export * from './wp-copy.js';
+export * from './artifact-kinds.js';
+export * from './artifact-media.js';
+export * from './artifact-refusals.js';
+export * from './artifact-copy.js';
+export * from './markdown.js';

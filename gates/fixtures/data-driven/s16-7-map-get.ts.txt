@@ -1,0 +1,2 @@
+// expect: S16.7
+export const f = (m: Map<string, number>): number | undefined => m.get('contract');

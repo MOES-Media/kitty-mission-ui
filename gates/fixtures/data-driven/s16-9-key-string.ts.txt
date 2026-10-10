@@ -1,0 +1,2 @@
+// expect: S16.9
+export const m = { 'spec': 1 };

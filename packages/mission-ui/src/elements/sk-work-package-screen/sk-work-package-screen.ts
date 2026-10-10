@@ -551,8 +551,8 @@ export class SkWorkPackageScreen extends LitElement {
       refs === undefined || (refs.spec === null && refs.prompt === null)
         ? null
         : {
-            spec: refs.spec === null ? null : { path: refs.spec.path, kind: refs.spec.kind },
-            prompt: refs.prompt === null ? null : { path: refs.prompt.path, kind: refs.prompt.kind },
+            specLink: refs.spec === null ? null : { path: refs.spec.path, kind: refs.spec.kind },
+            promptLink: refs.prompt === null ? null : { path: refs.prompt.path, kind: refs.prompt.kind },
             inert,
           };
 
@@ -604,7 +604,6 @@ export class SkWorkPackageScreen extends LitElement {
 declare global {
   interface HTMLElementEventMap {
     'sk-open-artifact': CustomEvent<SkOpenArtifactDetail>;
-    'sk-retry-load': CustomEvent<SkRetryLoadDetail>;
   }
   interface HTMLElementTagNameMap {
     'sk-work-package-screen': SkWorkPackageScreen;

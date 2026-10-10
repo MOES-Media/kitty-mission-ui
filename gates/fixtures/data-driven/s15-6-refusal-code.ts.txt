@@ -1,0 +1,2 @@
+// expect: S15.1 S15.3
+export const f = (c: string): boolean => c === 'artifact_secret';

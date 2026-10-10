@@ -1,26 +1,9 @@
 import { DETAIL_REFUSAL_GENERIC, DETAIL_REFUSAL_WORDS } from '../defaults/index.js';
 import { lookup } from './lookup.js';
+import type { DetailRetryDetail, RetryLoadDetail, WorkPackageRetryDetail } from '../retry-types.js';
 
-/** The retry of the whole Work Package read. */
-export interface WorkPackageRetryDetail {
-  missionId: string;
-  wpId: string;
-  target: 'work-package';
-}
-
-/** The retry of the detail regions only. */
-export interface DetailRetryDetail {
-  missionId: string;
-  wpId: string;
-  target: 'detail';
-}
-
-/**
- * The payload of `sk-retry-load`: a union discriminated by `target`. `HTMLElementEventMap['sk-retry-load']` can be declared
- * once, so a later screen adds its own member here (with its own `target` word) instead of declaring the event again.
- * The screen's `SkRetryLoadDetail` is this type.
- */
-export type RetryLoadDetail = WorkPackageRetryDetail | DetailRetryDetail;
+// The payload types live in the neutral `src/retry-types.ts`; these re-exports keep #5's names.
+export type { DetailRetryDetail, RetryLoadDetail, WorkPackageRetryDetail } from '../retry-types.js';
 
 /** What the builder reads from the host's properties. */
 export interface RetryProps {

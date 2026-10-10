@@ -1,0 +1,9 @@
+// expect: S15.1 S15.3
+export function f(c: string): number {
+  switch (c) {
+    case 'not_found':
+      return 1;
+    default:
+      return 0;
+  }
+}
