@@ -369,7 +369,7 @@ export class SkMissionShell extends LitElement {
   @property({ type: Boolean, reflect: true })
   flush = false;
 
-  /** Which regions render; unknown values fall back to `project`. */
+  /** Which regions render: `project`, `mission`, or `picker` (top bar and one content column, no navigation at any tier). Unknown values fall back to `project`. */
   @property({ reflect: true })
   layout: ShellLayout = 'project';
 
@@ -582,9 +582,24 @@ export class SkMissionShell extends LitElement {
     return (layout === 'mission' ? this.mission?.title : this.project?.name) ?? '';
   }
 
+  /** The picker layout: top bar and one content column; every navigation input is ignored. */
+  private renderPicker(tier: ShellTier): TemplateResult {
+    return html`<div data-frame>
+      ${renderSkipLink({ onSkipLink: (event) => this.onSkipLink(event) })}
+      ${renderTopBar({ tier, context: '', picker: true, onHamburger: () => undefined })}
+      <div data-body data-layout="picker" data-tier=${tier}>
+        <div data-content>
+          ${renderStatus({ status: this.status, errorMessage: this.errorMessage, onRetry: () => this.emitRetry() })}
+          ${renderContent()}
+        </div>
+      </div>
+    </div>`;
+  }
+
   protected override render(): TemplateResult {
-    const layout: ShellLayout = this.layout === 'mission' ? 'mission' : 'project';
     const tier = this.tier;
+    if (this.layout === 'picker') return this.renderPicker(tier);
+    const layout: ShellLayout = this.layout === 'mission' ? 'mission' : 'project';
     const sidebarItems = [...this.navItems, ...(this.footerItem ? [this.footerItem] : [])];
     const marking = resolveMarking(
       this.current,

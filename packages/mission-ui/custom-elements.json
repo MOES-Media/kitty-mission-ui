@@ -241,7 +241,7 @@
                 "text": "ShellLayout"
               },
               "default": "'project'",
-              "description": "Which regions render; unknown values fall back to `project`.",
+              "description": "Which regions render: `project`, `mission`, or `picker` (top bar and one content column, no navigation at any tier). Unknown values fall back to `project`.",
               "attribute": "layout",
               "reflects": true
             },
@@ -413,7 +413,7 @@
                 "text": "ShellLayout"
               },
               "default": "'project'",
-              "description": "Which regions render; unknown values fall back to `project`.",
+              "description": "Which regions render: `project`, `mission`, or `picker` (top bar and one content column, no navigation at any tier). Unknown values fall back to `project`.",
               "fieldName": "layout"
             },
             {

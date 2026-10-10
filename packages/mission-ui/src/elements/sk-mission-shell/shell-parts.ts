@@ -64,15 +64,17 @@ export interface TopBarContext {
   /** The project name or mission title: shown beside the brand on mobile, where no sidebar is on screen. */
   context: string;
   onHamburger: () => void;
+  /** The picker layout: no hamburger and no context label at any tier. */
+  picker?: boolean;
 }
 
 export function renderTopBar(ctx: TopBarContext): TemplateResult {
   return html`<header data-top-bar>
-    ${ctx.tier === 'mobile'
+    ${ctx.tier === 'mobile' && ctx.picker !== true
       ? html`<sk-button size="icon" variant="ghost" label="Open navigation" @click=${ctx.onHamburger}>${renderIcon('menu')}</sk-button>`
       : nothing}
     <div data-brand>${renderBrandMark()}<slot name="brand"><span>kitty desktop</span></slot></div>
-    ${ctx.tier === 'mobile' && ctx.context !== '' ? html`<span data-top-bar-context>${ctx.context}</span>` : nothing}
+    ${ctx.tier === 'mobile' && ctx.picker !== true && ctx.context !== '' ? html`<span data-top-bar-context>${ctx.context}</span>` : nothing}
     <div data-top-bar-actions><slot name="top-bar-actions"></slot></div>
   </header>`;
 }

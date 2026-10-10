@@ -14,6 +14,7 @@ import type { Marking, SidebarContext } from './shell-parts.js';
 
 /** What the overlays read from, and write to, the shell. Public members only. */
 export interface OverlayHost extends ReactiveControllerHost, HTMLElement {
+  layout: string;
   tier: ShellTier;
   drawerOpen: boolean;
   flyoutOpen: boolean;
@@ -215,8 +216,9 @@ export class ShellOverlays implements ReactiveController {
 
   hostUpdate(): void {
     // Forced false outside their tier, before the render, so a host-set value there is simply ignored.
-    if (this.host.tier !== 'mobile') this.host.drawerOpen = false;
-    if (this.host.tier !== 'collapsed') this.host.flyoutOpen = false;
+    const picker = this.host.layout === 'picker';
+    if (picker || this.host.tier !== 'mobile') this.host.drawerOpen = false;
+    if (picker || this.host.tier !== 'collapsed') this.host.flyoutOpen = false;
   }
 
   hostUpdated(): void {
