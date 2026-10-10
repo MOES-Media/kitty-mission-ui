@@ -28,7 +28,21 @@ parseTokens.labelScans = 0;
 parseTokens.labelEarlyOut = true;
 
 const libraryParseLinkLabel = md.helpers.parseLinkLabel;
+// A label can only end at a `]` inside [start + 1, posMax), so with none there the library's scan returns -1 after reading every
+// character to the end of the run, once per `[`. The last `]` of a run is found once and kept for the state (and so the run) it was found in, so a
+// bracket with nothing to close it is answered in constant time and the answer is the one the scan would have given.
+let seenState: object | null = null;
+let seenMax = -1;
+let lastClose = -1;
 md.helpers.parseLinkLabel = (state, start, disableNested) => {
+  if (parseTokens.labelEarlyOut) {
+    if (state !== seenState || state.posMax !== seenMax) {
+      seenState = state;
+      seenMax = state.posMax;
+      lastClose = state.src.lastIndexOf(']', state.posMax - 1);
+    }
+    if (lastClose <= start) return -1;
+  }
   parseTokens.labelScans += 1;
   return libraryParseLinkLabel(state, start, disableNested);
 };
