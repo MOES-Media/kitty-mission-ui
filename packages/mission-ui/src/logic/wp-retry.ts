@@ -15,12 +15,31 @@ export interface DetailRetryDetail {
   target: 'detail';
 }
 
+/** The retry of one Projects list entry; `key` is the host's entry identity. */
+export interface ProjectRetryDetail {
+  target: 'project';
+  key: string;
+}
+
+/** The retry of the whole Projects list. */
+export interface ProjectsRetryDetail {
+  target: 'projects';
+}
+
+/** The retry of the folder listing of the open-project dialog. */
+export interface FoldersRetryDetail {
+  target: 'folders';
+}
+
+/** The two Work Package members: the only ones `retryDetail` builds. */
+export type WorkPackageRetryMember = WorkPackageRetryDetail | DetailRetryDetail;
+
 /**
  * The payload of `sk-retry-load`: a union discriminated by `target`. `HTMLElementEventMap['sk-retry-load']` can be declared
  * once, so a later screen adds its own member here (with its own `target` word) instead of declaring the event again.
  * The screen's `SkRetryLoadDetail` is this type.
  */
-export type RetryLoadDetail = WorkPackageRetryDetail | DetailRetryDetail;
+export type RetryLoadDetail = WorkPackageRetryMember | ProjectRetryDetail | ProjectsRetryDetail | FoldersRetryDetail;
 
 /** What the builder reads from the host's properties. */
 export interface RetryProps {
@@ -34,7 +53,7 @@ export interface RetryProps {
  * The one payload builder. The id comes from the host property `wpId`, then `workPackage.wpId`, then `detail.wpId`.
  * Null when there is no Mission or no id anywhere: the control is inert and no event is built.
  */
-export function retryDetail(target: (WorkPackageRetryDetail | DetailRetryDetail)['target'], props: RetryProps): RetryLoadDetail | null {
+export function retryDetail(target: WorkPackageRetryMember['target'], props: RetryProps): WorkPackageRetryMember | null {
   if (props.mission === null) return null;
   const wpId = [props.wpId, props.workPackage?.wpId, props.detail?.wpId].find((id): id is string => typeof id === 'string' && id !== '');
   if (wpId === undefined) return null;
