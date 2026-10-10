@@ -1,3 +1,4 @@
+/// <reference types="vite/client" />
 // The public surface of the Missions and Pipeline elements and of the Work Package screen, frozen. The committed manifest is
 // the contract: this test pins what it lists (tags, attributes, events) and the run-time defaults of every property,
 // so a later work package that changes the surface fails here and reports the change instead of making it.
@@ -5,6 +6,7 @@ import { describe, expect, it } from 'vitest';
 import manifest from '../custom-elements.json';
 import '../src/index.js';
 import { BOARD_LABEL, DEFAULT_LANE_GROUPS, PHASES_LABEL } from '../src/defaults/index.js';
+import type { ShellLayout } from '../src/shell-types.js';
 
 interface ManifestMember {
   kind: string;
@@ -12,6 +14,7 @@ interface ManifestMember {
   attribute?: string;
   default?: string;
   privacy?: string;
+  reflects?: boolean;
 }
 interface ManifestDeclaration {
   tagName?: string;
@@ -256,5 +259,185 @@ describe('the public type surface (BOUNDARY-004)', () => {
     const record: import('../src/index.js').WorkPackageRecordView | null = screen.workPackage;
     const detail: import('../src/index.js').WorkPackageDetailView | null = screen.detail;
     expect([record, detail]).toEqual([null, null]);
+  });
+});
+
+describe('the public type surface: the Projects screen (BOUNDARY-002)', () => {
+  it('exports ProjectView, the type of ProjectEntry.project, from the package entry', async () => {
+    const entry = await import('../src/index.js');
+    const screen = new entry.SkProjectsScreen();
+    // Compile-time: these names must resolve from the package entry, or `tsc` fails this file.
+    const view: import('../src/index.js').ProjectView | undefined = screen.entries[0]?.project;
+    const asEntry: import('../src/index.js').ProjectEntry = view === undefined ? { key: 'k', location: '' } : { key: 'k', location: '', project: view };
+    expect(asEntry.project).toBeUndefined();
+  });
+});
+
+describe('surface freeze: the Projects screen (five properties, three events) and the open-project dialog (five properties, three events)', () => {
+  const SCREEN = 'sk-projects-screen';
+  const DIALOG = 'sk-open-project-dialog';
+  const PROJECT_SURFACE: [string, string, string | undefined, unknown][] = [
+    [SCREEN, 'status', 'status', 'loading'],
+    [SCREEN, 'entries', undefined, []],
+    [SCREEN, 'now', 'now', null],
+    [SCREEN, 'labels', undefined, null],
+    [SCREEN, 'errorMessage', 'error-message', ''],
+    [DIALOG, 'open', 'open', false],
+    [DIALOG, 'location', 'location', ''],
+    [DIALOG, 'folders', undefined, []],
+    [DIALOG, 'selected', undefined, null],
+    [DIALOG, 'status', 'status', 'ready'],
+  ];
+  const PROJECT_EVENTS: [string, string[]][] = [
+    [SCREEN, ['sk-open-project', 'sk-request-open-project', 'sk-retry-load']],
+    [DIALOG, ['sk-browse-folder', 'sk-confirm-open-project', 'sk-retry-load']],
+  ];
+  const fields = (tag: string) => (declarations.get(tag)?.members ?? []).filter((m) => m.kind === 'field');
+
+  it('registers both tags and lists each in the committed manifest', () => {
+    let checked = 0;
+    for (const tag of [SCREEN, DIALOG]) {
+      expect(customElements.get(tag), tag).toBeDefined();
+      expect(declarations.has(tag), tag).toBe(true);
+      checked += 1;
+    }
+    expect(checked).toBe(2);
+  });
+
+  it('has exactly five properties each, with the contract attributes and defaults, in the manifest and at run time', () => {
+    expect(PROJECT_SURFACE.filter(([tag]) => tag === SCREEN)).toHaveLength(5);
+    expect(PROJECT_SURFACE.filter(([tag]) => tag === DIALOG)).toHaveLength(5);
+    let checked = 0;
+    for (const [tag, name, attribute, expected] of PROJECT_SURFACE) {
+      const member = fields(tag).find((m) => m.name === name);
+      expect(member, `${tag}.${name}`).toBeDefined();
+      expect(member?.attribute, `${tag}.${name} attribute`).toBe(attribute);
+      expect(member?.default, `${tag}.${name} default`).toBeDefined();
+      const element = document.createElement(tag) as unknown as Record<string, unknown>;
+      expect(element[name], `${tag}.${name} run-time default`).toEqual(expected);
+      checked += 1;
+    }
+    expect(checked).toBe(10);
+    for (const tag of [SCREEN, DIALOG]) {
+      expect(fields(tag).map((m) => m.name).sort(), tag).toEqual(PROJECT_SURFACE.filter(([t]) => t === tag).map(([, name]) => name).sort());
+      expect(fields(tag), tag).toHaveLength(5);
+    }
+  });
+
+  it('reflects exactly status (both) and open (dialog) in the manifest, and no other property', () => {
+    let reflected = 0;
+    for (const [tag] of [[SCREEN], [DIALOG]] as const) {
+      const names = fields(tag).filter((m) => m.reflects === true).map((m) => m.name).sort();
+      expect(names, tag).toEqual(tag === SCREEN ? ['status'] : ['open', 'status']);
+      reflected += names.length;
+    }
+    expect(reflected).toBe(3);
+  });
+
+  it('declares exactly the attributes of the contracts; every other property is property-only', () => {
+    const attributes = (tag: string) => (declarations.get(tag)?.attributes ?? []).map((a) => a.name).sort();
+    expect(attributes(SCREEN)).toEqual(['error-message', 'now', 'status']);
+    expect(attributes(DIALOG)).toEqual(['location', 'open', 'status']);
+    const ctor = (tag: string) => customElements.get(tag) as unknown as { elementProperties: Map<string, unknown>; observedAttributes: string[] };
+    expect(ctor(SCREEN).elementProperties.size).toBe(5);
+    expect(ctor(DIALOG).elementProperties.size).toBe(5);
+    expect([...ctor(SCREEN).observedAttributes].sort()).toEqual(['error-message', 'now', 'status']);
+    expect([...ctor(DIALOG).observedAttributes].sort()).toEqual(['location', 'open', 'status']);
+  });
+
+  it('declares exactly three events each, no slot and no part; sk-retry-load is the one shared name', () => {
+    let checked = 0;
+    for (const [tag, expected] of PROJECT_EVENTS) {
+      expect((declarations.get(tag)?.events ?? []).map((e) => e.name).sort(), tag).toEqual(expected);
+      expect(declarations.get(tag)?.events, tag).toHaveLength(3);
+      expect(declarations.get(tag)?.slots ?? [], `${tag} slots`).toEqual([]);
+      expect(declarations.get(tag)?.cssParts ?? [], `${tag} parts`).toEqual([]);
+      checked += 1;
+    }
+    expect(checked).toBe(2);
+    const declared = [...declarations.values()].flatMap((declaration) => (declaration.events ?? []).map((e) => e.name));
+    expect(declared.filter((name) => name === 'sk-retry-load')).toHaveLength(3);
+  });
+
+  it('marks the Projects screen, and not the dialog, as a screen with the `@screen` line the manifest gate looks for', async () => {
+    const sources = import.meta.glob('../src/elements/{sk-projects-screen/sk-projects-screen,sk-open-project-dialog/sk-open-project-dialog}.ts', {
+      query: '?raw',
+      import: 'default',
+      eager: true,
+    }) as Record<string, string>;
+    const marker = /^[ \t]*\*[ \t]*@screen[ \t]*$/m;
+    const keys = Object.keys(sources).sort();
+    expect(keys).toHaveLength(2);
+    expect(marker.test(sources[keys.find((key) => key.includes('sk-projects-screen.ts')) ?? ''] ?? '')).toBe(true);
+    expect(marker.test(sources[keys.find((key) => key.includes('sk-open-project-dialog.ts')) ?? ''] ?? '')).toBe(false);
+    // Both carry a status property: the screen because the gate requires it, the dialog because it states its listing.
+    expect(fields(SCREEN).some((m) => m.name === 'status')).toBe(true);
+    expect(fields(DIALOG).some((m) => m.name === 'status')).toBe(true);
+  });
+
+  it('reflects status on both, and open on the dialog', async () => {
+    const screen = document.createElement(SCREEN) as HTMLElement & { status: string; updateComplete: Promise<boolean> };
+    const dialog = document.createElement(DIALOG) as HTMLElement & { status: string; open: boolean; updateComplete: Promise<boolean> };
+    document.body.append(screen, dialog);
+    screen.status = 'ready';
+    dialog.status = 'error';
+    dialog.open = true;
+    await Promise.all([screen.updateComplete, dialog.updateComplete]);
+    expect(screen.getAttribute('status')).toBe('ready');
+    expect(dialog.getAttribute('status')).toBe('error');
+    expect(dialog.hasAttribute('open')).toBe(true);
+    screen.remove();
+    dialog.remove();
+  });
+
+  it('declares no method beyond the lifecycle hooks, the dispatch methods and the private helpers', () => {
+    // Both element files are frozen after this work package: a new method, public or not, is a change of the file and shows here.
+    const own = (tag: string) => {
+      const proto = customElements.get(tag)?.prototype as object;
+      return Object.getOwnPropertyNames(proto)
+        .filter((name) => typeof Object.getOwnPropertyDescriptor(proto, name)?.value === 'function')
+        .sort();
+    };
+    expect(own(SCREEN)).toEqual(
+      ['constructor', 'entryText', 'moveFocusIntoView', 'openProject', 'render', 'renderBody', 'requestOpenProject', 'retryProject', 'retryProjects', 'stateText', 'transitionText', 'updated', 'willUpdate'].sort(),
+    );
+    expect(own(DIALOG)).toEqual(
+      ['closeDialog', 'confirmOpen', 'constructor', 'focusFirstControl', 'listingText', 'render', 'renderListing', 'retryFolders', 'returnFocus', 'selectFolder', 'selectedValid', 'updated', 'willUpdate'].sort(),
+    );
+    expect((declarations.get(SCREEN)?.members ?? []).filter((m) => m.kind === 'method')).toEqual([]);
+    expect((declarations.get(DIALOG)?.members ?? []).filter((m) => m.kind === 'method')).toEqual([]);
+  });
+});
+
+describe('surface freeze: the shell layout value set', () => {
+  it('lists project, mission and picker, in the manifest and as the type', () => {
+    const layouts: ShellLayout[] = ['project', 'mission', 'picker'];
+    const member = (declarations.get('sk-mission-shell')?.members ?? []).find((m) => m.kind === 'field' && m.name === 'layout') as (ManifestMember & { description?: string; type?: { text: string } }) | undefined;
+    expect(member?.attribute).toBe('layout');
+    expect(member?.default).toBe("'project'");
+    expect(member?.type?.text).toBe('ShellLayout');
+    let found = 0;
+    for (const layout of layouts) {
+      expect(member?.description, layout).toContain(`\`${layout}\``);
+      found += 1;
+    }
+    expect(found).toBe(3);
+    expect(layouts).toHaveLength(3);
+  });
+
+  it('resolves picker exactly and keeps the fallback to project for any other value', async () => {
+    const shell = document.createElement('sk-mission-shell') as HTMLElement & { layout: string; updateComplete: Promise<boolean> };
+    document.body.append(shell);
+    const resolved: Record<string, boolean> = {};
+    for (const layout of ['picker', 'project', 'mission', 'bogus']) {
+      shell.layout = layout;
+      await shell.updateComplete;
+      resolved[layout] = shell.shadowRoot?.querySelector('sk-context-sidebar, sk-personal-rail') === null;
+    }
+    // picker draws no navigation; the others keep theirs (a project-layout shell has the context sidebar or the rail).
+    expect(resolved['picker']).toBe(true);
+    expect(Object.keys(resolved)).toHaveLength(4);
+    expect(resolved['bogus']).toBe(resolved['project']);
+    shell.remove();
   });
 });
