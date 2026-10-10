@@ -356,8 +356,11 @@ describe('surface freeze: the Projects screen (five properties, three events) an
       checked += 1;
     }
     expect(checked).toBe(2);
-    const declared = [...declarations.values()].flatMap((declaration) => (declaration.events ?? []).map((e) => e.name));
-    expect(declared.filter((name) => name === 'sk-retry-load')).toHaveLength(3);
+    const retryDeclarers = [...declarations.entries()]
+      .filter(([, declaration]) => (declaration.events ?? []).some((e) => e.name === 'sk-retry-load'))
+      .map(([tag]) => tag)
+      .sort();
+    expect(retryDeclarers).toEqual(['sk-artifact-screen', 'sk-open-project-dialog', 'sk-projects-screen', 'sk-work-package-screen']);
   });
 
   it('marks the Projects screen, and not the dialog, as a screen with the `@screen` line the manifest gate looks for', async () => {
