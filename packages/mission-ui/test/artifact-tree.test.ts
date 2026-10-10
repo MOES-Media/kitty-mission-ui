@@ -7,6 +7,7 @@ import { dirOf, resolveRelative, splitPath } from '../src/logic/artifact-path.js
 import { buildArtifactTree, pathOfArtifactNode } from '../src/logic/artifact-tree.js';
 import type { ArtifactVocabulary } from '../src/logic/artifact-types.js';
 import type { TreeNode } from '../src/shell-types.js';
+import { leafId, walk } from './support/artifact-tree-harness.js';
 import treeSource from '../src/logic/artifact-tree.ts?raw';
 import pathSource from '../src/logic/artifact-path.ts?raw';
 
@@ -19,16 +20,7 @@ const entry = (path: string, over: Partial<ArtifactEntryView> = {}): ArtifactEnt
   ...over,
 });
 
-const leafId = (path: string): string => `${TREE_ID_PREFIX}${path}`;
 const folderId = (path: string): string => `${TREE_FOLDER_ID_PREFIX}${path}`;
-
-function walk(nodes: readonly TreeNode[], into: TreeNode[] = []): TreeNode[] {
-  for (const node of nodes) {
-    into.push(node);
-    if (node.children) walk(node.children, into);
-  }
-  return into;
-}
 
 const SAMPLE = [entry('a.md'), entry('docs/b.md'), entry('docs/deep/c.md'), entry('docs/deep/d.md'), entry('z/e.md')];
 
@@ -181,23 +173,6 @@ describe('buildArtifactTree: kinds, icons and the vocabulary', () => {
 });
 
 describe('buildArtifactTree: the 1000-entry listing', () => {
-  it('builds it under the 500 ms ceiling, best of three after a warm-up, and the pinned shape holds', () => {
-    const listing = makeArtifactListing(BULK_LISTING_SIZE, { truncated: true, include: ['spec.md'] });
-    expect(listing.entries.length).toBe(1000);
-    const options = { selectedPath: 'spec.md' };
-    const warm = buildArtifactTree(listing.entries, options);
-    expect(walk(warm.nodes).filter((n) => n.kind === 'leaf').length).toBe(1000);
-    expect(warm.current).toBe(leafId('spec.md'));
-    const times: number[] = [];
-    for (let run = 0; run < 3; run += 1) {
-      const start = performance.now();
-      buildArtifactTree(listing.entries, options);
-      times.push(performance.now() - start);
-    }
-    expect(times.length).toBe(3);
-    expect(Math.min(...times)).toBeLessThan(500);
-  });
-
   it('cross-checks every entry: its own relative name from its directory resolves to its path, and the tree builds the leaf with that id', () => {
     const listing = makeArtifactListing(BULK_LISTING_SIZE, { truncated: false });
     const { nodes } = buildArtifactTree(listing.entries, { selectedPath: '' });

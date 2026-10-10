@@ -96,6 +96,12 @@ Retry ownership: the shell owns a whole-page failure (`sk-shell-retry`); a scree
 (`sk-retry-load`). The `sk-retry-load` payload is a union keyed on `target`; this screen's members are `'work-package'` and
 `'detail'`, and a later screen adds its own member to the union instead of declaring the event again.
 
+## Running the tests
+
+`pnpm test` runs two Vitest projects in the same Chromium setup, one after the other and never together: `unit` (every test file except `*.perf.test.ts`) and then `perf` (only `*.perf.test.ts`, with `fileParallelism: false`, so one file at a time). Run one project with `pnpm --filter @moes-media/mission-ui exec vitest run --project unit` (or `--project perf`).
+
+A test that measures wall-clock time against a ceiling (`within 200 ms`, an NFR budget) belongs in a sibling `<name>.perf.test.ts`, so that it is not timed while other test files share the browser. The ceilings are not loosened by this. `scripts/perf-split.test.mjs` (part of `pnpm test:scripts`) fails when a file that calls `performance.now()` and asserts a ceiling is not a `*.perf.test.ts`, and when a `*.perf.test.ts` has none. Helpers that a unit file and its perf sibling both need live in `packages/mission-ui/test/support/`.
+
 ## The Projects screen
 
 `sk-projects-screen` lists the projects a host knows about and reports which one to open. The optional widget
@@ -189,7 +195,7 @@ packages, never only the changed files.
 | `Gate: contract` | `pnpm contract:check` and `pnpm test:contract` | the vendored Mission Status contract equals its pin, the generated types and fixtures are fresh, every fixture is a valid and coherent contract document (closed shapes), no event-stream identifier in `packages/*/src` |
 | `Gate: data-driven` | `pnpm lint:data-driven` and `pnpm test:data-driven` | no phase name, status lane or other contract status word (`pending`, `complete`, `draft`, `discarded`) hard-coded in `packages/*/src` outside `src/defaults/`, `src/contract/`, stories, fixtures and `src/story-support/`; 31 selectors, a self-test with 36 positive fixtures and inline `eslint-disable` comments ignored |
 | `Gate: storybook-build` | `pnpm build-storybook` | the static Storybook builds (255 stories), then the output is scanned for tokens |
-| `Gate: unit-tests` | `pnpm test` | Vitest browser-mode tests: one per emitted event and payload, plus the host composition test (both screens rendered from contract-shaped data with no I/O) |
+| `Gate: unit-tests` | `pnpm test` | Vitest browser-mode tests in two projects run one after the other, `unit` and then `perf` (the wall-clock ceiling tests, one file at a time; see below): one test per emitted event and payload, plus the host composition test (both screens rendered from contract-shaped data with no I/O) |
 | `Gate: visual` | `pnpm visual` | screenshots of every story (255) against the committed baselines (255, one per story), inside the pinned Playwright container |
 | `Gate: proof (<gate>)` | `pnpm gate-proof` | one leg per gate: passes clean, fails with the plant (see below) |
 | `Gate: proof` | (CI only) | checks coverage, assembles and schema-validates the proof record |

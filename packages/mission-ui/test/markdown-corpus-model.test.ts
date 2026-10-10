@@ -10,7 +10,6 @@ import { parseTokens } from '../src/logic/markdown/parse.js';
 import { CORPUS, LISTING, OPEN_PATH, expectedElementCount, type Activation, type CorpusEntry } from './support/markdown-corpus-entries.js';
 
 const EXPECTED_ENTRIES = 326;
-const KIB = 1024;
 
 /** The plain text of an inline run: what the reader sees of the document's own words (suffix words are the renderer's). */
 function inlineText(nodes: readonly ResolvedInline[]): string {
@@ -158,23 +157,6 @@ describe('the corpus on the model', () => {
       for (const part of entry.absent ?? []) expect({ name: entry.name, has: text.includes(part) }).toEqual({ name: entry.name, has: false });
     }
     expect(checked).toBeGreaterThan(100);
-  });
-
-  it('builds every model inside its ceiling (model only, best of three after a warm-up)', () => {
-    const slow: string[] = [];
-    for (const entry of CORPUS) {
-      const ceiling = entry.ceilingMs ?? (entry.source.length >= 100 * KIB ? 500 : 200);
-      buildMarkdownModel(entry.source);
-      let best = Infinity;
-      for (let run = 0; run < 3; run += 1) {
-        const start = performance.now();
-        const result = buildMarkdownModel(entry.source);
-        if (result.kind === 'ok') resolveLinks(result.blocks, { openPath: OPEN_PATH, kindOf: LISTING });
-        best = Math.min(best, performance.now() - start);
-      }
-      if (best > ceiling) slow.push(`${entry.name}: ${best.toFixed(0)} ms over ${ceiling} ms`);
-    }
-    expect(slow).toEqual([]);
   });
 });
 

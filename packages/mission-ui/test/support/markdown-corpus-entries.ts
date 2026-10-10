@@ -67,7 +67,7 @@ const X: Activation = { artifact: { path: 'docs/x.md', kind: 'plan' } };
 const Y: Activation = { artifact: { path: 'docs/y.md', kind: 'tasks' } };
 const ext = (href: string): Activation => ({ external: href });
 
-const KIB = 1024;
+export const KIB = 1024;
 const LARGE = 256 * KIB;
 const SHORT_LINE = 200;
 

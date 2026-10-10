@@ -4,12 +4,10 @@ import { html, render } from 'lit';
 import '@spec-kitty/tokens';
 import '../src/index.js';
 import type { SkMissionsScreen } from '../src/elements/sk-missions-screen/sk-missions-screen.js';
-import type { SkFilterToggleGroup } from '../src/elements/sk-filter-toggle-group/sk-filter-toggle-group.js';
 import * as stories from '../src/elements/sk-missions-screen/sk-missions-screen.stories.js';
 import {
   BRANCH,
   NOW,
-  bulkMissions,
   duplicateNames,
   exhaustedMissions,
   firstMissions,
@@ -24,66 +22,21 @@ import {
   longNamePageInfo,
   longPageInfo,
   mixedMissions,
-  mixedPageInfo,
   project,
   projectOf,
 } from '../src/elements/sk-missions-screen/fixtures.js';
+import { filterButton, filterGroup, mount, missionItems, one, readyProps, resetDocument, searchInput, settle, sr, type Props } from './support/missions-screen-harness.js';
 import { shellFrame } from '../src/story-support/shell-frame.js';
 import type { MissionOverviewView } from '../src/contract/types.js';
 import type { PageInfo } from '../src/contract/types.js';
 
-afterEach(async () => {
-  document.body.replaceChildren();
-  document.documentElement.style.fontSize = '';
-  await page.viewport(414, 896);
-});
+afterEach(resetDocument);
 
-type Props = Partial<SkMissionsScreen>;
 
-const readyProps = (): Props => ({
-  status: 'ready',
-  project,
-  branch: BRANCH,
-  missions: mixedMissions,
-  pageInfo: mixedPageInfo,
-  now: NOW,
-});
 
-async function mount(props: Props = readyProps(), width = 1280): Promise<SkMissionsScreen> {
-  await page.viewport(width, 900);
-  const el = document.createElement('sk-missions-screen');
-  Object.assign(el, props);
-  document.body.append(el);
-  await settle(el);
-  return el;
-}
 
-/** Waits for the screen and every library element inside it. */
-async function settle(el: SkMissionsScreen): Promise<void> {
-  await el.updateComplete;
-  const toggle = el.shadowRoot?.querySelector<SkFilterToggleGroup>('sk-filter-toggle-group');
-  await toggle?.updateComplete;
-  for (const row of el.shadowRoot?.querySelectorAll('sk-action-row') ?? []) await (row as HTMLElement & { updateComplete: Promise<boolean> }).updateComplete;
-  for (const tag of ['sk-form-input', 'sk-notice', 'sk-page-header', 'sk-button']) {
-    for (const node of el.shadowRoot?.querySelectorAll(tag) ?? []) await (node as HTMLElement & { updateComplete: Promise<boolean> }).updateComplete;
-  }
-}
 
-function sr(el: SkMissionsScreen): ShadowRoot {
-  if (!el.shadowRoot) throw new Error('no shadow root');
-  return el.shadowRoot;
-}
 
-function one<T extends Element>(scope: ParentNode, selector: string): T {
-  const found = scope.querySelector<T>(selector);
-  if (!found) throw new Error(`missing ${selector}`);
-  return found;
-}
-
-/** The Mission rows' wrapping list items (not the Load more row). */
-function missionItems(el: SkMissionsScreen): HTMLLIElement[] {
-  return [...sr(el).querySelectorAll<HTMLLIElement>('ul > li')].filter((li) => li.querySelector('sk-action-row') !== null);
-}
 
 function visibleNames(el: SkMissionsScreen): string[] {
   return missionItems(el)
@@ -106,20 +59,8 @@ function loadMoreButton(el: SkMissionsScreen): HTMLElement {
   return one<HTMLElement>(li, 'sk-button');
 }
 
-function filterGroup(el: SkMissionsScreen): SkFilterToggleGroup {
-  return one<SkFilterToggleGroup>(sr(el), 'sk-filter-toggle-group');
-}
 
-function filterButton(el: SkMissionsScreen, label: string): HTMLButtonElement {
-  const found = [...(filterGroup(el).shadowRoot?.querySelectorAll<HTMLButtonElement>('button') ?? [])].find((b) => b.textContent?.trim() === label);
-  if (!found) throw new Error(`filter ${label} missing`);
-  return found;
-}
 
-function searchInput(el: SkMissionsScreen): HTMLInputElement {
-  const field = one<HTMLElement>(sr(el), 'sk-form-input');
-  return one<HTMLInputElement>(field.shadowRoot as ShadowRoot, 'input');
-}
 
 function liveRegion(el: SkMissionsScreen): HTMLElement {
   return one<HTMLElement>(sr(el), '[role="status"]');
@@ -790,61 +731,6 @@ describe('result-count live region', () => {
     }
     expect([...seen].some((node) => region.contains(node) || node === region)).toBe(false);
     expect(seen.size).toBeGreaterThan(6);
-  });
-});
-
-describe('500 Missions, 200 ms', () => {
-  async function mountBulk(): Promise<{ el: SkMissionsScreen; before: HTMLLIElement[] }> {
-    const missions = bulkMissions(500);
-    const el = await mount({ ...readyProps(), missions, pageInfo: fullMoreInfo, project: projectOf(500) });
-    const before = missionItems(el);
-    expect(before.length).toBe(500);
-    expect(before.filter((li) => li.hidden).length).toBe(0);
-    return { el, before };
-  }
-
-  function expectSameNodes(el: SkMissionsScreen, before: HTMLLIElement[]): void {
-    const after = missionItems(el);
-    expect(after.length).toBe(500);
-    for (const index of [0, 249, 499]) expect(after[index]).toBe(before[index]);
-    let same = 0;
-    for (let i = 0; i < 500; i += 1) {
-      if (after[i] === before[i]) same += 1;
-    }
-    expect(same).toBe(500);
-    const hidden = after.filter((li) => li.hidden).length;
-    expect(hidden).toBeGreaterThan(0);
-    expect(hidden).toBeLessThan(500);
-  }
-
-  it('a filter press (the real button) updates the rows within 200 ms; the same li nodes survive', async () => {
-    const { el, before } = await mountBulk();
-    const button = filterButton(el, 'Done');
-    const start = performance.now();
-    button.click();
-    await el.updateComplete;
-    const elapsed = performance.now() - start;
-    expect(elapsed).toBeLessThanOrEqual(200);
-    expectSameNodes(el, before);
-  });
-
-  it('a keystroke in the real search input updates the rows within 200 ms; the same li nodes survive', async () => {
-    const { el, before } = await mountBulk();
-    const input = searchInput(el);
-    input.focus();
-    // The keystroke itself travels through the browser-mode command channel (tens of milliseconds of test plumbing, not
-    // screen work), so the clock runs from the input event reaching the screen to the end of its update.
-    let start = 0;
-    let end = 0;
-    el.addEventListener('input', () => (start = performance.now()), { capture: true });
-    el.addEventListener('input', () => void el.updateComplete.then(() => (end = performance.now())));
-    await userEvent.keyboard('7');
-    await el.updateComplete;
-    const elapsed = end - start;
-    expect(start).toBeGreaterThan(0);
-    expect(end).toBeGreaterThanOrEqual(start);
-    expect(elapsed).toBeLessThanOrEqual(200);
-    expectSameNodes(el, before);
   });
 });
 
