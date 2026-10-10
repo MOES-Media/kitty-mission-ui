@@ -1,7 +1,7 @@
 # spec-kitty-mission-ui
 
 Shared Spec Kitty mission screens (Lit web components) for the dashboard and Kitty Desktop.
-Storybook is the workbench and the visual source of truth. The package is `@spec-kitty/mission-ui`.
+Storybook is the workbench and the visual source of truth. The package is `@moes-media/mission-ui`.
 
 ## Setup
 

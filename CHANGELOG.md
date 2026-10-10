@@ -62,6 +62,11 @@ All user-visible changes to this repository. Per-package notes live in `packages
 
 ### Changed
 
+- **The repository is now `kitty-mission-ui`, licensed AGPL-3.0-or-later.** The packages are renamed
+  `@spec-kitty/mission-ui` to `@moes-media/mission-ui` and `@spec-kitty/storybook-app` to `@moes-media/storybook-app`;
+  every `package.json` declares `"license": "AGPL-3.0-or-later"`. The design library (`@spec-kitty/elements`,
+  `@spec-kitty/styles`, `@spec-kitty/tokens`) keeps its scope and registry.
+
 - **💥 The mission sample's open event is now `sk-open-mission`** (`#4`). Hosts that listened for `sk-mission-open`
   on `sk-mission-sample` must listen for `sk-open-mission`; it carries the same detail type as the Missions screen, so
   one listener serves both. New events follow the verb-noun form; the shell's older event names are unchanged.
