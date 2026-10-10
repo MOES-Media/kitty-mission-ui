@@ -596,6 +596,10 @@ jobs:
         uses: ./.github/actions/install
         with:
           npm-token: ${{ secrets.NPM_TOKEN }}
+      - name: Trust the checkout for git
+        # In the Playwright container the checkout belongs to another user, so git refuses it ("dubious ownership") and
+        # the proof's restore step cannot ask which planted files are tracked.
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
       - name: Run the gate proof leg
         run: node scripts/gate-proof.mjs leg --gate ${{ matrix.gate }} --out proof-output/fragments
       - name: Upload proof fragment
