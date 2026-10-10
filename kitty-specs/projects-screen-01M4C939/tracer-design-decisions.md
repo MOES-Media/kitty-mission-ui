@@ -173,7 +173,7 @@ Named out-of-map config edits by WP06 (`stylelint.config.mjs`, `eslint.config.mj
 
 ## Wrap-up (2026-10-09)
 
-- Accepted with `spec-kitty accept --mode local --lenient` (the `src/`, `tests/` and `docs/` path conventions do not apply to this repository; ledger a spec-kitty tooling issue). The 33 acceptance criteria carry `pass` verdicts with evidence.
+- Accepted with `spec-kitty accept --mode local --lenient` (the `src/`, `tests/` and `docs/` path conventions do not apply to this repository) (a recorded spec-kitty tooling issue). The 33 acceptance criteria carry `pass` verdicts with evidence.
 - Issue matrix: `#5528`, `#5776`, `#5881` and `#496` are `not-applicable` (cited only); `#9` stays `in-mission` until the orchestrator sets its terminal verdict after the merge.
 - Dev-assist folds on lane-i, each its own commit:
   - the open-project dialog's listing-error "Try again" sits the screen error's 12 px (`--sk-space-3`) under the notice; one baseline regenerated (`screens-projects-open-project-dialog--error-1280`);
