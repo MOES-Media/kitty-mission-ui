@@ -1,0 +1,40 @@
+schema: review-verify/v1
+complete: true
+phase: plan
+results:
+- id: plan-arch-001
+  status: resolved
+  reason: Fix present in the committed plan/spec text (see plan.fixes.md).
+- id: plan-arch-002
+  status: resolved
+  reason: Fix present in the committed plan/spec text (see plan.fixes.md).
+- id: plan-arch-003
+  status: resolved
+  reason: Fix present in the committed plan/spec text (see plan.fixes.md).
+- id: plan-correct-001
+  status: resolved
+  reason: Fix present in the committed plan/spec text (see plan.fixes.md).
+- id: plan-correct-002
+  status: resolved
+  reason: Fix present in the committed plan/spec text (see plan.fixes.md).
+- id: plan-correct-003
+  status: resolved
+  reason: Fix present in the committed plan/spec text (see plan.fixes.md).
+- id: plan-correct-004
+  status: resolved
+  reason: Fix present in the committed plan/spec text (see plan.fixes.md).
+- id: plan-visual-001
+  status: resolved
+  reason: Fix present in the committed plan/spec text (see plan.fixes.md).
+- id: plan-visual-002
+  status: resolved
+  reason: Fix present in the committed plan/spec text (see plan.fixes.md).
+- id: plan-visual-003
+  status: resolved
+  reason: Fix present in the committed plan/spec text (see plan.fixes.md).
+- id: plan-verify-001
+  status: resolved
+  reason: Fix present in the committed plan/spec text (see plan.fixes.md).
+- id: plan-verify-002
+  status: resolved
+  reason: Fix present in the committed plan/spec text (see plan.fixes.md).

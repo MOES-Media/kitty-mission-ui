@@ -535,7 +535,7 @@
                 "text": "ShellLayout"
               },
               "default": "'project'",
-              "description": "Which regions render; unknown values fall back to `project`.",
+              "description": "Which regions render: `project`, `mission`, or `picker` (top bar and one content column, no navigation at any tier). Unknown values fall back to `project`.",
               "attribute": "layout",
               "reflects": true
             },
@@ -707,7 +707,7 @@
                 "text": "ShellLayout"
               },
               "default": "'project'",
-              "description": "Which regions render; unknown values fall back to `project`.",
+              "description": "Which regions render: `project`, `mission`, or `picker` (top bar and one content column, no navigation at any tier). Unknown values fall back to `project`.",
               "fieldName": "layout"
             },
             {
@@ -1041,6 +1041,143 @@
     },
     {
       "kind": "javascript-module",
+      "path": "src/elements/sk-open-project-dialog/folder-list-parts.ts",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/elements/sk-open-project-dialog/sk-open-project-dialog.ts",
+      "declarations": [
+        {
+          "kind": "class",
+          "description": "The open-project dialog. Semi-controlled: Cancel, Escape and a backdrop click set `open` false themselves and emit nothing.\nIt is a widget, not a screen: it has a `status` property (the folder listing) and carries no screen marker.",
+          "name": "SkOpenProjectDialog",
+          "members": [
+            {
+              "kind": "field",
+              "name": "open",
+              "type": {
+                "text": "boolean"
+              },
+              "default": "false",
+              "description": "Whether the dialog is open; semi-controlled: Cancel, Escape and a backdrop click set it false.",
+              "attribute": "open",
+              "reflects": true
+            },
+            {
+              "kind": "field",
+              "name": "location",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "description": "The location shown in the read-only folder field; opaque host text.",
+              "attribute": "location"
+            },
+            {
+              "kind": "field",
+              "name": "folders",
+              "type": {
+                "text": "FolderEntry[]"
+              },
+              "default": "[]",
+              "description": "The folders of the listing in host order."
+            },
+            {
+              "kind": "field",
+              "name": "selected",
+              "type": {
+                "text": "string | null"
+              },
+              "default": "null",
+              "description": "The `location` of the selected folder, or null; controlled by the host."
+            },
+            {
+              "kind": "field",
+              "name": "status",
+              "type": {
+                "text": "ViewState"
+              },
+              "default": "'ready'",
+              "description": "The view state of the folder listing; unknown values collapse to `empty`.",
+              "attribute": "status",
+              "reflects": true
+            }
+          ],
+          "events": [
+            {
+              "name": "sk-browse-folder",
+              "type": {
+                "text": "CustomEvent<SkBrowseFolderDetail>"
+              },
+              "description": "a folder option was selected"
+            },
+            {
+              "name": "sk-confirm-open-project",
+              "type": {
+                "text": "CustomEvent<SkConfirmOpenProjectDetail>"
+              },
+              "description": "Open was activated while the selected folder is a valid project"
+            },
+            {
+              "name": "sk-retry-load",
+              "type": {
+                "text": "CustomEvent<RetryLoadDetail>"
+              },
+              "description": "Retry was activated on a failed folder listing (`folders`)"
+            }
+          ],
+          "attributes": [
+            {
+              "name": "open",
+              "type": {
+                "text": "boolean"
+              },
+              "default": "false",
+              "description": "Whether the dialog is open; semi-controlled: Cancel, Escape and a backdrop click set it false.",
+              "fieldName": "open"
+            },
+            {
+              "name": "location",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "description": "The location shown in the read-only folder field; opaque host text.",
+              "fieldName": "location"
+            },
+            {
+              "name": "status",
+              "type": {
+                "text": "ViewState"
+              },
+              "default": "'ready'",
+              "description": "The view state of the folder listing; unknown values collapse to `empty`.",
+              "fieldName": "status"
+            }
+          ],
+          "superclass": {
+            "name": "LitElement",
+            "package": "lit"
+          },
+          "tagName": "sk-open-project-dialog",
+          "customElement": true
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "SkOpenProjectDialog",
+          "declaration": {
+            "name": "SkOpenProjectDialog",
+            "module": "src/elements/sk-open-project-dialog/sk-open-project-dialog.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
       "path": "src/elements/sk-phase-bar/sk-phase-bar.ts",
       "declarations": [
         {
@@ -1251,6 +1388,154 @@
           }
         }
       ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/elements/sk-projects-screen/header-parts.ts",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/elements/sk-projects-screen/row-parts.ts",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/elements/sk-projects-screen/sk-projects-screen.ts",
+      "declarations": [
+        {
+          "kind": "class",
+          "description": "The Projects screen. Read-only: it only asks the host to open a project, to open the folder dialog or to read again.",
+          "name": "SkProjectsScreen",
+          "members": [
+            {
+              "kind": "field",
+              "name": "status",
+              "type": {
+                "text": "ViewState"
+              },
+              "default": "'loading'",
+              "description": "The view state of the whole list; unknown values collapse to `empty`. It wins over every entry state.",
+              "attribute": "status",
+              "reflects": true
+            },
+            {
+              "kind": "field",
+              "name": "entries",
+              "type": {
+                "text": "ProjectEntry[]"
+              },
+              "default": "[]",
+              "description": "The recent projects in host order: never sorted, filtered or grouped."
+            },
+            {
+              "kind": "field",
+              "name": "now",
+              "type": {
+                "text": "string | null"
+              },
+              "default": "null",
+              "description": "ISO instant for relative times; null shows the ISO timestamp as given.",
+              "attribute": "now"
+            },
+            {
+              "kind": "field",
+              "name": "labels",
+              "type": {
+                "text": "ProjectLabelHooks | null"
+              },
+              "default": "null",
+              "description": "Optional label hooks: `time` and `health`."
+            },
+            {
+              "kind": "field",
+              "name": "errorMessage",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "description": "Overrides the default body of the whole-list error.",
+              "attribute": "error-message"
+            }
+          ],
+          "events": [
+            {
+              "name": "sk-open-project",
+              "type": {
+                "text": "CustomEvent<SkOpenProjectDetail>"
+              },
+              "description": "an openable row was activated; the screen never navigates"
+            },
+            {
+              "name": "sk-request-open-project",
+              "type": {
+                "text": "CustomEvent<null>"
+              },
+              "description": "the \"Open project\" button was activated"
+            },
+            {
+              "name": "sk-retry-load",
+              "type": {
+                "text": "CustomEvent<RetryLoadDetail>"
+              },
+              "description": "Retry was activated on a failed row (`project`) or on the failed list (`projects`)"
+            }
+          ],
+          "attributes": [
+            {
+              "name": "status",
+              "type": {
+                "text": "ViewState"
+              },
+              "default": "'loading'",
+              "description": "The view state of the whole list; unknown values collapse to `empty`. It wins over every entry state.",
+              "fieldName": "status"
+            },
+            {
+              "name": "now",
+              "type": {
+                "text": "string | null"
+              },
+              "default": "null",
+              "description": "ISO instant for relative times; null shows the ISO timestamp as given.",
+              "fieldName": "now"
+            },
+            {
+              "name": "error-message",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "description": "Overrides the default body of the whole-list error.",
+              "fieldName": "errorMessage"
+            }
+          ],
+          "superclass": {
+            "name": "LitElement",
+            "package": "lit"
+          },
+          "tagName": "sk-projects-screen",
+          "customElement": true
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "SkProjectsScreen",
+          "declaration": {
+            "name": "SkProjectsScreen",
+            "module": "src/elements/sk-projects-screen/sk-projects-screen.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/elements/sk-projects-screen/state-parts.ts",
+      "declarations": [],
+      "exports": []
     },
     {
       "kind": "javascript-module",

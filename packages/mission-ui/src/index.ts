@@ -4,9 +4,11 @@ import { SkArtifactScreen } from './elements/sk-artifact-screen/sk-artifact-scre
 import { SkFilterToggleGroup } from './elements/sk-filter-toggle-group/sk-filter-toggle-group.js';
 import { SkMissionSample } from './elements/sk-mission-sample/sk-mission-sample.js';
 import { SkMissionShell } from './elements/sk-mission-shell/sk-mission-shell.js';
+import { SkOpenProjectDialog } from './elements/sk-open-project-dialog/sk-open-project-dialog.js';
 import { SkMissionsScreen } from './elements/sk-missions-screen/sk-missions-screen.js';
 import { SkPhaseBar } from './elements/sk-phase-bar/sk-phase-bar.js';
 import { SkPipelineScreen } from './elements/sk-pipeline-screen/sk-pipeline-screen.js';
+import { SkProjectsScreen } from './elements/sk-projects-screen/sk-projects-screen.js';
 import { SkShellNavItem } from './elements/sk-shell-nav-item/sk-shell-nav-item.js';
 import { SkShellTree } from './elements/sk-shell-tree/sk-shell-tree.js';
 import { SkWorkPackageBoard } from './elements/sk-work-package-board/sk-work-package-board.js';
@@ -42,6 +44,12 @@ if (!customElements.get('sk-work-package-board')) {
 if (!customElements.get('sk-work-package-screen')) {
   customElements.define('sk-work-package-screen', SkWorkPackageScreen);
 }
+if (!customElements.get('sk-projects-screen')) {
+  customElements.define('sk-projects-screen', SkProjectsScreen);
+}
+if (!customElements.get('sk-open-project-dialog')) {
+  customElements.define('sk-open-project-dialog', SkOpenProjectDialog);
+}
 if (!customElements.get('sk-artifact-screen')) {
   customElements.define('sk-artifact-screen', SkArtifactScreen);
 }
@@ -52,8 +60,10 @@ export {
   SkMissionSample,
   SkMissionShell,
   SkMissionsScreen,
+  SkOpenProjectDialog,
   SkPhaseBar,
   SkPipelineScreen,
+  SkProjectsScreen,
   SkShellNavItem,
   SkShellTree,
   SkWorkPackageBoard,
@@ -75,6 +85,10 @@ export type { SkArtifactRetryLoadDetail, SkOpenLinkDetail, SkSelectArtifactDetai
 export type { RetryLoadDetail, RetryLoadEventDetail, SkArtifactRetryDetail } from './retry-types.js';
 export type { SkFilterChangeDetail } from './elements/sk-filter-toggle-group/sk-filter-toggle-group.js';
 export type { SkLoadMoreDetail, SkOpenMissionDetail, SkSearchDetail } from './elements/sk-missions-screen/sk-missions-screen.js';
+export type { SkBrowseFolderDetail, SkConfirmOpenProjectDetail } from './elements/sk-open-project-dialog/sk-open-project-dialog.js';
+export type { SkOpenProjectDetail } from './elements/sk-projects-screen/sk-projects-screen.js';
+export type { FolderEntry, FolderKind, ProjectEntry, ProjectEntryState, ProjectLabelHooks } from './project-types.js';
+export type { ProjectView } from './contract/types.js';
 export type { SkOpenMissionsDetail, SkViewArtifactsDetail } from './elements/sk-pipeline-screen/sk-pipeline-screen.js';
 export type { SkSelectWorkPackageDetail } from './elements/sk-work-package-board/sk-work-package-board.js';
 export type {

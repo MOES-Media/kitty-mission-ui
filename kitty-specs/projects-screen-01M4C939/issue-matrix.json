@@ -1,0 +1,65 @@
+{
+  "rows": {
+    "#496": {
+      "evidence_ref": "design-library issue sk-button icon support; cited in the WP09 PR inputs as a recorded gap only, no work owed in this mission",
+      "fr": null,
+      "nfr": null,
+      "repo": null,
+      "sc": null,
+      "scope": null,
+      "source_file": null,
+      "title": null,
+      "verdict": "not-applicable",
+      "wp": null
+    },
+    "#5528": {
+      "evidence_ref": "spec-kitty#5528 is the server-side read service for GET /project, out of scope per spec (Scope: Out); the screen is built against the contract and fixtures",
+      "fr": null,
+      "nfr": null,
+      "repo": null,
+      "sc": null,
+      "scope": null,
+      "source_file": null,
+      "title": null,
+      "verdict": "not-applicable",
+      "wp": null
+    },
+    "#5776": {
+      "evidence_ref": "spec-kitty#5776 names the same contract slice as PR #5881 (spec Assumptions); the re-vendor WP01 consumes whichever is on main",
+      "fr": null,
+      "nfr": null,
+      "repo": null,
+      "sc": null,
+      "scope": null,
+      "source_file": null,
+      "title": null,
+      "verdict": "not-applicable",
+      "wp": null
+    },
+    "#5881": {
+      "evidence_ref": "spec-kitty PR #5881 is the contract slice this mission re-vendors (WP01 stop-check T001); cited as a precondition, no issue work owed",
+      "fr": null,
+      "nfr": null,
+      "repo": null,
+      "sc": null,
+      "scope": null,
+      "source_file": "spec.md",
+      "title": "<auto-classified: pr_or_commit_ref>",
+      "verdict": "not-applicable",
+      "wp": null
+    },
+    "#9": {
+      "evidence_ref": "mission-ui#9 Projects screen implemented in WP01-WP09, accepted, pre-merge squad R3 resolved 18/18",
+      "fr": null,
+      "nfr": null,
+      "repo": null,
+      "sc": null,
+      "scope": null,
+      "source_file": null,
+      "title": null,
+      "verdict": "fixed",
+      "wp": null
+    }
+  },
+  "schema_version": 1
+}

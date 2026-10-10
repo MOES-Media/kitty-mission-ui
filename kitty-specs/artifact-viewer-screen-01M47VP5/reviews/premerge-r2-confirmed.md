@@ -35,10 +35,10 @@ This file outranks any paraphrase of it. Implement exactly this, no more.
    - on the decoded text, require exactly one `@` (not leading or trailing), no control characters and no comma.
 
    Add unit rows in `markdown-links.test.ts`. Each must be inert (not external):
-   - `mailto:a%40x.example,b@y.example`
-   - `mailto:a@b.example%0D%0ABcc:c%40d.example`
-   - `mailto:a@b.example%2Cc%40d.example`
-   - `mailto:a@b.example,c%40d.example`
+   - `mailto:a%40x.example,b@y.example.invalid`
+   - `mailto:a@b.example.invalid%0D%0ABcc:c%40d.example`
+   - `mailto:a@b.example.invalid%2Cc%40d.example`
+   - `mailto:a@b.example.invalid,c%40d.example`
 
    Keep the existing valid rows valid.
 7. **CONTRACT-001 (sev 2).** Draw `TRUNCATED_NOTE` at the top of the pane whenever the listing is shown and truncated: nothing-selected, content loading, refused and error, as well as an open document.

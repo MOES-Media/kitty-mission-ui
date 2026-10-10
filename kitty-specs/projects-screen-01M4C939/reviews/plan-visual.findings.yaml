@@ -1,0 +1,38 @@
+schema: review-findings/v1
+complete: true
+phase: plan
+lens_group: visual
+mission: projects-screen-01M4C939
+findings:
+- id: plan-visual-001
+  lens: Prototype fidelity
+  severity: 3
+  title: PR-29 and FR-020 say the header button is full width at 620 px; the prototype has no such rule
+  evidence:
+  - artifact: spec.md PR-29, FR-020
+  - code: kitty-desktop screens-opendesign-v2/prototype.css:924 (.page-header column at 800 px) and the
+      620 px block (no header or button rule)
+  claim: The claim came from the issue. The prototype is the visual source of truth, so building it would
+    be undeclared drift in the other direction.
+  remediation: Follow the prototype; remove the claim; register DP-27 recording the issue/prototype disagreement.
+- id: plan-visual-002
+  lens: Prototype fidelity
+  severity: 3
+  title: The openable row is an <a href> in the prototype and a button here; the semantics change is not
+    in the register
+  evidence:
+  - artifact: research.md D-11; spec.md DP register
+  - code: '01-projects.html: <a class="collection-row" href=...>'
+  claim: No href exists, the host routes on the event. The accessible role changes from link to button.
+  remediation: Register DP-26 and tag D-11 with it.
+- id: plan-visual-003
+  lens: Library fit
+  severity: 2
+  title: No existing screen puts an action in sk-page-header; the plan presumes an action slot
+  evidence:
+  - code: 'slots in use: eyebrow, title, supporting (header-parts.ts, pipeline-parts.ts, sk-missions-screen.ts)'
+  - artifact: plan.md Architecture
+  claim: The header band holds a primary button on the right in the prototype. The plan says spike S1
+    confirms a slot that may not exist, with no fallback.
+  remediation: 'State the fallback: a layout-only flex wrapper around the page header and the button,
+    no exception.'

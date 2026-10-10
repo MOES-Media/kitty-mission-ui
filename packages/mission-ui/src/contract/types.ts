@@ -5,6 +5,9 @@ import type { components } from './types.generated.js';
 type Schemas = components['schemas'];
 
 export type Project = Schemas['Project'];
+
+/** A project whose provisional `health` is an open string: a value outside the enum must survive (mission-ui#9). */
+export type ProjectView = Omit<Project, 'health'> & { health: string };
 export type MissionHead = Schemas['MissionHead'];
 export type MissionOverview = Schemas['MissionOverview'];
 export type MissionOverviewPage = Schemas['MissionOverviewPage'];

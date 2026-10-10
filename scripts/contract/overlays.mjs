@@ -684,6 +684,18 @@ function artifactFixtures(ex) {
   };
 }
 
+/** A project whose branch (255), version (64) and name are at their limits; every character matches the contract patterns. */
+function projectLong(base) {
+  const branch = `topic/${'long-branch-segment-'.repeat(20)}`.slice(0, 255);
+  return {
+    ...structuredClone(base),
+    name: `example-project-${LONG_WORD.toLowerCase()}-with-an-unbroken-name-that-keeps-going`,
+    missionCount: 128,
+    specKittyVersion: `4.0.0-rc.${'1'.repeat(64)}`.slice(0, 64),
+    currentBranch: branch,
+  };
+}
+
 /**
  * Every fixture document, in registry order. `examples` is the parsed vendored examples (loadExamples); `bulk` is the
  * bulk module. Pure: the same inputs give the same documents.
@@ -704,6 +716,10 @@ export function buildFixtures({ examples: ex, bulk }) {
   const out = {
     project: structuredClone(ex['Project.example']),
     projectEmpty: { ...structuredClone(ex['Project.example']), missionCount: 0 },
+    projectUnknownHealth: { ...structuredClone(ex['Project.example']), health: 'unheard_of_health' },
+    projectLong: projectLong(ex['Project.example']),
+    projectSchemaDrift: structuredClone(ex['Project.schema-drift']),
+    projectAllNull: structuredClone(ex['Project.all-null']),
     pageMixed: { items: mixed, pageInfo: pageInfo(mixed, true) },
     pageFull: { items: full, pageInfo: pageInfo(full, true) },
     pageLast: { items: full.map((m) => structuredClone(m)), pageInfo: pageInfo(full, false) },

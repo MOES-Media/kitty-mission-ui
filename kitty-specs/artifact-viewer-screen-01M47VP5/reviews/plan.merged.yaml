@@ -455,7 +455,7 @@ findings:
   - artifact: "contracts/markdown-renderer.md \xA7 Link rule rows 5 and 6 and 'Rendering' ('external and artifact links are a role=link; inert links carry title'); research.md D-08"
   - code: 'probe: markdown-it normalizeLink keeps scheme case (''HTTP://x'' stays ''HTTP://x'', hostname lowercased only for IDN-converted hosts), keeps userinfo, keeps mailto query'
   claim: 'Row 5 lowercases the scheme but the host regex ''^https?://[^/?#]+'' is stated case-sensitive on the original string, so ''HTTP://EXAMPLE.COM'' is inert by accident (fail closed but inconsistent
-    with row 5''s own case-folding; the unit table only lists JaVaScRiPt:). More importantly the emitted event carries the whole normalized destination: userinfo (''http://github.com@evil.example/'', a
+    with row 5''s own case-folding; the unit table only lists JaVaScRiPt:). More importantly the emitted event carries the whole normalized destination: userinfo (''http://github.com@evil.example.invalid/'', a
     classic spoof, accepted by [^/?#]+), no length bound (a 20,000-char destination fits maxLineChars and is put in the event; titleMax truncates only the title), and for mailto only ''a non-empty address
     follows'', so ''mailto:?bcc=a@x&body=...'' (prefilled recipient and body, a phishing vector) passes. Separately an external link carries no visible destination at all: title exists only on inert links,
     so the link text can read ''github.com/spec-kitty'' while the href is elsewhere and a user cannot hover to see it before the host acts. The host re-validation promise does not repair spoofing, only

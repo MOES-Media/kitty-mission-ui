@@ -6,13 +6,21 @@ All user-visible changes to this repository. Per-package notes live in `packages
 
 ### Added
 
+- **A Projects screen and a picker layout for the shell** (`#9`). `sk-projects-screen` lists a host's projects with their
+  health, Mission count, branch and last activity, and reports which one to open; `sk-open-project-dialog` is an optional
+  modal folder picker. The host passes contract-shaped `Project` data and performs the folder picking itself; the elements
+  perform no I/O and emit `sk-open-project`, `sk-request-open-project`, `sk-browse-folder`, `sk-confirm-open-project` and
+  `sk-retry-load`. `sk-mission-shell` gains the `picker` layout (top bar and content only). 36 new Storybook stories
+  with one visual baseline each (210 in total); the visual job timeouts rise to 28 minutes (job) and 47 (proof leg),
+  derived from run 37584109220.
+- **The contract copy moves to Mission Status contract commit `805e122`, on spec-kitty `main`: `Project` carries seven members** (`#9`). `name`, `missionCount`, `specKittyVersion`, `schemaVersion`, `health` (new `ProjectHealth`), `currentBranch` and `lastActivityAt`, with two host fixtures (`projectUnknownHealth`, `projectLong`); the vendored copy also gains the drift and Op invocation paths. No screen changes and no visual baseline changes.
 - **An Artifact screen: the documents of one Mission, drawn from the pinned Mission Status contract** (`#7`).
   `sk-artifact-screen` shows the Mission's artifact tree, one document as rendered markdown or raw source, and an inspector
   with the file facts, the Mission facts and the linked Work Packages. A host passes only contract-shaped data, the
   Mission, the view states, `now` and labels; the screen performs no I/O and emits five events (`sk-select-artifact`,
   `sk-open-link`, `sk-select-work-package`, `sk-open-mission`, `sk-retry-load`). Markdown goes through a closed allow-list
   renderer over `markdown-it` 15.0.2 (a new dependency) with lint rules and a hostile-input corpus that keep raw HTML,
-  remote images and script URLs out. 45 new Storybook stories with one visual baseline each (219 in total).
+  remote images and script URLs out. 45 new Storybook stories with one visual baseline each (255 in total).
 
 - **A Work Package screen: one Work Package of a Mission, drawn from the pinned Mission Status contract** (`#5`).
   `sk-work-package-screen` shows the header and facts, lane history, review summary and cycles, the evidence and dependency

@@ -166,7 +166,7 @@ test('a CLI review feedback_path with a home path is flagged in the status files
   const val = (v) => `{"feedback_path": "${v}"}`;
   const good = `${HOME}exampleuser/r/kitty-specs/m/tasks/WP01-x/review-cycle-1.md`;
   for (const f of ['kitty-specs/m/status.events.jsonl', 'kitty-specs/m/status.json']) {
-    assert.deepEqual(rules(f, val(good)), ['user-path'], f);
+    assert.deepEqual(rules(f, val(good)), f.endsWith('.jsonl') ? ['cli-absolute-path', 'user-path'] : ['user-path'], f);
     assert.deepEqual(rules(f, val('~/r/kitty-specs/m/tasks/WP01-x/review-cycle-1.md')), [], f);
   }
 });
@@ -189,7 +189,7 @@ test('the allow-list is empty: nothing is exempt from the path rules', () => {
   assert.ok(Object.isFrozen(ALLOW_LIST));
   const fb = `{"review_result": {"feedback_path": "${HOME}exampleuser/r/kitty-specs/m/tasks/WP01-x/review-cycle-1.md",`;
   for (const f of ['kitty-specs/m/status.events.jsonl', 'kitty-specs/m/status.json', 'kitty-specs/m/meta.json', 'docs/status.json']) {
-    assert.deepEqual(rules(f, fb), ['user-path'], f);
+    assert.deepEqual(rules(f, fb), /(?:meta\.json|events\.jsonl)$/.test(f) ? ['cli-absolute-path', 'user-path'] : ['user-path'], f);
   }
 });
 
@@ -197,8 +197,9 @@ test('plant: a status-file retrospective record_path with a home path is flagged
   const rec = (v) => `{"provenance_kind": "runtime_post_completion", "record_path": "${v}"}`;
   const planted = `${HOME}exampleuser/dev/r/kitty-specs/m/retrospective.yaml`;
   for (const f of ['kitty-specs/m/status.events.jsonl', 'kitty-specs/m/status.json']) {
-    assert.deepEqual(rules(f, rec(planted)), ['user-path'], f);
-    assert.deepEqual(rules(f, rec(`\\/${'home'}\\/exampleuser\\/r\\/kitty-specs\\/m\\/retrospective.yaml`)), ['user-path'], f);
+    const absolute = f.endsWith('.jsonl') ? ['cli-absolute-path', 'user-path'] : ['user-path'];
+    assert.deepEqual(rules(f, rec(planted)), absolute, f);
+    assert.deepEqual(rules(f, rec(`\\/${'home'}\\/exampleuser\\/r\\/kitty-specs\\/m\\/retrospective.yaml`)), absolute, f);
     assert.deepEqual(rules(f, rec('~/dev/r/kitty-specs/m/retrospective.yaml')), [], f);
   }
 });
@@ -224,11 +225,12 @@ test('a private ledger id is flagged; two-digit finding codes pass', () => {
 test('the username of the running account is flagged as a whole word, case-insensitively', () => {
   const names = forbiddenNames('exampleuser');
   const r = (file, text) => scanText(file, text, { names }).map((f) => f.rule);
-  assert.deepEqual(r('kitty-specs/m/meta.json', '{"accepted_by": "exampleuser"}'), ['os-username']);
+  assert.deepEqual(r('kitty-specs/m/meta.json', '{"accepted_by": "exampleuser"}'), ['cli-identity', 'os-username']);
   assert.deepEqual(r('a.md', 'by ExampleUser.'), ['os-username']);
   assert.deepEqual(r('a.md', 'see -dev-exampleuser-x'), ['os-username']);
   assert.deepEqual(r('a.md', 'exampleusers and myexampleuser'), []);
-  assert.deepEqual(rules('kitty-specs/m/meta.json', '{"accepted_by": "exampleuser"}'), []);
+  // Without the account name the structural identity rule still fires, and no name is echoed.
+  assert.deepEqual(rules('kitty-specs/m/meta.json', '{"accepted_by": "exampleuser"}'), ['cli-identity']);
 });
 
 test('forbiddenNames skips short names and shared accounts and adds the extra list', () => {
@@ -550,6 +552,74 @@ test('plant: the gate fails on a tracked status-file record_path, scratchpad pat
     assert.notEqual(r.status, 0);
     for (const [file, rule] of Object.entries(expected)) assert.match(r.stdout, new RegExp(`\\[${rule}\\] ${file}:1`), file);
     assert.ok(!r.stdout.includes('exampleuser'));
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+// CLI-written identity: the structural rules do not need the account name of the machine that runs the gate.
+test('plant: an actor field that names a person is flagged in meta.json and the event log, without the account name', () => {
+  const person = 'jane' + 'doe';
+  for (const f of ['kitty-specs/m/meta.json', 'kitty-specs/m/status.events.jsonl']) {
+    for (const key of ['accepted_by', 'actor', 'actor_id', 'agent', 'resolved_by']) {
+      const found = scanText(f, `{"${key}": "${person}"}`);
+      assert.deepEqual(found.map((x) => x.rule), ['cli-identity'], `${f} ${key}`);
+      assert.ok(!JSON.stringify(found).includes(person), `${f} ${key}`);
+    }
+  }
+});
+
+test('clean control: neutral actors pass in meta.json and the event log', () => {
+  let n = 0;
+  for (const value of ['<user>', 'claude', 'claude:opus', 'user', 'cli', 'merge', 'finalize-tasks', '', 'spec-kitty mission create',
+    'spec-kitty agent mission finalize-tasks', mail('34285209+Org-Name', 'users.noreply.github.com')]) {
+    for (const f of ['kitty-specs/m/meta.json', 'kitty-specs/m/status.events.jsonl']) {
+      assert.deepEqual(scanText(f, `{"accepted_by": ${JSON.stringify(value)}, "actor": ${JSON.stringify(value)}}`), [], `${f} ${value}`);
+      n += 1;
+    }
+  }
+  assert.equal(n, 22);
+  // the rule is scoped: the same name in another file or under a non-actor key is not this rule's business
+  assert.deepEqual(scanText('docs/meta.json', '{"accepted_by": "' + 'jane' + 'doe"}'), []);
+  assert.deepEqual(scanText('kitty-specs/m/meta.json', '{"title": "' + 'jane' + 'doe"}'), []);
+});
+
+test('plant: an absolute record_path or feedback_path is flagged in meta.json and the event log, a relative or home-relative one passes', () => {
+  for (const f of ['kitty-specs/m/meta.json', 'kitty-specs/m/status.events.jsonl']) {
+    for (const key of ['record_path', 'feedback_path']) {
+      for (const bad of ['/srv/work/kitty-specs/m/x.md', 'C:\\\\work\\\\x.md', '\\/srv\\/work\\/x.md']) {
+        const found = scanText(f, `{"${key}": "${bad}"}`);
+        assert.deepEqual(found.map((x) => x.rule), ['cli-absolute-path'], `${f} ${key} ${bad}`);
+        assert.ok(!JSON.stringify(found).includes('srv'), f);
+      }
+      for (const good of ['kitty-specs/m/x.md', '~/work/kitty-specs/m/x.md', '<workspace>/kitty-specs/m/x.md']) {
+        assert.deepEqual(scanText(f, `{"${key}": "${good}"}`), [], `${f} ${key} ${good}`);
+      }
+    }
+  }
+});
+
+test('plant: an e-mail address that is not a noreply address is flagged in any tracked kitty-specs file, noreply and example addresses pass', () => {
+  for (const f of ['kitty-specs/m/spec.md', 'kitty-specs/m/meta.json', 'kitty-specs/m/status.events.jsonl', 'kitty-specs/m/tasks/WP01-x.md']) {
+    const found = scanText(f, `contact ${mail('person', 'corp.test')}`);
+    assert.deepEqual(found.map((x) => x.rule), ['email-address'], f);
+    assert.ok(!JSON.stringify(found).includes('person'), f);
+    for (const ok of [mail('12345+name', 'users.noreply.github.com'), mail('noreply', 'anthropic.com'), mail('person', 'example.com')]) {
+      assert.deepEqual(scanText(f, `contact ${ok}`), [], `${f} ${ok}`);
+    }
+  }
+});
+
+test('plant: the gate fails on a tracked actor name, absolute record_path and non-noreply address, with no account name given', () => {
+  const plants = {
+    'kitty-specs/m/meta.json': '{"accepted_by": "' + 'jane' + 'doe"}\n',
+    'kitty-specs/m/status.events.jsonl': '{"record_path": "/srv/work/r.yaml"}\n',
+    'kitty-specs/m/spec.md': `owner ${mail('person', 'corp.test')}\n`,
+  };
+  const expected = { 'kitty-specs/m/meta.json': 'cli-identity', 'kitty-specs/m/status.events.jsonl': 'cli-absolute-path', 'kitty-specs/m/spec.md': 'email-address' };
+  const dir = repo(plants);
+  try {
+    const r = spawnSync('node', [SCRIPT, '--root', dir], { encoding: 'utf8', env: { ...process.env, HYGIENE_FORBIDDEN_NAMES: '' } });
+    assert.notEqual(r.status, 0);
+    for (const [file, rule] of Object.entries(expected)) assert.match(r.stdout, new RegExp(`\\[${rule}\\] ${file}:1`), file);
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
 

@@ -16,8 +16,27 @@ export interface DetailRetryDetail {
   target: 'detail';
 }
 
-/** The Work Package screen's payload: a union discriminated by `target`. */
-export type RetryLoadDetail = WorkPackageRetryDetail | DetailRetryDetail;
+/** The retry of one Projects list entry; `key` is the host's entry identity. */
+export interface ProjectRetryDetail {
+  target: 'project';
+  key: string;
+}
+
+/** The retry of the whole Projects list. */
+export interface ProjectsRetryDetail {
+  target: 'projects';
+}
+
+/** The retry of the folder listing of the open-project dialog. */
+export interface FoldersRetryDetail {
+  target: 'folders';
+}
+
+/** The two Work Package members: the only ones `retryDetail` builds. */
+export type WorkPackageRetryMember = WorkPackageRetryDetail | DetailRetryDetail;
+
+/** The payload of the Work Package and Projects screens: a union discriminated by `target`. */
+export type RetryLoadDetail = WorkPackageRetryMember | ProjectRetryDetail | ProjectsRetryDetail | FoldersRetryDetail;
 
 /** The Artifact Viewer's payload: the open content (with its path) or the whole listing. */
 export type SkArtifactRetryDetail = { missionId: string; target: 'content'; path: string } | { missionId: string; target: 'listing' };

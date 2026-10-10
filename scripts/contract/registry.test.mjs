@@ -10,12 +10,12 @@ import * as bulk from '../../packages/mission-ui/src/contract/bulk.ts';
 
 const detailBase = () => structuredClone(loadExamples(ROOT)['MissionDetail.populated']);
 
-test('the inventory has 100 fixtures: 86 valid, 4 host, 10 relaxed (30 of them are the Artifact Viewer documents)', () => {
+test('the inventory has 104 fixtures: 89 valid, 4 host, 11 relaxed (30 of them are the Artifact Viewer documents)', () => {
   const kinds = Object.values(FIXTURES).map((f) => f.kind);
-  assert.equal(kinds.length, 100);
-  assert.equal(kinds.filter((k) => k === 'valid').length, 86);
+  assert.equal(kinds.length, 104);
+  assert.equal(kinds.filter((k) => k === 'valid').length, 89);
   assert.equal(kinds.filter((k) => k === 'host').length, 4);
-  assert.equal(kinds.filter((k) => k === 'relaxed').length, 10);
+  assert.equal(kinds.filter((k) => k === 'relaxed').length, 11);
   const artifact = Object.values(FIXTURES).filter((f) => f.schema.startsWith('Artifact'));
   assert.equal(artifact.length, 30);
   assert.equal(artifact.filter((f) => f.kind === 'valid').length, 27);
@@ -36,7 +36,7 @@ test('the inventory has 100 fixtures: 86 valid, 4 host, 10 relaxed (30 of them a
 test('every relaxation named by a fixture exists, and every relaxation is used', () => {
   const used = new Set(Object.values(FIXTURES).filter((f) => f.relaxation).map((f) => f.relaxation));
   assert.deepEqual([...used].sort(), Object.keys(RELAXATIONS).sort());
-  assert.equal(used.size, 8);
+  assert.equal(used.size, 9);
   for (const [name, def] of Object.entries(FIXTURES).filter(([, f]) => f.relaxation)) {
     assert.ok(relaxationSchemas(RELAXATIONS[def.relaxation]).includes(def.schema), `${name}: the fixture and its relaxation name the same schema`);
   }
@@ -92,7 +92,7 @@ test('the allowed-path patterns cover the relaxation and nothing wider', () => {
   assert.ok(!lo.test('/phases'));
 });
 
-// ---- the four relaxations new in this mission: relaxed passes, strict fails, every strict error is allowed, a second
+// ---- the relaxations new in these missions: relaxed passes, strict fails, every strict error is allowed, a second
 // defect still fails, and the patch reverted (the strict schema) makes the fixture fail ----
 const fixtures = buildFixtures({ examples: loadExamples(ROOT), bulk });
 const strictErrors = async (schema, doc) => validateWith(compile(await loadSchema(ROOT, schema)), doc);
@@ -104,6 +104,7 @@ const NEW_RELAXATIONS = [
   ['detail-lane-open', 'detailUnknownLanes', (d) => { d.reviewCycles[0].verdict = 'unheard-of'; }],
   ['provisional-omittable', 'wpStalenessOmitted', (d) => { delete d.readiness; }],
   ['detail-omittable', 'detailOmittedProvisional', (d) => { delete d.ownedFiles; }],
+  ['health-open', 'projectUnknownHealth', (d) => { d.health = 7; }],
 ];
 
 test('each new relaxation: passes relaxed, fails strict, every strict error at an allowed place, reverted-must-fail', async () => {
@@ -122,7 +123,7 @@ test('each new relaxation: passes relaxed, fails strict, every strict error at a
     assert.equal((await relaxedValidate(rel.schema, name, defective)).valid, false, `${name}: a second defect still fails the relaxed schema`);
     n += 1;
   }
-  assert.equal(n, 4);
+  assert.equal(n, 5);
 });
 
 test('wp-lane-open and detail-lane-open: a number or an object is still refused, a null lane is accepted only where the contract allows it', async () => {

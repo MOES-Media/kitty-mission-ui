@@ -1,7 +1,7 @@
 import type { ViewState } from './view-state.js';
 
-/** Which regions the shell renders. */
-export type ShellLayout = 'project' | 'mission';
+/** Which regions the shell renders. `picker` is the top bar and one content column only, at every tier. */
+export type ShellLayout = 'project' | 'mission' | 'picker';
 
 /** Output only: derived from the window width by the shell, never accepted from a host. */
 export type ShellTier = 'expanded' | 'collapsed' | 'mobile';

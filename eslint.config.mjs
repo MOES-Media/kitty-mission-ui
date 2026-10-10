@@ -13,7 +13,7 @@ import { MARKDOWN_IT_HOME, markdownImportRestrictions } from './eslint-rules/mar
 const classOnly = (prefixes) => {
   const alternatives = prefixes.join('|');
   return {
-    selector: String.raw`TaggedTemplateExpression:matches([tag.name=/^(html|svg)$/], [tag.property.name=/^(html|svg)$/]) > TemplateLiteral > TemplateElement[value.raw=/\sclass\s*=\s*(?!"(${alternatives})[a-z0-9_-]*(\s+(${alternatives})[a-z0-9_-]*)*")/i]`,
+    selector: String.raw`TaggedTemplateExpression:matches([tag.name=/^(html|svg)$/], [tag.property.name=/^(html|svg)$/]) > TemplateLiteral > TemplateElement[value.raw=/\sclass\s*=\s*(?!"(${alternatives})(?:(?:--|__)[a-z0-9-]+)?(\s+(${alternatives})(?:(?:--|__)[a-z0-9-]+)?)*")/i]`,
     message: `class= is only allowed for the library classes ${prefixes.join(', ')} in this file.`,
   };
 };
@@ -254,6 +254,31 @@ export default tseslint.config(
   {
     files: ['packages/*/src/elements/sk-work-package-screen/state-parts.ts'],
     rules: { 'no-restricted-syntax': ['error', ...withoutClassBan, classOnly(['sk-empty-state', 'sk-progress'])] },
+  },
+  {
+    // WP06 ruling (2026-10-08, operator): the Projects screen adopts #4's `.sk-progress` stylesheet, so class= is allowed for the
+    // sk-progress classes only, in the row and state part files (every other file of the mission keeps the ban).
+    files: ['packages/*/src/elements/sk-projects-screen/row-parts.ts', 'packages/*/src/elements/sk-projects-screen/state-parts.ts'],
+    rules: { 'no-restricted-syntax': ['error', ...withoutClassBan, classOnly(['sk-progress'])] },
+  },
+  {
+    // Exception E-33 (Projects screen, CP-1 2026-10-08; sunset: spec-kitty-design#527, a listbox and option): the folder
+    // listbox of the open-project dialog is the one place with a raw `<button type="button" role="option">`, and only that form.
+    // No class= prefix was ruled for this mission (E-34 is the header typography), so class= stays forbidden in every file.
+    files: ['packages/*/src/elements/sk-open-project-dialog/folder-list-parts.ts'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        ...elementSyntaxRestrictions.map((entry) =>
+          entry.message.startsWith('Raw <button>')
+            ? {
+                selector: String.raw`TaggedTemplateExpression:matches([tag.name=/^(html|svg)$/], [tag.property.name=/^(html|svg)$/]) > TemplateLiteral > TemplateElement[value.raw=/<(input|select|textarea)\b|<button\b(?!\s+type="button"\s+role="option")/i]`,
+                message: 'Only <button type="button" role="option"> is allowed raw in this file; other raw controls are forbidden.',
+              }
+            : entry,
+        ),
+      ],
+    },
   },
   {
     // Artifact Viewer (mission-ui#7, IC-06a). E-27 (sunset G-20, spec-kitty-design#523: a library element for the facts, empty-state and progress families,

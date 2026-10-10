@@ -1,0 +1,40 @@
+schema: review-findings/v1
+complete: true
+phase: plan
+lens_group: arch
+mission: projects-screen-01M4C939
+findings:
+- id: plan-arch-001
+  lens: Generated artifacts
+  severity: 3
+  title: IC-03 changes the shell layout description but the manifest is regenerated only in IC-04b and
+    IC-08
+  evidence:
+  - artifact: plan.md "Gates" manifest bullet; IC-03
+  - code: packages/mission-ui/custom-elements.json (sk-mission-shell field layout, description "unknown
+      values fall back to `project`")
+  - code: scripts/check-manifest.mjs (regenerates and requires byte equality)
+  claim: The manifest records the shell layout field with its JSDoc description. IC-03 updates that JSDoc
+    for the new value, so manifest:check is red on the IC-03 tip until the manifest is regenerated.
+  remediation: IC-03 regenerates custom-elements.json in the same commit; list IC-03 as a writer of that
+    file; the Gates bullet names IC-03.
+- id: plan-arch-002
+  lens: Contracts
+  severity: 2
+  title: The manifest gate requires an @screen JSDoc line on the screen; the plan does not state it
+  evidence:
+  - code: 'scripts/check-manifest.mjs header comment: required `status` applies to screens only, found
+      by @screen'
+  - artifact: contracts/sk-projects-screen.md
+  claim: A screen is recognised by an @screen line or the src/screens path. The plan puts the element
+    under src/elements without saying it carries @screen, and does not say the dialog does not.
+  remediation: 'State in contracts and IC-04b: sk-projects-screen has @screen, sk-open-project-dialog
+    does not.'
+- id: plan-arch-003
+  lens: Blast radius
+  severity: 2
+  title: IC-02 and IC-03 run in parallel and both append to the same CHANGELOG
+  evidence:
+  - artifact: 'plan.md "Shared files" CHANGELOG row: IC-01..IC-03 add one line each'
+  claim: Two parallel lanes appending to one file produce a textual conflict that the plan could avoid.
+  remediation: Only IC-01 and IC-08 write CHANGELOG lines.

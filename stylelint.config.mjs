@@ -157,7 +157,7 @@ const SHELL_FILES = [
 // the exceptions are declared once here and merged per file below; no file gets more than its own exceptions.
 // Entry options: `properties` (allowed beyond layout), `strict` (made strict for the file), `unstrict` (taken OUT of the strict
 // list, so the pinned `values` entry is its only guard), `keywords` (extra non-token words, a map property -> words: a word is refused on every other property the file checks), `values` (the allowed values of a
-// property; the token form is added unless the property is `pinned`), `pxProperties` / `emProperties` / `chProperties` (units allowed; `chProperties` is the Artifact Viewer's `ch` grant).
+// property; the token form is added unless the property is `pinned`), `pxProperties` / `emProperties` / `chProperties` / `vwProperties` / `vhProperties` (units allowed; `chProperties` is the Artifact Viewer's `ch` grant, on those properties only), `allowFunctions` (colour functions opened for the file).
 const TOKEN_VALUE = '/^var\\(--sk-[a-z0-9-]+\\)$/';
 const EXCEPTIONS = [
   {
@@ -537,7 +537,254 @@ const EXCEPTIONS = [
     values: { 'border-inline-start-width': ['0'] },
     pinned: ['border-inline-start-width'],
   },
+  // ---- Projects screen (mission-ui#9). E-31 to E-34 as ruled at CP-1 (2026-10-08, tracer-design-decisions.md "CP-1 confirmed");
+  // each grant is pinned to its file and its values and proven in scripts/stylelint-exceptions.test.mjs (pass in the file, refused in
+  // every sibling part file and in the other element, different values refused). E-31(a) to E-31(c) and E-34 are scoped to a
+  // whole file because Stylelint cannot scope by selector: the selectors are named here so a reader knows what the grant is for.
+  {
+    // E-31 (a) (sunset: spec-kitty-design#525, an action-row hover paint): `sk-action-row:hover::part(row)` takes the prototype's
+    // hover border and background; token values only (the implementer measures which tokens render rgb(129,129,139) and rgb(28,31,37)).
+    id: 'E-31 (a)',
+    files: ['sk-projects-screen/row-parts.ts'],
+    properties: ['border-color', 'background-color'],
+    strict: ['border-color', 'background-color'],
+  },
+  {
+    // E-31 (b): the pill (`sk-pill-tag::part(tag)`), the version text and the row title (U5) do not wrap: nowrap and an ellipsis, nothing else.
+    id: 'E-31 (b)',
+    files: ['sk-projects-screen/row-parts.ts'],
+    properties: ['white-space', 'text-overflow'],
+    values: { 'white-space': ['nowrap'], 'text-overflow': ['ellipsis'] },
+    pinned: ['white-space', 'text-overflow'],
+  },
+  {
+    // E-31 (c) (sunset: spec-kitty-design#526, pill density and outlined mono): the health pill's 1px outline in the tone's foreground colour (token width, `solid`, token colour) and the mono face.
+    id: 'E-31 (c)',
+    // Extended at WP07 (2026-10-08): the dialog's "valid project" pill takes the same outlined mono treatment.
+    files: ['sk-projects-screen/row-parts.ts', 'sk-open-project-dialog/folder-list-parts.ts'],
+    properties: ['border', 'font-family'],
+    strict: ['font-family'],
+    keywords: { border: ['solid'] },
+    values: { border: ['/^var\\(--sk-border-width-[0-9]+\\) solid var\\(--sk-[a-z0-9-]+\\)$/'], 'font-family': ['var(--sk-font-mono)'] },
+    pinned: ['border', 'font-family'],
+  },
+  {
+    // E-32 (sunset: spec-kitty-design#503, a modal dialog with slots): the dialog chrome, the backdrop and the mono path field, in
+    // the dialog element's styles only. Every value is pinned. The two literals of the ruling are the shadow and the backdrop paint
+    // (`rgb()` is opened for this one file; the pinned `box-shadow` and `background` values are the only places it can appear).
+    id: 'E-32',
+    files: ['sk-open-project-dialog/sk-open-project-dialog.ts'],
+    properties: ['max-height', 'border', 'border-radius', 'background', 'color', 'box-shadow', 'font-family', 'font-size', 'font-weight', 'text-transform', 'letter-spacing', 'border-block-end', 'border-block-start'],
+    unstrict: ['width'],
+    strict: ['font-family', 'font-weight', 'letter-spacing', 'border-block-end', 'border-block-start'],
+    keywords: { border: ['solid'], background: ['rgb(3 6 10 / 0.72)'], 'letter-spacing': ['0.08em'], 'border-block-end': ['solid'], 'border-block-start': ['solid'] },
+    values: {
+      width: ['min(680px, calc(100vw - 32px))'],
+      'max-height': ['min(720px, calc(100vh - 32px))'],
+      border: ['var(--sk-border-width-1) solid var(--sk-border-control)'],
+      'border-radius': ['var(--sk-radius-lg)'],
+      background: ['var(--sk-surface-card)', 'rgb(3 6 10 / 0.72)'],
+      // E-32 (c) (CP-1 addendum): the subtle eyebrow and the muted hint and reason, the tokens the prototype renders.
+      color: ['var(--sk-fg-body)', 'var(--sk-fg-subtle)', 'var(--sk-fg-muted)'],
+      // E-32 (d) (second WP05 review): the dialog type scale. Base 14px (the hint), the 18px display title, the 600 form-input label.
+      'font-size': ['var(--sk-text-xs)', 'var(--sk-text-sm)', 'var(--sk-text-lg)'],
+      'font-weight': ['var(--sk-weight-semibold)'],
+      'text-transform': ['uppercase'],
+      'letter-spacing': ['0.08em'],
+      'border-block-end': ['var(--sk-border-width-1) solid var(--sk-border-default)'],
+      'border-block-start': ['var(--sk-border-width-1) solid var(--sk-border-default)'],
+      'box-shadow': ['0 24px 80px rgb(0 0 0 / 0.48)'],
+      'font-family': ['var(--sk-font-mono)', 'var(--sk-font-display)'],
+    },
+    pinned: ['width', 'max-height', 'border', 'border-radius', 'background', 'color', 'box-shadow', 'font-family', 'font-size', 'font-weight', 'text-transform', 'letter-spacing', 'border-block-end', 'border-block-start'],
+    pxProperties: ['width', 'max-height', 'box-shadow'],
+    emProperties: ['letter-spacing'],
+    vwProperties: ['width'],
+    vhProperties: ['max-height'],
+    allowFunctions: ['rgb'],
+  },
+  {
+    // E-33 (sunset: spec-kitty-design#527, a listbox and option): the paint of the raw `button role="option"` on hover and
+    // selected, and its forced-colours border. The reset words of any strict property (`transparent`, `inherit`) stay allowed.
+    id: 'E-33',
+    files: ['sk-open-project-dialog/folder-list-parts.ts'],
+    properties: ['background', 'color', 'border'],
+    keywords: { border: ['solid'] },
+    values: {
+      background: ['var(--sk-surface-pill)', 'transparent'],
+      color: ['var(--sk-fg-default)', 'inherit'],
+      border: ['var(--sk-border-width-1) solid currentColor'],
+    },
+    pinned: ['background', 'color', 'border'],
+  },
+  {
+    // E-33 (c) (WP07 ruling, 2026-10-08; sunset: spec-kitty-design#527, a listbox and option): the raw option button's reset and the listbox frame,
+    // folder-list-parts.ts only. Token values only; `0` is the border reset, `start` and `solid` are the only keywords. The two minimum
+    // block sizes are token calcs (46px, 220px) and need no entry; a px or rem literal is refused.
+    id: 'E-33 (c)',
+    files: ['sk-open-project-dialog/folder-list-parts.ts'],
+    properties: ['border', 'border-radius', 'font', 'text-align', 'color', 'background', 'outline', 'outline-offset'],
+    keywords: { outline: ['solid'], 'text-align': ['start'] },
+    values: {
+      border: ['0'],
+      'border-radius': ['var(--sk-radius-sm)', 'var(--sk-radius-md)'],
+      font: ['inherit'],
+      'text-align': ['start'],
+      color: ['var(--sk-fg-muted)'],
+      background: ['var(--sk-surface-page)'],
+      outline: ['var(--sk-border-width-2) solid var(--sk-border-focus)'],
+      'outline-offset': ['var(--sk-border-width-2)'],
+    },
+    pinned: ['border', 'border-radius', 'font', 'text-align', 'color', 'background', 'outline', 'outline-offset'],
+  },
+  {
+    // E-31 (d) (sunset: spec-kitty-design#526; WP07 review ruling, 2026-10-08): the pill's line-height 1.2 as the prototype's badge sets it (the library's 1.5 makes the
+    // pill 28px against 24.4px), in the two files that draw a pill: row-parts.ts and folder-list-parts.ts.
+    id: 'E-31 (d)',
+    files: ['sk-projects-screen/row-parts.ts', 'sk-open-project-dialog/folder-list-parts.ts'],
+    properties: ['line-height'],
+    keywords: { 'line-height': ['1.2'] },
+    values: { 'line-height': ['1.2'] },
+    pinned: ['line-height'],
+  },
+  {
+    // E-32 (f) (WP07 review ruling, 2026-10-08): the dialog's footer buttons and field size, dialog file only. The 14px size, the semibold
+    // weight and the 44px minimum (a token calc) are already granted or lint-clean; the one new value is the Cancel pill's quiet border.
+    id: 'E-32 (f)',
+    files: ['sk-open-project-dialog/sk-open-project-dialog.ts'],
+    properties: ['border'],
+    keywords: { border: ['solid'] },
+    values: { border: ['var(--sk-border-width-1) solid var(--sk-border-default)'] },
+    pinned: ['border'],
+  },
+  {
+    // E-32 (e) (WP07 ruling, 2026-10-08): the dialog's base line-height 1.5 and the title's 1.3, as the prototype page sets them.
+    id: 'E-32 (e)',
+    files: ['sk-open-project-dialog/sk-open-project-dialog.ts'],
+    properties: ['line-height'],
+    keywords: { 'line-height': ['1.5', '1.3'] },
+    values: { 'line-height': ['1.5', '1.3'] },
+    pinned: ['line-height'],
+  },
+  {
+    // E-34 (sunset: spec-kitty-design#529, a compact page-header scale; the number is reused for the page header typography; S1 showed no family exception is needed): the 24px title and
+    // the 12px mono uppercase eyebrow of `sk-page-header` and of the "Recent projects" toolbar eyebrow, all in header-parts.ts.
+    // The sizes are the tokens that render 24px and 12px; the tracking is the prototype's 0.08em (as the E-09 extension, no token
+    // exists); the colour is the subtle foreground token (CP-1 addendum).
+    id: 'E-34',
+    files: ['sk-projects-screen/header-parts.ts'],
+    properties: ['font-size', 'font-family', 'text-transform', 'letter-spacing', 'color'],
+    strict: ['font-family', 'letter-spacing'],
+    keywords: { 'letter-spacing': ['0.08em'] },
+    values: {
+      'font-size': ['var(--sk-text-2xl)', 'var(--sk-text-xs)'],
+      'font-family': ['var(--sk-font-mono)'],
+      'text-transform': ['uppercase'],
+      'letter-spacing': ['0.08em'],
+      // CP-1 addendum (2026-10-08): "muted" means the token the prototype renders for `.eyebrow`, the subtle foreground.
+      color: ['var(--sk-fg-subtle)'],
+    },
+    pinned: ['font-size', 'font-family', 'text-transform', 'letter-spacing', 'color'],
+    emProperties: ['letter-spacing'],
+  },
+  {
+    // E-34 (b) (sunset: #529; CP-1 addendum, 2026-10-08): the screen header band's 1px bottom border, header-parts.ts only. The 76px minimum needs
+    // no entry: `min-height: calc(var(--sk-space-10) + var(--sk-space-3))` (64px + 12px) is already lint-clean; a px or rem literal is refused.
+    id: 'E-34 (b)',
+    files: ['sk-projects-screen/header-parts.ts'],
+    properties: ['border-block-end'],
+    strict: ['border-block-end'],
+    keywords: { 'border-block-end': ['solid'] },
+    values: { 'border-block-end': ['var(--sk-border-width-1) solid var(--sk-border-default)'] },
+    pinned: ['border-block-end'],
+  },
+  {
+    // E-33 (b) (CP-1 addendum): the whole-list state panel look (DP-18), state-parts.ts only, mirroring the Missions screen's E-13 panel
+    // values (the #7 E-45 precedent): card fill, dashed (message) or solid (loading) border, large radius, display face, bold. The
+    // panel's padding is a token on a layout property, so it needs no entry. Sunset: spec-kitty-design#510.
+    id: 'E-33 (b)',
+    files: ['sk-projects-screen/state-parts.ts'],
+    properties: ['background', 'border', 'border-radius', 'font-weight', 'font-family'],
+    strict: ['font-weight', 'font-family'],
+    keywords: { border: ['dashed', 'solid'] },
+    values: {
+      background: ['var(--sk-surface-card)'],
+      border: ['var(--sk-border-width-1) dashed var(--sk-border-control)', 'var(--sk-border-width-1) solid var(--sk-border-default)'],
+      'border-radius': ['var(--sk-radius-lg)'],
+      'font-weight': ['var(--sk-weight-bold)'],
+      'font-family': ['var(--sk-font-display)'],
+    },
+    pinned: ['background', 'border', 'border-radius', 'font-weight', 'font-family'],
+  },
+  {
+    // E-34 (c) (sunset: #529; WP06 ruling, 2026-10-08, operator: grant the screen type; values measured against 01-projects.html at 1280): the screen
+    // host's base type, 14px on a 1.5 line (the prototype body). Pinned to the screen file.
+    id: 'E-34 (c)',
+    files: ['sk-projects-screen/sk-projects-screen.ts'],
+    properties: ['font-size', 'line-height'],
+    keywords: { 'line-height': ['1.5'] },
+    values: { 'font-size': ['var(--sk-text-sm)'], 'line-height': ['1.5'] },
+    pinned: ['font-size', 'line-height'],
+  },
+  {
+    // E-34 (c), header-parts.ts: the h1 takes the display face, the default colour, -0.01em tracking and a 1.2 line; the muted copy the
+    // muted colour; the eyebrows are semibold; the toolbar count is 14px (the prototype's `.mono.muted`). Token values, no other literal.
+    id: 'E-34 (c)',
+    files: ['sk-projects-screen/header-parts.ts'],
+    properties: ['font-size', 'font-family', 'color', 'letter-spacing', 'line-height', 'font-weight'],
+    strict: ['font-weight'],
+    keywords: { 'letter-spacing': ['-0.01em'], 'line-height': ['1.2'] },
+    values: {
+      'font-size': ['var(--sk-text-sm)'],
+      'font-family': ['var(--sk-font-display)'],
+      color: ['var(--sk-fg-default)', 'var(--sk-fg-muted)'],
+      'letter-spacing': ['-0.01em'],
+      'line-height': ['1.2'],
+      'font-weight': ['var(--sk-weight-semibold)'],
+    },
+    pinned: ['font-size', 'font-family', 'color', 'letter-spacing', 'line-height', 'font-weight'],
+    emProperties: ['letter-spacing'],
+  },
+  {
+    // E-34 (d) (sunset: #529; WP06 review ruling, standing prototype-fidelity preference), header-parts.ts only: the "Open project" button's 44px minimum
+    // block size as one token calc (40px + 4px). Its 14px size and semibold weight are the E-34 (c) values; its padding is token padding (layout).
+    id: 'E-34 (d)',
+    files: ['sk-projects-screen/header-parts.ts'],
+    properties: ['min-block-size'],
+    values: { 'min-block-size': ['calc(var(--sk-space-8) + var(--sk-space-1))'] },
+    pinned: ['min-block-size'],
+  },
+  {
+    // E-34 (c), row-parts.ts: the row text (version, location, side block) at 14px, the project name bold, the pill regular.
+    id: 'E-34 (c)',
+    files: ['sk-projects-screen/row-parts.ts'],
+    properties: ['font-size', 'font-weight'],
+    strict: ['font-weight'],
+    values: { 'font-size': ['var(--sk-text-sm)'], 'font-weight': ['var(--sk-weight-bold)', 'var(--sk-weight-normal)'] },
+    pinned: ['font-size', 'font-weight'],
+  },
+  {
+    // E-33 (b) addendum (WP06 ruling): #4's panel heading size, 18px, in state-parts.ts only.
+    id: 'E-33 (b)',
+    files: ['sk-projects-screen/state-parts.ts'],
+    properties: ['font-size'],
+    values: { 'font-size': ['var(--sk-text-lg)'] },
+    pinned: ['font-size'],
+  },
+  {
+    // Narrow column (DP-22, CP-1): `max-inline-size` has no lint-clean form (not an allowed property, and no token or unit-free
+    // spelling of 900px exists), so ONE pinned declaration is granted, in the screen file: `width: min(900px, 100%)`.
+    id: 'DP-22',
+    files: ['sk-projects-screen/sk-projects-screen.ts'],
+    unstrict: ['width'],
+    values: { width: ['min(900px, 100%)'] },
+    pinned: ['width'],
+    pxProperties: ['width'],
+  },
 ];
+
+const LENGTH_UNITS = ['px', 'em', 'ch', 'vw', 'vh'];
+const FORBIDDEN_FUNCTIONS = ['rgb', 'rgba', 'hsl', 'hsla', 'oklch', 'color-mix'];
 
 function unique(list) {
   return [...new Set(list)];
@@ -570,9 +817,9 @@ function exceptionOverrides() {
       }
     }
     const keywords = unique(list.flatMap((exception) => Object.values(exception.keywords ?? {}).flat()));
-    const pxProperties = pick('pxProperties');
-    const emProperties = pick('emProperties');
-    const chProperties = pick('chProperties');
+    // Units opened per property: `pxProperties`, `emProperties`, `chProperties`, `vwProperties` and `vhProperties` (their values are pinned above).
+    const owners = Object.fromEntries(LENGTH_UNITS.map((unit) => [unit, pick(`${unit}Properties`)]));
+    const named = unique(LENGTH_UNITS.flatMap((unit) => owners[unit]));
     const ids = unique(list.map((exception) => exception.id)).join(', ');
     const rules = {
       'scale-unlimited/declaration-strict-value': [
@@ -601,28 +848,28 @@ function exceptionOverrides() {
       rules['declaration-property-value-allowed-list'] = Object.fromEntries(
         Object.entries(values).map(([property, allowed]) => [
           property,
-          pxProperties.includes(property) || pinned.includes(property) ? allowed : [TOKEN_VALUE, ...allowed],
+          owners.px.includes(property) || pinned.includes(property) ? allowed : [TOKEN_VALUE, ...allowed],
         ]),
       );
     }
-    if (pxProperties.length > 0 || emProperties.length > 0 || chProperties.length > 0) {
-      // `px`, `em` and `ch` are allowed, and only on the named properties (their values are pinned above).
+    if (named.length > 0) {
+      // Each unit is allowed, and only on the properties that own it.
       // Stylelint applies the FIRST matching property key only, so the keys partition the properties:
-      // properties with no unit exception forbid all three, the others forbid the units they do not own.
-      const units = { px: pxProperties, em: emProperties, ch: chProperties };
-      const named = unique([...pxProperties, ...emProperties, ...chProperties]);
+      // properties with no unit exception forbid every opened unit, the others forbid the units they do not own.
       const exact = (names) => `/^(?:${names.join('|')})$/`;
-      rules['unit-allowed-list'] = ['%', 'fr', ...Object.keys(units).filter((unit) => units[unit].length > 0)];
-      rules['declaration-property-unit-disallowed-list'] = { [`/^(?!(?:${named.join('|')})$)/`]: Object.keys(units) };
-      // One key per distinct set of refused units, over the properties that share it.
+      rules['unit-allowed-list'] = ['%', 'fr', ...LENGTH_UNITS.filter((unit) => owners[unit].length > 0)];
+      const table = { [`/^(?!(?:${named.join('|')})$)/`]: LENGTH_UNITS };
       const groups = new Map();
       for (const property of named) {
-        const refused = Object.keys(units).filter((unit) => !units[unit].includes(property));
-        if (refused.length === 0) continue;
-        groups.set(refused.join(','), [...(groups.get(refused.join(',')) ?? []), property]);
+        const owned = LENGTH_UNITS.filter((unit) => owners[unit].includes(property));
+        groups.set(owned.join(','), [...(groups.get(owned.join(',')) ?? []), property]);
       }
-      for (const [refused, names] of groups) rules['declaration-property-unit-disallowed-list'][exact(names)] = refused.split(',');
+      for (const [owned, properties] of groups) table[exact(properties)] = LENGTH_UNITS.filter((unit) => !owned.split(',').includes(unit));
+      rules['declaration-property-unit-disallowed-list'] = table;
     }
+    // A file may be granted a colour function (E-32: `rgb()` for the shadow and the backdrop); the pinned values are then its only guard.
+    const allowFunctions = pick('allowFunctions');
+    if (allowFunctions.length > 0) rules['function-disallowed-list'] = FORBIDDEN_FUNCTIONS.filter((name) => !allowFunctions.includes(name));
     return { files: [`**/src/elements/${file}`], rules };
   });
 }
@@ -667,7 +914,7 @@ export default {
       },
     ],
     'color-no-hex': true,
-    'function-disallowed-list': ['rgb', 'rgba', 'hsl', 'hsla', 'oklch', 'color-mix'],
+    'function-disallowed-list': FORBIDDEN_FUNCTIONS,
     'property-allowed-list': LAYOUT_PROPERTIES,
     'unit-allowed-list': ['%', 'fr'],
   },

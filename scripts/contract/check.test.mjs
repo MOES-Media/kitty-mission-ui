@@ -101,9 +101,9 @@ test('positive control: the repository itself passes every check, and the checks
   assert.deepEqual(clean.problems, []);
   // independent literals, deliberately not computed from PIN.files (a pin and a directory that shrink together would
   // keep a derived floor green); edited deliberately at each re-pin
-  assert.equal(clean.summary.vendoredFiles, 151);
+  assert.equal(clean.summary.vendoredFiles, 200);
   assert.equal(clean.summary.fixtures, Object.keys(FIXTURES).length, 'every registry entry was validated');
-  assert.equal(clean.summary.fixtures, 100);
+  assert.equal(clean.summary.fixtures, 104);
   assert.equal(clean.summary.anchorFiles, 5);
   assert.equal(clean.summary.bulkPages, 2);
   assert.equal(clean.summary.bulkDocuments, 5, 'two listings and three contents');
@@ -572,11 +572,11 @@ test('guard: a registry one entry short of its exports is reported with both cou
   assert.match(r.problems.find((p) => p.token === TOKENS.unregistered).message, new RegExp(`${exported - 1}.*${exported}|${exported}.*${exported - 1}`));
 });
 
-test('guard: a PIN.files of 150 keys against 151 files gives file set', async () => {
+test('guard: a PIN.files of 199 keys against 200 files gives file set', async () => {
   const root = tempRepo();
   const pin = JSON.parse(read(root, LAYOUT.pin));
   delete pin.files[Object.keys(pin.files)[0]];
-  assert.equal(Object.keys(pin.files).length, 150);
+  assert.equal(Object.keys(pin.files).length, 199);
   write(root, LAYOUT.pin, JSON.stringify(pin, null, 2));
   assert.deepEqual(tokens(await check(root)), [TOKENS.fileSet]);
 });
@@ -590,8 +590,8 @@ test('guard: the floors fail when the vendored set shrinks by one file together 
   });
   const r = await check(root);
   assert.equal(r.problems.some((p) => p.token === TOKENS.fileSet), false, 'the pin and the directory agree, so C1 alone is silent');
-  assert.equal(r.summary.vendoredFiles, 150);
-  assert.notEqual(r.summary.vendoredFiles, 151, 'the literal floor of the positive control would fail on this');
+  assert.equal(r.summary.vendoredFiles, 199);
+  assert.notEqual(r.summary.vendoredFiles, 200, 'the literal floor of the positive control would fail on this');
 });
 
 test('guard: a vendored set missing a named anchor file gives guard and names the file', async () => {

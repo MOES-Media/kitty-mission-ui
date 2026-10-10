@@ -561,6 +561,589 @@ describe('E-17: the class= overrides of the Work Package screen, per file, with 
   });
 });
 
+// ---- Projects screen (mission-ui#9): E-31 to E-34 as ruled at CP-1 (2026-10-08) and the pinned narrow-column grant (DP-22).
+// Each grant is proven three ways: its CSS passes in its one file, the same CSS is refused in every sibling part file, in the
+// other element's files and in an unrelated file (leak tests), and a different value is refused inside its own file (plants).
+describe('Projects screen: E-31 to E-34 and the narrow column, pinned per file, with leak tests and plants', () => {
+  const PS = `${EL}/sk-projects-screen`;
+  const PD = `${EL}/sk-open-project-dialog`;
+  const SCREEN = `${PS}/sk-projects-screen.ts`;
+  const HEADER = `${PS}/header-parts.ts`;
+  const ROW = `${PS}/row-parts.ts`;
+  const STATE = `${PS}/state-parts.ts`;
+  const DIALOG = `${PD}/sk-open-project-dialog.ts`;
+  const FOLDERS = `${PD}/folder-list-parts.ts`;
+  const ALL = [SCREEN, HEADER, ROW, STATE, DIALOG, FOLDERS, OTHER];
+  const except = (file) => ALL.filter((candidate) => candidate !== file);
+  // The mono family is ruled three times (E-31 (c), E-32 (b), E-34): each of those files may carry it, no other file may.
+  // E-32 (c) and E-34 share the eyebrow treatment and the header band's separator: the same declaration is granted in both files.
+  const SHARED_E32C = {
+    'font-size: var(--sk-text-xs);': [DIALOG],
+    'text-transform: uppercase;': [DIALOG],
+    'letter-spacing: 0.08em;': [DIALOG],
+    'color: var(--sk-fg-subtle);': [DIALOG],
+    'border-block-end: var(--sk-border-width-1) solid var(--sk-border-default);': [DIALOG, HEADER],
+  };
+  // E-31 (c)'s pill border is any token width, `solid` and any token colour, so E-32's border is also valid in row-parts.ts.
+  const MONO = [ROW, DIALOG, HEADER, FOLDERS];
+  const MONO_SHARED = (file) => ({ 'font-family: var(--sk-font-mono);': MONO.filter((candidate) => candidate !== file) });
+
+  /**
+   * Every declaration passes in `file`, and is refused in every other file of ALL except those in `shared` (files whose own ruled
+   * grant is the very same declaration: the mono family is ruled for three files). Returns the leak count.
+   */
+  // Declarations that two ruled grants share (the same pinned value in more than one file): the file list is where each is granted.
+  const OVERLAP = {
+    'font-weight: var(--sk-weight-bold);': [ROW, STATE],
+    'font-weight: var(--sk-weight-normal);': [ROW],
+    'font-weight: var(--sk-weight-semibold);': [HEADER, DIALOG],
+    'color: var(--sk-fg-default);': [HEADER, FOLDERS],
+    'color: var(--sk-fg-muted);': [HEADER, DIALOG, FOLDERS],
+    'font-family: var(--sk-font-display);': [HEADER, STATE, DIALOG],
+    'font-size: var(--sk-text-sm);': [SCREEN, HEADER, ROW, DIALOG],
+    'font-size: var(--sk-text-lg);': [STATE, DIALOG],
+    // Union of the two chains: E-34 (c) grants 1.5 on the screen host and 1.2 on the h1; E-32 (e) grants 1.5 in the dialog file; E-31 (d) grants 1.2 in the row and folder-list pill.
+    'line-height: 1.5;': [SCREEN, DIALOG],
+    'line-height: 1.2;': [HEADER, ROW, FOLDERS],
+    'letter-spacing: -0.01em;': [HEADER],
+  };
+  async function pinned(file, declarations, shared = {}) {
+    assert.deepEqual(await problems(file, declarations.join(' ')), [], `${file} ${declarations.join(' ')}`);
+    let leaks = 0;
+    let skipped = 0;
+    let expected = 0;
+    for (const other of except(file)) {
+      for (const declaration of declarations) {
+        expected += 1;
+        if ([...(shared[declaration] ?? []), ...(OVERLAP[declaration] ?? [])].includes(other)) {
+          skipped += 1;
+          continue;
+        }
+        assert.ok((await problems(other, declaration)).length >= 1, `${other} ${declaration}`);
+        leaks += 1;
+      }
+    }
+    assert.equal(expected, declarations.length * 6);
+    assert.equal(leaks + skipped, expected);
+    return leaks;
+  }
+  /** Every plant is refused in `file`, also with the file's own grant beside it. Returns the plant count. */
+  async function plants(file, own, list) {
+    for (const plant of list) {
+      assert.ok((await problems(file, plant)).length >= 1, `${file} ${plant}`);
+      assert.ok((await problems(file, `${own} ${plant}`)).length >= 1, `${file} own + ${plant}`);
+    }
+    return list.length;
+  }
+
+  test('E-31 (a): the hover paint of the row is two colour properties with token values, in row-parts.ts only', async () => {
+    const own = 'border-color: var(--sk-border-control); background-color: var(--sk-surface-input);';
+    assert.equal(await pinned(ROW, ['border-color: var(--sk-border-control);', 'background-color: var(--sk-surface-input);']), 12);
+    assert.deepEqual(await problems(ROW, own), []);
+    assert.equal(
+      await plants(ROW, own, ['background-color: #1c1f25;', 'border-color: rgb(129 129 139);', 'background-color: red;', 'border-color: 1px;', 'background: var(--sk-surface-input);', 'box-shadow: var(--sk-shadow-md);', 'outline-color: var(--sk-border-control);']),
+      7,
+    );
+  });
+  test('E-31 (b): nowrap and ellipsis on the pill and the version text, in row-parts.ts only, and only those values', async () => {
+    const own = 'white-space: nowrap; text-overflow: ellipsis;';
+    assert.equal(await pinned(ROW, ['white-space: nowrap;', 'text-overflow: ellipsis;']), 12);
+    assert.equal(await plants(ROW, own, ['white-space: pre;', 'white-space: normal;', 'text-overflow: clip;', 'text-overflow: "…";', 'overflow-wrap: anywhere;', 'word-break: break-all;']), 6);
+  });
+  test('E-31 (c): the pill border (token width, solid, token colour) and the mono family, in row-parts.ts only', async () => {
+    const own = 'border: var(--sk-border-width-1) solid var(--sk-on-status-success); font-family: var(--sk-font-mono);';
+    // Extended at WP07: the dialog's "valid project" pill carries the same outline and mono face, so folder-list-parts.ts is the one other file that passes both.
+    assert.equal(
+      await pinned(ROW, ['border: var(--sk-border-width-1) solid var(--sk-on-status-success);', 'font-family: var(--sk-font-mono);'], {
+        ...MONO_SHARED(ROW),
+        'border: var(--sk-border-width-1) solid var(--sk-on-status-success);': [FOLDERS],
+      }),
+      8,
+    );
+    assert.equal(
+      await plants(ROW, own, [
+        'border: 2px solid var(--sk-on-status-success);',
+        'border: var(--sk-border-width-1) dashed var(--sk-on-status-success);',
+        'border: var(--sk-border-width-1) solid red;',
+        'font-family: monospace;',
+        'font-family: var(--sk-font-display);',
+        'font-weight: var(--sk-weight-semibold);',
+        'border-radius: var(--sk-radius-md);',
+      ]),
+      7,
+    );
+    // `solid` is a border word only: it stays refused on every other property of the file.
+    for (const css of ['background-color: solid;', 'color: solid;', 'padding: solid;', 'font-family: solid;']) assert.ok((await problems(ROW, css)).length >= 1, css);
+  });
+  test('E-31 dropped parts stay refused: the card chrome, the minimum height and the raw button have no grant in row-parts.ts', async () => {
+    let ran = 0;
+    for (const css of ['background: var(--sk-surface-card);', 'border-radius: var(--sk-radius-md);', 'min-height: 82px;', 'min-block-size: var(--sk-space-8);']) {
+      assert.ok((await problems(ROW, css)).length >= 1, css);
+      ran += 1;
+    }
+    assert.equal(ran, 4);
+  });
+
+  test('E-34 (c): the screen host takes the 14px base and the 1.5 line, in the screen file only', async () => {
+    const own = ['font-size: var(--sk-text-sm);', 'line-height: 1.5;'];
+    assert.ok((await pinned(SCREEN, own)) > 0);
+    assert.equal(
+      await plants(SCREEN, own.join(' '), ['font-size: 14px;', 'font-size: var(--sk-text-lg);', 'font-size: 0.875rem;', 'line-height: 1.6;', 'line-height: 21px;', 'line-height: 1.2;', 'color: var(--sk-fg-muted);', 'font-weight: var(--sk-weight-bold);']),
+      8,
+    );
+  });
+  test('E-34 (c): the h1, the muted copy, the eyebrow weight and the count size are pinned values in header-parts.ts only', async () => {
+    const own = [
+      'font-family: var(--sk-font-display);',
+      'color: var(--sk-fg-default);',
+      'color: var(--sk-fg-muted);',
+      'letter-spacing: -0.01em;',
+      'line-height: 1.2;',
+      'font-weight: var(--sk-weight-semibold);',
+      'font-size: var(--sk-text-sm);',
+    ];
+    assert.ok((await pinned(HEADER, own, SHARED_E32C)) > 0);
+    assert.equal(
+      await plants(HEADER, own.join(' '), ['letter-spacing: -0.02em;', 'letter-spacing: -1px;', 'line-height: 1.3;', 'line-height: 28.8px;', 'font-weight: 700;', 'font-weight: var(--sk-weight-extrabold);', 'color: #ffffff;', 'font-size: var(--sk-text-base);', 'font-size: 14px;']),
+      9,
+    );
+  });
+  test('E-34 (d): the "Open project" button minimum block size is one pinned token calc, in header-parts.ts only', async () => {
+    const own = 'min-block-size: calc(var(--sk-space-8) + var(--sk-space-1));';
+    assert.equal(await pinned(HEADER, [own]), 6);
+    assert.equal(await plants(HEADER, own, ['min-block-size: 44px;', 'min-block-size: 2.75rem;', 'min-block-size: calc(var(--sk-space-8) + var(--sk-space-2));', 'min-block-size: calc(40px + 4px);', 'min-block-size: var(--sk-space-8);']), 5);
+  });
+  test('E-34 (c): the row text size, the bold name and the regular pill are pinned values in row-parts.ts only', async () => {
+    const own = ['font-size: var(--sk-text-sm);', 'font-weight: var(--sk-weight-bold);', 'font-weight: var(--sk-weight-normal);'];
+    assert.ok((await pinned(ROW, own)) > 0);
+    assert.equal(
+      await plants(ROW, own.join(' '), ['font-size: var(--sk-text-base);', 'font-size: 14px;', 'font-weight: 700;', 'font-weight: var(--sk-weight-medium);', 'font-weight: bold;', 'line-height: 1.5;', 'color: var(--sk-fg-muted);']),
+      7,
+    );
+  });
+  test('E-33 (b) addendum: the panel heading size token is granted in state-parts.ts only', async () => {
+    assert.ok((await pinned(STATE, ['font-size: var(--sk-text-lg);'])) > 0);
+    assert.equal(await plants(STATE, 'font-size: var(--sk-text-lg);', ['font-size: var(--sk-text-xl);', 'font-size: 18px;', 'font-size: var(--sk-text-sm);']), 3);
+  });
+
+  test('E-32: the dialog chrome is pinned value by value, in the dialog file only', async () => {
+    const own = [
+      'width: min(680px, calc(100vw - 32px));',
+      'max-height: min(720px, calc(100vh - 32px));',
+      'border: var(--sk-border-width-1) solid var(--sk-border-control);',
+      'border-radius: var(--sk-radius-lg);',
+      'background: var(--sk-surface-card);',
+      'color: var(--sk-fg-body);',
+      'box-shadow: 0 24px 80px rgb(0 0 0 / 0.48);',
+      'background: rgb(3 6 10 / 0.72);',
+      'font-family: var(--sk-font-mono);',
+    ];
+    assert.ok((await pinned(DIALOG, own, { ...MONO_SHARED(DIALOG), 'border: var(--sk-border-width-1) solid var(--sk-border-control);': [ROW, FOLDERS], 'background: var(--sk-surface-card);': [STATE], 'border-radius: var(--sk-radius-lg);': [STATE] })) > 0);
+    assert.equal(
+      await plants(DIALOG, own.join(' '), [
+        'width: min(700px, calc(100vw - 32px));',
+        'width: 680px;',
+        'width: min(680px, 100vw);',
+        'max-height: min(720px, calc(100vh - 20px));',
+        'max-height: 720px;',
+        'border: 2px solid var(--sk-border-control);',
+        'border: var(--sk-border-width-1) dashed var(--sk-border-control);',
+        'border-radius: var(--sk-radius-md);',
+        'background: var(--sk-surface-input);',
+        'background: rgb(3 6 10 / 0.5);',
+        'background: #030a0e;',
+        'color: rgb(3 6 10 / 0.72);',
+        'box-shadow: 0 24px 80px rgb(0 0 0 / 0.5);',
+        'box-shadow: 0 8px 80px rgb(0 0 0 / 0.48);',
+        'box-shadow: var(--sk-shadow-md);',
+        'font-family: monospace;',
+        'border-color: rgb(3 6 10 / 0.72);',
+        'backdrop-filter: blur(4px);',
+      ]),
+      18,
+    );
+  });
+  test('E-32: viewport units and rgb() are not opened up for the rest of the dialog file', async () => {
+    let ran = 0;
+    for (const css of ['padding: 10vw;', 'margin: 1vh;', 'gap: 4px;', 'min-width: 100vw;', 'height: 100vh;', 'font-size: 14px;']) {
+      assert.ok((await problems(DIALOG, css)).length >= 1, css);
+      ran += 1;
+    }
+    assert.equal(ran, 6);
+    // And not opened up anywhere else: rgb() and vw/vh are refused by the base rules.
+    for (const file of except(DIALOG)) {
+      assert.ok((await problems(file, 'background: rgb(3 6 10 / 0.72);')).length >= 1, file);
+      assert.ok((await problems(file, 'width: min(680px, calc(100vw - 32px));')).length >= 1, file);
+      ran += 2;
+    }
+    assert.equal(ran, 18);
+  });
+
+  test('E-33: the folder option paint is three pinned values, in folder-list-parts.ts only', async () => {
+    const own = ['background: var(--sk-surface-pill);', 'color: var(--sk-fg-default);', 'border: var(--sk-border-width-1) solid currentColor;'];
+    assert.ok((await pinned(FOLDERS, own)) > 0);
+    assert.equal(
+      await plants(FOLDERS, own.join(' '), [
+        'background: var(--sk-surface-card);',
+        'background: #212830;',
+        'color: #fff;',
+        'border: 2px solid currentColor;',
+        'border: var(--sk-border-width-1) dashed currentColor;',
+        'box-shadow: var(--sk-shadow-md);',
+      ]),
+      6,
+    );
+    // The reset words of any strict property stay allowed (a raw button needs them); a dashed or solid word elsewhere does not.
+    assert.deepEqual(await problems(FOLDERS, 'background: transparent; color: inherit;'), []);
+    for (const css of ['padding: solid;', 'gap: dashed;']) assert.ok((await problems(FOLDERS, css)).length >= 1, css);
+  });
+
+  test('E-33 (c): the option reset and the listbox frame, token values only, in folder-list-parts.ts only', async () => {
+    const own = [
+      'border: 0;',
+      'border-radius: var(--sk-radius-sm);',
+      'border-radius: var(--sk-radius-md);',
+      'font: inherit;',
+      'text-align: start;',
+      'color: var(--sk-fg-muted);',
+      'background: var(--sk-surface-page);',
+      'outline: var(--sk-border-width-2) solid var(--sk-border-focus);',
+      'outline-offset: var(--sk-border-width-2);',
+    ];
+    assert.ok((await pinned(FOLDERS, own, { 'color: var(--sk-fg-muted);': [DIALOG] })) > 0);
+    assert.equal(
+      await plants(FOLDERS, own.join(' '), [
+        'border: 1px solid currentColor;',
+        'border: var(--sk-border-width-1) dotted var(--sk-border-default);',
+        'border-radius: var(--sk-radius-lg);',
+        'border-radius: 4px;',
+        'font: 14px Arial;',
+        'font-size: var(--sk-text-sm);',
+        'text-align: center;',
+        'color: var(--sk-fg-subtle);',
+        'background: var(--sk-surface-card);',
+        'background: #0d0e11;',
+        'outline: var(--sk-border-width-1) solid var(--sk-border-focus);',
+        'outline: 2px solid red;',
+        'outline-offset: 4px;',
+        'outline-offset: var(--sk-border-width-1);',
+      ]),
+      14,
+    );
+    // The minimum block sizes are token calcs and need no entry; a px or rem literal and `min-block-size` stay refused.
+    for (const css of ['min-height: calc(var(--sk-space-9) - var(--sk-border-width-2));', 'min-height: calc(var(--sk-space-10) + var(--sk-space-10) + var(--sk-space-10) + var(--sk-space-6) + var(--sk-space-1));']) {
+      assert.deepEqual(await problems(FOLDERS, css), [], css);
+    }
+    for (const css of ['min-height: 46px;', 'min-height: 2.875rem;', 'min-height: 220px;', 'min-block-size: calc(var(--sk-space-9) - var(--sk-border-width-2));']) {
+      assert.ok((await problems(FOLDERS, css)).length >= 1, css);
+    }
+    // `start` is a text-align word only.
+    for (const css of ['padding: start;', 'gap: start;']) assert.ok((await problems(FOLDERS, css)).length >= 1, css);
+  });
+  test('E-31 (c) extended: the dialog pill gets the outline and the mono face in folder-list-parts.ts, with token padding that needs no entry', async () => {
+    const own = 'border: var(--sk-border-width-1) solid var(--sk-on-status-success); font-family: var(--sk-font-mono);';
+    assert.deepEqual(await problems(FOLDERS, own), []);
+    assert.deepEqual(await problems(FOLDERS, 'padding: var(--sk-space-1) var(--sk-space-2);'), []);
+    assert.equal(
+      await plants(FOLDERS, own, ['border: 2px solid var(--sk-on-status-success);', 'border: var(--sk-border-width-1) solid red;', 'font-family: monospace;', 'font-family: var(--sk-font-display);', 'padding: 4px 8px;']),
+      5,
+    );
+  });
+  test('E-32 (e): the dialog line-heights 1.5 and 1.3 are pinned in the dialog file only', async () => {
+    const own = ['line-height: 1.5;', 'line-height: 1.3;'];
+    assert.ok((await pinned(DIALOG, own)) > 0);
+    assert.equal(await plants(DIALOG, own.join(' '), ['line-height: 1.4;', 'line-height: 20px;', 'line-height: 150%;', 'line-height: 1.5em;', 'padding: 1.5;', 'gap: 1.3;']), 6);
+  });
+  test('E-31 (d): the pill line-height 1.2 is pinned in row-parts.ts and folder-list-parts.ts only', async () => {
+    const own = 'line-height: 1.2;';
+    for (const file of [ROW, FOLDERS]) assert.deepEqual(await problems(file, own), [], file);
+    // The header file also grants 1.2 (E-34 (c), the h1 line): the same declaration, granted twice, so it is not a leak there.
+    assert.deepEqual(await problems(HEADER, own), []);
+    let leaks = 0;
+    for (const file of except(ROW).filter((f) => f !== FOLDERS && f !== HEADER)) {
+      assert.ok((await problems(file, own)).length >= 1, file);
+      leaks += 1;
+    }
+    assert.equal(leaks, 4);
+    let plants = 0;
+    for (const file of [ROW, FOLDERS]) {
+      for (const plant of ['line-height: 1.5;', 'line-height: 1.3;', 'line-height: 1.1;', 'line-height: 17px;', 'line-height: 120%;', 'padding: 1.2;']) {
+        assert.ok((await problems(file, plant)).length >= 1, `${file} ${plant}`);
+        assert.ok((await problems(file, `${own} ${plant}`)).length >= 1, `${file} own + ${plant}`);
+        plants += 1;
+      }
+    }
+    assert.equal(plants, 12);
+  });
+  test('E-32 (f): the Cancel pill border is one pinned value in the dialog file only', async () => {
+    const own = 'border: var(--sk-border-width-1) solid var(--sk-border-default);';
+    assert.deepEqual(await problems(DIALOG, own), []);
+    assert.deepEqual(await problems(DIALOG, 'min-height: calc(var(--sk-space-8) + var(--sk-space-1)); padding: var(--sk-space-2) var(--sk-space-4); margin-block: 0 var(--sk-space-1);'), []);
+    // Granted elsewhere by other rulings: row-parts.ts (E-31 (c) regex), folder-list-parts.ts (same) and state-parts.ts (E-33 (b)); refused in the rest.
+    let refused = 0;
+    for (const file of [SCREEN, HEADER, OTHER]) {
+      assert.ok((await problems(file, own)).length >= 1, file);
+      refused += 1;
+    }
+    assert.equal(refused, 3);
+    assert.equal(
+      await plants(DIALOG, own, ['border: 2px solid var(--sk-border-default);', 'border: var(--sk-border-width-1) dashed var(--sk-border-default);', 'border: var(--sk-border-width-1) solid var(--sk-border-strong);', 'min-height: 44px;']),
+      4,
+    );
+  });
+  test('E-34: the header typography is five properties on header-parts.ts, pinned where the ruling names a value', async () => {
+    const own = [
+      'font-size: var(--sk-text-2xl);',
+      'font-size: var(--sk-text-xs);',
+      'font-family: var(--sk-font-mono);',
+      'text-transform: uppercase;',
+      'letter-spacing: 0.08em;',
+      'color: var(--sk-fg-subtle);',
+    ];
+    assert.ok((await pinned(HEADER, own, { ...MONO_SHARED(HEADER), ...SHARED_E32C })) > 0);
+    assert.equal(
+      await plants(HEADER, own.join(' '), [
+        'font-size: var(--sk-text-3xl);',
+        'font-size: 24px;',
+        'font-size: 1.5rem;',
+        'font-family: monospace;',
+        'font-family: var(--sk-font-sans);',
+        'text-transform: capitalize;',
+        'text-transform: lowercase;',
+        'letter-spacing: 0.1em;',
+        'letter-spacing: 1px;',
+        'letter-spacing: var(--sk-tracking-wide);',
+        'color: #fff;',
+        'color: rgb(255 255 255);',
+        'color: var(--sk-fg-body);',
+        'color: var(--sk-fg-strong);',
+        'font-weight: var(--sk-weight-bold);',
+        'background: var(--sk-surface-card);',
+      ]),
+      16,
+    );
+  });
+  test('E-34: the 0.08em literal is a letter-spacing value only: em stays refused on every other property', async () => {
+    let ran = 0;
+    for (const css of ['padding: 0.08em;', 'gap: 0.08em;', 'margin: 0.08em;', 'width: 0.08em;', 'font-size: 0.08em;']) {
+      assert.ok((await problems(HEADER, css)).length >= 1, css);
+      ran += 1;
+    }
+    assert.equal(ran, 5);
+  });
+
+  test('E-32 (c): the dialog chrome typography, separators and muted text, pinned, in the dialog file only', async () => {
+    const own = [
+      'font-size: var(--sk-text-xs);',
+      'text-transform: uppercase;',
+      'letter-spacing: 0.08em;',
+      'color: var(--sk-fg-subtle);',
+      'color: var(--sk-fg-muted);',
+      'border-block-end: var(--sk-border-width-1) solid var(--sk-border-default);',
+      'border-block-start: var(--sk-border-width-1) solid var(--sk-border-default);',
+    ];
+    const shared = {
+      'color: var(--sk-fg-muted);': [FOLDERS],
+      'font-size: var(--sk-text-xs);': [HEADER],
+      'text-transform: uppercase;': [HEADER],
+      'letter-spacing: 0.08em;': [HEADER],
+      'color: var(--sk-fg-subtle);': [HEADER],
+      'border-block-end: var(--sk-border-width-1) solid var(--sk-border-default);': [HEADER],
+    };
+    assert.ok((await pinned(DIALOG, own, shared)) > 0);
+    assert.equal(
+      await plants(DIALOG, own.join(' '), [
+        'font-size: var(--sk-text-2xl);',
+        'font-size: 12px;',
+        'text-transform: capitalize;',
+        'letter-spacing: 0.1em;',
+        'letter-spacing: 1px;',
+        'color: var(--sk-fg-default);',
+        'color: #888;',
+        'border-block-end: 2px solid var(--sk-border-default);',
+        'border-block-end: var(--sk-border-width-1) dashed var(--sk-border-default);',
+        'border-block-end: var(--sk-border-width-1) solid var(--sk-border-control);',
+        'border-block-start: var(--sk-border-width-1) solid var(--sk-border-control);',
+        'border-inline-start: var(--sk-border-width-1) solid var(--sk-border-default);',
+      ]),
+      12,
+    );
+  });
+  test('E-32 (d): the dialog type scale (base 14px, 18px display title, 600 label) is pinned, in the dialog file only', async () => {
+    const own = [
+      'font-size: var(--sk-text-sm);',
+      'font-size: var(--sk-text-lg);',
+      'font-family: var(--sk-font-display);',
+      'font-weight: var(--sk-weight-semibold);',
+    ];
+    const shared = { 'font-family: var(--sk-font-display);': [STATE] };
+    assert.ok((await pinned(DIALOG, own, shared)) > 0);
+    assert.equal(
+      await plants(DIALOG, own.join(' '), [
+        'font-size: var(--sk-text-base);',
+        'font-size: var(--sk-text-2xl);',
+        'font-size: 14px;',
+        'font-size: 18px;',
+        'font-family: var(--sk-font-sans);',
+        'font-family: Arial;',
+        'font-weight: var(--sk-weight-bold);',
+        'font-weight: 600;',
+        'font-weight: bold;',
+        'line-height: var(--sk-leading-normal);',
+      ]),
+      10,
+    );
+  });
+  test('E-34 (b): the header band border is one pinned value in header-parts.ts only; the 76px minimum is a token calc that needs no entry', async () => {
+    const border = 'border-block-end: var(--sk-border-width-1) solid var(--sk-border-default);';
+    assert.ok((await pinned(HEADER, [border], { [border]: [DIALOG] })) > 0);
+    assert.equal(
+      await plants(HEADER, border, [
+        'border-block-end: 2px solid var(--sk-border-default);',
+        'border-block-end: var(--sk-border-width-1) dashed var(--sk-border-default);',
+        'border-block-end: var(--sk-border-width-1) solid var(--sk-border-control);',
+        'border-block-start: var(--sk-border-width-1) solid var(--sk-border-default);',
+      ]),
+      4,
+    );
+    // The probe: `min-height` with a calc of two space tokens (64px + 12px = 76px) is already lint-clean everywhere; `min-block-size`
+    // is not an allowed property, and a px or rem literal is refused, so no entry was added.
+    const calc = 'min-height: calc(var(--sk-space-10) + var(--sk-space-3));';
+    let clean = 0;
+    for (const file of ALL) {
+      assert.deepEqual(await problems(file, calc), [], file);
+      clean += 1;
+    }
+    assert.equal(clean, 7);
+    for (const css of ['min-height: 76px;', 'min-height: 4.75rem;', 'min-block-size: calc(var(--sk-space-10) + var(--sk-space-3));', 'min-block-size: 76px;']) {
+      assert.ok((await problems(HEADER, css)).length >= 1, css);
+    }
+  });
+  test('E-33 (b): the whole-list state panel mirrors the Missions screen panel (E-13), pinned, in state-parts.ts only', async () => {
+    const own = [
+      'background: var(--sk-surface-card);',
+      'border: var(--sk-border-width-1) dashed var(--sk-border-control);',
+      'border: var(--sk-border-width-1) solid var(--sk-border-default);',
+      'border-radius: var(--sk-radius-lg);',
+      'font-weight: var(--sk-weight-bold);',
+      'font-family: var(--sk-font-display);',
+    ];
+    const shared = { 'font-family: var(--sk-font-display);': [DIALOG], 'background: var(--sk-surface-card);': [DIALOG], 'border-radius: var(--sk-radius-lg);': [DIALOG], 'border: var(--sk-border-width-1) solid var(--sk-border-default);': [ROW, FOLDERS, DIALOG] };
+    assert.ok((await pinned(STATE, own, shared)) > 0);
+    assert.deepEqual(await problems(STATE, 'padding-inline: var(--sk-space-9);'), []);
+    assert.equal(
+      await plants(STATE, own.join(' '), [
+        'background: var(--sk-surface-input);',
+        'border: var(--sk-border-width-1) dashed var(--sk-border-default);',
+        'border: var(--sk-border-width-1) solid var(--sk-border-control);',
+        'border: var(--sk-border-width-1) dotted var(--sk-border-control);',
+        'border: 2px dashed var(--sk-border-control);',
+        'border-radius: var(--sk-radius-md);',
+        'font-weight: var(--sk-weight-semibold);',
+        'font-family: var(--sk-font-mono);',
+        'padding-inline: 48px;',
+        'color: dashed;',
+        'letter-spacing: 0.08em;',
+      ]),
+      11,
+    );
+  });
+
+  test('narrow column (DP-22): max-inline-size has no lint-clean form, so ONE pinned grant exists: width min(900px, 100%) in the screen file', async () => {
+    // The probe: every max-inline-size spelling (and its token calc) is refused in the screen file, so the pinned grant is needed.
+    let probed = 0;
+    for (const css of ['max-inline-size: 900px;', 'max-inline-size: 56.25rem;', 'max-inline-size: min(900px, 100%);', 'max-inline-size: calc(var(--sk-layout-context-sidebar-width) * 3.75);', 'max-width: 56.25rem;']) {
+      assert.ok((await problems(SCREEN, css)).length >= 1, css);
+      probed += 1;
+    }
+    assert.equal(probed, 5);
+    assert.equal(await pinned(SCREEN, ['width: min(900px, 100%);']), 6);
+    assert.equal(
+      await plants(SCREEN, 'width: min(900px, 100%);', ['width: min(901px, 100%);', 'width: min(900px, 90%);', 'width: 900px;', 'max-width: 900px;', 'inline-size: min(900px, 100%);', 'min-width: 900px;', 'padding: 900px;']),
+      7,
+    );
+  });
+  test('the container query lengths of the screen need no exception (the 800px and 620px thresholds pass everywhere)', async () => {
+    const code = "import { css } from 'lit';\nexport const s = css`\n  @container (max-width: 800px) { .x { display: block; } }\n  @container (max-width: 620px) { .x { display: block; } }\n`;\n";
+    let ran = 0;
+    for (const file of ALL) {
+      const result = await stylelint.lint({ code, codeFilename: join(root, file), config, configBasedir: root });
+      assert.deepEqual(result.results.flatMap((r) => r.warnings), [], file);
+      ran += 1;
+    }
+    assert.equal(ran, 7);
+  });
+});
+
+// E-33 (ESLint half): the raw `<button type="button" role="option">` of the folder listbox, in folder-list-parts.ts only.
+// The only class= grant is the sk-progress prefix of the row and state parts (WP06 ruling); every other file keeps the ban.
+describe('Projects screen: E-33 raw option button and the class= ban, with leak plants', () => {
+  const eslint = new ESLint({ cwd: root });
+  const lint = async (file, markup) => {
+    const code = `import { html } from 'lit';\nexport const t = html\`${markup}\`;\n`;
+    const [result] = await eslint.lintText(code, { filePath: join(root, file) });
+    return (result?.messages ?? []).filter((m) => m.ruleId === 'no-restricted-syntax').map((m) => m.message);
+  };
+  const FOLDERS = `${EL}/sk-open-project-dialog/folder-list-parts.ts`;
+  const OTHERS = [
+    `${EL}/sk-projects-screen/sk-projects-screen.ts`,
+    `${EL}/sk-projects-screen/header-parts.ts`,
+    `${EL}/sk-projects-screen/row-parts.ts`,
+    `${EL}/sk-projects-screen/state-parts.ts`,
+    `${EL}/sk-open-project-dialog/sk-open-project-dialog.ts`,
+  ];
+  const OPTION = '<button type="button" role="option" aria-selected="false">x</button>';
+
+  test('the option button passes in folder-list-parts.ts and is refused in every other file of both elements', async () => {
+    assert.deepEqual(await lint(FOLDERS, OPTION), []);
+    let ran = 0;
+    for (const file of OTHERS) {
+      assert.ok((await lint(file, OPTION)).some((m) => /Raw <button>/.test(m)), file);
+      ran += 1;
+    }
+    assert.equal(ran, 5);
+  });
+  test('plants: any other raw control, or a button with other attributes first, is refused in folder-list-parts.ts', async () => {
+    let ran = 0;
+    for (const markup of [
+      '<button>x</button>',
+      '<button type="button">x</button>',
+      '<button type="submit" role="option">x</button>',
+      '<button role="option" type="button">x</button>',
+      '<button type="button" role="tab">x</button>',
+      '<input type="text">',
+      '<select></select>',
+      '<textarea></textarea>',
+    ]) {
+      assert.ok((await lint(FOLDERS, markup)).some((m) => /raw|Raw/.test(m)), markup);
+      ran += 1;
+    }
+    assert.equal(ran, 8);
+  });
+  test('class= is forbidden in every file of both elements except the sk-progress classes of the row and state parts (WP06 ruling)', async () => {
+    const GRANTED = [`${EL}/sk-projects-screen/row-parts.ts`, `${EL}/sk-projects-screen/state-parts.ts`];
+    let ran = 0;
+    for (const file of [FOLDERS, ...OTHERS]) {
+      const refused = (await lint(file, '<div class="sk-empty-state"></div>')).some((m) => /class= is only allowed|class= is forbidden/.test(m));
+      assert.ok(refused, file);
+      if (!GRANTED.includes(file)) assert.ok((await lint(file, '<div class="sk-progress"></div>')).some((m) => /class= is forbidden/.test(m)), `${file} sk-progress leak`);
+      ran += 1;
+    }
+    assert.equal(ran, 6);
+  });
+  test('the sk-progress classes pass in row-parts.ts and state-parts.ts only, and only the progress family (plants)', async () => {
+    let ran = 0;
+    for (const file of [`${EL}/sk-projects-screen/row-parts.ts`, `${EL}/sk-projects-screen/state-parts.ts`]) {
+      assert.deepEqual(await lint(file, '<div class="sk-progress sk-progress--indeterminate sk-progress--compact"><progress class="sk-progress__bar"></progress></div>'), [], file);
+      for (const plant of ['<div class="sk-empty-state"></div>', '<div class="sk-progress other"></div>', '<div class="x sk-progress"></div>', '<div class="${y}"></div>', '<div class="sk-progressive"></div>', '<div class="sk-progressx"></div>', '<div class="sk-notice"></div>']) {
+        assert.ok((await lint(file, plant)).length >= 1, `${file} ${plant}`);
+        ran += 1;
+      }
+    }
+    assert.equal(ran, 14);
+  });
+});
+
 // ---------------------------------------------------------------------------------------------------------------------------
 // Artifact Viewer (mission-ui#7, IC-06a): the `ch` grant, E-23, E-25, E-26 (paint), E-28, and the ESLint overrides E-26, E-27, E-29
 // with the R4 options schema. Values are the CP-1 rulings of 2026-10-07 (spec.md Clarifications). The pins are on DECLARATIONS

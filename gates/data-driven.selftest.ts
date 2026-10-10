@@ -26,6 +26,7 @@ interface ConfigModule {
   CHANGE_STATE_WORDS: string[];
   STALENESS_STATUS_WORDS: string[];
   STALENESS_REASON_WORDS: string[];
+  HEALTH_WORDS: string[];
   NEW_WORDS: string[];
   NEW_UNDERSCORED: string[];
   NEW_BARE_WORDS: string[];
@@ -67,10 +68,11 @@ const EXPECTED_CHANGE_STATE_WORDS = ['changed', 'unchanged', 'unknown'];
 const EXPECTED_STALENESS_STATUS_WORDS = ['fresh', 'stale', 'not_applicable'];
 const EXPECTED_STALENESS_REASON_WORDS = ['planning_artifact_repo_root_shared_workspace', 'live_claim_process'];
 // Gate words (literals, anywhere outside the allow-list): underscored ones and whole-word ones that are not common identifiers.
-const EXPECTED_NEW_WORDS = ['changes_requested', 'unchanged', 'not_applicable', 'planning_artifact_repo_root_shared_workspace', 'live_claim_process'];
-const EXPECTED_NEW_UNDERSCORED = ['changes_requested', 'not_applicable', 'planning_artifact_repo_root_shared_workspace', 'live_claim_process'];
+const EXPECTED_HEALTH_WORDS = ['healthy', 'schema_drift'];
+const EXPECTED_NEW_WORDS = ['changes_requested', 'unchanged', 'not_applicable', 'planning_artifact_repo_root_shared_workspace', 'live_claim_process', 'schema_drift'];
+const EXPECTED_NEW_UNDERSCORED = ['changes_requested', 'not_applicable', 'planning_artifact_repo_root_shared_workspace', 'live_claim_process', 'schema_drift'];
 // Common identifiers: matched only in comparisons and case labels.
-const EXPECTED_NEW_BARE_WORDS = ['changed', 'unknown', 'fresh', 'stale'];
+const EXPECTED_NEW_BARE_WORDS = ['changed', 'unknown', 'fresh', 'stale', 'healthy'];
 // The vocabulary the Artifact Viewer extension reads: the ArtifactKind enum and the ArtifactRefusalCode enum of the vendored
 // schemas, written out here independently of them, in the schemas' order. The count guards: exactly 12 kinds and 7 codes.
 const EXPECTED_ARTIFACT_KINDS = ['review_cycle', 'work_package_prompt', 'spec', 'plan', 'tasks', 'data_model', 'quickstart', 'analysis_report', 'research', 'contract', 'checklist', 'other'];
@@ -99,6 +101,7 @@ describe('data-driven gate self-test: configuration', () => {
     expect(cfg.CHANGE_STATE_WORDS).toEqual(EXPECTED_CHANGE_STATE_WORDS);
     expect(cfg.STALENESS_STATUS_WORDS).toEqual(EXPECTED_STALENESS_STATUS_WORDS);
     expect(cfg.STALENESS_REASON_WORDS).toEqual(EXPECTED_STALENESS_REASON_WORDS);
+    expect(cfg.HEALTH_WORDS).toEqual(EXPECTED_HEALTH_WORDS);
     expect(cfg.NEW_WORDS).toEqual(EXPECTED_NEW_WORDS);
     expect(cfg.NEW_UNDERSCORED).toEqual(EXPECTED_NEW_UNDERSCORED);
     expect(cfg.NEW_BARE_WORDS).toEqual(EXPECTED_NEW_BARE_WORDS);
@@ -219,13 +222,13 @@ describe('data-driven gate self-test: every word of the verdict, change-state an
         ran += 1;
       }
     }
-    expect(ran).toBe(10);
+    expect(ran).toBe(12);
     let inside = 0;
     for (const w of cfg.NEW_UNDERSCORED) {
       expect(selectorIds(await lint(`export const x = 'tone-${w}';\n`)), w).toEqual(['S13.3']);
       inside += 1;
     }
-    expect(inside).toBe(4);
+    expect(inside).toBe(5);
   });
 
   it('reports each bare word only in a comparison (S14.1, S14.3) or a case label (S14.2, S14.4), as a string or a template', async () => {
@@ -245,13 +248,13 @@ describe('data-driven gate self-test: every word of the verdict, change-state an
       expect(selectorIds(await lint(`export const x = '${w}';\n`)), w).toEqual([]);
       ran += 1;
     }
-    expect(ran).toBe(4);
+    expect(ran).toBe(5);
   });
 
   it('reads the vocabulary from the vendored schemas: every enum member is a gate word or a bare word', async () => {
     const cfg = await loadConfig();
-    const all = [...cfg.VERDICT_WORDS, ...cfg.CHANGE_STATE_WORDS, ...cfg.STALENESS_STATUS_WORDS, ...cfg.STALENESS_REASON_WORDS];
-    expect(all.length).toBe(10);
+    const all = [...cfg.VERDICT_WORDS, ...cfg.CHANGE_STATE_WORDS, ...cfg.STALENESS_STATUS_WORDS, ...cfg.STALENESS_REASON_WORDS, ...cfg.HEALTH_WORDS];
+    expect(all.length).toBe(12);
     const covered = new Set([...cfg.WORDS, ...cfg.NEW_WORDS, ...cfg.NEW_BARE_WORDS]);
     expect(all.filter((w) => !covered.has(w))).toEqual([]);
   });
@@ -341,6 +344,41 @@ describe('data-driven gate self-test: every word of the artifact kind and refusa
     }
     expect(ran).toBe(3);
     expect(selectorIds(await lint(code, ELEMENT_FILE)).sort()).toEqual(['S15.1', 'S15.3', 'S16.1']);
+  });
+});
+
+describe('data-driven gate self-test: the project health words (NFR-009)', () => {
+  const FROM_ELEMENT = ['packages/sample/src/elements/x/x.ts', 'packages/sample/src/logic/project-row.ts'];
+  const IN_DEFAULTS = ['packages/sample/src/defaults/health.ts', 'packages/sample/src/contract/types.ts'];
+
+  it("refuses a component literal 'healthy' only in a comparison or case label, and 'schema_drift' anywhere as a literal", async () => {
+    expect(selectorIds(await lint("export const f = (h: string): boolean => h === 'healthy';\n"))).toEqual(['S14.1']);
+    expect(selectorIds(await lint("export const f = (h: string): boolean => h !== 'healthy';\n"))).toEqual(['S14.1']);
+    expect(selectorIds(await lint("export function f(h: string): number {\n  switch (h) {\n    case 'healthy':\n      return 1;\n    default:\n      return 0;\n  }\n}\n"))).toEqual(['S14.2']);
+    expect(selectorIds(await lint("export const f = (h: string): boolean => h === 'schema_drift';\n"))).toEqual(['S13.1', 'S13.3']);
+    expect(selectorIds(await lint("export const x = 'schema_drift';\n"))).toEqual(['S13.1', 'S13.3']);
+    expect(selectorIds(await lint("export const x = 'tone-schema_drift';\n"))).toEqual(['S13.3']);
+    expect(selectorIds(await lint("export const t = { schema_drift: 1 };\n"))).toEqual(['S13.5']);
+  });
+
+  it("leaves 'healthy' as an ordinary word outside a comparison (positive control: the comparison above is refused)", async () => {
+    expect(selectorIds(await lint("export const x = 'healthy';\n"))).toEqual([]);
+    expect(selectorIds(await lint('export const f = (o: { healthy: boolean }) => o.healthy;\n'))).toEqual([]);
+    expect(selectorIds(await lint("export const f = (h: string): boolean => h === 'healthy';\n"))).toEqual(['S14.1']);
+  });
+
+  it('exempts both words in defaults and contract paths, and reports them in the element files', async () => {
+    const code = "export const f = (h: string): boolean => h === 'healthy' || h === 'schema_drift';\n";
+    let ran = 0;
+    for (const file of IN_DEFAULTS) {
+      expect((await lint(code, file)).map((m) => m.ruleId), file).toEqual([null]);
+      ran += 1;
+    }
+    for (const file of FROM_ELEMENT) {
+      expect(selectorIds(await lint(code, file)).sort(), file).toEqual(['S13.1', 'S13.3', 'S14.1']);
+      ran += 1;
+    }
+    expect(ran).toBe(4);
   });
 });
 

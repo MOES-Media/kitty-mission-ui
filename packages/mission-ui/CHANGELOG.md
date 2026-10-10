@@ -4,6 +4,14 @@
 
 ### Added
 
+- `sk-projects-screen` (screen): the projects a host knows. Five properties (`status`, `entries`, `now`, `labels`,
+  `errorMessage`) and three events (`sk-open-project`, `sk-request-open-project`, `sk-retry-load`). Health, time and
+  screen words are read from `src/defaults/` (`#9`).
+- `sk-open-project-dialog` (widget): a modal folder picker. Five properties (`open`, `location`, `folders`, `selected`,
+  `status`) and three events (`sk-browse-folder`, `sk-confirm-open-project`, `sk-retry-load`); the host lists and picks
+  folders (`#9`).
+- `sk-mission-shell` `layout="picker"`: the top bar and the content slot only, with no sidebar, rail, hamburger or drawer
+  at any tier. `sk-retry-load` gains the targets `'project'`, `'projects'` and `'folders'` (`#9`).
 - `sk-artifact-screen` (screen): the artifacts of one Mission. Thirteen properties (`status`, `contentStatus`, `listing`,
   `content`, `refusalCode`, `selectedPath`, `mission`, `workPackages`, `view`, `now`, `labels`, `errorMessage`,
   `vocabulary`) and five events (`sk-select-artifact`, `sk-open-link`, `sk-select-work-package`, `sk-open-mission`,
@@ -24,7 +32,7 @@
   - Inspector, tree and Work Package links: file and Mission facts, the shell tree carrier and the linked Work Packages.
   - Tiers, accessibility and edge cases: focus order and rings, forced colors, reduced motion, target size, scroll regions
     that are tab stops only while they overflow, long paths, deep nesting, 1000 entries and a 256 KiB document.
-  - Integration and baselines: the 45 dark-theme baselines (219 in total), the row-to-story test in `test:scripts`, the host
+  - Integration and baselines: the 45 dark-theme baselines (255 in total), the row-to-story test in `test:scripts`, the host
     composition test and NFR-006 timings (best of three after a warm-up).
 - `sk-work-package-screen` (screen): one Work Package of a Mission. Ten properties (`status`, `detailStatus`,
   `detailRefusalCode`, `workPackage`, `detail`, `mission`, `wpId`, `now`, `labels`, `errorMessage`) and four events
