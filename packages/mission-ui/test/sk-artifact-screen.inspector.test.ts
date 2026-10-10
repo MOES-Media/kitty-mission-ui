@@ -180,8 +180,15 @@ describe('AV-24: file facts', () => {
     const dd = (value as HTMLElement).getBoundingClientRect();
     expect(dd.right).toBeLessThanOrEqual(box.right);
     expect(inspector.scrollWidth).toBeLessThanOrEqual(inspector.clientWidth);
-    // the value is more than one line, so it broke at a separator or a space, not at the end only
-    expect(dd.height).toBeGreaterThan(30);
+    // the value is more than one line, so it broke at a separator or a space, not at the end only. Counted as distinct rows of the word
+    // spans, not as a pixel height: a line box is as tall as the font stack of the machine makes it.
+    const rows = new Set(Array.from((value as HTMLElement).querySelectorAll<HTMLElement>('span')).map((span) => Math.round(span.getBoundingClientRect().top)));
+    expect(rows.size, 'the path wraps onto more than one row').toBeGreaterThan(1);
+    // Control: a one-word fact value is on a single row by the same measure, so the count is not blind to wrapping.
+    const rowsOf = (dd: HTMLElement): number => new Set(Array.from(dd.querySelectorAll<HTMLElement>('span')).map((span) => Math.round(span.getBoundingClientRect().top))).size;
+    const single = Array.from(inspector.querySelectorAll<HTMLElement>('dd')).find((dd) => dd !== value && dd.querySelectorAll('span').length === 1);
+    expect(single, 'a one-word value exists').toBeDefined();
+    expect(rowsOf(single as HTMLElement)).toBe(1);
     // the single over-long word ellipsizes (words-only wrapping), it never pushes the panel wider
     const words = Array.from((value as HTMLElement).querySelectorAll<HTMLElement>('span'));
     expect(words.length).toBeGreaterThan(4);
@@ -285,8 +292,17 @@ describe('AV-26: linked Work Packages', () => {
     const pills = Array.from(inspectorOf(screen).querySelectorAll<HTMLElement>('button.sk-pill-tag'));
     expect(pills.length).toBe(2);
     for (const pill of pills) {
-      expect(pill.getBoundingClientRect().height).toBe(26);
       const style = getComputedStyle(pill);
+      // Derived, not a literal: the box is its line height (the library's 1.5 times the font size, a unitless ratio on the pill itself, so
+      // the fallback font of a runner cannot move it) plus the block padding; both padding values are asserted so a change turns this red.
+      const px = (value: string): number => parseFloat(value);
+      expect(px(style.paddingTop)).toBe(4);
+      expect(px(style.paddingBottom)).toBe(4);
+      expect(px(style.paddingLeft)).toBe(12);
+      expect(px(style.paddingRight)).toBe(12);
+      expect(Math.abs(px(style.lineHeight) / px(style.fontSize) - 1.5)).toBeLessThan(0.001);
+      expect(pill.getBoundingClientRect().height).toBeCloseTo(px(style.lineHeight) + px(style.paddingTop) + px(style.paddingBottom), 1);
+      expect(px(style.lineHeight) + px(style.paddingTop) + px(style.paddingBottom), 'the prototype pill, above the 24px of NFR-015').toBeGreaterThanOrEqual(26);
       expect([style.borderTopWidth, style.borderRightWidth, style.borderBottomWidth, style.borderLeftWidth]).toEqual(['0px', '0px', '0px', '0px']);
       expect(style.cursor).toBe('pointer');
     }
