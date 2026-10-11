@@ -12,7 +12,7 @@ import { html, render } from 'lit';
 import type { SkDriftScreen } from '../src/elements/sk-drift-screen/sk-drift-screen.js';
 import { bulkProps, driftFrame, reportProps, scopedMissionId, stateProps, unbreakableSlug } from '../src/elements/sk-drift-screen/fixtures.js';
 import type { DriftScreenProps } from '../src/elements/sk-drift-screen/fixtures.js';
-import { reportClean, reportPopulated } from '../src/contract/fixtures.generated.js';
+import { reportClean, reportMissionUnlisted, reportPopulated, reportScoped } from '../src/contract/fixtures.generated.js';
 import type { DriftFindingView, DriftReportView } from '../src/contract/types.js';
 import { findingKey } from '../src/logic/index.js';
 import { CHOOSE_HEADING, COPY_RESULT_TEXT, STALE_SELECTION_NOTE } from '../src/defaults/index.js';
@@ -89,7 +89,7 @@ describe('a Mission missing from the name map, a foreign finding, a report that 
     const screen = await mount(reportProps('reportMissionUnlisted', { select: 0 }));
     expect(text(one(screen, '[data-mission-id]'))).toBe('01JZCB3H8J9KMNPQRSTVWXYZ01');
     expect(root(screen).querySelector('[data-mission-link]')).toBeNull();
-    expect(options(screen).length).toBeGreaterThan(0);
+    expect(options(screen)).toHaveLength(reportMissionUnlisted.findings.length);
     expect(options(screen).some((option) => text(option).includes('01JZCB3H8J9KMNPQRSTVWXYZ01'))).toBe(true);
   });
 
@@ -101,7 +101,7 @@ describe('a Mission missing from the name map, a foreign finding, a report that 
     document.body.replaceChildren();
     const own = await mount(reportProps('reportScoped', { select: 0 }));
     expect(one(own, '[data-root]').getAttribute('data-state')).toBe('ready');
-    expect(options(own).length).toBeGreaterThan(0);
+    expect(options(own)).toHaveLength(reportScoped.findings.length);
     expect(scopedMissionId).not.toBe('');
   });
 

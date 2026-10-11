@@ -94,6 +94,9 @@ describe('SR-1: the pane divider reaches the bottom of the content cell', () => 
   });
 });
 
+// The detail of the second finding of reportPopulated: kicker, title, explanation, Authority, Facts, lane comparison, resolution.
+const BLOCKS_OF_FINDING_1 = 7;
+
 describe('the detail blocks stack at the start of a tall cell (TESTS-005)', () => {
   // Without `align-content: start` on the detail, its grid rows share the spare height of the stretched cell and the blocks spread down the pane.
   it('1280x1600: the blocks are one gap apart and the last one ends well above the cell bottom (positive control: the cell is taller than the detail)', async () => {
@@ -102,7 +105,7 @@ describe('the detail blocks stack at the start of a tall cell (TESTS-005)', () =
     const gap = Number.parseFloat(getComputedStyle(detail).rowGap);
     expect(gap).toBeGreaterThan(0);
     const blocks = [...detail.children] as HTMLElement[];
-    expect(blocks.length).toBeGreaterThanOrEqual(5);
+    expect(blocks).toHaveLength(BLOCKS_OF_FINDING_1);
     const spare = cell.getBoundingClientRect().bottom - blocks[blocks.length - 1]!.getBoundingClientRect().bottom;
     expect(spare, 'the cell is much taller than the detail').toBeGreaterThan(300);
     let pairs = 0;
