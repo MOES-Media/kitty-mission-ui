@@ -488,6 +488,73 @@ function detailFixtures(ex, bulk) {
   };
 }
 
+/** A project whose branch (255), version (64) and name are at their limits; every character matches the contract patterns. */
+function projectLong(base) {
+  const branch = `topic/${'long-branch-segment-'.repeat(20)}`.slice(0, 255);
+  return {
+    ...structuredClone(base),
+    name: `example-project-${LONG_WORD.toLowerCase()}-with-an-unbroken-name-that-keeps-going`,
+    missionCount: 128,
+    specKittyVersion: `4.0.0-rc.${'1'.repeat(64)}`.slice(0, 64),
+    currentBranch: branch,
+  };
+}
+
+// ---- Drift screen (mission-ui#10) ---------------------------------------------------------------------------------
+// Every Drift overlay starts from the vendored populated report (or its first findings) and changes the one thing that
+// makes it the fixture it is. Findings stay sorted by (missionId, kind, artifactPath) and keys stay unique; check.mjs
+// recomputes both (C5). Mission ids are synthetic ULIDs.
+const DRIFT_MISSION = { long: '01JZCB3G7H8J9KMNPQRSTVWXYZ', unlisted: '01JZCB3H8J9KMNPQRSTVWXYZ01', foreign: '01JZCB3J9KMNPQRSTVWXYZ0123' };
+
+const driftFinding = (base, change) => ({ ...structuredClone(base), ...change });
+
+
+function driftReportFrom(base, change) {
+  const report = structuredClone(base);
+  change(report.findings);
+  return report;
+}
+
+/** A report of its own: the populated report's scan time and the given findings. */
+const driftReportOf = (base, findings, truncated = false) => ({ scannedAt: base.scannedAt, findings, truncated });
+
+function driftFixtures(ex) {
+  const populated = ex['DriftReport.populated'];
+  const [branchMissing, drift, , terminal, eventLogMissing] = populated.findings;
+  const lane = (n, persisted, derived) => ({ wpId: `WP${String(n).padStart(2, '0')}`, persistedStatusLane: persisted, derivedStatusLane: derived });
+  const manyRows = Array.from({ length: 40 }, (_, i) => {
+    const pair = [['in_progress', 'for_review'], ['planned', null], [null, 'claimed'], ['approved', 'done'], ['blocked', 'in_progress']][i % 5];
+    return lane(i + 1, pair[0], pair[1]);
+  });
+  const own = branchMissing.missionId;
+  return {
+    reportPopulated: structuredClone(populated),
+    reportClean: structuredClone(ex['DriftReport.clean']),
+    reportCorruptJson: structuredClone(ex['DriftReport.corrupt-json']),
+    reportTruncated: structuredClone(ex['DriftReport.truncated']),
+    refusalMissionNotFound: structuredClone(ex['DriftRefusal.mission-not-found']),
+    refusalScanUnreadable: structuredClone(ex['DriftRefusal.scan-unreadable']),
+    // One foreign word each, in the populated list (relaxation drift-vocabulary-open).
+    reportUnknownKind: driftReportFrom(populated, (f) => { f[0] = driftFinding(f[0], { kind: 'derived_view_stale' }); }),
+    reportUnknownSeverity: driftReportFrom(populated, (f) => { f[2] = driftFinding(f[2], { severity: 'info' }); }),
+    reportUnknownAuthority: driftReportFrom(populated, (f) => { f[3] = driftFinding(f[3], { authority: 'operator' }); }),
+    reportUnknownRemedy: driftReportFrom(populated, (f) => { f[1] = driftFinding(f[1], { remedy: 'rebuild_lanes' }); }),
+    // sourceCode is a pattern, not an enum: an unknown code is valid as it stands.
+    reportUnknownSourceCode: driftReportFrom(populated, (f) => { f[2] = driftFinding(f[2], { sourceCode: 'SNAPSHOT_DRIFT_FUTURE' }); }),
+    reportOneSidedLane: driftReportOf(populated, [
+      driftFinding(drift, { laneComparison: [lane(1, null, 'planned'), lane(2, 'done', null)] }),
+    ]),
+    reportManyLanes: driftReportOf(populated, [driftFinding(drift, { laneComparison: manyRows })]),
+    reportLongSlugMission: driftReportOf(populated, [driftFinding(drift, { missionId: DRIFT_MISSION.long })]),
+    reportMissionUnlisted: driftReportOf(populated, [driftFinding(drift, { missionId: DRIFT_MISSION.unlisted })]),
+    reportScoped: driftReportOf(populated, [branchMissing, drift, eventLogMissing].map((x) => driftFinding(x, { missionId: own }))),
+    reportScopedForeign: driftReportOf(populated, [
+      ...[branchMissing, drift, eventLogMissing].map((x) => driftFinding(x, { missionId: own })),
+      driftFinding(terminal, { missionId: DRIFT_MISSION.foreign }),
+    ]),
+  };
+}
+
 /**
  * Every fixture document, in registry order. `examples` is the parsed vendored examples (loadExamples); `bulk` is the
  * bulk module. Pure: the same inputs give the same documents.
@@ -508,6 +575,8 @@ export function buildFixtures({ examples: ex, bulk }) {
   const out = {
     project: structuredClone(ex['Project.example']),
     projectEmpty: { ...structuredClone(ex['Project.example']), missionCount: 0 },
+    projectUnknownHealth: { ...structuredClone(ex['Project.example']), health: 'unheard_of_health' },
+    projectLong: projectLong(ex['Project.example']),
     pageMixed: { items: mixed, pageInfo: pageInfo(mixed, true) },
     pageFull: { items: full, pageInfo: pageInfo(full, true) },
     pageLast: { items: full.map((m) => structuredClone(m)), pageInfo: pageInfo(full, false) },
@@ -583,5 +652,5 @@ export function buildFixtures({ examples: ex, bulk }) {
   out.detailCustomGroups.mid8 = id(16).slice(0, 8);
   out.detailCustomGroups.slug = `example-mission-${id(16).slice(0, 8)}`;
   out.detailCustomGroups.friendlyName = 'Example Mission Custom Groups';
-  return { ...out, ...workPackageFixtures(ex, bulk), ...detailFixtures(ex, bulk) };
+  return { ...out, ...workPackageFixtures(ex, bulk), ...detailFixtures(ex, bulk), ...driftFixtures(ex) };
 }

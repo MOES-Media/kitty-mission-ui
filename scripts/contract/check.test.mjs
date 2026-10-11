@@ -101,8 +101,8 @@ test('positive control: the repository itself passes every check, and the checks
   assert.deepEqual(clean.problems, []);
   // independent literals, deliberately not computed from PIN.files (a pin and a directory that shrink together would
   // keep a derived floor green); edited deliberately at each re-pin
-  assert.equal(clean.summary.vendoredFiles, 151);
-  assert.equal(clean.summary.fixtures, 70);
+  assert.equal(clean.summary.vendoredFiles, 200);
+  assert.equal(clean.summary.fixtures, 89);
   assert.equal(clean.summary.anchorFiles, 5);
   assert.equal(clean.summary.bulkPages, 2);
   assert.ok(clean.summary.c7Files > 0);
@@ -560,20 +560,20 @@ test('C7: the contract directory itself may name stream identifiers', async () =
 });
 
 // ---- guards ----
-test('guard: a registry of 69 entries against 70 exports is reported with both counts', async () => {
+test('guard: a registry of 88 entries against 89 exports is reported with both counts', async () => {
   const root = tempRepo();
   const registry = without(FIXTURES, 'pageLong');
-  assert.equal(Object.keys(registry).length, 69);
+  assert.equal(Object.keys(registry).length, 88);
   const r = await check(root, { registry });
   assert.ok(tokens(r).includes(TOKENS.unregistered));
-  assert.match(r.problems.find((p) => p.token === TOKENS.unregistered).message, /69.*70|70.*69/);
+  assert.match(r.problems.find((p) => p.token === TOKENS.unregistered).message, /88.*89|89.*88/);
 });
 
-test('guard: a PIN.files of 150 keys against 151 files gives file set', async () => {
+test('guard: a PIN.files of 199 keys against 200 files gives file set', async () => {
   const root = tempRepo();
   const pin = JSON.parse(read(root, LAYOUT.pin));
   delete pin.files[Object.keys(pin.files)[0]];
-  assert.equal(Object.keys(pin.files).length, 150);
+  assert.equal(Object.keys(pin.files).length, 199);
   write(root, LAYOUT.pin, JSON.stringify(pin, null, 2));
   assert.deepEqual(tokens(await check(root)), [TOKENS.fileSet]);
 });
@@ -587,8 +587,8 @@ test('guard: the floors fail when the vendored set shrinks by one file together 
   });
   const r = await check(root);
   assert.equal(r.problems.some((p) => p.token === TOKENS.fileSet), false, 'the pin and the directory agree, so C1 alone is silent');
-  assert.equal(r.summary.vendoredFiles, 150);
-  assert.notEqual(r.summary.vendoredFiles, 151, 'the literal floor of the positive control would fail on this');
+  assert.equal(r.summary.vendoredFiles, 199);
+  assert.notEqual(r.summary.vendoredFiles, 200, 'the literal floor of the positive control would fail on this');
 });
 
 test('guard: a vendored set missing a named anchor file gives guard and names the file', async () => {
@@ -617,4 +617,58 @@ test('guard: a C7 scan over no files gives guard', async () => {
   const src = join(root, 'packages/mission-ui/src');
   for (const name of readdirSync(src)) if (name !== 'contract') rmSync(join(src, name), { recursive: true });
   assert.deepEqual(tokens(await check(root)), [TOKENS.guard]);
+});
+
+// ---- the Drift fixtures (mission-ui#10) ----
+test('C4 Drift: the bulk report of 1000 findings is counted, validated and clean', async () => {
+  assert.equal(clean.summary.bulkReports, 1);
+  assert.deepEqual(clean.problems, []);
+});
+
+test('C4 Drift: a bulk generator that returns 1001 findings breaks maxItems, and the equality is checked in the gate itself', async () => {
+  const root = tempRepo();
+  edit(root, 'packages/mission-ui/src/contract/bulk.ts', 'for (let i = 0; i < count; i += 1) findings.push(', 'for (let i = 0; i <= count; i += 1) findings.push(');
+  const r = await check(root);
+  assert.ok(r.problems.some((p) => p.token === TOKENS.violates && /bulk Drift report/.test(p.message)), tokens(r).join());
+});
+
+test('C4 Drift: a foreign vocabulary word registered as a valid fixture (the relaxation withdrawn) is rejected by the closed schema', async () => {
+  const root = tempRepo();
+  const registry = { ...FIXTURES, reportUnknownKind: { schema: 'DriftReport', kind: 'valid', satisfies: 'DriftReport' } };
+  const r = await check(root, { registry });
+  assert.ok(r.problems.some((p) => p.token === TOKENS.violates && /reportUnknownKind/.test(p.message)), tokens(r).join());
+});
+
+test('C4 Drift: a vocabulary fixture registered as relaxed whose words are all in the contract set gives relaxation (a stale entry)', async () => {
+  const root = tempRepo();
+  const registry = { ...FIXTURES, reportPopulated: { schema: 'DriftReport', kind: 'relaxed', satisfies: 'DriftReportView', relaxation: 'drift-vocabulary-open' } };
+  const r = await check(root, { registry });
+  assert.ok(r.problems.some((p) => p.token === TOKENS.relaxation && /reportPopulated/.test(p.message)), tokens(r).join());
+});
+
+test('C4 Drift: a relaxed Drift fixture with a second defect (a bad path next to a foreign kind) gives relaxation', async () => {
+  const root = tempRepo();
+  const deps = await mutateDocs(root, (d) => {
+    d.reportUnknownKind.findings[0].artifactPath = '/absolute';
+  });
+  assert.ok(tokens(await check(root, deps)).includes(TOKENS.relaxation));
+});
+
+test('C5 Drift: each rule fails a report built to violate exactly it', async () => {
+  const cases = [
+    ['key-unique', (d) => { d.reportPopulated.findings[1] = structuredClone(d.reportPopulated.findings[0]); }],
+    ['key-order', (d) => { d.reportPopulated.findings.reverse(); }],
+    ['lane-order', (d) => { d.reportPopulated.findings[1].laneComparison.reverse(); }],
+    ['lane-equal', (d) => { d.reportPopulated.findings[1].laneComparison[0].derivedStatusLane = d.reportPopulated.findings[1].laneComparison[0].persistedStatusLane; }],
+  ];
+  let n = 0;
+  for (const [rule, change] of cases) {
+    const root = tempRepo();
+    const deps = await mutateDocs(root, change);
+    const r = await check(root, deps);
+    assert.deepEqual(tokens(r), [TOKENS.incoherent], `${rule}: ${tokens(r).join()}`);
+    assert.ok(rulesOf(r).includes(rule), `${rule}: ${rulesOf(r).join()}`);
+    n += 1;
+  }
+  assert.equal(n, 4);
 });

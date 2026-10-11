@@ -323,7 +323,40 @@ export function workPackageFailures(wp) {
   return failed;
 }
 
-function checkCoherence(docs, registry, bulkPages) {
+const bytes = (text) => Buffer.from(String(text), 'utf8');
+const byteCompare = (a, b) => Buffer.compare(bytes(a), bytes(b));
+
+/**
+ * C5 rules of one `DriftReport`, recomputed here and nowhere else (the overlays and bulk.ts share no helper with this).
+ * Returns the names of the failed rules:
+ * key-unique   no two findings share (missionId, kind, artifactPath)
+ * key-order    the findings are strictly ascending by (missionId, kind, artifactPath) in the byte order of the UTF-8 encoding
+ * lane-order   the lane rows of each finding are strictly ascending by wpId in byte order
+ * lane-equal   no lane row has the same lane on both sides (a row exists only where the sides differ)
+ */
+export function driftFailures(report) {
+  const failed = [];
+  const findings = report.findings ?? [];
+  const key = (f) => [f.missionId, f.kind, f.artifactPath];
+  if (new Set(findings.map((f) => JSON.stringify(key(f)))).size !== findings.length) failed.push('key-unique');
+  const ascending = findings.every((f, i) => {
+    if (i === 0) return true;
+    const a = key(findings[i - 1]);
+    const b = key(f);
+    for (let k = 0; k < 3; k += 1) {
+      const c = byteCompare(a[k], b[k]);
+      if (c !== 0) return c < 0;
+    }
+    return false;
+  });
+  if (!ascending) failed.push('key-order');
+  const rowsOf = (f) => f.laneComparison ?? [];
+  if (!findings.every((f) => rowsOf(f).every((r, i) => i === 0 || byteCompare(rowsOf(f)[i - 1].wpId, r.wpId) < 0))) failed.push('lane-order');
+  if (findings.some((f) => rowsOf(f).some((r) => r.persistedStatusLane === r.derivedStatusLane))) failed.push('lane-equal');
+  return failed;
+}
+
+function checkCoherence(docs, registry, bulkPages, bulkReports = {}) {
   const out = [];
   let records = 0;
   const run = (label, rec, isDetail, skipPhases) => {
@@ -339,22 +372,41 @@ function checkCoherence(docs, registry, bulkPages) {
       records += 1;
       const rules = workPackageFailures(doc);
       if (rules.length) out.push(problem(TOKENS.incoherent, `fixture ${name} is incoherent (rule ${rules.join(', ')})`, { rules }));
+    } else if (def.schema === 'DriftReport') {
+      records += 1;
+      const rules = driftFailures(doc);
+      if (rules.length) out.push(problem(TOKENS.incoherent, `fixture ${name} is incoherent (rule ${rules.join(', ')})`, { rules }));
     }
+  }
+  for (const [label, report] of Object.entries(bulkReports)) {
+    records += 1;
+    const rules = driftFailures(report);
+    if (rules.length) out.push(problem(TOKENS.incoherent, `${label} is incoherent (rule ${rules.join(', ')})`, { rules }));
   }
   for (const [label, page] of Object.entries(bulkPages)) page.items.forEach((item, i) => run(`${label} item ${i}`, item, false, false));
   return { problems: out, records };
 }
 
+/** The contract's maxItems of a Drift report, restated here: the bulk generator is checked against this literal, not against its own constant. */
+const DRIFT_MAX_FINDINGS = 1000;
+
 async function checkBulk(root) {
   const bulk = await loadBulk(root);
   const pages = { 'bulk page of 40': bulk.makeMissionPage(40, true), 'bulk page of 500': bulk.makeMissionPage(500, true) };
+  const reports = { 'bulk Drift report': bulk.makeDriftReport(DRIFT_MAX_FINDINGS) };
   const out = [];
   const v = await validators(root, 'MissionOverviewPage');
   for (const [label, page] of Object.entries(pages)) {
     const r = validateWith(v, page);
     if (!r.valid) out.push(problem(TOKENS.violates, `${label} violates the closed contract: ${summarise(r.errors)}`));
   }
-  return { problems: out, pages };
+  const dv = await validators(root, 'DriftReport');
+  for (const [label, report] of Object.entries(reports)) {
+    const r = validateWith(dv, report);
+    if (!r.valid) out.push(problem(TOKENS.violates, `${label} violates the closed contract: ${summarise(r.errors)}`));
+    if (report.findings.length !== DRIFT_MAX_FINDINGS) out.push(problem(TOKENS.violates, `${label} holds ${report.findings.length} findings; the bulk report holds exactly ${DRIFT_MAX_FINDINGS}`));
+  }
+  return { problems: out, pages, reports };
 }
 
 // ---- C6 ---------------------------------------------------------------------------------------------------------
@@ -398,7 +450,7 @@ function currentUsername() {
   }
 }
 
-function checkHygieneScope(root, docs, bulkPages) {
+function checkHygieneScope(root, docs, bulkPages, bulkReports = {}) {
   const out = [];
   const files = [
     ...listFiles(join(root, LAYOUT.vendor)).map((f) => `${LAYOUT.vendor}/${f}`),
@@ -427,7 +479,7 @@ function checkHygieneScope(root, docs, bulkPages) {
       if (texts.some((t) => re.test(t))) out.push(problem(TOKENS.hygiene, `${label} contains the username of the account running the gate`));
     };
     hit('generated fixture values', stringValues(docs));
-    hit('bulk generator output', stringValues(bulkPages));
+    hit('bulk generator output', stringValues([bulkPages, bulkReports]));
     for (const file of authoredFiles(root).filter(isAuthored)) hit(file, [readText(root, file)]);
   }
   return { problems: out, scanned: files.length };
@@ -464,15 +516,15 @@ export async function runChecks({ root = ROOT, deps = {}, requireMain = false } 
   problems.push(...fx.problems);
   const bulk = await checkBulk(root);
   problems.push(...bulk.problems);
-  const c5 = checkCoherence(fx.docs, registry, bulk.pages);
+  const c5 = checkCoherence(fx.docs, registry, bulk.pages, bulk.reports);
   problems.push(...c5.problems);
-  const c6 = checkHygieneScope(root, fx.docs, bulk.pages);
+  const c6 = checkHygieneScope(root, fx.docs, bulk.pages, bulk.reports);
   problems.push(...c6.problems);
   const c7 = checkProvisional(root);
   problems.push(...c7.problems);
   return {
     problems,
-    summary: { vendoredFiles: c1.files, anchorFiles: c1.anchors, fixtures: fx.count, bulkPages: Object.keys(bulk.pages).length, coherenceRecords: c5.records, hygieneFiles: c6.scanned, c7Files: c7.files },
+    summary: { vendoredFiles: c1.files, anchorFiles: c1.anchors, fixtures: fx.count, bulkPages: Object.keys(bulk.pages).length, bulkReports: Object.keys(bulk.reports).length, coherenceRecords: c5.records, hygieneFiles: c6.scanned, c7Files: c7.files },
   };
 }
 
@@ -481,7 +533,7 @@ async function main() {
   for (const p of problems) process.stdout.write(`contract: ${p.token}: ${p.message}\n`);
   if (problems.length === 0) {
     const s = summary;
-    process.stdout.write(`contract gate: ok (${s.vendoredFiles} vendored files, ${s.anchorFiles} anchor files, ${s.fixtures} fixtures, ${s.bulkPages} bulk pages, ${s.coherenceRecords} records checked for coherence, ${s.hygieneFiles} files in the hygiene scope, ${s.c7Files} files in the provisional scan)\n`);
+    process.stdout.write(`contract gate: ok (${s.vendoredFiles} vendored files, ${s.anchorFiles} anchor files, ${s.fixtures} fixtures, ${s.bulkPages} bulk pages, ${s.bulkReports} bulk report, ${s.coherenceRecords} records checked for coherence, ${s.hygieneFiles} files in the hygiene scope, ${s.c7Files} files in the provisional scan)\n`);
     return 0;
   }
   process.stdout.write(`contract gate: ${problems.length} problem(s)\n`);

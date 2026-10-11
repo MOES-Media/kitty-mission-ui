@@ -9,6 +9,9 @@ const f = (schema, kind, satisfies, relaxation) => ({ schema, kind, satisfies, .
 export const FIXTURES = {
   project: f('Project', 'valid', 'Project'),
   projectEmpty: f('Project', 'valid', 'Project'),
+  // ---- Projects screen (mission-ui#9): two host overlays the contract examples do not give ----
+  projectUnknownHealth: f('Project', 'relaxed', 'ProjectView', 'health-open'),
+  projectLong: f('Project', 'valid', 'Project'),
   pageMixed: f('MissionOverviewPage', 'host', 'MissionOverviewPageView'),
   pageFull: f('MissionOverviewPage', 'host', 'MissionOverviewPageView'),
   pageLast: f('MissionOverviewPage', 'host', 'MissionOverviewPageView'),
@@ -79,6 +82,26 @@ export const FIXTURES = {
   detailLong: f('WorkPackageDetail', 'valid', 'WorkPackageDetail'),
   detailUnknownLanes: f('WorkPackageDetail', 'relaxed', 'WorkPackageDetailView', 'detail-lane-open'),
   detailOmittedProvisional: f('WorkPackageDetail', 'relaxed', 'WorkPackageDetailView', 'detail-omittable'),
+
+  // ---- Drift screen (mission-ui#10): the six contract examples and eleven overlays. The 1000-finding report is NOT here:
+  // bulk.ts generates it and gate `contract` validates it (check.mjs, checkBulk), as for the 500-Mission page. ----
+  reportPopulated: f('DriftReport', 'valid', 'DriftReport'),
+  reportClean: f('DriftReport', 'valid', 'DriftReport'),
+  reportCorruptJson: f('DriftReport', 'valid', 'DriftReport'),
+  reportTruncated: f('DriftReport', 'valid', 'DriftReport'),
+  refusalMissionNotFound: f('DriftRefusal', 'valid', 'DriftRefusal'),
+  refusalScanUnreadable: f('DriftRefusal', 'valid', 'DriftRefusal'),
+  reportUnknownKind: f('DriftReport', 'relaxed', 'DriftReportView', 'drift-vocabulary-open'),
+  reportUnknownSeverity: f('DriftReport', 'relaxed', 'DriftReportView', 'drift-vocabulary-open'),
+  reportUnknownAuthority: f('DriftReport', 'relaxed', 'DriftReportView', 'drift-vocabulary-open'),
+  reportUnknownRemedy: f('DriftReport', 'relaxed', 'DriftReportView', 'drift-vocabulary-open'),
+  reportUnknownSourceCode: f('DriftReport', 'valid', 'DriftReport'),
+  reportOneSidedLane: f('DriftReport', 'valid', 'DriftReport'),
+  reportManyLanes: f('DriftReport', 'valid', 'DriftReport'),
+  reportLongSlugMission: f('DriftReport', 'valid', 'DriftReport'),
+  reportMissionUnlisted: f('DriftReport', 'valid', 'DriftReport'),
+  reportScoped: f('DriftReport', 'valid', 'DriftReport'),
+  reportScopedForeign: f('DriftReport', 'valid', 'DriftReport'),
 };
 
 /** Every distinct `satisfies` target, for the generated import line. */
@@ -151,6 +174,29 @@ export const RELAXATIONS = {
     allowedMissing: ['reviewCycles', 'workspace'],
     patch(schema) {
       schema.required = schema.required.filter((k) => k !== 'reviewCycles' && k !== 'workspace');
+    },
+  },
+  // ---- mission-ui#9: ProjectHealth is provisional and a client must tolerate a value it does not know ----
+  'health-open': {
+    schema: 'Project',
+    description: 'Project.health becomes an open string; nothing else changes',
+    allowedPath: /^\/health$/,
+    patch(schema) {
+      schema.properties.health = { type: 'string' };
+    },
+  },
+  // ---- mission-ui#10: the vocabularies of a Drift finding are provisional and a client must tolerate a word it does not know ----
+  'drift-vocabulary-open': {
+    schema: 'DriftReport',
+    description: 'DriftFinding.kind, severity, authority, derivedSide and remedy (or null) and LaneComparison.persistedStatusLane and derivedStatusLane (or null) become open strings; sourceCode is a pattern and needs no widening',
+    allowedPath: /^\/findings\/\d+\/(?:kind|severity|authority|derivedSide|remedy|laneComparison\/\d+\/(?:persisted|derived)StatusLane)$/,
+    patch(schema) {
+      const finding = schema.properties.findings.items.properties;
+      for (const field of ['kind', 'severity', 'authority', 'derivedSide']) finding[field] = { type: 'string', minLength: 1 };
+      finding.remedy = { type: ['string', 'null'], minLength: 1 };
+      const row = finding.laneComparison.items.properties;
+      row.persistedStatusLane = { type: ['string', 'null'] };
+      row.derivedStatusLane = { type: ['string', 'null'] };
     },
   },
 };
