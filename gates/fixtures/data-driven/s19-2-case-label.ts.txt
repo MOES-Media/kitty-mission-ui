@@ -1,0 +1,9 @@
+// expect: S19.2
+export function f(s: string): number {
+  switch (s) {
+    case 'agent':
+      return 1;
+    default:
+      return 0;
+  }
+}

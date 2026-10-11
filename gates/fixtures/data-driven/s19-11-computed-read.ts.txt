@@ -1,2 +1,2 @@
-// expect: S16.11
+// expect: S19.11
 export const f = (o: Record<string, number>): number | undefined => o['failed'];

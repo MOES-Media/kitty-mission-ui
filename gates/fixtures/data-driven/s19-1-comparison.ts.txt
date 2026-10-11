@@ -1,0 +1,2 @@
+// expect: S19.1
+export const f = (s: string): boolean => s === 'open';

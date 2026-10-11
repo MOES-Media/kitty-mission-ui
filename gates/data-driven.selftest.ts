@@ -134,8 +134,8 @@ const EXPECTED_ENTRY_IDS = [
   'S12.1', 'S12.2', 'S13.1', 'S13.2', 'S13.3', 'S13.4', 'S13.5', 'S14.1', 'S14.2', 'S14.3', 'S14.4',
   'S15.1', 'S15.2', 'S15.3', 'S15.4', 'S15.5', 'S16.1', 'S16.2', 'S16.3', 'S16.4', 'S16.5', 'S16.6', 'S16.7', 'S16.8', 'S16.9', 'S16.10', 'S16.11',
   'S17.1', 'S17.2', 'S17.3', 'S17.4', 'S17.5',
-  'S15.1', 'S15.2', 'S15.3', 'S15.4', 'S15.5', 'S16.1', 'S16.2', 'S16.3', 'S16.4',
-  'S16.5', 'S16.6', 'S16.7', 'S16.9', 'S16.10', 'S16.11',
+  'S18.1', 'S18.2', 'S18.3', 'S18.4', 'S18.5', 'S19.1', 'S19.2', 'S19.3', 'S19.4',
+  'S19.5', 'S19.6', 'S19.7', 'S19.9', 'S19.10', 'S19.11',
 ];
 // The fixtures on #5's tip, and the new ones of the Artifact Viewer extension.
 const FIXTURES_BEFORE = 46;
@@ -199,6 +199,7 @@ describe('data-driven gate self-test: positive fixtures', () => {
     expect(readdirSync(FIXTURE_DIR).length).toBe(FIXTURES_BEFORE + FIXTURES_ADDED + FIXTURES_DRIFT + FIXTURES_OPS);
     expect(positives.filter((f) => /^s1[56]-/.test(f)).length).toBe(FIXTURES_ADDED);
     expect(positives.filter((f) => /^s17-/.test(f)).length).toBe(FIXTURES_DRIFT);
+    expect(positives.filter((f) => /^s1[89]-/.test(f)).length).toBe(FIXTURES_OPS);
   });
 
   for (const name of positives) {
@@ -583,36 +584,36 @@ describe('data-driven gate self-test: every word of the Ops vocabularies', () =>
     expect(cfg.OPS_BARE_WORDS.filter((w) => cfg.WORDS.includes(w))).toEqual([]);
   });
 
-  it('reports each gate word as a literal (S15.1), in any case, and the underscored ones inside a longer string (S15.3)', async () => {
+  it('reports each gate word as a literal (S18.1), in any case, and the underscored ones inside a longer string (S18.3)', async () => {
     const cfg = await loadConfig();
     let ran = 0;
     for (const w of cfg.OPS_WORDS) {
       for (const v of [w, w.toUpperCase()]) {
-        expect(selectorIds(await lint(`export const x = '${v}';\n`)), v).toContain('S15.1');
+        expect(selectorIds(await lint(`export const x = '${v}';\n`)), v).toContain('S18.1');
         ran += 1;
       }
     }
     expect(ran).toBe(14);
     let inside = 0;
     for (const w of cfg.OPS_UNDERSCORED) {
-      expect(selectorIds(await lint(`export const x = 'tone-${w}';\n`)), w).toEqual(['S15.3']);
-      expect(selectorIds(await lint(`export const x = \`tone-${w}\`;\n`)), w).toEqual(['S15.4']);
-      expect(selectorIds(await lint(`export const x = { ${w}: 1 };\n`)), w).toEqual(['S15.5']);
+      expect(selectorIds(await lint(`export const x = 'tone-${w}';\n`)), w).toEqual(['S18.3']);
+      expect(selectorIds(await lint(`export const x = \`tone-${w}\`;\n`)), w).toEqual(['S18.4']);
+      expect(selectorIds(await lint(`export const x = { ${w}: 1 };\n`)), w).toEqual(['S18.5']);
       inside += 1;
     }
     expect(inside).toBe(6);
   });
 
-  it('reports each bare word only in a comparison (S16.1, S16.3) or a case label (S16.2, S16.4), as a string or a template', async () => {
+  it('reports each bare word only in a comparison (S19.1, S19.3) or a case label (S19.2, S19.4), as a string or a template', async () => {
     const cfg = await loadConfig();
     let ran = 0;
     for (const w of cfg.OPS_BARE_WORDS) {
-      expect(selectorIds(await lint(`export const f = (s: string): boolean => s === '${w}';\n`)), w).toEqual(['S16.1']);
-      expect(selectorIds(await lint(`export const f = (s: string): boolean => '${w}' !== s;\n`)), w).toEqual(['S16.1']);
-      expect(selectorIds(await lint(`export const f = (s: string): boolean => s == '${w.toUpperCase()}';\n`)), w).toEqual(['S16.1']);
-      expect(selectorIds(await lint(`export function f(s: string): number {\n  switch (s) {\n    case '${w}':\n      return 1;\n    default:\n      return 0;\n  }\n}\n`)), w).toEqual(['S16.2']);
-      expect(selectorIds(await lint(`export const f = (s: string): boolean => s === \`${w}\`;\n`)), w).toEqual(['S16.3']);
-      expect(selectorIds(await lint(`export function f(s: string): number {\n  switch (s) {\n    case \`${w}\`:\n      return 1;\n    default:\n      return 0;\n  }\n}\n`)), w).toEqual(['S16.4']);
+      expect(selectorIds(await lint(`export const f = (s: string): boolean => s === '${w}';\n`)), w).toEqual(['S19.1']);
+      expect(selectorIds(await lint(`export const f = (s: string): boolean => '${w}' !== s;\n`)), w).toEqual(['S19.1']);
+      expect(selectorIds(await lint(`export const f = (s: string): boolean => s == '${w.toUpperCase()}';\n`)), w).toEqual(['S19.1']);
+      expect(selectorIds(await lint(`export function f(s: string): number {\n  switch (s) {\n    case '${w}':\n      return 1;\n    default:\n      return 0;\n  }\n}\n`)), w).toEqual(['S19.2']);
+      expect(selectorIds(await lint(`export const f = (s: string): boolean => s === \`${w}\`;\n`)), w).toEqual(['S19.3']);
+      expect(selectorIds(await lint(`export function f(s: string): number {\n  switch (s) {\n    case \`${w}\`:\n      return 1;\n    default:\n      return 0;\n  }\n}\n`)), w).toEqual(['S19.4']);
       // not a bare word: a template with an expression, a plain string, an object key, a member read (positive control: the six above are)
       expect(selectorIds(await lint(`export const f = (s: string, t: string): boolean => s === \`${w}\${t}\`;\n`)), w).toEqual([]);
       expect(selectorIds(await lint(`export const x = '${w}';\n`)), w).toEqual([]);
@@ -628,13 +629,13 @@ describe('data-driven gate self-test: every word of the Ops vocabularies', () =>
     let ran = 0;
     for (const w of cfg.OPS_BARE_WORDS) {
       for (const method of ['includes', 'indexOf', 'lastIndexOf']) {
-        expect(selectorIds(await lint(`export const f = (s: string): boolean => s.${method}('${w}') !== false;\n`)), `${method} ${w}`).toEqual(['S16.5']);
-        expect(selectorIds(await lint(`export const f = (s: string): unknown => ['${w}', 'other'].${method}(s);\n`)), `array ${method} ${w}`).toEqual(['S16.6']);
+        expect(selectorIds(await lint(`export const f = (s: string): boolean => s.${method}('${w}') !== false;\n`)), `${method} ${w}`).toEqual(['S19.5']);
+        expect(selectorIds(await lint(`export const f = (s: string): unknown => ['${w}', 'other'].${method}(s);\n`)), `array ${method} ${w}`).toEqual(['S19.6']);
       }
-      for (const method of ['get', 'has']) expect(selectorIds(await lint(`export const f = (m: Map<string, number>): unknown => m.${method}('${w.toUpperCase()}');\n`)), `${method} ${w}`).toEqual(['S16.7']);
-      expect(selectorIds(await lint(`export const o = { '${w}': 1 };\n`)), w).toEqual(['S16.9']);
-      expect(selectorIds(await lint(`export const o = { ['${w}']: 1 };\n`)), w).toEqual(['S16.10']);
-      expect(selectorIds(await lint(`export const f = (o: Record<string, number>): number | undefined => o['${w}'];\n`)), w).toEqual(['S16.11']);
+      for (const method of ['get', 'has']) expect(selectorIds(await lint(`export const f = (m: Map<string, number>): unknown => m.${method}('${w.toUpperCase()}');\n`)), `${method} ${w}`).toEqual(['S19.7']);
+      expect(selectorIds(await lint(`export const o = { '${w}': 1 };\n`)), w).toEqual(['S19.9']);
+      expect(selectorIds(await lint(`export const o = { ['${w}']: 1 };\n`)), w).toEqual(['S19.10']);
+      expect(selectorIds(await lint(`export const f = (o: Record<string, number>): number | undefined => o['${w}'];\n`)), w).toEqual(['S19.11']);
       ran += 1;
     }
     expect(ran).toBe(8);
@@ -645,15 +646,15 @@ describe('data-driven gate self-test: every word of the Ops vocabularies', () =>
     let ran = 0;
     for (const w of cfg.OPS_BARE_WORDS) {
       for (const method of ['includes', 'indexOf', 'lastIndexOf', 'startsWith', 'endsWith']) {
-        expect(selectorIds(await lint(`export const f = (s: string): unknown => s.${method}(\`${w}\`);\n`)), `template ${method} ${w}`).toEqual(['S16.5']);
+        expect(selectorIds(await lint(`export const f = (s: string): unknown => s.${method}(\`${w}\`);\n`)), `template ${method} ${w}`).toEqual(['S19.5']);
       }
       for (const method of ['startsWith', 'endsWith']) {
-        expect(selectorIds(await lint(`export const f = (s: string): boolean => s.${method}('${w}');\n`)), `${method} ${w}`).toEqual(['S16.5']);
+        expect(selectorIds(await lint(`export const f = (s: string): boolean => s.${method}('${w}');\n`)), `${method} ${w}`).toEqual(['S19.5']);
       }
-      for (const method of ['get', 'has']) expect(selectorIds(await lint(`export const f = (m: Map<string, number>): unknown => m.${method}(\`${w}\`);\n`)), `template ${method} ${w}`).toEqual(['S16.7']);
-      expect(selectorIds(await lint(`export const f = (s: string): boolean => new Set(['${w}', 'other']).has(s);\n`)), `set ${w}`).toEqual(['S16.6']);
-      expect(selectorIds(await lint(`export const f = (s: string): boolean => new Set([\`${w}\`]).has(s);\n`)), `set template ${w}`).toEqual(['S16.6']);
-      expect(selectorIds(await lint(`export const f = (s: string): unknown => new Map([['${w}', 1]]).get(s);\n`)), `map ${w}`).toEqual(['S16.6']);
+      for (const method of ['get', 'has']) expect(selectorIds(await lint(`export const f = (m: Map<string, number>): unknown => m.${method}(\`${w}\`);\n`)), `template ${method} ${w}`).toEqual(['S19.7']);
+      expect(selectorIds(await lint(`export const f = (s: string): boolean => new Set(['${w}', 'other']).has(s);\n`)), `set ${w}`).toEqual(['S19.6']);
+      expect(selectorIds(await lint(`export const f = (s: string): boolean => new Set([\`${w}\`]).has(s);\n`)), `set template ${w}`).toEqual(['S19.6']);
+      expect(selectorIds(await lint(`export const f = (s: string): unknown => new Map([['${w}', 1]]).get(s);\n`)), `map ${w}`).toEqual(['S19.6']);
       ran += 1;
     }
     expect(ran).toBe(8);
@@ -663,13 +664,13 @@ describe('data-driven gate self-test: every word of the Ops vocabularies', () =>
     const cfg = await loadConfig();
     let ran = 0;
     for (const w of cfg.OPS_BARE_WORDS) {
-      expect(selectorIds(await lint(`export const f = (o: Record<string, number>): number | undefined => o[\`${w}\`];\n`)), `computed template ${w}`).toEqual(['S16.11']);
+      expect(selectorIds(await lint(`export const f = (o: Record<string, number>): number | undefined => o[\`${w}\`];\n`)), `computed template ${w}`).toEqual(['S19.11']);
       for (const method of ['some', 'every', 'find', 'findIndex', 'findLast', 'findLastIndex', 'filter']) {
-        expect(selectorIds(await lint(`export const f = (s: string): unknown => ['${w}', 'other'].${method}((x) => x === s);\n`)).filter((id) => id !== 'S16.1'), `array ${method} ${w}`).toEqual(['S16.6']);
-        expect(selectorIds(await lint(`export const f = (s: string): unknown => [\`${w}\`].${method}((x) => x.length > s.length);\n`)), `template array ${method} ${w}`).toEqual(['S16.6']);
+        expect(selectorIds(await lint(`export const f = (s: string): unknown => ['${w}', 'other'].${method}((x) => x === s);\n`)).filter((id) => id !== 'S19.1'), `array ${method} ${w}`).toEqual(['S19.6']);
+        expect(selectorIds(await lint(`export const f = (s: string): unknown => [\`${w}\`].${method}((x) => x.length > s.length);\n`)), `template array ${method} ${w}`).toEqual(['S19.6']);
       }
-      expect(selectorIds(await lint(`export const f = (o: object): boolean => '${w}' in o;\n`)), `in ${w}`).toEqual(['S16.7']);
-      expect(selectorIds(await lint(`export const f = (o: object): boolean => \`${w}\` in o;\n`)), `in template ${w}`).toEqual(['S16.7']);
+      expect(selectorIds(await lint(`export const f = (o: object): boolean => '${w}' in o;\n`)), `in ${w}`).toEqual(['S19.7']);
+      expect(selectorIds(await lint(`export const f = (o: object): boolean => \`${w}\` in o;\n`)), `in template ${w}`).toEqual(['S19.7']);
       ran += 1;
     }
     expect(ran).toBe(8);
@@ -686,7 +687,7 @@ describe('data-driven gate self-test: every word of the Ops vocabularies', () =>
     ];
     for (const code of silent) expect(selectorIds(await lint(code)), code).toEqual([]);
     expect(silent.length).toBe(6);
-    expect(selectorIds(await lint("export const f = (o: object): boolean => 'text' in o;\n"))).toEqual(['S16.7']);
+    expect(selectorIds(await lint("export const f = (o: object): boolean => 'text' in o;\n"))).toEqual(['S19.7']);
   });
 
   it('keeps those shapes silent for other words and for a template with an expression (positive controls: the shapes above fire)', async () => {
@@ -701,7 +702,7 @@ describe('data-driven gate self-test: every word of the Ops vocabularies', () =>
     ];
     for (const code of silent) expect(selectorIds(await lint(code)), code).toEqual([]);
     expect(silent.length).toBe(7);
-    expect(selectorIds(await lint('export const f = (s: string): boolean => s.includes(`text`);\n'))).toEqual(['S16.5']);
+    expect(selectorIds(await lint('export const f = (s: string): boolean => s.includes(`text`);\n'))).toEqual(['S19.5']);
   });
 
   it('keeps the same shapes silent when no bare word is in them, and the identifier key (not copied from #7) silent (positive controls: the shapes above fire)', async () => {
@@ -718,7 +719,7 @@ describe('data-driven gate self-test: every word of the Ops vocabularies', () =>
     ];
     for (const code of silent) expect(selectorIds(await lint(code)), code).toEqual([]);
     expect(silent.length).toBe(8);
-    expect(selectorIds(await lint("export const f = (s: string): boolean => s.includes('text');\n"))).toEqual(['S16.5']);
+    expect(selectorIds(await lint("export const f = (s: string): boolean => s.includes('text');\n"))).toEqual(['S19.5']);
   });
 
   it('finds exactly the expected violations in one file that holds one of each class (counted, so the gate cannot pass vacuously)', async () => {
@@ -728,11 +729,11 @@ describe('data-driven gate self-test: every word of the Ops vocabularies', () =>
     const clean = cfg.OPS_BARE_WORDS.map((w, i) => `export const c${i} = { ${w}: '' };`);
     const messages = await lint(`${[...anywhere, ...bare, ...clean].join('\n')}\n`);
     const ids = selectorIds(messages);
-    // 7 gate words (6 of them underscored, so S15.1 and S15.3 each) and 8 bare words (S16.1 each); the 8 bare-word keys are silent
+    // 7 gate words (6 of them underscored, so S18.1 and S18.3 each) and 8 bare words (S19.1 each); the 8 bare-word keys are silent
     expect(anywhere.length + bare.length + clean.length).toBe(23);
-    expect(ids.filter((i) => i === 'S15.1').length).toBe(7);
-    expect(ids.filter((i) => i === 'S15.3').length).toBe(6);
-    expect(ids.filter((i) => i === 'S16.1').length).toBe(8);
+    expect(ids.filter((i) => i === 'S18.1').length).toBe(7);
+    expect(ids.filter((i) => i === 'S18.3').length).toBe(6);
+    expect(ids.filter((i) => i === 'S19.1').length).toBe(8);
     expect(ids.length).toBe(21);
   });
 
@@ -747,8 +748,8 @@ describe('data-driven gate self-test: every word of the Ops vocabularies', () =>
     ];
     for (const code of silent) expect(selectorIds(await lint(`${code}\n`)), code).toEqual([]);
     expect(silent.length).toBe(6);
-    expect(selectorIds(await lint("export const f = (o: { text: string }): boolean => o.text === 'text';\n"))).toEqual(['S16.1']);
-    expect(selectorIds(await lint("export const f = (o: { url: string }): boolean => 'url' === o.url;\n"))).toEqual(['S16.1']);
+    expect(selectorIds(await lint("export const f = (o: { text: string }): boolean => o.text === 'text';\n"))).toEqual(['S19.1']);
+    expect(selectorIds(await lint("export const f = (o: { url: string }): boolean => 'url' === o.url;\n"))).toEqual(['S19.1']);
   });
 
   it('exempts the Ops words in defaults and contract paths and reports them in an element', async () => {
@@ -759,7 +760,7 @@ describe('data-driven gate self-test: every word of the Ops vocabularies', () =>
       ran += 1;
     }
     expect(ran).toBe(2);
-    expect(selectorIds(await lint(code, ELEMENT_FILE)).sort()).toEqual(['S15.1', 'S15.3', 'S16.1']);
+    expect(selectorIds(await lint(code, ELEMENT_FILE)).sort()).toEqual(['S18.1', 'S18.3', 'S19.1']);
   });
 
   it('does not touch the earlier vocabularies: a lane, a verdict word and a staleness word are still reported once', async () => {

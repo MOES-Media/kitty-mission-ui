@@ -41,13 +41,13 @@
 //    collision class as the verdict `approved`. They are covered by the foreign-value tests and the reviewer self-check list.
 //    The severity enum itself is not read, for the same reason.
 //  - The Ops vocabularies (mission-ui#11) follow the same split: the underscored and rare members (task_execution, mission_step,
-//    doctor_sweep, repo_path, ops_unreadable, invalid_page_cursor, abandoned) are matched as literals; the common identifiers
-//    (open, closed, agent, query, text, url, failed, advisory) only in a comparison or case label, so an object key, a
+//    doctor_sweep, repo_path, ops_unreadable, invalid_page_cursor, abandoned) are matched as literals (S18.1 to S18.5); the common identifiers
+//    (open, closed, agent, query, text, url, failed, advisory) only in a comparison or case label (S19.1 to S19.4), so an object key, a
 //    property, a type member or a variable of that name stays clean, and a bare word held in a plain string is not seen.
 //    `done` is an Ops outcome and already gated as a lane. The profile and action of an Op are open text and have no word.
 //    The bare words are also caught as the argument (a string or an expression-free template) of includes, indexOf, lastIndexOf,
 //    startsWith, endsWith, get and has, in an array searched with includes, indexOf or lastIndexOf, in a Set or Map built from
-//    them, as a quoted or computed object key and as a computed read (S16.5 to S16.11); a bare word
+//    them, as a quoted or computed object key and as a computed read (S19.5 to S19.11); a bare word
 //    as a plain identifier key stays clean. Also: a template computed read, an array of them searched with some, every, find,
 //    findIndex, findLast, findLastIndex or filter, and the left side of the `in` operator.
 //  - Vocabulary in a .d.ts or JSON file, and code outside packages/*/src (tests), is not scanned.
@@ -218,23 +218,23 @@ export const SELECTOR_ENTRIES = [
   entry('S17.3', `Literal[value=/(${DW})/i]`, 'drift word inside a longer string'),
   entry('S17.4', `TemplateElement[value.cooked=/(${DW})/i]`, 'drift word inside a template'),
   entry('S17.5', `Property[computed=false] > Identifier.key[name=/^(${DW})$/i]`, 'object key named like a drift word'),
-  entry('S15.1', `Literal[value=/^(${OW})$/i]`, 'Ops vocabulary word as a literal; read it from src/defaults/'),
-  entry('S15.2', `TemplateElement[value.cooked=/^(${OW})$/i]`, 'Ops vocabulary word as an exact template'),
-  entry('S15.3', `Literal[value=/${OU}/i]`, 'underscored Ops vocabulary word inside a longer string'),
-  entry('S15.4', `TemplateElement[value.cooked=/${OU}/i]`, 'underscored Ops vocabulary word inside a template'),
-  entry('S15.5', `Property[computed=false] > Identifier.key[name=/^(${OU})$/]`, 'object key named like an Ops vocabulary word'),
-  entry('S16.1', `BinaryExpression[operator=/^[!=]==?$/] > Literal[value=/^(${OB})$/i]`, 'Ops vocabulary word compared as a literal; read it from src/defaults/'),
-  entry('S16.2', `SwitchCase > Literal.test[value=/^(${OB})$/i]`, 'Ops vocabulary word as a case label; read it from src/defaults/'),
-  entry('S16.3', `BinaryExpression[operator=/^[!=]==?$/] > TemplateLiteral[expressions.length=0] > TemplateElement[value.cooked=/^(${OB})$/i]`, 'Ops vocabulary word compared as an expression-free template; read it from src/defaults/'),
-  entry('S16.4', `SwitchCase > TemplateLiteral.test[expressions.length=0] > TemplateElement[value.cooked=/^(${OB})$/i]`, 'Ops vocabulary word as a template case label; read it from src/defaults/'),
-  // The shapes #7's bare-word gate closed after its review (BOUNDARY-006); the numbers follow #7's S16.5-S16.7 and S16.9-S16.11.
+  entry('S18.1', `Literal[value=/^(${OW})$/i]`, 'Ops vocabulary word as a literal; read it from src/defaults/'),
+  entry('S18.2', `TemplateElement[value.cooked=/^(${OW})$/i]`, 'Ops vocabulary word as an exact template'),
+  entry('S18.3', `Literal[value=/${OU}/i]`, 'underscored Ops vocabulary word inside a longer string'),
+  entry('S18.4', `TemplateElement[value.cooked=/${OU}/i]`, 'underscored Ops vocabulary word inside a template'),
+  entry('S18.5', `Property[computed=false] > Identifier.key[name=/^(${OU})$/]`, 'object key named like an Ops vocabulary word'),
+  entry('S19.1', `BinaryExpression[operator=/^[!=]==?$/] > Literal[value=/^(${OB})$/i]`, 'Ops vocabulary word compared as a literal; read it from src/defaults/'),
+  entry('S19.2', `SwitchCase > Literal.test[value=/^(${OB})$/i]`, 'Ops vocabulary word as a case label; read it from src/defaults/'),
+  entry('S19.3', `BinaryExpression[operator=/^[!=]==?$/] > TemplateLiteral[expressions.length=0] > TemplateElement[value.cooked=/^(${OB})$/i]`, 'Ops vocabulary word compared as an expression-free template; read it from src/defaults/'),
+  entry('S19.4', `SwitchCase > TemplateLiteral.test[expressions.length=0] > TemplateElement[value.cooked=/^(${OB})$/i]`, 'Ops vocabulary word as a template case label; read it from src/defaults/'),
+  // The shapes #7's bare-word gate closed after its review (BOUNDARY-006); S19.5-S19.7 and S19.9-S19.11 mirror #7's S16.5-S16.7 and S16.9-S16.11.
   // Its identifier-key shape (#7's S16.8) is NOT copied: it would flag legitimate keys such as `{ text: ... }`.
-  entry('S16.5', `CallExpression[callee.property.name=/^(${OPS_STRING_METHODS})$/] > Literal[value=/^(${OB})$/i], ${TPL(`CallExpression[callee.property.name=/^(${OPS_STRING_METHODS})$/]`)}`, 'Ops vocabulary word searched for with includes, indexOf, lastIndexOf, startsWith or endsWith (as a string or an expression-free template); read it from src/defaults/'),
-  entry('S16.6', `MemberExpression[property.name=/^(${OPS_ARRAY_METHODS})$/] > ArrayExpression.object > Literal[value=/^(${OB})$/i], ${TPL(`MemberExpression[property.name=/^(${OPS_ARRAY_METHODS})$/] > ArrayExpression.object`)}, NewExpression[callee.name=/^(Set|Map)$/] > ArrayExpression > Literal[value=/^(${OB})$/i], NewExpression[callee.name='Map'] > ArrayExpression > ArrayExpression > Literal:first-child[value=/^(${OB})$/i], ${TPL('NewExpression[callee.name=/^(Set|Map)$/] > ArrayExpression')}`, 'Ops vocabulary word in an array searched with includes, indexOf or lastIndexOf, or in a Set or Map built from it; read it from src/defaults/'),
-  entry('S16.7', `CallExpression[callee.property.name=/^(${OPS_KEYED_METHODS})$/] > Literal[value=/^(${OB})$/i], ${TPL(`CallExpression[callee.property.name=/^(${OPS_KEYED_METHODS})$/]`)}, BinaryExpression[operator='in'] > Literal.left[value=/^(${OB})$/i], ${TPL("BinaryExpression[operator='in']")}`, 'Ops vocabulary word as the key of a Map or Set get or has, or the left side of the in operator (as a string or an expression-free template); read it from src/defaults/'),
-  entry('S16.9', `Property[computed=false] > Literal.key[value=/^(${OB})$/i]`, 'Ops vocabulary word as a quoted object key; read it from src/defaults/'),
-  entry('S16.10', `Property[computed=true] > Literal.key[value=/^(${OB})$/i]`, 'Ops vocabulary word as a computed object key; read it from src/defaults/'),
-  entry('S16.11', `MemberExpression[computed=true] > Literal.property[value=/^(${OB})$/i], ${TPL('MemberExpression[computed=true]')}`, 'Ops vocabulary word as a computed property read; read it from src/defaults/'),
+  entry('S19.5', `CallExpression[callee.property.name=/^(${OPS_STRING_METHODS})$/] > Literal[value=/^(${OB})$/i], ${TPL(`CallExpression[callee.property.name=/^(${OPS_STRING_METHODS})$/]`)}`, 'Ops vocabulary word searched for with includes, indexOf, lastIndexOf, startsWith or endsWith (as a string or an expression-free template); read it from src/defaults/'),
+  entry('S19.6', `MemberExpression[property.name=/^(${OPS_ARRAY_METHODS})$/] > ArrayExpression.object > Literal[value=/^(${OB})$/i], ${TPL(`MemberExpression[property.name=/^(${OPS_ARRAY_METHODS})$/] > ArrayExpression.object`)}, NewExpression[callee.name=/^(Set|Map)$/] > ArrayExpression > Literal[value=/^(${OB})$/i], NewExpression[callee.name='Map'] > ArrayExpression > ArrayExpression > Literal:first-child[value=/^(${OB})$/i], ${TPL('NewExpression[callee.name=/^(Set|Map)$/] > ArrayExpression')}`, 'Ops vocabulary word in an array searched with includes, indexOf or lastIndexOf, or in a Set or Map built from it; read it from src/defaults/'),
+  entry('S19.7', `CallExpression[callee.property.name=/^(${OPS_KEYED_METHODS})$/] > Literal[value=/^(${OB})$/i], ${TPL(`CallExpression[callee.property.name=/^(${OPS_KEYED_METHODS})$/]`)}, BinaryExpression[operator='in'] > Literal.left[value=/^(${OB})$/i], ${TPL("BinaryExpression[operator='in']")}`, 'Ops vocabulary word as the key of a Map or Set get or has, or the left side of the in operator (as a string or an expression-free template); read it from src/defaults/'),
+  entry('S19.9', `Property[computed=false] > Literal.key[value=/^(${OB})$/i]`, 'Ops vocabulary word as a quoted object key; read it from src/defaults/'),
+  entry('S19.10', `Property[computed=true] > Literal.key[value=/^(${OB})$/i]`, 'Ops vocabulary word as a computed object key; read it from src/defaults/'),
+  entry('S19.11', `MemberExpression[computed=true] > Literal.property[value=/^(${OB})$/i], ${TPL('MemberExpression[computed=true]')}`, 'Ops vocabulary word as a computed property read; read it from src/defaults/'),
 ];
 
 export default [

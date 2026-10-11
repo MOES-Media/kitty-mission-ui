@@ -1,2 +1,2 @@
-// expect: S16.10
+// expect: S19.10
 export const o = { ['failed']: 1 };

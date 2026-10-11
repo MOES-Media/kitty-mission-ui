@@ -1,0 +1,2 @@
+// expect: S19.6 S19.6
+export const f = (s: string): number => ['open', 'closed'].indexOf(s);

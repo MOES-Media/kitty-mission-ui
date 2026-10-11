@@ -1,2 +1,2 @@
-// expect: S15.1
+// expect: S18.1
 export const m = 'abandoned';

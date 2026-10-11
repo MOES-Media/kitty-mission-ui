@@ -1,0 +1,2 @@
+// expect: S19.5
+export const f = (s: string): boolean => s.includes('open');
