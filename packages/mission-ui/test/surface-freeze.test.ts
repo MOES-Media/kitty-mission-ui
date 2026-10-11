@@ -89,6 +89,12 @@ const SURFACE: [string, string, string | undefined, unknown][] = [
   ['sk-ops-screen', 'errorMessage', 'error-message', ''],
 ];
 
+/**
+ * The one list of `sk-retry-load` declarers (BOUNDARY-004): every screen that dispatches the shared retry event, each with its own
+ * member of `RetryLoadEventDetail`. A screen that adds the event is added here, and only here.
+ */
+const RETRY_LOAD_DECLARERS = ['sk-artifact-screen', 'sk-drift-screen', 'sk-open-project-dialog', 'sk-ops-screen', 'sk-projects-screen', 'sk-work-package-screen'];
+
 /** tag, the exact set of events its manifest entry declares (own dispatches and `@fires` of child events). */
 const EVENTS: [string, string[]][] = [
   ['sk-missions-screen', ['sk-filter-change', 'sk-load-more', 'sk-open-mission', 'sk-search']],
@@ -157,14 +163,15 @@ describe('surface freeze', () => {
     ]);
   });
 
-  it('names the declarers of the two shared events exactly: sk-load-more (Missions, Ops) and sk-retry-load (Work Package, Ops)', () => {
+  it('names the declarers of the two shared events exactly: sk-load-more (Missions, Ops) and sk-retry-load (the one list)', () => {
     const declarersOf = (name: string): string[] =>
       [...declarations]
         .filter(([, decl]) => (decl.events ?? []).some((event) => event.name === name))
         .map(([tag]) => tag)
         .sort();
     expect(declarersOf('sk-load-more')).toEqual(['sk-missions-screen', 'sk-ops-screen']);
-    expect(declarersOf('sk-retry-load')).toEqual(['sk-ops-screen', 'sk-work-package-screen']);
+    expect(declarersOf('sk-retry-load')).toEqual(RETRY_LOAD_DECLARERS);
+    expect(RETRY_LOAD_DECLARERS).toHaveLength(6);
     // Positive control: the helper finds a one-declarer event too.
     expect(declarersOf('sk-search')).toEqual(['sk-missions-screen']);
   });
@@ -483,10 +490,10 @@ describe('surface freeze: the Projects screen (five properties, three events) an
       .filter(([, declaration]) => (declaration.events ?? []).some((e) => e.name === 'sk-retry-load'))
       .map(([tag]) => tag)
       .sort();
-    expect(retryDeclarers).toEqual(['sk-artifact-screen', 'sk-drift-screen', 'sk-open-project-dialog', 'sk-projects-screen', 'sk-work-package-screen']);
+    expect(retryDeclarers).toEqual(RETRY_LOAD_DECLARERS);
     // `some` per tag would pass a component that declares the event twice: count every declaration of the name.
     const retryDeclarations = [...declarations.values()].reduce((total, declaration) => total + (declaration.events ?? []).filter((e) => e.name === 'sk-retry-load').length, 0);
-    expect(retryDeclarations).toBe(5);
+    expect(retryDeclarations).toBe(6);
   });
 
   it('marks the Projects screen, and not the dialog, as a screen with the `@screen` line the manifest gate looks for', async () => {
