@@ -42,7 +42,8 @@ test('the registry holds the 17 Drift entries with their schema and kind, and th
     n += 1;
   }
   assert.equal(n, 17);
-  assert.equal(Object.keys(FIXTURES).filter((k) => /^(report|refusal)[A-Z]/.test(k)).length, 17, 'no other fixture is named like a Drift one');
+  // by schema, not by name: the Artifact Viewer (#7) registers refusal* fixtures of its own
+  assert.equal(Object.values(FIXTURES).filter((f) => f.schema.startsWith('Drift')).length, 17, 'no other fixture has a Drift schema');
 });
 
 test('the six contract examples are carried through byte for byte (deep-equal to the vendored example)', () => {
