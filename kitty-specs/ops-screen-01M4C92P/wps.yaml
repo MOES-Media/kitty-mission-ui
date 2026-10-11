@@ -1,0 +1,307 @@
+work_packages:
+  - id: WP01
+    title: "Contract slice check, Ops fixtures and gate baseline"
+    dependencies: []
+    owned_files:
+      - "packages/mission-ui/src/contract/**"
+      - "scripts/contract/**"
+      - "gates/plants/contract/**"
+      - "packages/mission-ui/src/elements/sk-ops-screen/fixtures.ts"
+      - "packages/mission-ui/test/ops-fixtures.test.ts"
+    requirement_refs:
+      - FR-002
+      - FR-041
+      - NFR-001
+      - NFR-007
+      - NFR-010
+      - C-002
+      - C-008
+      - C-012
+      - C-013
+      - C-014
+    plan_concern_refs:
+      - IC-01
+    subtasks:
+      - T001
+      - T002
+      - T003
+      - T004
+      - T005
+      - T006
+    prompt_file: "tasks/WP01-contract-slice-fixtures-baseline.md"
+  - id: WP02
+    title: "Ops defaults, pure logic and the data-driven and R-ops-1 gates"
+    dependencies: [WP01]
+    owned_files:
+      - "packages/mission-ui/src/defaults/ops-copy.ts"
+      - "packages/mission-ui/src/logic/ops-look.ts"
+      - "packages/mission-ui/src/logic/ops-row.ts"
+      - "packages/mission-ui/src/logic/ops-time.ts"
+      - "packages/mission-ui/src/logic/ops-text.ts"
+      - "packages/mission-ui/src/logic/index.ts"
+      - "packages/mission-ui/src/logic/wp-retry.ts"
+      - "packages/mission-ui/src/retry-types.ts"
+      - "packages/mission-ui/test/ops-copy.test.ts"
+      - "packages/mission-ui/test/ops-look.test.ts"
+      - "packages/mission-ui/test/ops-row.test.ts"
+      - "packages/mission-ui/test/ops-time.test.ts"
+      - "packages/mission-ui/test/ops-text.test.ts"
+      - "packages/mission-ui/test/ops-retry-union.test.ts"
+      - "packages/mission-ui/test/wp-retry-union.test.ts"
+      - "eslint.data-driven.config.mjs"
+      - "gates/data-driven.selftest.ts"
+      - "gates/fixtures/data-driven/**"
+      - "gates/plants/data-driven/**"
+      - "eslint.config.mjs"
+      - "gates/plants/eslint/**"
+    requirement_refs:
+      - FR-017
+      - FR-018
+      - FR-028
+      - FR-032
+      - FR-038
+      - FR-039
+      - NFR-005
+      - NFR-009
+      - C-004
+      - C-007
+      - C-009
+    plan_concern_refs:
+      - IC-02
+    subtasks:
+      - T007
+      - T008
+      - T009
+      - T010
+      - T011
+      - T012
+      - T013
+    prompt_file: "tasks/WP02-defaults-logic-data-driven-gate.md"
+  - id: WP03
+    title: "Foundation spikes S-O1 to S-O4 and CP-1 evidence"
+    dependencies: [WP02]
+    owned_files:
+      - "spikes/ic-03a-ops/**"
+      - "apps/storybook/.storybook/main.ts"
+    requirement_refs:
+      - FR-020
+      - FR-034
+      - FR-037
+      - FR-043
+      - NFR-008
+      - C-005
+      - C-006
+    plan_concern_refs:
+      - IC-03
+    subtasks:
+      - T014
+      - T015
+      - T016
+      - T017
+      - T018
+    prompt_file: "tasks/WP03-foundation-spikes-cp1-evidence.md"
+  - id: WP04
+    title: "Foundation: skeleton, exceptions wiring and the surface freeze"
+    dependencies: [WP03]
+    owned_files:
+      - "packages/mission-ui/src/index.ts"
+      - "packages/mission-ui/src/defaults/index.ts"
+      - "packages/mission-ui/custom-elements.json"
+      - "packages/mission-ui/src/elements/sk-ops-screen/sk-ops-screen.ts"
+      - "packages/mission-ui/test/sk-ops-screen.skeleton.test.ts"
+      - "packages/mission-ui/test/surface-freeze.test.ts"
+      - "stylelint.config.mjs"
+      - "scripts/stylelint-exceptions.test.mjs"
+      - "gates/plants/stylelint/**"
+    requirement_refs:
+      - FR-001
+      - FR-014
+      - FR-028
+      - FR-032
+      - FR-033
+      - FR-034
+      - FR-040
+      - FR-042
+      - FR-043
+      - NFR-002
+      - C-001
+      - C-003
+      - C-005
+      - C-010
+      - C-013
+    plan_concern_refs:
+      - IC-03
+    subtasks:
+      - T019
+      - T020
+      - T021
+      - T022
+      - T023
+      - T024
+    prompt_file: "tasks/WP04-skeleton-and-surface-freeze.md"
+  - id: WP05
+    title: "Rows: head, badge, facts and inert evidence (chain X)"
+    dependencies: [WP04]
+    owned_files:
+      - "packages/mission-ui/src/elements/sk-ops-screen/ops-row-parts.ts"
+      - "packages/mission-ui/src/elements/sk-ops-screen/sk-ops-screen.rows.stories.ts"
+      - "packages/mission-ui/test/ops-row-parts.test.ts"
+      - "packages/mission-ui/test/sk-ops-screen.rows.test.ts"
+      - "packages/mission-ui/test/sk-ops-screen.evidence.test.ts"
+    requirement_refs:
+      - FR-006
+      - FR-007
+      - FR-008
+      - FR-009
+      - FR-010
+      - FR-011
+      - FR-012
+      - FR-013
+      - FR-014
+      - FR-015
+      - FR-016
+      - FR-017
+      - FR-018
+      - FR-019
+      - FR-036
+      - FR-039
+      - FR-044
+      - NFR-005
+      - NFR-011
+      - NFR-012
+      - C-003
+      - C-005
+      - C-009
+    plan_concern_refs:
+      - IC-04
+    subtasks:
+      - T025
+      - T026
+      - T027
+      - T028
+      - T029
+      - T030
+    prompt_file: "tasks/WP05-rows.md"
+  - id: WP06
+    title: "Paging and notices: header, count, Load more, skipped and load-more error (chain Y)"
+    dependencies: [WP04]
+    owned_files:
+      - "packages/mission-ui/src/elements/sk-ops-screen/ops-page-parts.ts"
+      - "packages/mission-ui/src/elements/sk-ops-screen/sk-ops-screen.paging.stories.ts"
+      - "packages/mission-ui/test/ops-page-parts.test.ts"
+      - "packages/mission-ui/test/sk-ops-screen.events.test.ts"
+    requirement_refs:
+      - FR-003
+      - FR-004
+      - FR-005
+      - FR-021
+      - FR-022
+      - FR-023
+      - FR-024
+      - FR-029
+      - FR-030
+      - FR-031
+      - FR-032
+      - FR-044
+      - NFR-012
+      - C-004
+    plan_concern_refs:
+      - IC-05
+    subtasks:
+      - T031
+      - T032
+      - T033
+      - T034
+      - T035
+    prompt_file: "tasks/WP06-paging-and-notices.md"
+  - id: WP07
+    title: "States: loading, empty, error, live region and focus proof (chain Y)"
+    dependencies: [WP06]
+    owned_files:
+      - "packages/mission-ui/src/elements/sk-ops-screen/ops-state-parts.ts"
+      - "packages/mission-ui/src/elements/sk-ops-screen/sk-ops-screen.states.stories.ts"
+      - "packages/mission-ui/test/ops-state-parts.test.ts"
+      - "packages/mission-ui/test/sk-ops-screen.states.test.ts"
+      - "packages/mission-ui/test/sk-ops-screen.announce.test.ts"
+      - "packages/mission-ui/test/sk-ops-screen.events-retry.test.ts"
+    requirement_refs:
+      - FR-025
+      - FR-026
+      - FR-027
+      - FR-028
+      - FR-033
+      - FR-034
+      - FR-044
+      - NFR-012
+      - NFR-013
+    plan_concern_refs:
+      - IC-06
+    subtasks:
+      - T036
+      - T037
+      - T038
+      - T039
+      - T040
+    prompt_file: "tasks/WP07-states.md"
+  - id: WP08
+    title: "Tiers, accessibility and edge cases"
+    dependencies: [WP05, WP07]
+    owned_files:
+      - "packages/mission-ui/src/elements/sk-ops-screen/sk-ops-screen.tiers.stories.ts"
+      - "packages/mission-ui/test/sk-ops-screen.tiers.test.ts"
+      - "packages/mission-ui/test/sk-ops-screen.a11y.test.ts"
+      - "packages/mission-ui/test/sk-ops-screen.perf.test.ts"
+      - "packages/mission-ui/test/sk-ops-screen.hostile.test.ts"
+      - "packages/mission-ui/test/sk-ops-screen.edge.test.ts"
+    requirement_refs:
+      - FR-020
+      - FR-035
+      - FR-036
+      - FR-037
+      - FR-044
+      - NFR-003
+      - NFR-004
+      - NFR-005
+      - NFR-006
+      - NFR-007
+      - NFR-011
+    plan_concern_refs:
+      - IC-07
+    subtasks:
+      - T041
+      - T042
+      - T043
+      - T044
+      - T045
+      - T046
+    prompt_file: "tasks/WP08-tiers-accessibility-edge-cases.md"
+  - id: WP09
+    title: "Integration, baselines, timings and wrap-up inputs"
+    dependencies: [WP08]
+    owned_files:
+      - "apps/storybook/tests/visual/__snapshots__/screens-ops-*.png"
+      - "scripts/ops-story-catalogue.test.mjs"
+      - ".github/workflows/ci.yml"
+      - "package.json"
+      - "README.md"
+      - "CHANGELOG.md"
+      - "packages/mission-ui/CHANGELOG.md"
+    requirement_refs:
+      - FR-041
+      - FR-043
+      - FR-044
+      - NFR-001
+      - NFR-002
+      - NFR-008
+      - NFR-010
+      - C-011
+      - C-014
+    plan_concern_refs:
+      - IC-08
+    subtasks:
+      - T047
+      - T048
+      - T049
+      - T050
+      - T051
+    prompt_file: "tasks/WP09-integration-baselines-timings.md"
