@@ -149,17 +149,23 @@ export class SkOpsScreen extends LitElement {
   protected retryPage(): void {
     const detail = this.retryPayload();
     if (detail === null) return;
+    // A load-more retry is asked for once per cursor, as Load more is; the first-page retry of the error look has no cursor to key on.
+    if (this.current.look === 'ready') {
+      const key = this.pageInfo?.nextPageCursor ?? '';
+      if (key === this.requestedCursor) return;
+      this.requestedCursor = key;
+    }
     this.dispatchEvent(new CustomEvent<SkOpsRetryLoadDetail>('sk-retry-load', { detail, bubbles: true, composed: true }));
   }
 
   /**
    * The retry payload, or null when the control is inert: the error look retries the first page; a load-more error retries the
    * page after the next cursor, or (when the cursor was refused) starts again from the newest; with no cursor to send there is
-   * nothing to build.
+   * nothing to build, and while a page is loading there is nothing to ask for.
    */
   private retryPayload(): SkOpsRetryLoadDetail | null {
     if (this.current.look === 'error') return opsRetryDetail();
-    if (this.current.look !== 'ready' || this.loadMoreError === null) return null;
+    if (this.current.look !== 'ready' || this.loadMoreError === null || this.loadingMore) return null;
     if (this.loadMoreError.code === CURSOR_REFUSAL_CODE) return opsRetryDetail();
     const cursor = this.pageInfo?.nextPageCursor ?? null;
     return cursor === null ? null : opsRetryDetail(cursor);

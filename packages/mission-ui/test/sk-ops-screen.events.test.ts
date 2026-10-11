@@ -166,6 +166,46 @@ describe('EV-4: sk-retry-load after a load-more error', () => {
   });
 });
 
+describe('EV-4: Try again asks for a page once, and never while one is loading', () => {
+  const retryNow = (screen: SkOpsScreen): void => (screen as unknown as { retryPage(): void }).retryPage();
+
+  it('a double activation emits exactly one event (positive control: a retry after the host answered emits)', async () => {
+    const { screen, events } = await mount(opsProps.loadMoreError(null));
+    await press(screen, '[data-retry]');
+    await press(screen, '[data-retry]');
+    retryNow(screen);
+    expectOne(events, 'sk-retry-load', { target: 'ops-page', cursor: CURSOR });
+    await update(screen, { loadingMore: true });
+    await update(screen, { loadingMore: false });
+    await press(screen, '[data-retry]');
+    expect(events).toHaveLength(2);
+    expect((events[1] as CustomEvent).detail).toEqual({ target: 'ops-page', cursor: CURSOR });
+  });
+
+  it('a refused cursor is asked for once as well (positive control: it emits again after the host answered)', async () => {
+    const { screen, events } = await mount(opsProps.refusedCursor());
+    await press(screen, '[data-retry]');
+    retryNow(screen);
+    expectOne(events, 'sk-retry-load', { target: 'ops-page' });
+    await update(screen, { loadingMore: true });
+    await update(screen, { loadingMore: false });
+    retryNow(screen);
+    expect(events).toHaveLength(2);
+  });
+
+  it('is inert while loadingMore with the error still shown (positive control: it emits once loading ends)', async () => {
+    const { screen, events } = await mount({ ...opsProps.loadMoreError(null), loadingMore: true });
+    expect(control(screen, '[data-retry]').hasAttribute('disabled')).toBe(true);
+    retryNow(screen);
+    await press(screen, '[data-retry]');
+    expect(events).toHaveLength(0);
+    await update(screen, { loadingMore: false });
+    expect(control(screen, '[data-retry]').hasAttribute('disabled')).toBe(false);
+    await press(screen, '[data-retry]');
+    expectOne(events, 'sk-retry-load', { target: 'ops-page', cursor: CURSOR });
+  });
+});
+
 describe('EV-5: sk-retry-load after a refused cursor', () => {
   it('emits { target } with NO cursor key, exactly once', async () => {
     const { screen, events } = await mount(opsProps.refusedCursor());
