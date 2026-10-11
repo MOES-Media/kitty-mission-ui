@@ -1,0 +1,12 @@
+import { css } from 'lit';
+
+// header-parts.ts carries E-37 G-5 and G-7 pinned to the CP-1 values: a neighbouring 48 px height, tracking, size and line height
+// must fail even inside the file that holds the grant. (This plant replaces the file for the proof run; the proof restores it.)
+export const headerStyles = css`
+  .plant-stylelint-drift-pinned {
+    min-block-size: 48px;
+    letter-spacing: -0.02em;
+    font-size: var(--sk-text-3xl);
+    line-height: 1.3;
+  }
+`;

@@ -1,0 +1,2 @@
+// expect: S17.1 S17.3
+export const k = (v: string): boolean => v === 'lane_branch_missing';

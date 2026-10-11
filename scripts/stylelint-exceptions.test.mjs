@@ -560,3 +560,293 @@ describe('E-17: the class= overrides of the Work Package screen, per file, with 
     assert.deepEqual(await lintClass('header-parts.ts', 'sk-breadcrumbs'), []);
   });
 });
+
+// ---------------------------------------------------------------------------------------------------------------------
+// The Drift screen (mission-ui#10), CP-1 confirmed 2026-10-10: E-35, E-36, E-37 (reused for the fidelity grants G-1 to G-8 and
+// the pinned 44 px button height), E-38 (re-scoped), E-39 and the E-18 extension. One row is ONE declaration with the exact set
+// of files that may carry it. The matrix test proves the whole table in both directions (the declaration passes in exactly the
+// files of its row and fails in every other file of the screen, in the Missions and Work Package files and in a file outside
+// the directory), and the value plants of a row are refused in every file that carries the declaration.
+// ---------------------------------------------------------------------------------------------------------------------
+const DRIFT_DIR = `${EL}/sk-drift-screen`;
+const DF = {
+  screen: `${DRIFT_DIR}/sk-drift-screen.ts`,
+  header: `${DRIFT_DIR}/header-parts.ts`,
+  list: `${DRIFT_DIR}/list-parts.ts`,
+  state: `${DRIFT_DIR}/state-parts.ts`,
+  detail: `${DRIFT_DIR}/detail-parts.ts`,
+  table: `${DRIFT_DIR}/table-parts.ts`,
+  resolution: `${DRIFT_DIR}/resolution-parts.ts`,
+  panel: `${DRIFT_DIR}/panel-parts.ts`,
+};
+const DRIFT_KEYS = Object.keys(DF);
+// Two files outside the directory, neither under any exception, that must never gain a Drift grant.
+const OUTSIDE = [OTHER, `${EL}/sk-work-package-screen/state-parts.ts`];
+
+// [grant, declaration, the files that carry it, value plants refused in each of those files (unless that file grants the plant itself)]
+const DRIFT_ROWS = [
+  ['E-35', 'grid-template-columns: 420px minmax(0, 1fr);', ['screen'], ['grid-template-columns: 421px minmax(0, 1fr);', 'grid-template-columns: 420px 1fr;', 'grid-template-columns: 420px;', 'grid-template-columns: minmax(420px, 1fr) minmax(0, 1fr);', 'grid-template-columns: 420px minmax(0, 1fr) 8px;', 'inline-size: 420px;', 'width: 420px;', 'min-inline-size: 420px;', 'flex-basis: 420px;']],
+  ['E-35', 'border-inline-end: var(--sk-border-width-1) solid var(--sk-border-default);', ['screen'], ['border-inline-end: 1px solid var(--sk-border-default);', 'border-inline-end: var(--sk-border-width-1) dashed var(--sk-border-default);', 'border-inline-end: var(--sk-border-width-1) solid #2b313b;', 'border-inline-end: var(--sk-border-width-1) solid red;', 'border-inline-start: var(--sk-border-width-1) solid var(--sk-border-default);']],
+  ['E-35', 'border-inline-end: 0;', ['screen'], ['border-inline-end: 1px;', 'border-inline-end: none;']],
+  ['E-36', 'border: 0;', ['list'], ['border: 1px;']],
+  ['E-36', 'background: transparent;', ['list'], ['background: red;', 'background: #123456;']],
+  ['E-36', 'background: var(--sk-surface-pill);', ['list'], ['background: #123456;', 'background: none;']],
+  ['E-36', 'background: var(--sk-surface-card);', ['list'], ['background: rgb(1 2 3);']],
+  ['E-36', 'color: inherit;', ['list'], ['color: red;', 'color: initial;']],
+  ['E-36', 'font: inherit;', ['list'], ['font: 14px serif;', 'font: initial;']],
+  ['E-36 / E-37 Mission link', 'text-align: start;', ['list', 'detail'], ['text-align: center;', 'text-align: left;', 'text-align: right;', 'text-align: end;']],
+  ['E-36', 'inline-size: 100%;', ['list'], ['inline-size: 50%;', 'inline-size: 300px;', 'width: 100%;', 'max-width: 100%;']],
+  ['E-36 / G-5', 'border-block-end: var(--sk-border-width-1) solid var(--sk-border-default);', ['list', 'header'], ['border-block-end: 1px solid var(--sk-border-default);', 'border-block-end: var(--sk-border-width-1) dotted var(--sk-border-default);', 'border-block-end: var(--sk-border-width-1) solid red;', 'border-block-start: var(--sk-border-width-1) solid var(--sk-border-default);']],
+  ['E-36', 'border-inline-start: var(--sk-border-width-2) solid transparent;', ['list'], ['border-inline-start: 2px solid transparent;', 'border-inline-start: var(--sk-border-width-2) dashed transparent;', 'border-inline-start: var(--sk-border-width-2) solid red;']],
+  ['E-36', 'border-inline-start-color: var(--sk-border-selected);', ['list'], ['border-inline-start-color: red;', 'border-inline-start-color: #fff;', 'border-inline-end-color: var(--sk-border-selected);']],
+  ['E-36', 'border-inline-start-color: Highlight;', ['list'], ['border-inline-start-color: HighlightText;', 'border-inline-start-color: Canvas;', 'border-inline-start-color: blue;']],
+  ['E-37 G-1 / G-7', 'font-size: var(--sk-text-sm);', ['screen', 'header', 'detail', 'resolution'], ['font-size: 14px;', 'font-size: 0.875rem;', 'font-size: var(--sk-text-3xl);', 'font-size: var(--sk-text-base);']],
+  ['E-37 G-1', 'line-height: 1.5;', ['screen'], ['line-height: 1.4;', 'line-height: 1.6;', 'line-height: 24px;', 'line-height: 150%;', 'line-height: var(--sk-leading-normal);']],
+  ['E-37 G-2 / G-3 / G-4 / G-5 / G-6 / table', 'font-family: var(--sk-font-mono);', ['header', 'list', 'detail', 'table', 'resolution', 'panel'], ['font-family: var(--sk-font-sans);', 'font-family: monospace;', 'font-family: serif;']],
+  ['E-37 G-2 / review addendum', 'color: var(--sk-fg-muted);', ['header', 'list', 'detail', 'resolution'], ['color: red;', 'color: #999;', 'color: var(--sk-fg-on-accent);']],
+  ['E-37 review addendum / table cells', 'color: var(--sk-fg-body);', ['header', 'table', 'resolution'], ['color: #ddd;', 'color: var(--sk-fg-on-accent);', 'color: rgb(214 214 218);']],
+  ['E-37 review addendum', 'min-block-size: 1.5em;', ['resolution'], ['min-block-size: 1.4em;', 'min-block-size: 2em;', 'min-block-size: 1.5rem;', 'min-block-size: 24px;', 'min-block-size: 1.50em;', 'min-height: 1.5em;', 'block-size: 1.5em;']],
+  ['E-37 G-3', 'font-size: var(--sk-text-xs);', ['list', 'detail', 'table', 'resolution', 'panel'], ['font-size: 12px;', 'font-size: 0.75rem;']],
+  ['E-37 G-3', 'font-weight: var(--sk-weight-semibold);', ['header', 'list', 'detail', 'resolution', 'panel'], ['font-weight: 600;', 'font-weight: var(--sk-weight-medium);']],
+  ['E-37 G-3', 'letter-spacing: 0.08em;', ['list', 'detail', 'resolution', 'panel'], ['letter-spacing: 0.1em;', 'letter-spacing: 1px;', 'letter-spacing: 0.080em;', 'letter-spacing: 0.08rem;']],
+  ['E-37 G-3 / table', 'text-transform: uppercase;', ['list', 'detail', 'table', 'resolution', 'panel'], ['text-transform: capitalize;', 'text-transform: lowercase;', 'text-transform: none;']],
+  ['E-37 G-3 / table', 'color: var(--sk-fg-subtle);', ['list', 'detail', 'table', 'resolution', 'panel'], ['color: red;', 'color: #888;', 'color: var(--sk-fg-on-accent);']],
+  ['E-37 table', 'letter-spacing: 0.06em;', ['table'], ['letter-spacing: 0.08em;', 'letter-spacing: 0.05em;', 'letter-spacing: 1px;', 'letter-spacing: 0.060em;']],
+  ['E-37 G-4 / G-8', 'font-weight: var(--sk-weight-normal);', ['list', 'detail'], ['font-weight: 400;', 'font-weight: var(--sk-weight-medium);']],
+  ['E-37 G-4', 'border: var(--sk-border-width-1) solid currentColor;', ['list'], ['border: 1px solid currentColor;', 'border: var(--sk-border-width-1) dashed currentColor;', 'border: var(--sk-border-width-1) solid red;', 'border: var(--sk-border-width-2) solid currentColor;', 'border-style: solid;']],
+  ['E-37 G-4 / G-5', 'line-height: 1.2;', ['header', 'list'], ['line-height: 1.1;', 'line-height: 1.20;', 'line-height: 1.25;']],
+  ['E-37 G-5 / G-6', 'font-family: var(--sk-font-display);', ['header', 'detail'], ['font-family: serif;', 'font-family: var(--sk-font-mono-display);']],
+  ['E-37 G-5', 'font-size: var(--sk-text-2xl);', ['header'], ['font-size: 24px;', 'font-size: 1.5rem;']],
+  ['E-37 G-5', 'letter-spacing: -0.01em;', ['header'], ['letter-spacing: 0.01em;', 'letter-spacing: -0.02em;', 'letter-spacing: -1px;', 'letter-spacing: -0.010em;']],
+  ['E-37 G-5 / G-6', 'color: var(--sk-fg-default);', ['header', 'detail'], ['color: red;', 'color: #fff;']],
+  ['E-37 G-6', 'font-size: var(--sk-text-lg);', ['detail'], ['font-size: 18px;']],
+  ['E-37 G-6', 'font-weight: var(--sk-weight-bold);', ['detail'], ['font-weight: 700;', 'font-weight: bold;']],
+  ['E-37 G-6', 'line-height: 1.3;', ['detail'], ['line-height: 1.30;', 'line-height: 1.35;']],
+  // F-3: `min-block-size` is the form the config accepts (the E-10 precedent). `min-height`, the rem form and a neighbouring px are refused.
+  ['E-37 F-3', 'min-block-size: 44px;', ['header', 'resolution'], ['min-block-size: 43px;', 'min-block-size: 45px;', 'min-block-size: 2.75rem;', 'min-block-size: 48px;', 'min-height: 44px;', 'block-size: 44px;', 'height: 44px;', 'min-inline-size: 44px;']],
+  ['E-37 G-9', 'padding-inline-start: var(--sk-space-7);', ['header'], ['padding-inline-start: var(--sk-space-6);', 'padding-inline-start: var(--sk-space-8);', 'padding-inline-start: 32px;', 'padding-inline-start: 2rem;', 'padding-left: var(--sk-space-7);']],
+  // G-10: the authority pill wraps. The keyword is granted in detail-parts.ts only; every other white-space word is refused there.
+  ['E-37 G-10', 'white-space: normal;', ['detail'], ['white-space: nowrap;', 'white-space: pre;', 'white-space: pre-wrap;', 'white-space: break-spaces;', 'white-space: pre-line;']],
+  ['E-38', 'border: var(--sk-border-width-1) solid var(--sk-border-default);', ['resolution'], ['border: 1px solid var(--sk-border-default);', 'border: var(--sk-border-width-1) dashed var(--sk-border-default);', 'border: var(--sk-border-width-1) solid red;', 'border: var(--sk-border-width-2) solid var(--sk-border-default);']],
+  ['E-38 / E-18 extension', 'border-radius: var(--sk-radius-md);', ['resolution', 'panel'], ['border-radius: 12px;', 'border-radius: var(--sk-radius-lg);', 'border-radius: var(--sk-radius-pill);']],
+  ['E-38', 'background: var(--sk-surface-muted);', ['resolution'], ['background: #262c36;', 'background: red;']],
+  ['E-39 / E-38', 'overflow-wrap: anywhere;', ['header', 'list', 'resolution', 'detail'], ['overflow-wrap: break-word;', 'overflow-wrap: normal;', 'overflow-wrap: foo;', 'word-break: break-all;', 'text-overflow: ellipsis;', 'white-space: nowrap;', 'hyphens: auto;']],
+  ['E-18 extension', 'border-width: var(--sk-border-width-1);', ['panel'], ['border-width: 1px;', 'border-width: var(--sk-border-width-2);', 'border-style: dashed;']],
+];
+// Layout properties already allowed in every file; the extension only PINS their token in panel-parts.ts.
+const DRIFT_PINNED_LAYOUT = [
+  ['E-18 extension', 'padding: var(--sk-space-5);', ['padding: var(--sk-space-7);', 'padding: 20px;', 'padding: var(--sk-space-4);']],
+  ['E-18 extension', 'margin-block: 0;', ['margin-block: 0 var(--sk-space-2);', 'margin-block: var(--sk-space-4);', 'margin-block: 0 var(--sk-space-4);', 'margin-block: 0 16px;']],
+  ['E-18 extension', 'row-gap: 0;', ['row-gap: var(--sk-space-2);', 'row-gap: 8px;']],
+];
+// What no Drift file may ever carry: not granted anywhere.
+const DRIFT_NEVER = ['box-shadow: var(--sk-shadow-md);', 'opacity: 0.5;', 'outline-width: var(--sk-border-width-2);', 'background-image: linear-gradient(to right, var(--sk-surface-hero), transparent);', 'font-style: italic;', 'text-overflow: ellipsis;', 'word-break: break-all;', 'cursor: pointer;'];
+
+const carries = (key, css) => DRIFT_ROWS.some(([, decl, files]) => decl === css && files.includes(key));
+const declsOf = (key) => DRIFT_ROWS.filter(([, , files]) => files.includes(key)).map(([, decl]) => decl);
+const uniqueDecls = [...new Set(DRIFT_ROWS.map(([, decl]) => decl))];
+
+describe('Drift exceptions (E-35 to E-39, the E-37 grants, the E-18 extension): the matrix, in both directions', () => {
+  test('the table has the expected shape', () => {
+    assert.equal(DRIFT_KEYS.length, 8);
+    assert.equal(DRIFT_ROWS.length, 45);
+    assert.equal(uniqueDecls.length, 45);
+    assert.equal(DRIFT_PINNED_LAYOUT.length, 3);
+    // a declaration repeated in two rows names the same files only through the union: the rows of one declaration agree
+    for (const decl of uniqueDecls) {
+      const sets = DRIFT_ROWS.filter(([, d]) => d === decl).map(([, , files]) => files.join(','));
+      assert.equal(new Set(sets).size, 1, decl);
+    }
+  });
+
+  test('every declaration passes in exactly the files of its row, and fails in every other file of the screen and outside it', async () => {
+    let passed = 0;
+    let refused = 0;
+    for (const decl of uniqueDecls) {
+      for (const key of DRIFT_KEYS) {
+        const found = await problems(DF[key], decl);
+        if (carries(key, decl)) {
+          assert.deepEqual(found, [], `${decl} must pass in ${key}`);
+          passed += 1;
+        } else {
+          assert.ok(found.length >= 1, `${decl} leaked into ${key}`);
+          refused += 1;
+        }
+      }
+      for (const file of OUTSIDE) {
+        assert.ok((await problems(file, decl)).length >= 1, `${decl} leaked into ${file}`);
+        refused += 1;
+      }
+    }
+    const expectedPassed = DRIFT_ROWS.reduce((n, [, decl, files], i) => (DRIFT_ROWS.findIndex(([, d]) => d === decl) === i ? n + files.length : n), 0);
+    assert.equal(passed, expectedPassed);
+    assert.equal(refused, uniqueDecls.length * (DRIFT_KEYS.length + OUTSIDE.length) - expectedPassed);
+  });
+
+  test('value plants are refused in every file that carries the declaration (a plant another grant makes legal in that file is skipped and proven legal)', async () => {
+    let refused = 0;
+    let legal = 0;
+    let expected = 0;
+    for (const [, decl, files, plants] of DRIFT_ROWS) {
+      for (const key of files) {
+        for (const plant of plants) {
+          expected += 1;
+          if (carries(key, plant)) {
+            assert.deepEqual(await problems(DF[key], plant), [], `${plant} is legal in ${key}`);
+            legal += 1;
+          } else {
+            assert.ok((await problems(DF[key], plant)).length >= 1, `${plant} passed in ${key} (plant of ${decl})`);
+            refused += 1;
+          }
+        }
+      }
+    }
+    assert.equal(refused + legal, expected);
+    assert.equal(legal, 0);
+    assert.equal(refused, 295);
+  });
+
+  test('all the declarations of one file pass together, and a never-granted property fails beside them', async () => {
+    let ran = 0;
+    for (const key of DRIFT_KEYS) {
+      const all = declsOf(key);
+      if (all.length === 0) {
+        assert.equal(key, 'state');
+        continue;
+      }
+      assert.deepEqual(await problems(DF[key], all.join(' ')), [], `${key} together`);
+      for (const never of DRIFT_NEVER) {
+        assert.ok((await problems(DF[key], `${all.join(' ')} ${never}`)).length >= 1, `${key} ${never}`);
+        ran += 1;
+      }
+    }
+    assert.equal(ran, 7 * DRIFT_NEVER.length);
+  });
+
+  test('state-parts.ts carries no grant: every declaration of the table fails there and a layout-only rule passes (positive control)', async () => {
+    assert.deepEqual(await problems(DF.state, 'display: grid; gap: var(--sk-space-4); padding: var(--sk-space-5);'), []);
+    let ran = 0;
+    for (const decl of uniqueDecls) {
+      assert.ok((await problems(DF.state, decl)).length >= 1, decl);
+      ran += 1;
+    }
+    assert.equal(ran, 45);
+  });
+
+  test('the E-18 extension pins three layout tokens in panel-parts.ts only: other values fail there and pass in the siblings (positive control)', async () => {
+    let pinned = 0;
+    for (const [, decl, plants] of DRIFT_PINNED_LAYOUT) {
+      assert.deepEqual(await problems(DF.panel, decl), [], decl);
+      for (const key of DRIFT_KEYS.filter((k) => k !== 'panel')) assert.deepEqual(await problems(DF[key], decl), [], `${key} ${decl}`);
+      for (const plant of plants) {
+        assert.ok((await problems(DF.panel, plant)).length >= 1, plant);
+        pinned += 1;
+      }
+    }
+    assert.equal(pinned, 9);
+    // the sibling accepts a different token (the token is only pinned in panel-parts.ts)
+    assert.deepEqual(await problems(DF.header, 'padding: var(--sk-space-7);'), []);
+    // the Work Package panel's own five (E-18) are not widened: its title size still passes there and not in the Drift panel
+    assert.deepEqual(await problems(`${EL}/sk-work-package-screen/panel-parts.ts`, 'font-size: var(--sk-text-lg); font-weight: var(--sk-weight-bold);'), []);
+    assert.ok((await problems(DF.panel, 'font-size: var(--sk-text-lg);')).length >= 1);
+    assert.ok((await problems(DF.panel, 'font-weight: var(--sk-weight-bold);')).length >= 1);
+  });
+
+  test('the container queries and the shell-mobile state need no exception (probe, as E-19 (a))', async () => {
+    const code = "import { css } from 'lit';\nexport const s = css`\n  @container (max-width: 799px) { .x { grid-template-columns: minmax(0, 1fr); } }\n  :host(:state(shell-mobile)) .x { grid-template-columns: minmax(0, 1fr); }\n`;\n";
+    for (const key of DRIFT_KEYS) {
+      const result = await stylelint.lint({ code, codeFilename: join(root, DF[key]), config, configBasedir: root });
+      assert.deepEqual(result.results.flatMap((r) => r.warnings), [], key);
+    }
+  });
+
+  test('the existing exceptions are untouched: the board, pipeline and Work Package files gain nothing from a Drift grant', async () => {
+    // the E-09 pinned tracking still passes in its two files and the new 0.06em / -0.01em values do not
+    for (const file of [`${EL}/sk-work-package-board/sk-work-package-board.ts`, `${EL}/sk-pipeline-screen/pipeline-parts.ts`]) {
+      assert.deepEqual(await problems(file, 'letter-spacing: 0.08em;'), [], file);
+      for (const css of ['letter-spacing: 0.06em;', 'letter-spacing: -0.01em;']) assert.ok((await problems(file, css)).length >= 1, `${file} ${css}`);
+    }
+  });
+});
+
+// ESLint: E-36 (the raw option button) and the class= rows of the adopted families, per file, with leak plants.
+describe('Drift ESLint overrides: E-36 raw option button, and class= per adopted family', () => {
+  const eslint = new ESLint({ cwd: root });
+  const lintTemplate = async (file, markup) => {
+    const code = `import { html } from 'lit';\nexport const t = html\`${markup}\`;\n`;
+    const [result] = await eslint.lintText(code, { filePath: join(root, file) });
+    return (result?.messages ?? []).filter((m) => m.ruleId === 'no-restricted-syntax').map((m) => m.message);
+  };
+  const OPTION = '<button type="button" role="option" aria-selected="true" tabindex="0">x</button>';
+
+  test('the raw option button passes in list-parts.ts only', async () => {
+    assert.deepEqual(await lintTemplate(DF.list, OPTION), []);
+    let ran = 0;
+    for (const key of DRIFT_KEYS.filter((k) => k !== 'list')) {
+      assert.ok((await lintTemplate(DF[key], OPTION)).some((m) => /Raw <button>/.test(m)), key);
+      ran += 1;
+    }
+    for (const file of [`${EL}/sk-work-package-screen/state-parts.ts`, `${EL}/sk-pipeline-screen/pipeline-parts.ts`, `${EL}/sk-filter-toggle-group/sk-filter-toggle-group.ts`]) {
+      assert.ok((await lintTemplate(file, OPTION)).length >= 1, file);
+      ran += 1;
+    }
+    assert.equal(ran, 10);
+  });
+
+  test('in list-parts.ts only the option button is raw: other buttons, inputs, selects and a different role are refused', async () => {
+    let ran = 0;
+    for (const markup of [
+      '<button type="button">x</button>',
+      '<button type="submit" role="option">x</button>',
+      '<button role="option" type="button">x</button>',
+      '<button type="button" role="tab">x</button>',
+      '<button type="button" role="option" class="x">x</button>',
+      '<input type="text">',
+      '<select></select>',
+      '<textarea></textarea>',
+    ]) {
+      assert.ok((await lintTemplate(DF.list, markup)).length >= 1, markup);
+      ran += 1;
+    }
+    assert.equal(ran, 8);
+    assert.ok((await lintTemplate(DF.list, '<div class="plain"></div>')).some((m) => /class= is forbidden/.test(m)));
+    assert.ok((await lintTemplate(DF.list, '<div style="color: red"></div>')).some((m) => /Inline style/.test(m)));
+  });
+
+  // file key, the prefixes its row grants
+  const CLASS_ROWS = [
+    ['table', ['sk-data-table']],
+    ['detail', ['sk-facts']],
+    ['state', ['sk-empty-state', 'sk-progress']],
+  ];
+  const ALL_PREFIXES = ['sk-data-table', 'sk-facts', 'sk-empty-state', 'sk-progress'];
+  test('a granted prefix passes in its own file, and the leak plants are refused', async () => {
+    let granted = 0;
+    let leaked = 0;
+    for (const [key, prefixes] of CLASS_ROWS) {
+      for (const prefix of prefixes) {
+        assert.deepEqual(await lintTemplate(DF[key], `<div class="${prefix}__part ${prefix}"></div>`), [], `${key} ${prefix}`);
+        granted += 1;
+      }
+      assert.ok((await lintTemplate(DF[key], '<div class="plain-class"></div>')).length >= 1, `${key} plain`);
+      assert.ok((await lintTemplate(DF[key], `<div class="${prefixes[0]} plain-class"></div>`)).length >= 1, `${key} mixed`);
+      for (const other of ALL_PREFIXES.filter((p) => !prefixes.includes(p))) {
+        assert.ok((await lintTemplate(DF[key], `<div class="${other}"></div>`)).length >= 1, `${key} ${other}`);
+        leaked += 1;
+      }
+    }
+    assert.equal(granted, 4);
+    assert.equal(leaked, 3 + 3 + 2);
+  });
+
+  test('the other Drift files carry no class at all, whatever the prefix', async () => {
+    let ran = 0;
+    for (const key of ['screen', 'header', 'list', 'resolution', 'panel']) {
+      for (const prefix of ALL_PREFIXES) {
+        assert.ok((await lintTemplate(DF[key], `<div class="${prefix}"></div>`)).some((m) => /class= is forbidden/.test(m)), `${key} ${prefix}`);
+        ran += 1;
+      }
+    }
+    assert.equal(ran, 20);
+  });
+});

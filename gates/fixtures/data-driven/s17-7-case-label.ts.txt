@@ -1,0 +1,9 @@
+// expect: S17.1 S17.3
+export function f(s: string): number {
+  switch (s) {
+    case 'snapshot_or_event_log_missing':
+      return 1;
+    default:
+      return 0;
+  }
+}

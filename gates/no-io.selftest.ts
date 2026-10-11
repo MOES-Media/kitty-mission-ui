@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest';
 const FIXTURE_DIR = fileURLToPath(new URL('./fixtures/no-io/', import.meta.url));
 const CONFIG_URL = new URL('../eslint.no-io.config.mjs', import.meta.url).href;
 const FILENAME = 'packages/sample/src/fixture.ts';
+const ELEMENT_FILENAME = 'packages/sample/src/elements/sk-sample/fixture.ts';
 
 // One fixture per rule: fixture name -> fragment of the message that rule must report.
 const EXPECTED: Readonly<Record<string, string>> = {
@@ -70,6 +71,10 @@ const EXPECTED: Readonly<Record<string, string>> = {
   'set-attribute-src': 'setAttribute of src/href/srcdoc/action/data is forbidden',
   'reflect-alias': 'aliasing navigator, document or Reflect is forbidden',
   worker: 'Worker and SharedWorker are forbidden',
+  // NFR-005 (no timers): the three `timer-` fixtures are linted as a screen file under `src/elements/`.
+  'timer-set-timeout': 'setTimeout/setInterval is forbidden in a screen',
+  'timer-set-interval': 'setTimeout/setInterval is forbidden in a screen',
+  'timer-member': 'setTimeout/setInterval is forbidden in a screen',
   'dynamic-import-url': 'import() of a non-relative specifier or URL is forbidden',
 };
 
@@ -102,7 +107,7 @@ describe('no-io gate self-test', () => {
 
   for (const [name, fragment] of Object.entries(EXPECTED)) {
     it(`flags ${name}`, async () => {
-      const messages = await lint(readFileSync(`${FIXTURE_DIR}${name}.ts.txt`, 'utf8'));
+      const messages = await lint(readFileSync(`${FIXTURE_DIR}${name}.ts.txt`, 'utf8'), name.startsWith('timer-') ? ELEMENT_FILENAME : FILENAME);
       expect(messages.some((m) => m.includes(fragment))).toBe(true);
     });
   }
@@ -113,6 +118,14 @@ describe('no-io gate self-test', () => {
       expect(messages.some((m) => m.includes('fetch is forbidden'))).toBe(true);
     });
   }
+
+  it('bans the timers in a screen only, and leaves queueMicrotask and requestAnimationFrame alone (NFR-005)', async () => {
+    const timer = 'export const f = () => setTimeout(() => undefined, 0);\n';
+    expect((await lint(timer, ELEMENT_FILENAME)).some((m) => m.includes('forbidden in a screen'))).toBe(true);
+    expect((await lint(timer, 'packages/sample/src/elements/sk-sample/deep/part-parts.ts')).some((m) => m.includes('forbidden in a screen'))).toBe(true);
+    expect(await lint(timer)).toEqual([]);
+    expect(await lint('export const f = () => { queueMicrotask(() => undefined); requestAnimationFrame(() => undefined); };\n', ELEMENT_FILENAME)).toEqual([]);
+  });
 
   it('reports nothing on a clean element sample', async () => {
     expect(await lint(CLEAN)).toEqual([]);

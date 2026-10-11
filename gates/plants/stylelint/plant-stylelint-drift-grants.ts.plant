@@ -1,0 +1,19 @@
+import { css } from 'lit';
+
+// The E-37 fidelity grants (screen type, mono, eyebrow, pill, 44 px button height) and the E-39 wrap are file-scoped to the part that
+// draws them: in a sibling file of the Drift directory that no exception names, they must still fail.
+export const plantStylelintDriftGrants = css`
+  .plant-stylelint-drift-grants {
+    font-size: var(--sk-text-sm);
+    line-height: 1.5;
+    font-family: var(--sk-font-mono);
+    letter-spacing: 0.08em;
+    color: var(--sk-fg-body);
+    text-align: start;
+    text-transform: uppercase;
+    border: var(--sk-border-width-1) solid currentColor;
+    min-block-size: 44px;
+    overflow-wrap: anywhere;
+    white-space: normal;
+  }
+`;

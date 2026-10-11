@@ -1,0 +1,4 @@
+// plant: a hard-coded drift source-code literal in element-scope source
+export function plantCode(code: string | null): boolean {
+  return code === 'CORRUPT_JSON';
+}

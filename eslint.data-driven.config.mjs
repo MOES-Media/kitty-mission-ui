@@ -20,6 +20,14 @@
 //    members (changes_requested, not_applicable, unchanged, the two reason codes) are matched as literals, as the lanes are.
 //  - The gate does NOT read ArtifactKind (the review-cycle kind) or the detail refusal codes (not_found,
 //    source_unreadable); the reviewer self-check list and the foreign-value tests cover them.
+//  - The Drift vocabulary (mission-ui#10) is gated the same way: the members of the enums DriftKind, DriftAuthority, DriftSide,
+//    DriftRemedy and DriftRefusalCode are read from the vendored schemas, and the four sourceCode values are held in the
+//    constant SOURCE_CODE_WORDS (DriftFinding.sourceCode is a pattern, not an enum; a self-test fails when the constant and the
+//    schema description disagree). Every one of them is underscored and is matched as a literal, an expression-free template,
+//    inside a longer string or template, and as an object key (S17.1 to S17.5). NOT gated: `error`, `warning` and `git`.
+//    `error` is a view-state word and a severity word, `warning` a severity word and `git` an everyday word: the same
+//    collision class as the verdict `approved`. They are covered by the foreign-value tests and the reviewer self-check list.
+//    The severity enum itself is not read, for the same reason.
 //  - Vocabulary in a .d.ts or JSON file, and code outside packages/*/src (tests), is not scanned.
 //  - An element that imports the vocabulary from defaults/ and then compares with a different literal it never
 //    imports is covered only by the behavioural test with a foreign vocabulary.
@@ -46,6 +54,18 @@ const NEW_ALL = [...new Set([...VERDICT_WORDS, ...CHANGE_STATE_WORDS, ...STALENE
 export const NEW_BARE_WORDS = ['changed', 'unknown', 'fresh', 'stale'].filter((w) => NEW_ALL.includes(w));
 export const NEW_WORDS = NEW_ALL.filter((w) => !NEW_BARE_WORDS.includes(w));
 export const NEW_UNDERSCORED = NEW_WORDS.filter((w) => w.includes('_'));
+// The Drift vocabulary (mission-ui#10). Five enums come from the schemas; the four audit codes behind a snapshot disagreement
+// exist only in the description of DriftFinding.sourceCode, so they are written out here and the self-test checks the agreement.
+export const DRIFT_KIND_WORDS = schema('DriftKind.yaml').enum;
+export const DRIFT_AUTHORITY_WORDS = schema('DriftAuthority.yaml').enum;
+export const DRIFT_SIDE_WORDS = schema('DriftSide.yaml').enum;
+export const DRIFT_REMEDY_WORDS = schema('DriftRemedy.yaml').enum;
+export const DRIFT_REFUSAL_WORDS = schema('DriftRefusalCode.yaml').enum;
+export const SOURCE_CODE_WORDS = ['SNAPSHOT_DRIFT', 'SNAPSHOT_DRIFT_PROVENANCE', 'SNAPSHOT_DRIFT_TERMINAL', 'CORRUPT_JSON'];
+// Only the underscored members are gated: a bare member (`git`) is an everyday word and stays out.
+export const DRIFT_WORDS = [
+  ...new Set([...DRIFT_KIND_WORDS, ...DRIFT_AUTHORITY_WORDS, ...DRIFT_SIDE_WORDS, ...DRIFT_REMEDY_WORDS, ...DRIFT_REFUSAL_WORDS, ...SOURCE_CODE_WORDS]),
+].filter((w) => w.includes('_'));
 const LANE_ONLY = LANES.filter((w) => w !== 'done');
 // Words used in identifier positions; `plan`, `review` and `done` are ordinary identifiers and are left out.
 export const IDENT_WORDS = [...LANE_ONLY, 'specify', 'implement', 'tasks'];
@@ -73,10 +93,11 @@ const M = alt(S8B_METHODS);
 const NW = alt(NEW_WORDS);
 const NU = alt(NEW_UNDERSCORED);
 const NB = alt(NEW_BARE_WORDS);
+const DW = alt(DRIFT_WORDS);
 
 const entry = (id, selector, text) => ({ selector, message: `data-driven: ${id} ${text}` });
 
-/** One entry per selector alternative (40), so a message names the alternative that fired. */
+/** One entry per selector alternative (45), so a message names the alternative that fired. */
 export const SELECTOR_ENTRIES = [
   entry('S1', `Literal[value=/^(${W})$/i]`, 'phase name or lane value as a literal; read it from src/defaults/'),
   entry('S1b.1', `Literal[value=/^(${SW})$/i]`, 'status word as a literal; read it from src/defaults/'),
@@ -118,6 +139,11 @@ export const SELECTOR_ENTRIES = [
   entry('S14.2', `SwitchCase > Literal.test[value=/^(${NB})$/i]`, 'change-state or staleness word as a case label; read it from src/defaults/'),
   entry('S14.3', `BinaryExpression[operator=/^[!=]==?$/] > TemplateLiteral[expressions.length=0] > TemplateElement[value.cooked=/^(${NB})$/i]`, 'change-state or staleness word compared as an expression-free template; read it from src/defaults/'),
   entry('S14.4', `SwitchCase > TemplateLiteral.test[expressions.length=0] > TemplateElement[value.cooked=/^(${NB})$/i]`, 'change-state or staleness word as a template case label; read it from src/defaults/'),
+  entry('S17.1', `Literal[value=/^(${DW})$/i]`, 'drift kind, authority, side, remedy, refusal or source-code word as a literal; read it from src/defaults/'),
+  entry('S17.2', `TemplateElement[value.cooked=/^(${DW})$/i]`, 'drift word as an exact template; read it from src/defaults/'),
+  entry('S17.3', `Literal[value=/(${DW})/i]`, 'drift word inside a longer string'),
+  entry('S17.4', `TemplateElement[value.cooked=/(${DW})/i]`, 'drift word inside a template'),
+  entry('S17.5', `Property[computed=false] > Identifier.key[name=/^(${DW})$/i]`, 'object key named like a drift word'),
 ];
 
 export default [

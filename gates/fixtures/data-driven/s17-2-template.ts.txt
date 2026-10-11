@@ -1,0 +1,2 @@
+// expect: S17.2 S17.4
+export const t = `materialize_status`;

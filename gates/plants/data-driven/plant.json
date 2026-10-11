@@ -1,11 +1,35 @@
-{
-  "gate": "data-driven",
-  "ciCommand": "pnpm lint:data-driven && pnpm test:data-driven",
-  "expectFailPattern": "plant-data-driven",
-  "overlays": [
-    {
-      "target": "packages/mission-ui/src/plant-data-driven.ts",
-      "source": "plant-data-driven.ts.plant"
-    }
-  ]
-}
+[
+  {
+    "gate": "data-driven",
+    "ciCommand": "pnpm lint:data-driven && pnpm test:data-driven",
+    "expectFailPattern": "plant-data-driven.ts",
+    "overlays": [
+      {
+        "target": "packages/mission-ui/src/plant-data-driven.ts",
+        "source": "plant-data-driven.ts.plant"
+      }
+    ]
+  },
+  {
+    "gate": "data-driven",
+    "ciCommand": "pnpm lint:data-driven && pnpm test:data-driven",
+    "expectFailPattern": "plant-data-driven-drift",
+    "overlays": [
+      {
+        "target": "packages/mission-ui/src/plant-data-driven-drift.ts",
+        "source": "plant-data-driven-drift.ts.plant"
+      }
+    ]
+  },
+  {
+    "gate": "data-driven",
+    "ciCommand": "pnpm lint:data-driven && pnpm test:data-driven",
+    "expectFailPattern": "plant-data-driven-code",
+    "overlays": [
+      {
+        "target": "packages/mission-ui/src/plant-data-driven-code.ts",
+        "source": "plant-data-driven-code.ts.plant"
+      }
+    ]
+  }
+]
