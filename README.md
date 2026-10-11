@@ -88,6 +88,32 @@ Retry ownership: the shell owns a whole-page failure (`sk-shell-retry`); a scree
 (`sk-retry-load`). The `sk-retry-load` payload is a union keyed on `target`; this screen's members are `'work-package'` and
 `'detail'`, and a later screen adds its own member to the union instead of declaring the event again.
 
+## The Drift screen
+
+`sk-drift-screen` lists the findings of a Mission Status drift scan and shows the chosen finding in a detail pane: kicker,
+title, explanation, authority panel, lane comparison table, suggested resolution with a Copy button, and facts. The screen
+is read-only: it asks the host to scan again, to retry, to open a Mission or to copy a command, and does nothing else. A
+host passes contract-shaped data only. Eleven properties: `status` (`loading`, `ready`, `empty`, `error`, `not-found`),
+`report` (the contract's `DriftReport`), `selectedFinding` (host-owned; an incoming change is never re-emitted),
+`missionId` (the scope of a scoped scan), `missions` (the host's Mission names, by id), `rescanning`, `copyResult`
+(`copied` or `manual`, the host's answer to a copy), `refusalCode`, `now`, `labels` (optional label hooks: `kind`, `severity`, `authority`, `derivedSide`, `refusal`, `lane` and `time`) and
+`errorMessage`. Six events, each with `bubbles` and `composed` true and `cancelable` false: `sk-select-finding`
+(`{ missionId, kind, artifactPath }`), `sk-rescan-drift` (`{ missionId }`, `null` for the whole project), `sk-copy-command`
+(`{ text, missionId, remedy }`; the host owns the clipboard), `sk-open-mission`, `sk-open-missions` and `sk-retry-load`.
+The `sk-retry-load` payload is the shared union keyed on `target`; this screen's member is `'drift-report'`.
+
+The screen performs no I/O and draws every kind, severity, authority and remedy word from `src/defaults/`. An unknown
+kind, severity, authority, derived side or source code is drawn neutrally with its raw word; an unknown remedy shows no
+command. Its 38 stories are under `Screens/Drift/` (four titles), one
+visual baseline each: the 33 rows of the specification's state matrix, with DR-07a and DR-07b counted separately and DR-09
+dropped, make 32, and six rows carry a second story. All of them sit in the project shell with `nav-drift` current and
+`flush` set. The walkthrough is `kitty-specs/drift-screen-01M4C93T/quickstart.md`.
+
+Exceptions to the layout-only rule, each recorded in `stylelint.config.mjs` with token values only: E-35 (the 420 px list
+track and the one-column tier; sunset spec-kitty/spec-kitty-design#530), E-36 (the raw `role="option"` finding button, as in the prototype; sunset spec-kitty/spec-kitty-design#527), E-37 (the prototype's
+type, colour and pill grants G-1 to G-10 (G-9: the busy Rescan start padding; G-10: the authority pill wraps, `white-space: normal` on that one pill's part) and the 44 px height of Rescan and Copy; sunsets spec-kitty/spec-kitty-design#531, spec-kitty/spec-kitty-design#509, spec-kitty/spec-kitty-design#526, spec-kitty/spec-kitty-design#529, spec-kitty/spec-kitty-design#516, spec-kitty/spec-kitty-design#532, spec-kitty/spec-kitty-design#523, spec-kitty/spec-kitty-design#535 and spec-kitty/spec-kitty-design#533 for the data-table family), E-38 (the command field wraps, a library
+gap; sunset spec-kitty/spec-kitty-design#534) and E-39 (`overflow-wrap: anywhere` on slugs and facts; sunset spec-kitty/spec-kitty-design#535), plus the E-18 scope extension to `panel-parts.ts` (sunset spec-kitty/spec-kitty-design#516).
+
 ## Gates
 
 One workflow, `.github/workflows/ci.yml`; the job ids are the gate ids and the check names are `Gate: <id>`. The list
@@ -102,7 +128,7 @@ packages, never only the changed files.
 | `Gate: stylelint` | `pnpm lint:styles` | layout-only CSS, `--sk-*` tokens, no colour, font or size literals; the operator-approved exceptions E-04 and E-08 to E-16 are scoped to named element files in `stylelint.config.mjs`, token values only (each sunsets on a spec-kitty-design issue) |
 | `Gate: no-io` | `pnpm lint:no-io` and `pnpm test:no-io` | no network, desktop-bridge or browser-storage I/O in `packages/*/src`; the self-test asserts one fixture per rule |
 | `Gate: manifest` | `pnpm manifest:check` | `custom-elements.json` equals a fresh regeneration and declares every property and event |
-| `Gate: hygiene` | `pnpm hygiene` and `pnpm test:scripts` | no token, no absolute user path, no e-mail address in the contract and fixture paths, pinned dependencies and actions, safe workflow triggers, baseline PNG checks; then the `node:test` suites of the gate scripts (hygiene, gate-proof, preflight, manifest-screen, settle, the stylelint exception scope proofs and the terminology scan: the word "feature" never appears in `packages/*/src` or the mission quickstart, the canonical term is "mission") |
+| `Gate: hygiene` | `pnpm hygiene` and `pnpm test:scripts` | no token, no absolute user path, no e-mail address in the contract and fixture paths, pinned dependencies and actions, safe workflow triggers, baseline PNG checks; then the `node:test` suites of the gate scripts (hygiene, gate-proof, preflight, manifest-screen, settle, the stylelint exception scope proofs, the story-catalogue and visual-tag tests, and the terminology scan: the word "feature" never appears in `packages/*/src` or the mission quickstart, the canonical term is "mission") |
 | `Gate: contract` | `pnpm contract:check` and `pnpm test:contract` | the vendored Mission Status contract equals its pin, the generated types and fixtures are fresh, every fixture is a valid and coherent contract document (closed shapes), no event-stream identifier in `packages/*/src` |
 | `Gate: data-driven` | `pnpm lint:data-driven` and `pnpm test:data-driven` | no phase name, status lane or other contract status word (`pending`, `complete`, `draft`, `discarded`) hard-coded in `packages/*/src` outside `src/defaults/`, `src/contract/`, stories, fixtures and `src/story-support/`; 31 selectors, a self-test with 36 positive fixtures and inline `eslint-disable` comments ignored |
 | `Gate: storybook-build` | `pnpm build-storybook` | the static Storybook builds (118 stories), then the output is scanned for tokens |

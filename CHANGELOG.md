@@ -6,6 +6,16 @@ All user-visible changes to this repository. Per-package notes live in `packages
 
 ### Added
 
+- **A Drift screen: the findings of a drift scan and the detail of the chosen one, drawn from the pinned Mission Status
+  contract** (`#10`). `sk-drift-screen` shows a header with the last scan and Rescan, a finding list, and a detail with the
+  explanation, authority panel, lane comparison table, suggested resolution with Copy and facts, plus the loading, clean,
+  truncated, rescanning, unreadable, not-found and nothing-chosen states. A host passes only contract-shaped data; the
+  screen performs no I/O and emits six events (`sk-select-finding`, `sk-rescan-drift`, `sk-copy-command`, `sk-open-mission`,
+  `sk-open-missions`, `sk-retry-load`). 38 new Storybook stories under `Screens/Drift/` with one visual baseline each, a
+  story-catalogue test, and CI timeouts re-derived for the larger set. Layout exceptions E-35 to E-39 and an extension of
+  E-18 are recorded in `stylelint.config.mjs`.
+- **Drift contract wiring: view types, 17 fixtures, the `drift-vocabulary-open` relaxation and a 1000-finding generator** (`#10`).
+  `pnpm contract:check` also validates the generated report of exactly 1000 findings; a plant removes the relaxation.
 - **A Work Package screen: one Work Package of a Mission, drawn from the pinned Mission Status contract** (`#5`).
   `sk-work-package-screen` shows the header and facts, lane history, review summary and cycles, the evidence and dependency
   chains, subtasks, owned files, workspace and links to the spec, prompt and review files. A host passes only
