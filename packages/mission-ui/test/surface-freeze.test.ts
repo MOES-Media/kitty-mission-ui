@@ -152,6 +152,7 @@ describe('surface freeze', () => {
       'sk-open-mission',
       'sk-open-mission',
       'sk-open-mission',
+      'sk-open-mission',
       'sk-open-missions',
       'sk-open-missions',
     ]);
