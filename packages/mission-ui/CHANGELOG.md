@@ -47,7 +47,8 @@
   vocabulary (`#10`).
 - `sk-ops-screen` (screen): the project's invocation records. Twelve properties (`status`, `project`, `items`, `pageInfo`,
   `totalCount`, `skippedCount`, `profile`, `loadingMore`, `loadMoreError`, `refusalCode`, `labels`, `errorMessage`), and two
-  events (`sk-load-more`, `sk-retry-load`, the latter a union keyed on `target` with `'ops-page'`). Words and tones come from
+  events (`sk-load-more`, `sk-retry-load`; the retry member `{ target: 'ops-page' }` (`OpsPageRetryDetail`, `SkOpsRetryLoadDetail`)
+  joins `RetryLoadEventDetail` in `src/retry-types.ts` only, as `DriftRetryDetail` does). Words and tones come from
   `src/defaults/`; an unknown outcome, closer, mode or evidence kind shows its raw text with the neutral tone, and an unknown
   or missing refusal code shows the generic error sentence (`#11`).
 - `sk-ops-screen` announces that Load more started ("Loading more records") before the rows arrive, and announces a different

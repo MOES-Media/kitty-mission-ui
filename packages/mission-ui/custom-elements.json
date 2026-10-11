@@ -1618,7 +1618,7 @@
             {
               "name": "sk-retry-load",
               "type": {
-                "text": "CustomEvent<SkRetryLoadDetail>"
+                "text": "CustomEvent<SkOpsRetryLoadDetail>"
               },
               "description": "Retry was activated: `{ target: 'ops-page' }` for the first page or a refresh from the newest, with `cursor` to retry the page after it"
             }

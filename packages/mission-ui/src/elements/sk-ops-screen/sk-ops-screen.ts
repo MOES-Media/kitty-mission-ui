@@ -9,7 +9,7 @@ import type { OpsLabelHooks, OpsLookResult } from '../../logic/index.js';
 import type { OpsInvocationView, PageInfo, Project } from '../../contract/types.js';
 import { visuallyHidden } from '../../visually-hidden.js';
 import type { SkLoadMoreDetail } from '../sk-missions-screen/sk-missions-screen.js';
-import type { SkRetryLoadDetail } from '../sk-work-package-screen/sk-work-package-screen.js';
+import type { OpsPageRetryDetail } from '../../retry-types.js';
 import { opsPageStyles, renderOpsFrame, renderOpsPage } from './ops-page-parts.js';
 import type { OpsPageView } from './ops-page-parts.js';
 import { opsRowStyles, renderOpsRow } from './ops-row-parts.js';
@@ -25,6 +25,9 @@ export interface OpsLoadMoreError {
   code: string | null;
 }
 
+/** Payload of `sk-retry-load` from this screen: the Ops member of the event union (`src/retry-types.ts`), never declared again. */
+export type SkOpsRetryLoadDetail = OpsPageRetryDetail;
+
 /**
  * The Ops screen: a read-only list of invocation records, newest first, one page at a time. No I/O, nothing stored; the host
  * owns loading, paging and the filter by profile. The screen sorts nothing and counts nothing (`items.length` aside).
@@ -35,7 +38,7 @@ export interface OpsLoadMoreError {
  * @tagname sk-ops-screen
  *
  * @fires {CustomEvent<SkLoadMoreDetail>} sk-load-more - Load more was activated while a next page exists and `loadingMore` is false; once per cursor until `loadingMore`, `items` or `pageInfo` changes
- * @fires {CustomEvent<SkRetryLoadDetail>} sk-retry-load - Retry was activated: `{ target: 'ops-page' }` for the first page or a refresh from the newest, with `cursor` to retry the page after it
+ * @fires {CustomEvent<SkOpsRetryLoadDetail>} sk-retry-load - Retry was activated: `{ target: 'ops-page' }` for the first page or a refresh from the newest, with `cursor` to retry the page after it
  */
 export class SkOpsScreen extends LitElement {
   static override styles = [
@@ -146,7 +149,7 @@ export class SkOpsScreen extends LitElement {
   protected retryPage(): void {
     const detail = this.retryPayload();
     if (detail === null) return;
-    this.dispatchEvent(new CustomEvent<SkRetryLoadDetail>('sk-retry-load', { detail, bubbles: true, composed: true }));
+    this.dispatchEvent(new CustomEvent<SkOpsRetryLoadDetail>('sk-retry-load', { detail, bubbles: true, composed: true }));
   }
 
   /**
@@ -154,7 +157,7 @@ export class SkOpsScreen extends LitElement {
    * page after the next cursor, or (when the cursor was refused) starts again from the newest; with no cursor to send there is
    * nothing to build.
    */
-  private retryPayload(): SkRetryLoadDetail | null {
+  private retryPayload(): SkOpsRetryLoadDetail | null {
     if (this.current.look === 'error') return opsRetryDetail();
     if (this.current.look !== 'ready' || this.loadMoreError === null) return null;
     if (this.loadMoreError.code === CURSOR_REFUSAL_CODE) return opsRetryDetail();

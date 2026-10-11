@@ -92,7 +92,7 @@ export type {
   ArtifactVocabulary,
 } from './logic/artifact-types.js';
 export type { SkArtifactRetryLoadDetail, SkOpenLinkDetail, SkSelectArtifactDetail } from './elements/sk-artifact-screen/sk-artifact-screen.js';
-export type { DriftRetryDetail, RetryLoadDetail, RetryLoadEventDetail, SkArtifactRetryDetail } from './retry-types.js';
+export type { DriftRetryDetail, OpsPageRetryDetail, RetryLoadDetail, RetryLoadEventDetail, SkArtifactRetryDetail } from './retry-types.js';
 export type {
   DriftCopyResult,
   DriftScreenStatus,
@@ -107,7 +107,7 @@ export type { SkBrowseFolderDetail, SkConfirmOpenProjectDetail } from './element
 export type { SkOpenProjectDetail } from './elements/sk-projects-screen/sk-projects-screen.js';
 export type { FolderEntry, FolderKind, ProjectEntry, ProjectEntryState, ProjectLabelHooks } from './project-types.js';
 export type { ProjectView } from './contract/types.js';
-export type { OpsLoadMoreError, OpsScreenStatus } from './elements/sk-ops-screen/sk-ops-screen.js';
+export type { OpsLoadMoreError, OpsScreenStatus, SkOpsRetryLoadDetail } from './elements/sk-ops-screen/sk-ops-screen.js';
 export type { SkOpenMissionsDetail, SkViewArtifactsDetail } from './elements/sk-pipeline-screen/sk-pipeline-screen.js';
 export type { SkSelectWorkPackageDetail } from './elements/sk-work-package-board/sk-work-package-board.js';
 export type {
@@ -149,7 +149,7 @@ export type {
   WorkPackageView,
 } from './contract/types.js';
 export type { SkMissionRetryDetail } from './elements/sk-mission-sample/sk-mission-sample.js';
-export type { OpsEvidenceDisplay, OpsFact, OpsFactKind, OpsLabelHooks, OpsPageRetryDetail, OpsRowView } from './logic/index.js';
+export type { OpsEvidenceDisplay, OpsFact, OpsFactKind, OpsLabelHooks, OpsRowView } from './logic/index.js';
 export type { MissionSummary, ViewState } from './view-state.js';
 export type {
   CurrentMark,

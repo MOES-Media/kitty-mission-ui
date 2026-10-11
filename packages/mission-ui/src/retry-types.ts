@@ -32,20 +32,11 @@ export interface FoldersRetryDetail {
   target: 'folders';
 }
 
-/**
- * The retry of one Ops page (the Ops screen). It carries no Mission or Work Package id: the screen has neither. No cursor
- * retries the first page (and a refused cursor starts again from the newest); a cursor retries the page after it.
- */
-export interface OpsPageRetryDetail {
-  target: 'ops-page';
-  cursor?: string;
-}
-
 /** The two Work Package members: the only ones `retryDetail` builds. */
 export type WorkPackageRetryMember = WorkPackageRetryDetail | DetailRetryDetail;
 
 /** The payload of the Work Package and Projects screens: a union discriminated by `target`. */
-export type RetryLoadDetail = WorkPackageRetryMember | ProjectRetryDetail | ProjectsRetryDetail | FoldersRetryDetail | OpsPageRetryDetail;
+export type RetryLoadDetail = WorkPackageRetryMember | ProjectRetryDetail | ProjectsRetryDetail | FoldersRetryDetail;
 
 /** The Artifact Viewer's payload: the open content (with its path) or the whole listing. */
 export type SkArtifactRetryDetail = { missionId: string; target: 'content'; path: string } | { missionId: string; target: 'listing' };
@@ -56,8 +47,17 @@ export interface DriftRetryDetail {
   target: 'drift-report';
 }
 
+/**
+ * The retry of one Ops page (the Ops screen's payload, joined to the event union only, as the Drift member is). It carries no Mission or Work Package id: the screen has neither. No cursor
+ * retries the first page (and a refused cursor starts again from the newest); a cursor retries the page after it.
+ */
+export interface OpsPageRetryDetail {
+  target: 'ops-page';
+  cursor?: string;
+}
+
 /** The payload of every `sk-retry-load`, whichever screen dispatches it. */
-export type RetryLoadEventDetail = RetryLoadDetail | SkArtifactRetryDetail | DriftRetryDetail;
+export type RetryLoadEventDetail = RetryLoadDetail | SkArtifactRetryDetail | DriftRetryDetail | OpsPageRetryDetail;
 
 declare global {
   interface HTMLElementEventMap {

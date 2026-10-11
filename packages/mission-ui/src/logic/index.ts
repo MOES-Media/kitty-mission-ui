@@ -24,6 +24,7 @@ export * from './drift-keys.js';
 export * from './drift-announce.js';
 export * from './drift-retry.js';
 export * from './ops-look.js';
+export * from './ops-retry.js';
 export * from './ops-row.js';
 export * from './ops-text.js';
 export * from './ops-time.js';

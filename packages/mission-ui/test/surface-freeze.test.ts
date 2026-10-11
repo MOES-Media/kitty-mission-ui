@@ -329,12 +329,13 @@ describe('surface freeze: the Ops screen (twelve properties, two events)', () =>
     expect((declarations.get(tag)?.members ?? []).filter((m) => m.kind === 'method')).toEqual([]);
   });
 
-  it('shares the two events with the earlier screens: sk-retry-load carries the Ops member of the one union, sk-load-more the Missions detail (compile-time)', () => {
+  it('shares the two events with the earlier screens: sk-retry-load carries the Ops member of the event union, sk-load-more the Missions detail (compile-time)', () => {
     const screen = document.createElement(tag);
     const seen: string[] = [];
     screen.addEventListener('sk-load-more', (event) => seen.push(event.detail.cursor));
     screen.addEventListener('sk-retry-load', (event) => {
-      const detail: import('../src/index.js').SkRetryLoadDetail = event.detail;
+      // the Ops member joins the event union only; `RetryLoadDetail` (the Work Package and Projects payload) stays exact
+      const detail: import('../src/index.js').RetryLoadEventDetail = event.detail;
       seen.push(detail.target === 'ops-page' ? (detail.cursor ?? 'first-page') : 'other');
     });
     screen.dispatchEvent(new CustomEvent('sk-load-more', { detail: { cursor: 'c1' } }));
@@ -365,6 +366,11 @@ describe('the public type surface (BOUNDARY-004)', () => {
     const factKind: import('../src/index.js').OpsFactKind | null = fact?.kind ?? null;
     const shown: import('../src/index.js').OpsEvidenceDisplay | null = row?.evidence ?? null;
     const retry: import('../src/index.js').OpsPageRetryDetail = { target: 'ops-page' };
+    const screenRetry: import('../src/index.js').SkOpsRetryLoadDetail = retry;
+    // @ts-expect-error the Ops member is not part of RetryLoadDetail
+    const notWp: import('../src/index.js').RetryLoadDetail = { target: 'ops-page' };
+    void notWp;
+    expect(screenRetry).toBe(retry);
     const evidence: import('../src/index.js').OpsEvidenceView | null = null;
     expect([items, status, failure, labels, row, fact, factKind, shown, retry, evidence]).toEqual([[], 'loading', null, null, null, null, null, null, { target: 'ops-page' }, null]);
   });
