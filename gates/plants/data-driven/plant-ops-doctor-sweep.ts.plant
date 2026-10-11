@@ -1,0 +1,2 @@
+// plant: an Ops vocabulary word (the sweep closer) as a literal in element-scope source
+export const plantOpsDoctorSweep = 'doctor_sweep';

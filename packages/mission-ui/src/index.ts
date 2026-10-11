@@ -7,6 +7,7 @@ import { SkMissionSample } from './elements/sk-mission-sample/sk-mission-sample.
 import { SkMissionShell } from './elements/sk-mission-shell/sk-mission-shell.js';
 import { SkOpenProjectDialog } from './elements/sk-open-project-dialog/sk-open-project-dialog.js';
 import { SkMissionsScreen } from './elements/sk-missions-screen/sk-missions-screen.js';
+import { SkOpsScreen } from './elements/sk-ops-screen/sk-ops-screen.js';
 import { SkPhaseBar } from './elements/sk-phase-bar/sk-phase-bar.js';
 import { SkPipelineScreen } from './elements/sk-pipeline-screen/sk-pipeline-screen.js';
 import { SkProjectsScreen } from './elements/sk-projects-screen/sk-projects-screen.js';
@@ -29,6 +30,9 @@ if (!customElements.get('sk-shell-tree')) {
 }
 if (!customElements.get('sk-missions-screen')) {
   customElements.define('sk-missions-screen', SkMissionsScreen);
+}
+if (!customElements.get('sk-ops-screen')) {
+  customElements.define('sk-ops-screen', SkOpsScreen);
 }
 if (!customElements.get('sk-pipeline-screen')) {
   customElements.define('sk-pipeline-screen', SkPipelineScreen);
@@ -66,6 +70,7 @@ export {
   SkMissionShell,
   SkMissionsScreen,
   SkOpenProjectDialog,
+  SkOpsScreen,
   SkPhaseBar,
   SkPipelineScreen,
   SkProjectsScreen,
@@ -87,7 +92,7 @@ export type {
   ArtifactVocabulary,
 } from './logic/artifact-types.js';
 export type { SkArtifactRetryLoadDetail, SkOpenLinkDetail, SkSelectArtifactDetail } from './elements/sk-artifact-screen/sk-artifact-screen.js';
-export type { DriftRetryDetail, RetryLoadDetail, RetryLoadEventDetail, SkArtifactRetryDetail } from './retry-types.js';
+export type { DriftRetryDetail, OpsPageRetryDetail, RetryLoadDetail, RetryLoadEventDetail, SkArtifactRetryDetail } from './retry-types.js';
 export type {
   DriftCopyResult,
   DriftScreenStatus,
@@ -102,6 +107,7 @@ export type { SkBrowseFolderDetail, SkConfirmOpenProjectDetail } from './element
 export type { SkOpenProjectDetail } from './elements/sk-projects-screen/sk-projects-screen.js';
 export type { FolderEntry, FolderKind, ProjectEntry, ProjectEntryState, ProjectLabelHooks } from './project-types.js';
 export type { ProjectView } from './contract/types.js';
+export type { OpsLoadMoreError, OpsScreenStatus, SkOpsRetryLoadDetail } from './elements/sk-ops-screen/sk-ops-screen.js';
 export type { SkOpenMissionsDetail, SkViewArtifactsDetail } from './elements/sk-pipeline-screen/sk-pipeline-screen.js';
 export type { SkSelectWorkPackageDetail } from './elements/sk-work-package-board/sk-work-package-board.js';
 export type {
@@ -133,6 +139,8 @@ export type {
   LaneComparisonView,
   MissionDetailView,
   MissionOverviewView,
+  OpsEvidenceView,
+  OpsInvocationView,
   PageInfo,
   PhaseView,
   Project,
@@ -141,6 +149,7 @@ export type {
   WorkPackageView,
 } from './contract/types.js';
 export type { SkMissionRetryDetail } from './elements/sk-mission-sample/sk-mission-sample.js';
+export type { OpsEvidenceDisplay, OpsFact, OpsFactKind, OpsLabelHooks, OpsRowView } from './logic/index.js';
 export type { MissionSummary, ViewState } from './view-state.js';
 export type {
   CurrentMark,

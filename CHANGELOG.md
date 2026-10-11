@@ -32,6 +32,14 @@ All user-visible changes to this repository. Per-package notes live in `packages
   E-18 are recorded in `stylelint.config.mjs`.
 - **Drift contract wiring: view types, 17 fixtures, the `drift-vocabulary-open` relaxation and a 1000-finding generator** (`#10`).
   `pnpm contract:check` also validates the generated report of exactly 1000 findings; a plant removes the relaxation.
+- **An Ops screen: the project's invocation records, newest first, read only** (`#11`). `sk-ops-screen` shows the page header,
+  the source notice, the count badge, one row per record (outcome, profile, action, actor, times in UTC, evidence, Mission,
+  Work Package, mode) and Load more, with loading, empty and error looks. A host passes contract-shaped data only; the screen
+  performs no I/O, never links a value of a record, and emits two events (`sk-load-more`, `sk-retry-load`). Exceptions E-40,
+  E-42 and E-43, and the grants Ops G-1 to Ops G-7. 37 new Storybook stories under `Screens/Ops/` with one visual baseline each
+  (330 in total). CI timeouts rise for the larger set: `proof (visual)` from 55 to 60 minutes, and the `unit-tests` proof leg from 10 to 11.
+- **`Gate: eslint` refuses an aliased lit `css` import** (`#11`). `import { css as x }` hid the template from postcss-lit and
+  so from every Stylelint rule.
 - **A Work Package screen: one Work Package of a Mission, drawn from the pinned Mission Status contract** (`#5`).
   `sk-work-package-screen` shows the header and facts, lane history, review summary and cycles, the evidence and dependency
   chains, subtasks, owned files, workspace and links to the spec, prompt and review files. A host passes only

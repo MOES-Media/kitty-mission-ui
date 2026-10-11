@@ -1,0 +1,2 @@
+// expect: S18.1
+export const m = 'abandoned';

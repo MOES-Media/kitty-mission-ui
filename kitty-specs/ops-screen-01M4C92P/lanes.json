@@ -1,0 +1,236 @@
+{
+  "version": 1,
+  "mission_slug": "ops-screen-01M4C92P",
+  "mission_id": "01M4C92PK8QEFEEWCYR16YE455",
+  "mission_branch": "kitty/mission-ops-screen-01M4C92P",
+  "target_branch": "feat/ops-screen-11",
+  "lanes": [
+    {
+      "lane_id": "lane-a",
+      "wp_ids": [
+        "WP01"
+      ],
+      "write_scope": [
+        "gates/plants/contract/**",
+        "packages/mission-ui/src/contract/**",
+        "packages/mission-ui/src/elements/sk-ops-screen/fixtures.ts",
+        "packages/mission-ui/test/ops-fixtures.test.ts",
+        "scripts/contract/**"
+      ],
+      "predicted_surfaces": [
+        "api",
+        "app-shell",
+        "artifact-rendering"
+      ],
+      "depends_on_lanes": [],
+      "parallel_group": 0
+    },
+    {
+      "lane_id": "lane-b",
+      "wp_ids": [
+        "WP02"
+      ],
+      "write_scope": [
+        "eslint.config.mjs",
+        "eslint.data-driven.config.mjs",
+        "gates/data-driven.selftest.ts",
+        "gates/fixtures/data-driven/**",
+        "gates/plants/data-driven/**",
+        "gates/plants/eslint/**",
+        "packages/mission-ui/src/defaults/ops-copy.ts",
+        "packages/mission-ui/src/logic/index.ts",
+        "packages/mission-ui/src/logic/ops-look.ts",
+        "packages/mission-ui/src/logic/ops-row.ts",
+        "packages/mission-ui/src/logic/ops-text.ts",
+        "packages/mission-ui/src/logic/ops-time.ts",
+        "packages/mission-ui/src/logic/wp-retry.ts",
+        "packages/mission-ui/src/retry-types.ts",
+        "packages/mission-ui/test/ops-copy.test.ts",
+        "packages/mission-ui/test/ops-look.test.ts",
+        "packages/mission-ui/test/ops-retry-union.test.ts",
+        "packages/mission-ui/test/ops-row.test.ts",
+        "packages/mission-ui/test/ops-text.test.ts",
+        "packages/mission-ui/test/ops-time.test.ts",
+        "packages/mission-ui/test/wp-retry-union.test.ts"
+      ],
+      "predicted_surfaces": [
+        "api",
+        "app-shell",
+        "artifact-rendering",
+        "legacy-cleanup"
+      ],
+      "depends_on_lanes": [
+        "lane-a"
+      ],
+      "parallel_group": 1
+    },
+    {
+      "lane_id": "lane-c",
+      "wp_ids": [
+        "WP03"
+      ],
+      "write_scope": [
+        "apps/storybook/.storybook/main.ts",
+        "spikes/ic-03a-ops/**"
+      ],
+      "predicted_surfaces": [
+        "api",
+        "app-shell",
+        "artifact-rendering",
+        "legacy-cleanup"
+      ],
+      "depends_on_lanes": [
+        "lane-b"
+      ],
+      "parallel_group": 2
+    },
+    {
+      "lane_id": "lane-d",
+      "wp_ids": [
+        "WP04"
+      ],
+      "write_scope": [
+        "gates/plants/stylelint/**",
+        "packages/mission-ui/custom-elements.json",
+        "packages/mission-ui/src/defaults/index.ts",
+        "packages/mission-ui/src/elements/sk-ops-screen/sk-ops-screen.ts",
+        "packages/mission-ui/src/index.ts",
+        "packages/mission-ui/test/sk-ops-screen.skeleton.test.ts",
+        "packages/mission-ui/test/surface-freeze.test.ts",
+        "scripts/stylelint-exceptions.test.mjs",
+        "stylelint.config.mjs"
+      ],
+      "predicted_surfaces": [
+        "api",
+        "app-shell",
+        "artifact-rendering",
+        "legacy-cleanup"
+      ],
+      "depends_on_lanes": [
+        "lane-c"
+      ],
+      "parallel_group": 3
+    },
+    {
+      "lane_id": "lane-e",
+      "wp_ids": [
+        "WP05"
+      ],
+      "write_scope": [
+        "packages/mission-ui/src/elements/sk-ops-screen/ops-row-parts.ts",
+        "packages/mission-ui/src/elements/sk-ops-screen/sk-ops-screen.rows.stories.ts",
+        "packages/mission-ui/test/ops-row-parts.test.ts",
+        "packages/mission-ui/test/sk-ops-screen.evidence.test.ts",
+        "packages/mission-ui/test/sk-ops-screen.rows.test.ts"
+      ],
+      "predicted_surfaces": [
+        "api",
+        "app-shell",
+        "artifact-rendering"
+      ],
+      "depends_on_lanes": [
+        "lane-d"
+      ],
+      "parallel_group": 4
+    },
+    {
+      "lane_id": "lane-f",
+      "wp_ids": [
+        "WP06"
+      ],
+      "write_scope": [
+        "packages/mission-ui/src/elements/sk-ops-screen/ops-page-parts.ts",
+        "packages/mission-ui/src/elements/sk-ops-screen/sk-ops-screen.paging.stories.ts",
+        "packages/mission-ui/test/ops-page-parts.test.ts",
+        "packages/mission-ui/test/sk-ops-screen.events.test.ts"
+      ],
+      "predicted_surfaces": [
+        "api",
+        "app-shell",
+        "artifact-rendering"
+      ],
+      "depends_on_lanes": [
+        "lane-d"
+      ],
+      "parallel_group": 4
+    },
+    {
+      "lane_id": "lane-g",
+      "wp_ids": [
+        "WP07"
+      ],
+      "write_scope": [
+        "packages/mission-ui/src/elements/sk-ops-screen/ops-state-parts.ts",
+        "packages/mission-ui/src/elements/sk-ops-screen/sk-ops-screen.states.stories.ts",
+        "packages/mission-ui/test/ops-state-parts.test.ts",
+        "packages/mission-ui/test/sk-ops-screen.announce.test.ts",
+        "packages/mission-ui/test/sk-ops-screen.events-retry.test.ts",
+        "packages/mission-ui/test/sk-ops-screen.states.test.ts"
+      ],
+      "predicted_surfaces": [
+        "api",
+        "app-shell",
+        "artifact-rendering",
+        "legacy-cleanup"
+      ],
+      "depends_on_lanes": [
+        "lane-f"
+      ],
+      "parallel_group": 5
+    },
+    {
+      "lane_id": "lane-h",
+      "wp_ids": [
+        "WP08"
+      ],
+      "write_scope": [
+        "packages/mission-ui/src/elements/sk-ops-screen/sk-ops-screen.tiers.stories.ts",
+        "packages/mission-ui/test/sk-ops-screen.a11y.test.ts",
+        "packages/mission-ui/test/sk-ops-screen.edge.test.ts",
+        "packages/mission-ui/test/sk-ops-screen.hostile.test.ts",
+        "packages/mission-ui/test/sk-ops-screen.perf.test.ts",
+        "packages/mission-ui/test/sk-ops-screen.tiers.test.ts"
+      ],
+      "predicted_surfaces": [
+        "api",
+        "app-shell",
+        "artifact-rendering",
+        "legacy-cleanup"
+      ],
+      "depends_on_lanes": [
+        "lane-e",
+        "lane-g"
+      ],
+      "parallel_group": 6
+    },
+    {
+      "lane_id": "lane-i",
+      "wp_ids": [
+        "WP09"
+      ],
+      "write_scope": [
+        ".github/workflows/ci.yml",
+        "CHANGELOG.md",
+        "README.md",
+        "apps/storybook/tests/visual/__snapshots__/screens-ops-*.png",
+        "package.json",
+        "packages/mission-ui/CHANGELOG.md",
+        "scripts/ops-story-catalogue.test.mjs"
+      ],
+      "predicted_surfaces": [
+        "api",
+        "app-shell",
+        "artifact-rendering",
+        "legacy-cleanup"
+      ],
+      "depends_on_lanes": [
+        "lane-h"
+      ],
+      "parallel_group": 7
+    }
+  ],
+  "computed_at": "2026-10-07T23:28:56.977411+00:00",
+  "computed_from": "dependency_graph+ownership",
+  "planning_artifact_wps": [],
+  "planning_commit_sha": "8c42302945a4b7beb3df4b4f093c485ab93adc17"
+}

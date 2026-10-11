@@ -31,5 +31,16 @@
         "source": "plant-data-driven-code.ts.plant"
       }
     ]
+  },
+  {
+    "gate": "data-driven",
+    "ciCommand": "pnpm lint:data-driven && pnpm test:data-driven",
+    "expectFailPattern": "plant-ops-doctor-sweep",
+    "overlays": [
+      {
+        "target": "packages/mission-ui/src/plant-ops-doctor-sweep.ts",
+        "source": "plant-ops-doctor-sweep.ts.plant"
+      }
+    ]
   }
 ]

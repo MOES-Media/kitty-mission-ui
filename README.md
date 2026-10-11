@@ -203,6 +203,20 @@ track and the one-column tier; sunset spec-kitty/spec-kitty-design#530), E-36 (t
 type, colour and pill grants G-1 to G-10 (G-9: the busy Rescan start padding; G-10: the authority pill wraps, `white-space: normal` on that one pill's part) and the 44 px height of Rescan and Copy; sunsets spec-kitty/spec-kitty-design#531, spec-kitty/spec-kitty-design#509, spec-kitty/spec-kitty-design#526, spec-kitty/spec-kitty-design#529, spec-kitty/spec-kitty-design#516, spec-kitty/spec-kitty-design#532, spec-kitty/spec-kitty-design#523, spec-kitty/spec-kitty-design#535 and spec-kitty/spec-kitty-design#533 for the data-table family), E-38 (the command field wraps, a library
 gap; sunset spec-kitty/spec-kitty-design#534) and E-39 (`overflow-wrap: anywhere` on slugs and facts; sunset spec-kitty/spec-kitty-design#535), plus the E-18 scope extension to `panel-parts.ts` (sunset spec-kitty/spec-kitty-design#516).
 
+## The Ops screen
+
+`sk-ops-screen` shows the invocation records (Ops) of a project, newest first, read only. A host passes contract-shaped data
+only: `status` (`loading`, `error`, `empty`, `ready`), `project`, `items`, `pageInfo`, `totalCount`, `skippedCount`,
+`profile`, `loadingMore`, `loadMoreError`, `refusalCode`, `labels` (optional word hooks) and `errorMessage`. Two events, each
+with `bubbles` and `composed` true: `sk-load-more` (Load more, once per cursor) and `sk-retry-load` (Try again, or Refresh
+from the newest after a refused cursor). The screen performs no I/O, never turns a value of a record into a link, and draws
+every word from the tables in `src/defaults/`. Its exceptions are E-40, E-42 and E-43 (row paint and typography, words-only
+wrapping, `overflow-wrap: anywhere` on the id and the evidence) and the grants Ops G-1 to Ops G-7 (the fact dividers, the badge
+line height, the page badges, the state card, the profile wrap, the empty-look typography and the badge width cap; named "Ops G-n" so they are not
+confused with other screens' grants). Its 37 stories are under `Screens/Ops/` (four titles), with
+one visual baseline each; a node test (`scripts/ops-story-catalogue.test.mjs`) ties the stories to the specification's state
+matrix and pins which baselines may be byte-identical.
+
 ## Gates
 
 One workflow, `.github/workflows/ci.yml`; the job ids are the gate ids and the check names are `Gate: <id>`. The list
@@ -219,10 +233,10 @@ packages, never only the changed files.
 | `Gate: manifest` | `pnpm manifest:check` | `custom-elements.json` equals a fresh regeneration and declares every property and event |
 | `Gate: hygiene` | `pnpm hygiene` and `pnpm test:scripts` | no token, no absolute user path (CLI state files included), no agent scratchpad path, no tooling-ledger id, no username of the running account, no e-mail address in the contract and fixture paths, pinned dependencies and actions, safe workflow triggers, baseline PNG checks; then the `node:test` suites of the gate scripts (hygiene, gate-proof, preflight, manifest-screen, settle, the stylelint exception scope proofs, the story-catalogue and visual-tag tests and the terminology scan: the word "feature" never appears in `packages/*/src` or the mission quickstart, the canonical term is "mission") |
 | `Gate: contract` | `pnpm contract:check` and `pnpm test:contract` | the vendored Mission Status contract equals its pin, the generated types and fixtures are fresh, every fixture is a valid and coherent contract document (closed shapes), no event-stream identifier in `packages/*/src` |
-| `Gate: data-driven` | `pnpm lint:data-driven` and `pnpm test:data-driven` | no phase name, status lane or other contract status word (`pending`, `complete`, `draft`, `discarded`) hard-coded in `packages/*/src` outside `src/defaults/`, `src/contract/`, stories, fixtures and `src/story-support/`; 31 selectors, a self-test with 36 positive fixtures and inline `eslint-disable` comments ignored |
-| `Gate: storybook-build` | `pnpm build-storybook` | the static Storybook builds (293 stories), then the output is scanned for tokens |
+| `Gate: data-driven` | `pnpm lint:data-driven` and `pnpm test:data-driven` | no phase name, status lane or other contract status word (`pending`, `complete`, `draft`, `discarded`) hard-coded in `packages/*/src` outside `src/defaults/`, `src/contract/`, stories, fixtures and `src/story-support/`; the selector list is `SELECTOR_ENTRIES` in `eslint.data-driven.config.mjs` (it reads the phase, lane, review, change-state, staleness, project health, artifact, Drift and Ops vocabularies from the vendored schemas), with a self-test over positive fixtures in `gates/fixtures/data-driven/` and inline `eslint-disable` comments ignored |
+| `Gate: storybook-build` | `pnpm build-storybook` | the static Storybook builds (330 stories), then the output is scanned for tokens |
 | `Gate: unit-tests` | `pnpm test` | Vitest browser-mode tests in two projects run one after the other, `unit` and then `perf` (the wall-clock ceiling tests, one file at a time; see below): one test per emitted event and payload, plus the host composition test (both screens rendered from contract-shaped data with no I/O) |
-| `Gate: visual` | `pnpm visual` | screenshots of every story (293) against the committed baselines (293, one per story), inside the pinned Playwright container |
+| `Gate: visual` | `pnpm visual` | screenshots of every story (330) against the committed baselines (330, one per story), inside the pinned Playwright container |
 | `Gate: proof (<gate>)` | `pnpm gate-proof` | one leg per gate: passes clean, fails with the plant (see below) |
 | `Gate: proof` | (CI only) | checks coverage, assembles and schema-validates the proof record |
 | `Gate: all` | (CI only) | fails unless every job above succeeded; skipped or cancelled counts as failed |
@@ -237,11 +251,11 @@ digest-pinned Playwright image. `pnpm visual` builds Storybook then runs `script
 skips) if podman or docker cannot start the container. After an intentional visual change run `pnpm visual:update`
 and review the PNG diff in the PR. CI repeats each screenshot 5 times to catch flakiness.
 
-CI timeouts for the visual gate are derived from measured runs. A run at 255 stories took 606 s for the `visual` job and
-1848 s for `proof (visual)`. Scaled to the 293 stories of the merged set (x 293/255) that is about 696 s for the job
-(606 x 293/255) and about 2123 s for the proof leg (1848 x 293/255). The 28-minute job timeout leaves the job estimate at
-about 41% of the limit (696 s of 1680 s), and the 55-minute proof leg timeout leaves its estimate at about 64% (2123 s of
-3300 s). `unit-tests` (150 s, 219 s) keeps 8 and 10.
+CI timeouts for the visual gate are derived from measured runs. The run on `main` at 293 stories (run 38148343620) took
+973 s for the `visual` job and 2102 s for `proof (visual)`. Scaled to the 330 stories of the merged set (x 330/293) that is
+about 1096 s for the job (973 x 330/293) and about 2367 s for the proof leg (2102 x 330/293). The 28-minute job timeout
+leaves the job estimate at about 65% of the limit (1096 s of 1680 s), and the 60-minute proof leg timeout leaves its
+estimate at about 66% (2367 s of 3600 s). `unit-tests` (150 s, 396 s in the same run) keeps its job timeout of 8 minutes. Its proof leg rises from 10 to 11 minutes for the merged suite: the pull request run 38151797285 took 435 s, which is 72.5% of the old 600 s limit and 66% of the new 660 s (435 / 660).
 
 ### Installs are frozen
 

@@ -52,5 +52,27 @@
         "source": "plant-eslint-drift-option.ts.plant"
       }
     ]
+  },
+  {
+    "gate": "eslint",
+    "ciCommand": "pnpm lint",
+    "expectFailPattern": "plant-ops-r1-parts",
+    "overlays": [
+      {
+        "target": "packages/mission-ui/src/elements/sk-ops-screen/plant-ops-r1-parts.ts",
+        "source": "plant-ops-r1-parts.ts.plant"
+      }
+    ]
+  },
+  {
+    "gate": "eslint",
+    "ciCommand": "pnpm lint",
+    "expectFailPattern": "plant-css-alias",
+    "overlays": [
+      {
+        "target": "packages/mission-ui/src/plant-css-alias.ts",
+        "source": "plant-css-alias.ts.plant"
+      }
+    ]
   }
 ]

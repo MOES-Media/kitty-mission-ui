@@ -46,6 +46,10 @@ export const elementSyntaxRestrictions = [
     message: 'html/svg may only be used as a template tag: no value aliasing, properties or arguments.',
   },
   {
+    selector: String.raw`ImportDeclaration[source.value=/^lit(\/|$)/] > ImportSpecifier[imported.name='css'][local.name!='css']`,
+    message: "Do not alias lit's css tag: postcss-lit finds the template by name, so an alias hides it from every Stylelint rule.",
+  },
+  {
     selector: 'ExportSpecifier[local.name=/^(html|svg)$/]',
     message: 'Do not re-export lit html/svg: the template rules match them by name.',
   },

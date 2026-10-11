@@ -1,0 +1,2 @@
+// expect: S19.3
+export const f = (s: string): boolean => s !== `text`;

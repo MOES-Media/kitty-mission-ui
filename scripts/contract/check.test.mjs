@@ -103,7 +103,7 @@ test('positive control: the repository itself passes every check, and the checks
   // keep a derived floor green); edited deliberately at each re-pin
   assert.equal(clean.summary.vendoredFiles, 200);
   assert.equal(clean.summary.fixtures, Object.keys(FIXTURES).length, 'every registry entry was validated');
-  assert.equal(clean.summary.fixtures, 121);
+  assert.equal(clean.summary.fixtures, 157);
   assert.equal(clean.summary.anchorFiles, 5);
   assert.equal(clean.summary.bulkPages, 2);
   assert.equal(clean.summary.bulkDocuments, 6, 'two listings, three contents and the Drift report');
@@ -411,6 +411,67 @@ test('C4 WorkPackage fixtures: an actor outside SYNTHETIC_ACTORS is a violation 
     n += 1;
   }
   assert.equal(n, 4);
+});
+
+test('C4 covers the Ops bulk pages: a work package id that breaks the pattern is a violation naming the page; the untouched generator passes', async () => {
+  const root = tempRepo();
+  edit(root, 'packages/mission-ui/src/contract/bulk.ts', "`WP${String((index % 9) + 1).padStart(2, '0')}`", "'wp-bad'");
+  const r = await check(root);
+  const hit = r.problems.filter((p) => p.token === TOKENS.violates && p.message.startsWith('ops bulk page of'));
+  assert.equal(hit.length, 2, tokens(r).join());
+  assert.deepEqual(tokens(await check(tempRepo())), [], 'positive control');
+});
+
+test('C4 Ops fixtures: an actor outside SYNTHETIC_ACTORS is a violation on a single Op and on a page item, and a known one is not (positive control)', async () => {
+  const cases = [
+    (d) => { d.opsOpen.actor = 'someone-real'; },
+    (d) => { d.opsPageFirst.items[1].actor = 'someone-real'; },
+    (d) => { d.opsUnknownMode.actor = 'someone-real'; },
+  ];
+  let n = 0;
+  for (const mutate of cases) {
+    const root = tempRepo();
+    const deps = await mutateDocs(root, mutate);
+    const r = await check(root, deps);
+    assert.ok(r.problems.some((p) => p.token === TOKENS.violates && p.message.includes('someone-real')), tokens(r).join());
+    n += 1;
+  }
+  assert.equal(n, 3);
+  const root = tempRepo();
+  const deps = await mutateDocs(root, (d) => { d.opsOpen.actor = 'codex'; });
+  assert.deepEqual(tokens(await check(root, deps)), [], 'codex is a synthetic actor');
+});
+
+test('C4: the Ops handles are allowed on Ops fixtures only (a Work Package fixture with actor operator is refused; positive control: an Ops fixture with it passes)', async () => {
+  let root = tempRepo();
+  let deps = await mutateDocs(root, (d) => { d.wpUnknownLane.actor.profile = 'operator'; });
+  let r = await check(root, deps);
+  assert.ok(r.problems.some((p) => p.token === TOKENS.violates && p.message.includes('operator')), tokens(r).join());
+  root = tempRepo();
+  deps = await mutateDocs(root, (d) => { d.wpApproved.review.latestResult.reviewer = 'codex'; });
+  r = await check(root, deps);
+  assert.ok(r.problems.some((p) => p.token === TOKENS.violates && p.message.includes('codex')), tokens(r).join());
+  root = tempRepo();
+  deps = await mutateDocs(root, (d) => { d.opsOpen.actor = 'operator'; });
+  assert.deepEqual(tokens(await check(root, deps)), [], 'operator is an Ops actor');
+});
+
+test('C4 Ops fixtures: a foreign vocabulary word is refused unless the fixture is registered with ops-vocab-open', async () => {
+  const root = tempRepo();
+  const registry = { ...FIXTURES, opsUnknownOutcome: { ...FIXTURES.opsUnknownOutcome, kind: 'valid' } };
+  delete registry.opsUnknownOutcome.relaxation;
+  const r = await check(root, { registry });
+  assert.ok(r.problems.some((p) => p.token === TOKENS.violates && p.message.includes('opsUnknownOutcome')), tokens(r).join());
+  const control = await check(tempRepo());
+  assert.deepEqual(tokens(control), [], 'positive control: the registry as it is passes');
+});
+
+test('C4 Ops fixtures: a second defect next to a foreign word, and a known word registered as relaxed, both give relaxation', async () => {
+  const root = tempRepo();
+  const deps = await mutateDocs(root, (d) => { d.opsUnknownCloser.profileId = 'has space'; });
+  assert.ok(tokens(await check(root, deps)).includes(TOKENS.relaxation));
+  const registry = { ...FIXTURES, opsFailed: { ...FIXTURES.opsFailed, kind: 'relaxed', relaxation: 'ops-vocab-open' } };
+  assert.ok(tokens(await check(tempRepo(), { registry })).includes(TOKENS.relaxation), 'a stale relaxed entry');
 });
 
 test('C4: a relaxed fixture whose schema differs from its relaxation schema gives relaxation', async () => {

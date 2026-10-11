@@ -1,0 +1,338 @@
+{
+  "event_count": 108,
+  "last_event_id": "01M4NNTZ19AW83DBBGKAANAMYX",
+  "materialized_at": "2026-10-11T14:28:29.353276+00:00",
+  "mission_number": "3",
+  "mission_slug": "ops-screen-01M4C92P",
+  "mission_type": "software-dev",
+  "schema_version": 2,
+  "summary": {
+    "approved": 0,
+    "blocked": 0,
+    "canceled": 0,
+    "claimed": 0,
+    "done": 9,
+    "for_review": 0,
+    "in_progress": 0,
+    "in_review": 0,
+    "planned": 0
+  },
+  "work_packages": {
+    "WP01": {
+      "actor": "merge",
+      "agent": "user",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
+      "force_count": 0,
+      "implementer_of_record": "claude",
+      "lane": "done",
+      "last_event_id": "01M4NNTS9HTVGZMDKBT495VRW4",
+      "last_transition_at": "2026-10-11T14:28:23.473365+00:00",
+      "model": "__resolved_model_absent__",
+      "notes": [
+        "Ops contract slice: 36 fixtures (14 examples + 22 overlays), ops-vocab-open relaxation, Ops types, fixtures.ts helpers, bulk Ops pages; gates green, baseline all green"
+      ],
+      "provider": "__resolved_provider_absent__",
+      "review_result": {
+        "feedback_path": "<workspace>/ui11/kitty-specs/ops-screen-01M4C92P/tasks/WP01-contract-slice-fixtures-baseline/review-cycle-1.md",
+        "reference": "review-cycle://ops-screen-01M4C92P/WP01-contract-slice-fixtures-baseline/review-cycle-1.md",
+        "reviewer": "user",
+        "verdict": "approved"
+      },
+      "role": "reviewer",
+      "shell_pid": 325891,
+      "shell_pid_created_at": "1791629535.55",
+      "subtasks": {
+        "T001": "done",
+        "T002": "done",
+        "T003": "done",
+        "T004": "done",
+        "T005": "done",
+        "T006": "done"
+      }
+    },
+    "WP02": {
+      "actor": "merge",
+      "agent": "user",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
+      "force_count": 0,
+      "implementer_of_record": "claude",
+      "lane": "done",
+      "last_event_id": "01M4NNTTS59V63QRVA30E70TMF",
+      "last_transition_at": "2026-10-11T14:28:24.997627+00:00",
+      "model": "__resolved_model_absent__",
+      "notes": [
+        "Ops defaults, pure logic (look, row, time, text), ops-page retry member, data-driven Ops vocabulary extension and R-ops-1 selectors with plants; all gates green",
+        "Review passed"
+      ],
+      "provider": "__resolved_provider_absent__",
+      "review_result": {
+        "feedback_path": "<workspace>/ui11/kitty-specs/ops-screen-01M4C92P/tasks/WP02-defaults-logic-data-driven-gate/review-cycle-1.md",
+        "reference": "review-cycle://ops-screen-01M4C92P/WP02-defaults-logic-data-driven-gate/review-cycle-1.md",
+        "reviewer": "user",
+        "verdict": "approved"
+      },
+      "role": "reviewer",
+      "shell_pid": 1111930,
+      "shell_pid_created_at": "1791630965.45",
+      "subtasks": {
+        "T007": "done",
+        "T008": "done",
+        "T009": "done",
+        "T010": "done",
+        "T011": "done",
+        "T012": "done",
+        "T013": "done"
+      }
+    },
+    "WP03": {
+      "actor": "merge",
+      "agent": "user",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
+      "force_count": 0,
+      "implementer_of_record": "claude",
+      "lane": "done",
+      "last_event_id": "01M4NNTVC11ZDMAS4FRWYEQPJW",
+      "last_transition_at": "2026-10-11T14:28:25.601059+00:00",
+      "model": "__resolved_model_absent__",
+      "notes": [
+        "Spikes S-O1..S-O4 answered; evidence packet uncommitted; spike code removed, tip tree equals base tree",
+        "Independent review APPROVE: tip tree equals base 61aa0fe; probes re-run byte-identical; S-O1 card and S-O2 696/588 thresholds re-measured. Packet corrections (697/589 control = 2 mismatches; expanded tier at 1100) carried to CP-1."
+      ],
+      "provider": "__resolved_provider_absent__",
+      "review_result": {
+        "feedback_path": "<workspace>/ui11/kitty-specs/ops-screen-01M4C92P/tasks/WP03-foundation-spikes-cp1-evidence/review-cycle-1.md",
+        "reference": "review-cycle://ops-screen-01M4C92P/WP03-foundation-spikes-cp1-evidence/review-cycle-1.md",
+        "reviewer": "user",
+        "verdict": "approved"
+      },
+      "role": "reviewer",
+      "shell_pid": 1903033,
+      "shell_pid_created_at": "1791708040.9",
+      "subtasks": {
+        "T014": "done",
+        "T015": "done",
+        "T016": "done",
+        "T017": "done",
+        "T018": "done"
+      }
+    },
+    "WP04": {
+      "actor": "merge",
+      "agent": "user",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
+      "force_count": 1,
+      "implementer_of_record": "claude",
+      "lane": "done",
+      "last_event_id": "01M4NNTVZKV45M810NQSBM4EWW",
+      "last_transition_at": "2026-10-11T14:28:26.227970+00:00",
+      "model": "__resolved_model_absent__",
+      "notes": [
+        "Skeleton, looks, live region, focus, stubs, E-40/42/43 overrides with plants, surface freeze and one manifest regeneration; all gates green, gate-proof stylelint ok",
+        "Fix round 1: tabular-nums pinned in E-40; ops-part-selectors test pins data-ops-badge/id/evidence; exact counts and positive controls; mismatch-look loadMore case; derived defaults list",
+        "Independent review cycle 2 APPROVE at bc7a654: tabular-nums pinned grant, ops-part-selectors pin (data-ops-badge/id/evidence), exact counts; gates green (1280 tests)."
+      ],
+      "provider": "__resolved_provider_absent__",
+      "review": null,
+      "review_result": {
+        "feedback_path": "<workspace>/ui11/kitty-specs/ops-screen-01M4C92P/tasks/WP04-skeleton-and-surface-freeze/review-cycle-2.md",
+        "reference": "review-cycle://ops-screen-01M4C92P/WP04-skeleton-and-surface-freeze/review-cycle-2.md",
+        "reviewer": "user",
+        "verdict": "approved"
+      },
+      "role": "reviewer",
+      "shell_pid": 1964686,
+      "shell_pid_created_at": "1791710587.31",
+      "subtasks": {
+        "T019": "done",
+        "T020": "done",
+        "T021": "done",
+        "T022": "done",
+        "T023": "done",
+        "T024": "done"
+      }
+    },
+    "WP05": {
+      "actor": "merge",
+      "agent": "user",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
+      "force_count": 2,
+      "implementer_of_record": "claude",
+      "lane": "done",
+      "last_event_id": "01M4NNTWJ0FX7BKJ5YDS6XEZVF",
+      "last_transition_at": "2026-10-11T14:28:26.816764+00:00",
+      "model": "__resolved_model_absent__",
+      "notes": [
+        "Rows, badge, facts, inert evidence; 16 stories; gates green except none introduced; dividers gap reported",
+        "WP05 fix round 1: G-1 dividers, G-2 badge, badge width at 390, counted-equality tests, single inertness predicate",
+        "Fix round 2: block (d) confines every E-40 granted property to its pinned selectors; head plant reported; gates green except visual (not run)",
+        "Independent review cycle 3 APPROVE at ab72d34: G-1 dividers, G-2 badge, 390 badge width, exact counts, E-40 confined to pinned selectors (block d). pnpm test 1345."
+      ],
+      "provider": "__resolved_provider_absent__",
+      "review": null,
+      "review_result": {
+        "feedback_path": "<workspace>/ui11/kitty-specs/ops-screen-01M4C92P/tasks/WP05-rows/review-cycle-3.md",
+        "reference": "review-cycle://ops-screen-01M4C92P/WP05-rows/review-cycle-3.md",
+        "reviewer": "user",
+        "verdict": "approved"
+      },
+      "role": "reviewer",
+      "shell_pid": 2061713,
+      "shell_pid_created_at": "1791712882.75",
+      "subtasks": {
+        "T025": "done",
+        "T026": "done",
+        "T027": "done",
+        "T028": "done",
+        "T029": "done",
+        "T030": "done"
+      }
+    },
+    "WP06": {
+      "actor": "merge",
+      "agent": "user",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
+      "force_count": 3,
+      "implementer_of_record": "claude",
+      "lane": "done",
+      "last_event_id": "01M4NNTX4XXVDKFVB9HKAB9BT2",
+      "last_transition_at": "2026-10-11T14:28:27.421774+00:00",
+      "model": "__resolved_model_absent__",
+      "notes": [
+        "WP06 paging and notices: page parts, 9 stories, EV-1/2/4/5 and OP-35 tests; gates green; visual not run",
+        "Fix round 1: six review items plus the project property (operator ruling); gates green except nine Ops stories with no visual baselines (WP09)",
+        "Fix round 2: G-3 confined to the badge rule (check c); supporting line tail as copy. Gates green; visual red only on 9 unbaselined Ops stories.",
+        "Fix round 3: dropped loading-header lock-in test; added positive control to the copy-override test",
+        "Independent review cycle 4 APPROVE at ead62ee: G-3 confined (check c), project property and supporting line with copy tail, paging tests with controls. pnpm test 1325."
+      ],
+      "provider": "__resolved_provider_absent__",
+      "review": null,
+      "review_result": {
+        "feedback_path": "<workspace>/ui11/kitty-specs/ops-screen-01M4C92P/tasks/WP06-paging-and-notices/review-cycle-4.md",
+        "reference": "review-cycle://ops-screen-01M4C92P/WP06-paging-and-notices/review-cycle-4.md",
+        "reviewer": "user",
+        "verdict": "approved"
+      },
+      "role": "reviewer",
+      "shell_pid": 2067299,
+      "shell_pid_created_at": "1791713061.95",
+      "subtasks": {
+        "T031": "done",
+        "T032": "done",
+        "T033": "done",
+        "T034": "done",
+        "T035": "done"
+      }
+    },
+    "WP07": {
+      "actor": "merge",
+      "agent": "user",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
+      "force_count": 2,
+      "implementer_of_record": "claude",
+      "lane": "done",
+      "last_event_id": "01M4NNTXS5S44FVQ3A8NEQ91FV",
+      "last_transition_at": "2026-10-11T14:28:28.069990+00:00",
+      "model": "__resolved_model_absent__",
+      "notes": [
+        "WP07 states: loading, empty, error under the shared header; announce, focus, EV-3 proofs; out-of-map edits recorded in hand-off",
+        "Fix round 1: G-4 card (empty dashed, loading solid, none on error), G-5 wrap, G-6 typography, emptySkipped removed, FR-033 empty announce, D-09 guards, test quality",
+        "Fix round 2: G-6 line-height 1.5 moved to the empty and loading cards (f9cd85c); relation tests red-first, revert bites; gates green",
+        "Independent review cycle 3 APPROVE at 17545a8: states per CP-1, G-4/G-5/G-6 confined, FR-033 and D-09 fixed; empty and loading cards match the prototype to the pixel."
+      ],
+      "provider": "__resolved_provider_absent__",
+      "review": null,
+      "review_result": {
+        "feedback_path": "<workspace>/ui11/kitty-specs/ops-screen-01M4C92P/tasks/WP07-states/review-cycle-3.md",
+        "reference": "review-cycle://ops-screen-01M4C92P/WP07-states/review-cycle-3.md",
+        "reviewer": "user",
+        "verdict": "approved"
+      },
+      "role": "reviewer",
+      "shell_pid": 2288093,
+      "shell_pid_created_at": "1791716176.22",
+      "subtasks": {
+        "T036": "done",
+        "T037": "done",
+        "T038": "done",
+        "T039": "done",
+        "T040": "done"
+      }
+    },
+    "WP08": {
+      "actor": "merge",
+      "agent": "user",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
+      "force_count": 1,
+      "implementer_of_record": "claude",
+      "lane": "done",
+      "last_event_id": "01M4NNTYD2QEZ3RM5D2MAK6B0Y",
+      "last_transition_at": "2026-10-11T14:28:28.707025+00:00",
+      "model": "__resolved_model_absent__",
+      "notes": [
+        "WP08: 696/588 container tiers (section heading stack added), tiers/a11y/perf/hostile/edge tests, OP-29..32 stories; all gates green; visual not run",
+        "Fix round 1: exact header pin + property whitelist with plants, stale comments, exact last-page count, dead container-type removed",
+        "Independent review cycle 2 APPROVE at 3f4b016: tiers 696/588 exact on the cell container, header pin exact and whitelisted, a11y and hostile and edge tests bite, perf within ceilings."
+      ],
+      "provider": "__resolved_provider_absent__",
+      "review": null,
+      "review_result": {
+        "feedback_path": "<workspace>/ui11/kitty-specs/ops-screen-01M4C92P/tasks/WP08-tiers-accessibility-edge-cases/review-cycle-2.md",
+        "reference": "review-cycle://ops-screen-01M4C92P/WP08-tiers-accessibility-edge-cases/review-cycle-2.md",
+        "reviewer": "user",
+        "verdict": "approved"
+      },
+      "role": "reviewer",
+      "shell_pid": 2422799,
+      "shell_pid_created_at": "1791718076.39",
+      "subtasks": {
+        "T041": "done",
+        "T042": "done",
+        "T043": "done",
+        "T044": "done",
+        "T045": "done",
+        "T046": "done"
+      }
+    },
+    "WP09": {
+      "actor": "merge",
+      "agent": "user",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
+      "force_count": 0,
+      "implementer_of_record": "claude",
+      "lane": "done",
+      "last_event_id": "01M4NNTZ19AW83DBBGKAANAMYX",
+      "last_transition_at": "2026-10-11T14:28:29.353276+00:00",
+      "model": "__resolved_model_absent__",
+      "notes": [
+        "36 Ops baselines (210 total), 5 clean visual runs, gate-proof all 12 legs, parity+distinctness+shell tests, folds 1-4, story framing fixes.",
+        "Independent review APPROVE at aecce41: folds verified, 36 Ops baselines added (0 changed), distinctness and shell tests bite, side-by-sides at 1280/1100/800/620 show no unregistered drift; 5-run visual streak clean; gate-proof 12/12."
+      ],
+      "provider": "__resolved_provider_absent__",
+      "review_result": {
+        "feedback_path": "<workspace>/ui11/kitty-specs/ops-screen-01M4C92P/tasks/WP09-integration-baselines-timings/review-cycle-1.md",
+        "reference": "review-cycle://ops-screen-01M4C92P/WP09-integration-baselines-timings/review-cycle-1.md",
+        "reviewer": "user",
+        "verdict": "approved"
+      },
+      "role": "reviewer",
+      "shell_pid": 2703811,
+      "shell_pid_created_at": "1791722120.81",
+      "subtasks": {
+        "T047": "done",
+        "T048": "done",
+        "T049": "done",
+        "T050": "done",
+        "T051": "done"
+      }
+    }
+  }
+}

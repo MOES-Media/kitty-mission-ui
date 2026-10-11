@@ -1,0 +1,9 @@
+import { css } from 'lit';
+
+// Exception E-43 allows `overflow-wrap: anywhere` in ops-row-parts.ts only; the same declaration in any other file of the
+// directory must still fail (no leak). This plant holds that one declaration, so widening E-43 alone makes it pass.
+export const plantStylelintOpsWrapLeak = css`
+  .plant-stylelint-ops-wrap-leak {
+    overflow-wrap: anywhere;
+  }
+`;

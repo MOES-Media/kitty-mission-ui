@@ -4,7 +4,7 @@
  * and the named overlays of scripts/contract/overlays.mjs. Data only: type imports and `satisfies`, so plain Node
  * loads it by type stripping. Do not edit: the contract gate regenerates and byte-compares this file.
  */
-import type { ArtifactContent, ArtifactContentView, ArtifactListing, ArtifactListingView, ArtifactRefusal, ArtifactRefusalView, DriftRefusal, DriftReport, DriftReportView, MissionDetail, MissionDetailView, MissionOverviewPage, MissionOverviewPageView, Project, ProjectView, WorkPackage, WorkPackageDetail, WorkPackageDetailRefusal, WorkPackageDetailView, WorkPackageRecordView } from './types.js';
+import type { ArtifactContent, ArtifactContentView, ArtifactListing, ArtifactListingView, ArtifactRefusal, ArtifactRefusalView, DriftRefusal, DriftReport, DriftReportView, MissionDetail, MissionDetailView, MissionOverviewPage, MissionOverviewPageView, OpsInvocation, OpsInvocationPage, OpsInvocationView, OpsRefusal, PageCursorRefusal, Project, ProjectView, WorkPackage, WorkPackageDetail, WorkPackageDetailRefusal, WorkPackageDetailView, WorkPackageRecordView } from './types.js';
 
 // fixture: project
 export const project = {
@@ -12580,3 +12580,789 @@ export const reportScopedForeign = {
   ],
   truncated: false
 } satisfies DriftReport;
+
+// fixture: opsPageFirst
+export const opsPageFirst = {
+  items: [
+    {
+      invocationId: "01K6TZ8M3N4P5Q6R7S8T9V0W1X",
+      profileId: "python-pedro",
+      action: "implement",
+      actor: "claude",
+      modeOfWork: "task_execution",
+      startedAt: "2026-10-05T14:20:00Z",
+      missionId: "01JZCB3C4D5E6F7G8H9JKMNPQT",
+      wpId: "WP03",
+      status: "open",
+      outcome: null,
+      closedBy: null,
+      completedAt: null,
+      evidence: null
+    },
+    {
+      invocationId: "01K6TY7H2J3K4M5N6P7Q8R9S0T",
+      profileId: "reviewer-renata",
+      action: "review",
+      actor: "codex",
+      modeOfWork: "mission_step",
+      startedAt: "2026-10-05T11:02:30Z",
+      missionId: "01JZCB3C4D5E6F7G8H9JKMNPQT",
+      wpId: "WP02",
+      status: "closed",
+      outcome: "done",
+      closedBy: "agent",
+      completedAt: "2026-10-05T11:41:10Z",
+      evidence: {
+        kind: "repo_path",
+        value: "docs/reports/review-summary.md",
+        redacted: false
+      }
+    }
+  ],
+  pageInfo: {
+    hasNextPage: true,
+    nextPageCursor: "cGFnZS0y",
+    pageSize: 2
+  },
+  totalCount: 5,
+  skippedCount: 1
+} satisfies OpsInvocationPage;
+
+// fixture: opsPageLast
+export const opsPageLast = {
+  items: [
+    {
+      invocationId: "01K6TW5B0C1D2E3F4G5H6J7K8M",
+      profileId: "python-pedro",
+      action: "implement",
+      actor: "claude",
+      modeOfWork: "task_execution",
+      startedAt: "2026-10-03T09:10:00Z",
+      missionId: "01JZCB3C4D5E6F7G8H9JKMNPQT",
+      wpId: "WP01",
+      status: "closed",
+      outcome: "done",
+      closedBy: "agent",
+      completedAt: "2026-10-03T10:30:00Z",
+      evidence: {
+        kind: "repo_path",
+        value: "src/specify_cli/status/models.py",
+        redacted: false
+      }
+    }
+  ],
+  pageInfo: {
+    hasNextPage: false,
+    nextPageCursor: null,
+    pageSize: 2
+  },
+  totalCount: 5,
+  skippedCount: 1
+} satisfies OpsInvocationPage;
+
+// fixture: opsPageEmpty
+export const opsPageEmpty = {
+  items: [],
+  pageInfo: {
+    hasNextPage: false,
+    nextPageCursor: null,
+    pageSize: 50
+  },
+  totalCount: 0,
+  skippedCount: 0
+} satisfies OpsInvocationPage;
+
+// fixture: opsOpen
+export const opsOpen = {
+  invocationId: "01K6TZ8M3N4P5Q6R7S8T9V0W1X",
+  profileId: "python-pedro",
+  action: "implement",
+  actor: "claude",
+  modeOfWork: "task_execution",
+  startedAt: "2026-10-05T14:20:00Z",
+  missionId: "01JZCB3C4D5E6F7G8H9JKMNPQT",
+  wpId: "WP03",
+  status: "open",
+  outcome: null,
+  closedBy: null,
+  completedAt: null,
+  evidence: null
+} satisfies OpsInvocation;
+
+// fixture: opsClosedByAgent
+export const opsClosedByAgent = {
+  invocationId: "01K6TY7H2J3K4M5N6P7Q8R9S0T",
+  profileId: "reviewer-renata",
+  action: "review",
+  actor: "codex",
+  modeOfWork: "mission_step",
+  startedAt: "2026-10-05T11:02:30Z",
+  missionId: "01JZCB3C4D5E6F7G8H9JKMNPQT",
+  wpId: "WP02",
+  status: "closed",
+  outcome: "done",
+  closedBy: "agent",
+  completedAt: "2026-10-05T11:41:10Z",
+  evidence: {
+    kind: "repo_path",
+    value: "docs/reports/review-summary.md",
+    redacted: false
+  }
+} satisfies OpsInvocation;
+
+// fixture: opsClosedBySweep
+export const opsClosedBySweep = {
+  invocationId: "01K6TX6E1F2G3H4J5K6M7N8P9Q",
+  profileId: "architect-alphonso",
+  action: "analyze",
+  actor: "operator",
+  modeOfWork: "advisory",
+  startedAt: "2026-10-04T16:45:00Z",
+  missionId: null,
+  wpId: null,
+  status: "closed",
+  outcome: "abandoned",
+  closedBy: "doctor_sweep",
+  completedAt: "2026-10-05T08:00:00Z",
+  evidence: {
+    kind: "text",
+    value: "Closed by the doctor sweep because no completion was recorded.",
+    redacted: false
+  }
+} satisfies OpsInvocation;
+
+// fixture: opsEvidenceNull
+export const opsEvidenceNull = {
+  invocationId: "01K6TQ0N5P6Q7R8S9T0V1W2X3Y",
+  profileId: "architect-alphonso",
+  action: "profiles.list",
+  actor: "claude",
+  modeOfWork: "query",
+  startedAt: "2026-09-28T12:00:00Z",
+  missionId: null,
+  wpId: null,
+  status: "closed",
+  outcome: "done",
+  closedBy: "agent",
+  completedAt: "2026-09-28T12:00:05Z",
+  evidence: null
+} satisfies OpsInvocation;
+
+// fixture: opsEvidenceRepoPath
+export const opsEvidenceRepoPath = {
+  invocationId: "01K6TW5B0C1D2E3F4G5H6J7K8M",
+  profileId: "python-pedro",
+  action: "implement",
+  actor: "claude",
+  modeOfWork: "task_execution",
+  startedAt: "2026-10-03T09:10:00Z",
+  missionId: "01JZCB3C4D5E6F7G8H9JKMNPQT",
+  wpId: "WP01",
+  status: "closed",
+  outcome: "done",
+  closedBy: "agent",
+  completedAt: "2026-10-03T10:30:00Z",
+  evidence: {
+    kind: "repo_path",
+    value: "src/specify_cli/status/models.py",
+    redacted: false
+  }
+} satisfies OpsInvocation;
+
+// fixture: opsEvidenceUrl
+export const opsEvidenceUrl = {
+  invocationId: "01K6TV4Z9A0B1C2D3E4F5G6H7J",
+  profileId: "reviewer-renata",
+  action: "review",
+  actor: "claude",
+  modeOfWork: "task_execution",
+  startedAt: "2026-10-02T13:00:00Z",
+  missionId: "01JZCB3C4D5E6F7G8H9JKMNPQT",
+  wpId: "WP04",
+  status: "closed",
+  outcome: "failed",
+  closedBy: "agent",
+  completedAt: "2026-10-02T13:25:00Z",
+  evidence: {
+    kind: "url",
+    value: "https://example.org/reviews/42",
+    redacted: false
+  }
+} satisfies OpsInvocation;
+
+// fixture: opsEvidenceUrlRedacted
+export const opsEvidenceUrlRedacted = {
+  invocationId: "01K6TT3W8X9Y0Z1A2B3C4D5E6F",
+  profileId: "reviewer-renata",
+  action: "review",
+  actor: "claude",
+  modeOfWork: "task_execution",
+  startedAt: "2026-10-01T15:30:00Z",
+  missionId: "01JZCB3C4D5E6F7G8H9JKMNPQT",
+  wpId: "WP04",
+  status: "closed",
+  outcome: "done",
+  closedBy: "agent",
+  completedAt: "2026-10-01T16:05:00Z",
+  evidence: {
+    kind: "url",
+    value: "https://example.org/reviews/41",
+    redacted: true
+  }
+} satisfies OpsInvocation;
+
+// fixture: opsEvidenceText
+export const opsEvidenceText = {
+  invocationId: "01K6TS2T7V8W9X0Y1Z2A3B4C5D",
+  profileId: "python-pedro",
+  action: "implement",
+  actor: "codex",
+  modeOfWork: "task_execution",
+  startedAt: "2026-09-30T08:00:00Z",
+  missionId: "01JZCB3C4D5E6F7G8H9JKMNPQT",
+  wpId: "WP02",
+  status: "closed",
+  outcome: "done",
+  closedBy: "agent",
+  completedAt: "2026-09-30T09:20:00Z",
+  evidence: {
+    kind: "text",
+    value: "Reviewed the change and found no blocking issue.",
+    redacted: false
+  }
+} satisfies OpsInvocation;
+
+// fixture: opsEvidenceTextRedacted
+export const opsEvidenceTextRedacted = {
+  invocationId: "01K6TR1Q6R7S8T9V0W1X2Y3Z4A",
+  profileId: "python-pedro",
+  action: "implement",
+  actor: "claude",
+  modeOfWork: "task_execution",
+  startedAt: "2026-09-29T10:00:00Z",
+  missionId: "01JZCB3C4D5E6F7G8H9JKMNPQT",
+  wpId: "WP01",
+  status: "closed",
+  outcome: "done",
+  closedBy: "agent",
+  completedAt: "2026-09-29T11:00:00Z",
+  evidence: {
+    kind: "text",
+    value: "Notes were shared with [email] and kept in [path].",
+    redacted: true
+  }
+} satisfies OpsInvocation;
+
+// fixture: opsFailed
+export const opsFailed = {
+  invocationId: "01K6TZ203N4P5Q6R7S8T9V0W1X",
+  profileId: "reviewer-renata",
+  action: "review",
+  actor: "codex",
+  modeOfWork: "mission_step",
+  startedAt: "2026-10-05T11:02:30Z",
+  missionId: "01JZCB3C4D5E6F7G8H9JKMNPQT",
+  wpId: "WP02",
+  status: "closed",
+  outcome: "failed",
+  closedBy: "agent",
+  completedAt: "2026-10-05T12:20:00Z",
+  evidence: {
+    kind: "text",
+    value: "The review found a blocking issue in the second file.",
+    redacted: false
+  }
+} satisfies OpsInvocation;
+
+// fixture: opsAbandoned
+export const opsAbandoned = {
+  invocationId: "01K6TZ213N4P5Q6R7S8T9V0W1X",
+  profileId: "architect-alphonso",
+  action: "analyze",
+  actor: "operator",
+  modeOfWork: "advisory",
+  startedAt: "2026-10-04T16:45:00Z",
+  missionId: null,
+  wpId: null,
+  status: "closed",
+  outcome: "abandoned",
+  closedBy: "doctor_sweep",
+  completedAt: "2026-10-05T12:21:00Z",
+  evidence: null
+} satisfies OpsInvocation;
+
+// fixture: opsModeAdvisory
+export const opsModeAdvisory = {
+  invocationId: "01K6TZ223N4P5Q6R7S8T9V0W1X",
+  profileId: "reviewer-renata",
+  action: "review",
+  actor: "codex",
+  modeOfWork: "advisory",
+  startedAt: "2026-10-05T11:02:30Z",
+  missionId: "01JZCB3C4D5E6F7G8H9JKMNPQT",
+  wpId: "WP02",
+  status: "closed",
+  outcome: "done",
+  closedBy: "agent",
+  completedAt: "2026-10-05T12:22:00Z",
+  evidence: null
+} satisfies OpsInvocation;
+
+// fixture: opsModeQuery
+export const opsModeQuery = {
+  invocationId: "01K6TZ233N4P5Q6R7S8T9V0W1X",
+  profileId: "architect-alphonso",
+  action: "profiles.list",
+  actor: "codex",
+  modeOfWork: "query",
+  startedAt: "2026-10-05T11:02:30Z",
+  missionId: "01JZCB3C4D5E6F7G8H9JKMNPQT",
+  wpId: "WP02",
+  status: "closed",
+  outcome: "done",
+  closedBy: "agent",
+  completedAt: "2026-10-05T12:23:00Z",
+  evidence: null
+} satisfies OpsInvocation;
+
+// fixture: opsRedactedMarkers
+export const opsRedactedMarkers = {
+  invocationId: "01K6TZ243N4P5Q6R7S8T9V0W1X",
+  profileId: "reviewer-renata",
+  action: "review",
+  actor: "codex",
+  modeOfWork: "mission_step",
+  startedAt: "2026-10-05T11:02:30Z",
+  missionId: "01JZCB3C4D5E6F7G8H9JKMNPQT",
+  wpId: "WP02",
+  status: "closed",
+  outcome: "done",
+  closedBy: "agent",
+  completedAt: "2026-10-05T12:24:00Z",
+  evidence: {
+    kind: "text",
+    value: "Saved the report to [path] and mailed [email] a copy.",
+    redacted: true
+  }
+} satisfies OpsInvocation;
+
+// fixture: opsActorNull
+export const opsActorNull = {
+  invocationId: "01K6TZ253N4P5Q6R7S8T9V0W1X",
+  profileId: "python-pedro",
+  action: "implement",
+  actor: null,
+  modeOfWork: "task_execution",
+  startedAt: "2026-10-05T14:20:00Z",
+  missionId: "01JZCB3C4D5E6F7G8H9JKMNPQT",
+  wpId: "WP03",
+  status: "open",
+  outcome: null,
+  closedBy: null,
+  completedAt: null,
+  evidence: null
+} satisfies OpsInvocation;
+
+// fixture: opsNoMissionNoWp
+export const opsNoMissionNoWp = {
+  invocationId: "01K6TZ263N4P5Q6R7S8T9V0W1X",
+  profileId: "python-pedro",
+  action: "implement",
+  actor: "claude",
+  modeOfWork: "task_execution",
+  startedAt: "2026-10-05T14:20:00Z",
+  missionId: null,
+  wpId: null,
+  status: "open",
+  outcome: null,
+  closedBy: null,
+  completedAt: null,
+  evidence: null
+} satisfies OpsInvocation;
+
+// fixture: opsMissionOnly
+export const opsMissionOnly = {
+  invocationId: "01K6TZ273N4P5Q6R7S8T9V0W1X",
+  profileId: "python-pedro",
+  action: "implement",
+  actor: "claude",
+  modeOfWork: "task_execution",
+  startedAt: "2026-10-05T14:20:00Z",
+  missionId: "01JZCB3C4D5E6F7G8H9JKMNPQT",
+  wpId: null,
+  status: "open",
+  outcome: null,
+  closedBy: null,
+  completedAt: null,
+  evidence: null
+} satisfies OpsInvocation;
+
+// fixture: opsEvidence512
+export const opsEvidence512 = {
+  invocationId: "01K6TZ283N4P5Q6R7S8T9V0W1X",
+  profileId: "reviewer-renata",
+  action: "review",
+  actor: "codex",
+  modeOfWork: "mission_step",
+  startedAt: "2026-10-05T11:02:30Z",
+  missionId: "01JZCB3C4D5E6F7G8H9JKMNPQT",
+  wpId: "WP02",
+  status: "closed",
+  outcome: "done",
+  closedBy: "agent",
+  completedAt: "2026-10-05T12:28:00Z",
+  evidence: {
+    kind: "text",
+    value: "Long evidence sentence that keeps going. Long evidence sentence that keeps going. Long evidence sentence that keeps going. Long evidence sentence that keeps going. Long evidence sentence that keeps going. Long evidence sentence that keeps going. Long evidence sentence that keeps going. Long evidence sentence that keeps going. Long evidence sentence that keeps going. Long evidence sentence that keeps going. Long evidence sentence that keeps going. Long evidence sentence that keeps going. Long evidence senten",
+    redacted: true
+  }
+} satisfies OpsInvocation;
+
+// fixture: opsEvidenceMarkup
+export const opsEvidenceMarkup = {
+  invocationId: "01K6TZ293N4P5Q6R7S8T9V0W1X",
+  profileId: "reviewer-renata",
+  action: "review",
+  actor: "codex",
+  modeOfWork: "mission_step",
+  startedAt: "2026-10-05T11:02:30Z",
+  missionId: "01JZCB3C4D5E6F7G8H9JKMNPQT",
+  wpId: "WP02",
+  status: "closed",
+  outcome: "done",
+  closedBy: "agent",
+  completedAt: "2026-10-05T12:29:00Z",
+  evidence: {
+    kind: "text",
+    value: "<img src=x onerror=alert(1)> <b>bold</b> &amp; <script>alert(2)</script>",
+    redacted: false
+  }
+} satisfies OpsInvocation;
+
+// fixture: opsEvidenceJavascriptUrl
+export const opsEvidenceJavascriptUrl = {
+  invocationId: "01K6TZ303N4P5Q6R7S8T9V0W1X",
+  profileId: "reviewer-renata",
+  action: "review",
+  actor: "codex",
+  modeOfWork: "mission_step",
+  startedAt: "2026-10-05T11:02:30Z",
+  missionId: "01JZCB3C4D5E6F7G8H9JKMNPQT",
+  wpId: "WP02",
+  status: "closed",
+  outcome: "done",
+  closedBy: "agent",
+  completedAt: "2026-10-05T12:30:00Z",
+  evidence: {
+    kind: "url",
+    value: "javascript:alert(document.domain)",
+    redacted: false
+  }
+} satisfies OpsInvocation;
+
+// fixture: opsEvidenceUnbroken512
+export const opsEvidenceUnbroken512 = {
+  invocationId: "01K6TZ313N4P5Q6R7S8T9V0W1X",
+  profileId: "reviewer-renata",
+  action: "review",
+  actor: "codex",
+  modeOfWork: "mission_step",
+  startedAt: "2026-10-05T11:02:30Z",
+  missionId: "01JZCB3C4D5E6F7G8H9JKMNPQT",
+  wpId: "WP02",
+  status: "closed",
+  outcome: "done",
+  closedBy: "agent",
+  completedAt: "2026-10-05T12:31:00Z",
+  evidence: {
+    kind: "text",
+    value: "unbrokenevidencetokenunbrokenevidencetokenunbrokenevidencetokenunbrokenevidencetokenunbrokenevidencetokenunbrokenevidencetokenunbrokenevidencetokenunbrokenevidencetokenunbrokenevidencetokenunbrokenevidencetokenunbrokenevidencetokenunbrokenevidencetokenunbrokenevidencetokenunbrokenevidencetokenunbrokenevidencetokenunbrokenevidencetokenunbrokenevidencetokenunbrokenevidencetokenunbrokenevidencetokenunbrokenevidencetokenunbrokenevidencetokenunbrokenevidencetokenunbrokenevidencetokenunbrokenevidencetokenunbroken",
+    redacted: true
+  }
+} satisfies OpsInvocation;
+
+// fixture: opsEvidenceBidi
+export const opsEvidenceBidi = {
+  invocationId: "01K6TZ323N4P5Q6R7S8T9V0W1X",
+  profileId: "reviewer-renata",
+  action: "review",
+  actor: "codex",
+  modeOfWork: "mission_step",
+  startedAt: "2026-10-05T11:02:30Z",
+  missionId: "01JZCB3C4D5E6F7G8H9JKMNPQT",
+  wpId: "WP02",
+  status: "closed",
+  outcome: "done",
+  closedBy: "agent",
+  completedAt: "2026-10-05T12:32:00Z",
+  evidence: {
+    kind: "text",
+    value: "Approved \u202egpj.noitulos-evitaerc-rof-tropeR",
+    redacted: false
+  }
+} satisfies OpsInvocation;
+
+// fixture: opsRefusalUnreadable
+export const opsRefusalUnreadable = {
+  type: "about:blank",
+  title: "The Ops directory could not be read",
+  status: 500,
+  code: "ops_unreadable",
+  detail: "The Ops directory or the closure spine exists but could not be read, so no page is returned."
+} satisfies OpsRefusal;
+
+// fixture: opsCursorRefusal
+export const opsCursorRefusal = {
+  type: "about:blank",
+  title: "The page cursor was refused",
+  status: 400,
+  code: "invalid_page_cursor",
+  detail: "The pageCursor is malformed, forged or no longer valid."
+} satisfies PageCursorRefusal;
+
+// fixture: opsUnknownOutcome
+export const opsUnknownOutcome = {
+  invocationId: "01K6TZ333N4P5Q6R7S8T9V0W1X",
+  profileId: "reviewer-renata",
+  action: "review",
+  actor: "codex",
+  modeOfWork: "mission_step",
+  startedAt: "2026-10-05T11:02:30Z",
+  missionId: "01JZCB3C4D5E6F7G8H9JKMNPQT",
+  wpId: "WP02",
+  status: "closed",
+  outcome: "paused",
+  closedBy: "agent",
+  completedAt: "2026-10-05T12:33:00Z",
+  evidence: {
+    kind: "text",
+    value: "A word the screen has not seen.",
+    redacted: false
+  }
+} satisfies OpsInvocationView;
+
+// fixture: opsUnknownCloser
+export const opsUnknownCloser = {
+  invocationId: "01K6TZ343N4P5Q6R7S8T9V0W1X",
+  profileId: "reviewer-renata",
+  action: "review",
+  actor: "codex",
+  modeOfWork: "mission_step",
+  startedAt: "2026-10-05T11:02:30Z",
+  missionId: "01JZCB3C4D5E6F7G8H9JKMNPQT",
+  wpId: "WP02",
+  status: "closed",
+  outcome: "done",
+  closedBy: "operator",
+  completedAt: "2026-10-05T12:34:00Z",
+  evidence: {
+    kind: "text",
+    value: "A word the screen has not seen.",
+    redacted: false
+  }
+} satisfies OpsInvocationView;
+
+// fixture: opsUnknownMode
+export const opsUnknownMode = {
+  invocationId: "01K6TZ353N4P5Q6R7S8T9V0W1X",
+  profileId: "reviewer-renata",
+  action: "review",
+  actor: "codex",
+  modeOfWork: "pairing",
+  startedAt: "2026-10-05T11:02:30Z",
+  missionId: "01JZCB3C4D5E6F7G8H9JKMNPQT",
+  wpId: "WP02",
+  status: "closed",
+  outcome: "done",
+  closedBy: "agent",
+  completedAt: "2026-10-05T12:35:00Z",
+  evidence: {
+    kind: "text",
+    value: "A word the screen has not seen.",
+    redacted: false
+  }
+} satisfies OpsInvocationView;
+
+// fixture: opsUnknownEvidenceKind
+export const opsUnknownEvidenceKind = {
+  invocationId: "01K6TZ363N4P5Q6R7S8T9V0W1X",
+  profileId: "reviewer-renata",
+  action: "review",
+  actor: "codex",
+  modeOfWork: "mission_step",
+  startedAt: "2026-10-05T11:02:30Z",
+  missionId: "01JZCB3C4D5E6F7G8H9JKMNPQT",
+  wpId: "WP02",
+  status: "closed",
+  outcome: "done",
+  closedBy: "agent",
+  completedAt: "2026-10-05T12:36:00Z",
+  evidence: {
+    kind: "screenshot",
+    value: "A kind the screen has not seen.",
+    redacted: false
+  }
+} satisfies OpsInvocationView;
+
+// fixture: opsProfile128
+export const opsProfile128 = {
+  invocationId: "01K6TZ373N4P5Q6R7S8T9V0W1X",
+  profileId: "profile-segment-segment-segment-segment-segment-segment-segment-segment-segment-segment-segment-segment-segment-segment-segment-",
+  action: "implement",
+  actor: "claude",
+  modeOfWork: "task_execution",
+  startedAt: "2026-10-05T14:20:00Z",
+  missionId: "01JZCB3C4D5E6F7G8H9JKMNPQT",
+  wpId: "WP03",
+  status: "open",
+  outcome: null,
+  closedBy: null,
+  completedAt: null,
+  evidence: null
+} satisfies OpsInvocation;
+
+// fixture: opsActionLong
+export const opsActionLong = {
+  invocationId: "01K6TZ383N4P5Q6R7S8T9V0W1X",
+  profileId: "python-pedro",
+  action: "action-segment-segment-segment-segment-segment-segment-segment-segment-segment-segment-segment-segment-segment-segment-segment-s",
+  actor: "claude",
+  modeOfWork: "task_execution",
+  startedAt: "2026-10-05T14:20:00Z",
+  missionId: "01JZCB3C4D5E6F7G8H9JKMNPQT",
+  wpId: "WP03",
+  status: "open",
+  outcome: null,
+  closedBy: null,
+  completedAt: null,
+  evidence: null
+} satisfies OpsInvocation;
+
+// fixture: opsOffsetStart
+export const opsOffsetStart = {
+  invocationId: "01K6TZ393N4P5Q6R7S8T9V0W1X",
+  profileId: "python-pedro",
+  action: "implement",
+  actor: "claude",
+  modeOfWork: "task_execution",
+  startedAt: "2026-10-05T16:20:00+02:00",
+  missionId: "01JZCB3C4D5E6F7G8H9JKMNPQT",
+  wpId: "WP03",
+  status: "open",
+  outcome: null,
+  closedBy: null,
+  completedAt: null,
+  evidence: null
+} satisfies OpsInvocation;
+
+// fixture: opsPageMixed
+export const opsPageMixed = {
+  items: [
+    {
+      invocationId: "01K6TZ143N4P5Q6R7S8T9V0W1X",
+      profileId: "reviewer-renata",
+      action: "review",
+      actor: "codex",
+      modeOfWork: "mission_step",
+      startedAt: "2026-10-09T16:00:00Z",
+      missionId: "01JZCB3C4D5E6F7G8H9JKMNPQT",
+      wpId: "WP02",
+      status: "closed",
+      outcome: "failed",
+      closedBy: "agent",
+      completedAt: "2026-10-05T12:14:00Z",
+      evidence: {
+        kind: "text",
+        value: "The check failed on the second run.",
+        redacted: false
+      }
+    },
+    {
+      invocationId: "01K6TZ133N4P5Q6R7S8T9V0W1X",
+      profileId: "python-pedro",
+      action: "implement",
+      actor: "claude",
+      modeOfWork: "mission_step",
+      startedAt: "2026-10-09T14:00:00Z",
+      missionId: "01JZCB3C4D5E6F7G8H9JKMNPQT",
+      wpId: "WP03",
+      status: "open",
+      outcome: null,
+      closedBy: null,
+      completedAt: null,
+      evidence: null
+    },
+    {
+      invocationId: "01K6TZ123N4P5Q6R7S8T9V0W1X",
+      profileId: "architect-alphonso",
+      action: "analyze",
+      actor: "operator",
+      modeOfWork: "advisory",
+      startedAt: "2026-10-09T11:00:00Z",
+      missionId: null,
+      wpId: null,
+      status: "closed",
+      outcome: "abandoned",
+      closedBy: "doctor_sweep",
+      completedAt: "2026-10-05T12:12:00Z",
+      evidence: {
+        kind: "text",
+        value: "Closed by the doctor sweep because no completion was recorded.",
+        redacted: false
+      }
+    },
+    {
+      invocationId: "01K6TZ113N4P5Q6R7S8T9V0W1X",
+      profileId: "architect-alphonso",
+      action: "analyze",
+      actor: "operator",
+      modeOfWork: "query",
+      startedAt: "2026-10-08T15:00:00Z",
+      missionId: "01JZCB3C4D5E6F7G8H9JKMNPQT",
+      wpId: "WP02",
+      status: "closed",
+      outcome: "done",
+      closedBy: "agent",
+      completedAt: "2026-10-05T12:11:00Z",
+      evidence: {
+        kind: "url",
+        value: "https://example.org/reviews/43",
+        redacted: false
+      }
+    },
+    {
+      invocationId: "01K6TZ103N4P5Q6R7S8T9V0W1X",
+      profileId: "reviewer-renata",
+      action: "review",
+      actor: "codex",
+      modeOfWork: "mission_step",
+      startedAt: "2026-10-08T15:00:00Z",
+      missionId: null,
+      wpId: null,
+      status: "closed",
+      outcome: "done",
+      closedBy: "agent",
+      completedAt: "2026-10-05T12:10:00Z",
+      evidence: null
+    }
+  ],
+  pageInfo: {
+    hasNextPage: true,
+    nextPageCursor: "cGFnZS0y",
+    pageSize: 5
+  },
+  totalCount: 12,
+  skippedCount: 2
+} satisfies OpsInvocationPage;
+
+// fixture: opsPageEmptySkipped
+export const opsPageEmptySkipped = {
+  items: [],
+  pageInfo: {
+    hasNextPage: false,
+    nextPageCursor: null,
+    pageSize: 50
+  },
+  totalCount: 0,
+  skippedCount: 3
+} satisfies OpsInvocationPage;

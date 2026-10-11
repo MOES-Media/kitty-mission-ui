@@ -18,6 +18,8 @@ export const SYNTHETIC_ACTORS = [
   'implementer-profile-with-a-deliberately-long-handle-to-test-wrapping-in-the-facts-panel-of-the-screen',
   'reviewer-profile-with-a-deliberately-long-handle-to-test-wrapping-in-the-review-summary-of-the-screen',
 ];
+/** The handles of the contract's own Ops examples (mission-ui#11): allowed on Ops fixtures only, never on any other kind. */
+export const OPS_ACTORS = ['codex', 'operator'];
 // Looked up by name, never by position: reordering SYNTHETIC_ACTORS must not change a fixture.
 const actorNamed = (prefix) => {
   const found = SYNTHETIC_ACTORS.filter((a) => a.startsWith(prefix));
@@ -750,6 +752,90 @@ function driftFixtures(ex) {
     ]),
   };
 }
+// ---- Ops screen (mission-ui#11) ----
+// Overlays start from a vendored Ops example and change only what the state needs. The Ops carry no derived values
+// beyond what the contract examples already show (status follows from outcome; counts are declared by the page).
+const opsId = (n) => `01K6TZ${String(n).padStart(2, '0')}${'3N4P5Q6R7S8T9V0W1X2Y'.slice(0, 18)}`.slice(0, 26);
+const opsTs = (day, h, m = 0) => `2026-10-${String(day).padStart(2, '0')}T${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:00Z`;
+const OPS_BIDI = String.fromCharCode(0x202e);
+
+/** A closed Op on top of `base`, with the closure fields given. */
+function opsClosed(base, n, { outcome, closedBy, evidence, ...rest }) {
+  return {
+    ...structuredClone(base),
+    invocationId: opsId(n),
+    status: 'closed',
+    outcome,
+    closedBy,
+    completedAt: opsTs(5, 12, n),
+    evidence,
+    ...rest,
+  };
+}
+
+const opsText = (value, redacted = false) => ({ kind: 'text', value, redacted });
+
+/** `count` characters of an unbroken token (no whitespace, no credential shape: lower-case words glued together). */
+const opsToken = (count) => 'unbrokenevidencetoken'.repeat(Math.ceil(count / 21)).slice(0, count);
+
+function opsFixtures(ex) {
+  const open = ex['OpsInvocation.open'];
+  const agent = ex['OpsInvocation.closed-by-agent'];
+  const sweep = ex['OpsInvocation.closed-by-doctor-sweep'];
+  const handle = (prefix, count) => `${prefix}${'-segment'.repeat(Math.ceil(count / 8))}`.slice(0, count);
+  const mixed = [
+    { ...opsClosed(agent, 14, { outcome: 'failed', closedBy: 'agent', evidence: opsText('The check failed on the second run.') }), startedAt: opsTs(9, 16), actor: 'codex' },
+    { ...structuredClone(open), invocationId: opsId(13), startedAt: opsTs(9, 14), modeOfWork: 'mission_step' },
+    { ...opsClosed(sweep, 12, { outcome: 'abandoned', closedBy: 'doctor_sweep', evidence: opsText('Closed by the doctor sweep because no completion was recorded.') }), startedAt: opsTs(9, 11), modeOfWork: 'advisory' },
+    { ...opsClosed(agent, 11, { outcome: 'done', closedBy: 'agent', evidence: { kind: 'url', value: 'https://example.org/reviews/43', redacted: false } }), startedAt: opsTs(8, 15), profileId: 'architect-alphonso', action: 'analyze', actor: 'operator', modeOfWork: 'query' },
+    { ...opsClosed(agent, 10, { outcome: 'done', closedBy: 'agent', evidence: null }), startedAt: opsTs(8, 15), missionId: null, wpId: null },
+  ];
+  const unknownOf = (n, change) => ({ ...opsClosed(agent, n, { outcome: 'done', closedBy: 'agent', evidence: { kind: 'text', value: 'A word the screen has not seen.', redacted: false } }), ...change });
+  return {
+    opsPageFirst: structuredClone(ex['OpsInvocationPage.first']),
+    opsPageLast: structuredClone(ex['OpsInvocationPage.last']),
+    opsPageEmpty: structuredClone(ex['OpsInvocationPage.empty']),
+    opsOpen: structuredClone(open),
+    opsClosedByAgent: structuredClone(agent),
+    opsClosedBySweep: structuredClone(sweep),
+    opsEvidenceNull: structuredClone(ex['OpsInvocation.evidence-null']),
+    opsEvidenceRepoPath: structuredClone(ex['OpsInvocation.evidence-repo-path']),
+    opsEvidenceUrl: structuredClone(ex['OpsInvocation.evidence-url']),
+    opsEvidenceUrlRedacted: structuredClone(ex['OpsInvocation.evidence-url-redacted']),
+    opsEvidenceText: structuredClone(ex['OpsInvocation.evidence-text']),
+    opsEvidenceTextRedacted: structuredClone(ex['OpsInvocation.evidence-text-redacted']),
+    opsFailed: opsClosed(agent, 20, { outcome: 'failed', closedBy: 'agent', evidence: opsText('The review found a blocking issue in the second file.') }),
+    opsAbandoned: opsClosed(sweep, 21, { outcome: 'abandoned', closedBy: 'doctor_sweep', evidence: null }),
+    opsModeAdvisory: opsClosed(agent, 22, { outcome: 'done', closedBy: 'agent', evidence: null, modeOfWork: 'advisory' }),
+    opsModeQuery: opsClosed(agent, 23, { outcome: 'done', closedBy: 'agent', evidence: null, modeOfWork: 'query', action: 'profiles.list', profileId: 'architect-alphonso' }),
+    opsRedactedMarkers: opsClosed(agent, 24, { outcome: 'done', closedBy: 'agent', evidence: opsText('Saved the report to [path] and mailed [email] a copy.', true) }),
+    opsActorNull: { ...structuredClone(open), invocationId: opsId(25), actor: null },
+    opsNoMissionNoWp: { ...structuredClone(open), invocationId: opsId(26), missionId: null, wpId: null },
+    opsMissionOnly: { ...structuredClone(open), invocationId: opsId(27), wpId: null },
+    opsEvidence512: opsClosed(agent, 28, { outcome: 'done', closedBy: 'agent', evidence: opsText(`${'Long evidence sentence that keeps going. '.repeat(13)}`.slice(0, 512), true) }),
+    opsEvidenceMarkup: opsClosed(agent, 29, { outcome: 'done', closedBy: 'agent', evidence: opsText('<img src=x onerror=alert(1)> <b>bold</b> &amp; <script>alert(2)</script>') }),
+    opsEvidenceJavascriptUrl: opsClosed(agent, 30, { outcome: 'done', closedBy: 'agent', evidence: { kind: 'url', value: 'javascript:alert(document.domain)', redacted: false } }),
+    opsEvidenceUnbroken512: opsClosed(agent, 31, { outcome: 'done', closedBy: 'agent', evidence: opsText(opsToken(512), true) }),
+    opsEvidenceBidi: opsClosed(agent, 32, { outcome: 'done', closedBy: 'agent', evidence: opsText(`Approved ${OPS_BIDI}gpj.noitulos-evitaerc-rof-tropeR`) }),
+    opsRefusalUnreadable: structuredClone(ex['OpsRefusal.ops-unreadable']),
+    opsCursorRefusal: structuredClone(ex['PageCursorRefusal.invalid']),
+    opsUnknownOutcome: unknownOf(33, { outcome: 'paused' }),
+    opsUnknownCloser: unknownOf(34, { closedBy: 'operator' }),
+    opsUnknownMode: unknownOf(35, { modeOfWork: 'pairing' }),
+    opsUnknownEvidenceKind: unknownOf(36, { evidence: { kind: 'screenshot', value: 'A kind the screen has not seen.', redacted: false } }),
+    opsProfile128: { ...structuredClone(open), invocationId: opsId(37), profileId: handle('profile', 128) },
+    opsActionLong: { ...structuredClone(open), invocationId: opsId(38), action: handle('action', 128) },
+    opsOffsetStart: { ...structuredClone(open), invocationId: opsId(39), startedAt: '2026-10-05T16:20:00+02:00' },
+    opsPageMixed: {
+      items: mixed,
+      pageInfo: { hasNextPage: true, nextPageCursor: 'cGFnZS0y', pageSize: 5 },
+      totalCount: 12,
+      skippedCount: 2,
+    },
+    opsPageEmptySkipped: { items: [], pageInfo: { hasNextPage: false, nextPageCursor: null, pageSize: 50 }, totalCount: 0, skippedCount: 3 },
+  };
+}
+
 /**
  * Every fixture document, in registry order. `examples` is the parsed vendored examples (loadExamples); `bulk` is the
  * bulk module. Pure: the same inputs give the same documents.
@@ -849,5 +935,5 @@ export function buildFixtures({ examples: ex, bulk }) {
   out.detailCustomGroups.mid8 = id(16).slice(0, 8);
   out.detailCustomGroups.slug = `example-mission-${id(16).slice(0, 8)}`;
   out.detailCustomGroups.friendlyName = 'Example Mission Custom Groups';
-  return { ...out, ...workPackageFixtures(ex, bulk), ...detailFixtures(ex, bulk), ...artifactFixtures(ex), ...driftFixtures(ex) };
+  return { ...out, ...workPackageFixtures(ex, bulk), ...detailFixtures(ex, bulk), ...artifactFixtures(ex), ...driftFixtures(ex), ...opsFixtures(ex) };
 }

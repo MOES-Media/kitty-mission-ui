@@ -1,6 +1,6 @@
 // Large synthetic pages for the 500-Mission test (NFR-006) and the long-list story. Pure functions, no value imports
 // (only `import type`, erased), so plain Node loads this file too and gate `contract` validates its output.
-import type { ArtifactContent, ArtifactEntry, ArtifactListing, DriftFinding, DriftReport, HistoryEntry, LaneComparison, MissionOverview, MissionOverviewPage, OwnedFile, Subtask } from './types.js';
+import type { ArtifactContent, ArtifactEntry, ArtifactListing, DriftFinding, DriftReport, HistoryEntry, LaneComparison, MissionOverview, MissionOverviewPage, OpsInvocation, OpsInvocationPage, OwnedFile, Subtask } from './types.js';
 
 const ALPHABET = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
 const DIGEST = '3a7bd3e2360a3d29eea436fcfb7e44c735d117c42d1c1835420b6b9942dd4f1b';
@@ -394,4 +394,71 @@ export function makeDriftReport(count: number = 1000, truncated: boolean = true)
   const findings: DriftFinding[] = [];
   for (let i = 0; i < count; i += 1) findings.push(makeDriftFinding(i));
   return { scannedAt: DRIFT_SCANNED_AT, findings, truncated };
+}
+
+// ---- Ops screen (mission-ui#11): synthetic pages of Ops for the 200-row story and the 1,000-row accumulation ----
+const OPS_BASE_TIME = Date.UTC(2026, 9, 9, 18, 0, 0);
+const OPS_ID_CEILING = 1_048_575;
+const OPS_MISSION = '01JZCB3C4D5E6F7G8H9JKMNPQT';
+
+/** The ULID of Op `index`: it descends as `index` ascends, so id order agrees with the newest-first order. */
+function opsUlid(index: number): string {
+  let rest = OPS_ID_CEILING - index;
+  let tail = '';
+  for (let i = 0; i < 20; i += 1) {
+    tail = ALPHABET.charAt(rest % 32) + tail;
+    rest = Math.floor(rest / 32);
+  }
+  return `01K6TZ${tail}`;
+}
+
+const OPS_PROFILES = ['python-pedro', 'reviewer-renata', 'architect-alphonso'] as const;
+const OPS_ACTIONS = ['implement', 'review', 'analyze'] as const;
+const OPS_ACTORS = ['claude', 'codex', 'operator'] as const;
+
+/** One synthetic Op; `index` 0 is the newest (startedAt descends with the index, one minute apart). */
+export function makeOpsInvocation(index: number): OpsInvocation {
+  const startedAt = new Date(OPS_BASE_TIME - index * 60_000).toISOString().replace('.000Z', 'Z');
+  const completedAt = new Date(OPS_BASE_TIME - index * 60_000 + 1_800_000).toISOString().replace('.000Z', 'Z');
+  const shape = index % 8;
+  const base = {
+    invocationId: opsUlid(index),
+    profileId: OPS_PROFILES[index % OPS_PROFILES.length] ?? 'python-pedro',
+    action: OPS_ACTIONS[index % OPS_ACTIONS.length] ?? 'implement',
+    actor: OPS_ACTORS[index % OPS_ACTORS.length] ?? 'claude',
+    startedAt,
+    missionId: shape === 6 ? null : OPS_MISSION,
+    wpId: shape === 6 ? null : `WP${String((index % 9) + 1).padStart(2, '0')}`,
+  };
+  const open = { ...base, modeOfWork: shape === 6 ? 'mission_step' : 'task_execution', status: 'open', outcome: null, closedBy: null, completedAt: null, evidence: null } as const;
+  const closed = { ...base, modeOfWork: 'task_execution', status: 'closed', completedAt } as const;
+  switch (shape) {
+    case 0:
+    case 6:
+      return open;
+    case 1:
+      return { ...closed, outcome: 'done', closedBy: 'agent', evidence: { kind: 'repo_path', value: `docs/reports/report-${index + 1}.md`, redacted: false } };
+    case 2:
+      return { ...closed, outcome: 'failed', closedBy: 'agent', evidence: { kind: 'text', value: `The check failed on run ${index + 1}.`, redacted: false } };
+    case 3:
+      return { ...closed, outcome: 'abandoned', closedBy: 'doctor_sweep', evidence: null };
+    case 4:
+      return { ...closed, outcome: 'done', closedBy: 'agent', evidence: { kind: 'url', value: `https://example.org/reviews/${index + 1}`, redacted: false } };
+    case 5:
+      return { ...closed, outcome: 'done', closedBy: 'agent', evidence: { kind: 'text', value: 'Notes were shared with [email] and kept in [path].', redacted: true } };
+    default:
+      return { ...closed, modeOfWork: 'advisory', outcome: 'done', closedBy: 'agent', evidence: null };
+  }
+}
+
+/** A page of `count` synthetic Ops starting at `start` (the page after a page of 200 starts at 200). Counts are given, never derived. */
+export function makeOpsPage(count: number, hasNextPage: boolean, start = 0): OpsInvocationPage {
+  const items: OpsInvocation[] = [];
+  for (let i = 0; i < count; i += 1) items.push(makeOpsInvocation(start + i));
+  return {
+    items,
+    pageInfo: { hasNextPage, nextPageCursor: hasNextPage ? 'c3ludGhldGljLW9wcw' : null, pageSize: Math.max(count, 1) },
+    totalCount: start + count,
+    skippedCount: 0,
+  };
 }

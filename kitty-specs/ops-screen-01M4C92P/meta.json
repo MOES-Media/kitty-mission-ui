@@ -1,0 +1,56 @@
+{
+  "accept_commit": "fd78d4a8b4af9abbd453933b952e299b7845a3af",
+  "acceptance_history": [
+    {
+      "accept_commit": "37ca3f211bfd148836997cb9e21a521100c504a8",
+      "acceptance_mode": "local",
+      "accepted_at": "2026-10-11T14:49:21.313312+00:00",
+      "accepted_by": "<user>",
+      "accepted_from_commit": "d41c10aba6611a6b4884706188e2b08bf8afcda9"
+    },
+    {
+      "accept_commit": "1366f80707b2506512788371972ec63234796de6",
+      "acceptance_mode": "local",
+      "accepted_at": "2026-10-11T14:56:46.643222+00:00",
+      "accepted_by": "<user>",
+      "accepted_from_commit": "d33882a9aafe25333d1d8b2f835ea01434113d5b"
+    },
+    {
+      "accept_commit": "8a2446b7c866be69e47f1b91e4bae70381bda373",
+      "acceptance_mode": "local",
+      "accepted_at": "2026-10-11T15:33:17.868522+00:00",
+      "accepted_by": "<user>",
+      "accepted_from_commit": "6c889988f5c267c1ed09dfe6f259c78a06b52b59"
+    },
+    {
+      "accept_commit": "fd78d4a8b4af9abbd453933b952e299b7845a3af",
+      "acceptance_mode": "local",
+      "accepted_at": "2026-10-11T16:06:31.997099+00:00",
+      "accepted_by": "<user>",
+      "accepted_from_commit": "d03dee026a7893347c21607d673985b4c181615a"
+    }
+  ],
+  "acceptance_mode": "local",
+  "accepted_at": "2026-10-11T16:06:31.997099+00:00",
+  "accepted_by": "<user>",
+  "accepted_from_commit": "d03dee026a7893347c21607d673985b4c181615a",
+  "baseline_merge_commit": "10f624554783a523dc07348e3ed42cc9772f8a85",
+  "created_at": "2026-10-07T22:52:21.493194+00:00",
+  "flattened": false,
+  "friendly_name": "Ops screen",
+  "merged_at": "2026-10-11T14:28:23.418392+00:00",
+  "merged_commit": "1f2f73e71d51de8bd7eb796c8d145c283075b618",
+  "mid8": "01M4C92P",
+  "mission_id": "01M4C92PK8QEFEEWCYR16YE455",
+  "mission_number": 3,
+  "mission_slug": "ops-screen-01M4C92P",
+  "mission_type": "software-dev",
+  "purpose_context": "This mission builds the read-only Ops screen (sk-ops-screen) for the project's Op invocation records against the Mission Status contract, so the app shell's Ops item shows real data.",
+  "purpose_tldr": "Ops screen against the Mission Status contract",
+  "slug": "ops-screen-01M4C92P",
+  "status_phase": "1",
+  "target_branch": "feat/ops-screen-11",
+  "topology": "lanes",
+  "vcs": "git",
+  "vcs_locked_at": "2026-10-10T10:02:12.024626+00:00"
+}

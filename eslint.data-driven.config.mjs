@@ -40,12 +40,23 @@
 //    `error` is a view-state word and a severity word, `warning` a severity word and `git` an everyday word: the same
 //    collision class as the verdict `approved`. They are covered by the foreign-value tests and the reviewer self-check list.
 //    The severity enum itself is not read, for the same reason.
+//  - The Ops vocabularies (mission-ui#11) follow the same split: the underscored and rare members (task_execution, mission_step,
+//    doctor_sweep, repo_path, ops_unreadable, invalid_page_cursor, abandoned) are matched as literals (S18.1 to S18.5); the common identifiers
+//    (open, closed, agent, query, text, url, failed, advisory) only in a comparison or case label (S19.1 to S19.4), so an object key, a
+//    property, a type member or a variable of that name stays clean, and a bare word held in a plain string is not seen.
+//    `done` is an Ops outcome and already gated as a lane. The profile and action of an Op are open text and have no word.
+//    The bare words are also caught as the argument (a string or an expression-free template) of includes, indexOf, lastIndexOf,
+//    startsWith, endsWith, get and has, in an array searched with includes, indexOf or lastIndexOf, in a Set or Map built from
+//    them, as a quoted or computed object key and as a computed read (S19.5 to S19.11); a bare word
+//    as a plain identifier key stays clean. Also: a template computed read, an array of them searched with some, every, find,
+//    findIndex, findLast, findLastIndex or filter, and the left side of the `in` operator.
 //  - Vocabulary in a .d.ts or JSON file, and code outside packages/*/src (tests), is not scanned.
 //  - An element that imports the vocabulary from defaults/ and then compares with a different literal it never
 //    imports is covered only by the behavioural test with a foreign vocabulary.
 import { readFileSync } from 'node:fs';
 import { parse } from 'yaml';
 import tseslint from 'typescript-eslint';
+import { builtinRules } from 'eslint/use-at-your-own-risk';
 
 // The vocabulary is read from the vendored contract schemas (pinned and hash-checked by `contract:check`), so a contract
 // bump that adds a lane or a phase widens the gate with no edit here.
@@ -64,6 +75,22 @@ export const STALENESS_REASON_WORDS = schema('Staleness.yaml').properties.reason
 // The project health enum (mission-ui#9, NFR-009): `schema_drift` is an underscored literal, `healthy` a comparison-only bare word.
 export const HEALTH_WORDS = schema('ProjectHealth.yaml').enum;
 const NEW_ALL = [...new Set([...VERDICT_WORDS, ...CHANGE_STATE_WORDS, ...STALENESS_STATUS_WORDS, ...STALENESS_REASON_WORDS, ...HEALTH_WORDS])].filter((w) => !WORDS.includes(w));
+// The Ops enums (mission-ui#11, plan D-12) and the page-cursor refusal constant.
+export const OPS_OUTCOME_WORDS = schema('OpsOutcome.yaml').enum;
+export const OPS_CLOSED_BY_WORDS = schema('OpsClosedBy.yaml').enum;
+export const OPS_MODE_WORDS = schema('OpsModeOfWork.yaml').enum;
+export const OPS_EVIDENCE_KIND_WORDS = schema('OpsEvidenceKind.yaml').enum;
+export const OPS_STATUS_WORDS = schema('OpsInvocationStatus.yaml').enum;
+export const OPS_REFUSAL_WORDS = schema('OpsRefusalCode.yaml').enum;
+export const OPS_CURSOR_REFUSAL_CODE = schema('PageCursorRefusal.yaml').allOf.find((part) => part.properties?.code?.const !== undefined).properties.code.const;
+const OPS_ALL = [
+  ...new Set([...OPS_OUTCOME_WORDS, ...OPS_CLOSED_BY_WORDS, ...OPS_MODE_WORDS, ...OPS_EVIDENCE_KIND_WORDS, ...OPS_STATUS_WORDS, ...OPS_REFUSAL_WORDS, OPS_CURSOR_REFUSAL_CODE]),
+];
+// Common identifiers: matched only in a comparison or a case label.
+export const OPS_BARE_WORDS = ['open', 'closed', 'agent', 'query', 'text', 'url', 'failed', 'advisory'].filter((w) => OPS_ALL.includes(w));
+// Matched anywhere as a literal; a lane word (`done`) is already gated by S1 and is left out here.
+export const OPS_WORDS = OPS_ALL.filter((w) => !OPS_BARE_WORDS.includes(w) && !WORDS.includes(w));
+export const OPS_UNDERSCORED = OPS_WORDS.filter((w) => w.includes('_'));
 // Matched anywhere as a literal: underscored members and whole words that are not everyday identifiers.
 export const NEW_BARE_WORDS = ['changed', 'unknown', 'fresh', 'stale', 'healthy'].filter((w) => NEW_ALL.includes(w));
 export const NEW_WORDS = NEW_ALL.filter((w) => !NEW_BARE_WORDS.includes(w));
@@ -118,6 +145,14 @@ const NB = alt(NEW_BARE_WORDS);
 const AU = alt(ARTIFACT_UNDERSCORED);
 const AB = alt(ARTIFACT_BARE_WORDS);
 const DW = alt(DRIFT_WORDS);
+const OW = alt(OPS_WORDS);
+const OU = alt(OPS_UNDERSCORED);
+const OB = alt(OPS_BARE_WORDS);
+const OPS_ARRAY_METHODS = alt(['includes', 'indexOf', 'lastIndexOf', 'some', 'every', 'find', 'findIndex', 'findLast', 'findLastIndex', 'filter']);
+const OPS_STRING_METHODS = alt(['includes', 'indexOf', 'lastIndexOf', 'startsWith', 'endsWith']);
+/** The expression-free template form of a bare word (F-5): `\`failed\``. */
+const TPL = (parent) => `${parent} > TemplateLiteral[expressions.length=0] > TemplateElement[value.cooked=/^(${OB})$/i]`;
+const OPS_KEYED_METHODS = alt(['get', 'has']);
 
 const entry = (id, selector, text) => ({ selector, message: `data-driven: ${id} ${text}` });
 
@@ -184,7 +219,46 @@ export const SELECTOR_ENTRIES = [
   entry('S17.3', `Literal[value=/(${DW})/i]`, 'drift word inside a longer string'),
   entry('S17.4', `TemplateElement[value.cooked=/(${DW})/i]`, 'drift word inside a template'),
   entry('S17.5', `Property[computed=false] > Identifier.key[name=/^(${DW})$/i]`, 'object key named like a drift word'),
+  entry('S18.1', `Literal[value=/^(${OW})$/i]`, 'Ops vocabulary word as a literal; read it from src/defaults/'),
+  entry('S18.2', `TemplateElement[value.cooked=/^(${OW})$/i]`, 'Ops vocabulary word as an exact template'),
+  entry('S18.3', `Literal[value=/${OU}/i]`, 'underscored Ops vocabulary word inside a longer string'),
+  entry('S18.4', `TemplateElement[value.cooked=/${OU}/i]`, 'underscored Ops vocabulary word inside a template'),
+  entry('S18.5', `Property[computed=false] > Identifier.key[name=/^(${OU})$/]`, 'object key named like an Ops vocabulary word'),
+  entry('S19.1', `BinaryExpression[operator=/^[!=]==?$/] > Literal[value=/^(${OB})$/i]`, 'Ops vocabulary word compared as a literal; read it from src/defaults/'),
+  entry('S19.2', `SwitchCase > Literal.test[value=/^(${OB})$/i]`, 'Ops vocabulary word as a case label; read it from src/defaults/'),
+  entry('S19.3', `BinaryExpression[operator=/^[!=]==?$/] > TemplateLiteral[expressions.length=0] > TemplateElement[value.cooked=/^(${OB})$/i]`, 'Ops vocabulary word compared as an expression-free template; read it from src/defaults/'),
+  entry('S19.4', `SwitchCase > TemplateLiteral.test[expressions.length=0] > TemplateElement[value.cooked=/^(${OB})$/i]`, 'Ops vocabulary word as a template case label; read it from src/defaults/'),
+  // The shapes #7's bare-word gate closed after its review (BOUNDARY-006); S19.5-S19.7 and S19.9-S19.11 mirror #7's S16.5-S16.7 and S16.9-S16.11.
+  // Its identifier-key shape (#7's S16.8) is NOT copied: it would flag legitimate keys such as `{ text: ... }`.
+  entry('S19.5', `CallExpression[callee.property.name=/^(${OPS_STRING_METHODS})$/] > Literal[value=/^(${OB})$/i], ${TPL(`CallExpression[callee.property.name=/^(${OPS_STRING_METHODS})$/]`)}`, 'Ops vocabulary word searched for with includes, indexOf, lastIndexOf, startsWith or endsWith (as a string or an expression-free template); read it from src/defaults/'),
+  entry('S19.6', `MemberExpression[property.name=/^(${OPS_ARRAY_METHODS})$/] > ArrayExpression.object > Literal[value=/^(${OB})$/i], ${TPL(`MemberExpression[property.name=/^(${OPS_ARRAY_METHODS})$/] > ArrayExpression.object`)}, NewExpression[callee.name=/^(Set|Map)$/] > ArrayExpression > Literal[value=/^(${OB})$/i], NewExpression[callee.name='Map'] > ArrayExpression > ArrayExpression > Literal:first-child[value=/^(${OB})$/i], ${TPL('NewExpression[callee.name=/^(Set|Map)$/] > ArrayExpression')}`, 'Ops vocabulary word in an array searched with includes, indexOf or lastIndexOf, or in a Set or Map built from it; read it from src/defaults/'),
+  entry('S19.7', `CallExpression[callee.property.name=/^(${OPS_KEYED_METHODS})$/] > Literal[value=/^(${OB})$/i], ${TPL(`CallExpression[callee.property.name=/^(${OPS_KEYED_METHODS})$/]`)}, BinaryExpression[operator='in'] > Literal.left[value=/^(${OB})$/i], ${TPL("BinaryExpression[operator='in']")}`, 'Ops vocabulary word as the key of a Map or Set get or has, or the left side of the in operator (as a string or an expression-free template); read it from src/defaults/'),
+  entry('S19.9', `Property[computed=false] > Literal.key[value=/^(${OB})$/i]`, 'Ops vocabulary word as a quoted object key; read it from src/defaults/'),
+  entry('S19.10', `Property[computed=true] > Literal.key[value=/^(${OB})$/i]`, 'Ops vocabulary word as a computed object key; read it from src/defaults/'),
+  entry('S19.11', `MemberExpression[computed=true] > Literal.property[value=/^(${OB})$/i], ${TPL('MemberExpression[computed=true]')}`, 'Ops vocabulary word as a computed property read; read it from src/defaults/'),
 ];
+
+// The Ops bare-word shapes (S19) run in a block of their own (BOUNDARY-001, operator ruling (b)). The Artifact Viewer's markdown
+// renderer (#7) compares markdown-it token types, and `text` is one of them (`token.type === 'text'`, `case 'text':`); it is
+// also an Ops evidence class, so S19.1 and S19.2 would refuse #7's code. The word stays in OPS_BARE_WORDS and #7's code is not
+// changed: the Ops block ignores logic/markdown/ instead, and every other selector still scans it. Two blocks that both set
+// `no-restricted-syntax` would REPLACE each other's list for a file both match, so the Ops block runs the same core rule under
+// its own name (`data-driven-ops/no-restricted-syntax`); its messages begin `data-driven: S19.` like the others.
+// The same class, found at the port: the open-project dialog (#9) reads Lit's changed-properties map by its own property name,
+// `changed.has('open')` and `changed.get('open')`, which S19.7 (a bare word as a Map get or has key) refuses. That file is
+// exempt from that one shape and no other: S19.7 runs in a block of its own, under its own rule name, that also ignores the
+// dialog, so S19.1-S19.6 and S19.9-S19.11 still scan it. #9's code is not changed.
+export const OPS_BARE_IGNORES = ['packages/mission-ui/src/logic/markdown/**'];
+export const OPS_KEYED_IGNORES = [...OPS_BARE_IGNORES, 'packages/mission-ui/src/elements/sk-open-project-dialog/sk-open-project-dialog.ts'];
+const isOpsBare = (entry) => entry.message.startsWith('data-driven: S19.');
+const isOpsKeyed = (entry) => entry.message.startsWith('data-driven: S19.7 ');
+export const OPS_BARE_ENTRIES = SELECTOR_ENTRIES.filter(isOpsBare);
+export const OPS_KEYED_ENTRIES = OPS_BARE_ENTRIES.filter(isOpsKeyed);
+export const OPS_UNKEYED_ENTRIES = OPS_BARE_ENTRIES.filter((entry) => !isOpsKeyed(entry));
+export const BASE_ENTRIES = SELECTOR_ENTRIES.filter((entry) => !isOpsBare(entry));
+export const OPS_BARE_RULE = 'data-driven-ops/no-restricted-syntax';
+export const OPS_KEYED_RULE = 'data-driven-ops-keyed/no-restricted-syntax';
+const opsPlugin = { rules: { 'no-restricted-syntax': builtinRules.get('no-restricted-syntax') } };
 
 export default [
   {
@@ -192,6 +266,22 @@ export default [
     ignores: ALLOW_LIST,
     languageOptions: { parser: tseslint.parser, sourceType: 'module' },
     linterOptions: { noInlineConfig: true },
-    rules: { 'no-restricted-syntax': ['error', ...SELECTOR_ENTRIES] },
+    rules: { 'no-restricted-syntax': ['error', ...BASE_ENTRIES] },
+  },
+  {
+    files: ['**/*.ts'],
+    ignores: [...ALLOW_LIST, ...OPS_BARE_IGNORES],
+    languageOptions: { parser: tseslint.parser, sourceType: 'module' },
+    linterOptions: { noInlineConfig: true },
+    plugins: { 'data-driven-ops': opsPlugin },
+    rules: { [OPS_BARE_RULE]: ['error', ...OPS_UNKEYED_ENTRIES] },
+  },
+  {
+    files: ['**/*.ts'],
+    ignores: [...ALLOW_LIST, ...OPS_KEYED_IGNORES],
+    languageOptions: { parser: tseslint.parser, sourceType: 'module' },
+    linterOptions: { noInlineConfig: true },
+    plugins: { 'data-driven-ops-keyed': opsPlugin },
+    rules: { [OPS_KEYED_RULE]: ['error', ...OPS_KEYED_ENTRIES] },
   },
 ];

@@ -994,6 +994,112 @@ const EXCEPTIONS = [
     },
     pinned: ['border-width', 'border-radius', 'padding', 'margin-block', 'row-gap'],
   },
+  {
+    // E-40 (CP-1 confirmed 2026-10-11, widened; sunset: a spec-kitty-design record-row element and a leading token; this file only):
+    // the Ops row is a plain `li` with the project grid, so its frame (`border` as a token width plus `solid`, `border-radius`,
+    // `background`) and its typography (`font-size`, `font-family`, `font-weight`, `font-variant-numeric`, `color`) are written here.
+    // Token values only, except the pinned literals of TWO properties: `line-height` (`1.5`, and `1.2` of Ops G-2; no line-height token
+    // exists) and `font-variant-numeric: tabular-nums` (no numeric token exists; no token is accepted for that property). The
+    // `tabular-nums` literal comes from the WP04 fix-round ruling of 2026-10-11 (aligned digits in the instants and the badge), not
+    // from CP-1, and is recorded here as part of E-40. The grants of the 2026-10-11 reviews are named Ops G-1 to Ops G-7 (the "Ops"
+    // keeps them apart from #10's G-n) and are all inside this block or their own:
+    //   Ops G-1  `border-block-end` (a token width, `solid`, a token colour) on the fact rows, the last row reset to 0;
+    //   Ops G-2  `line-height: 1.2` on the badge part;
+    //   Ops G-3  the page pills' badge clause (the next block);
+    //   Ops G-4  the state card, Ops G-5 the profile wrap, Ops G-6 the empty-look typography and Ops G-7 `max-width: 100%` on the badge
+    //            (their own blocks below).
+    // Second clause, the status badge keeps `sk-pill-tag` and takes the outline border and the mono font through the same two
+    // properties; Stylelint cannot scope by selector, so the file is the scope and the selectors are pinned in
+    // packages/mission-ui/test/ops-part-selectors.test.ts (the badge `data-ops-badge`; E-43's `data-ops-id` and `data-ops-evidence`).
+    // Fact values and terms wrap instead of ellipsizing (operator ruling on A11Y-001, 2026-10-11): E-42's ellipsis no longer applies to them.
+    // E-41 (a px term minimum) was DELETED at CP-1 and its number stays unused: the calc form passes the unmodified config.
+    id: 'E-40',
+    files: ['sk-ops-screen/ops-row-parts.ts'],
+    properties: ['border', 'border-radius', 'background', 'font-size', 'font-family', 'font-weight', 'font-variant-numeric', 'color', 'line-height', 'border-block-end'],
+    strict: ['font-family', 'font-weight', 'border-block-end'],
+    unstrict: ['line-height', 'font-variant-numeric'],
+    keywords: { border: ['solid'], 'border-block-end': ['solid'] },
+    values: { 'line-height': ['1.5', '1.2'], 'font-variant-numeric': ['tabular-nums'] },
+    pinned: ['line-height', 'font-variant-numeric'],
+  },
+  {
+    // E-40 badge clause, page file (Ops G-3, 2026-10-11; same sunset as E-40; this file only): the "Read only" and count pills take the
+    // prototype's outlined mono badge, through the five properties of the badge look and nothing else of E-40: no radius, background,
+    // size or colour here. Token values only, except TWO pinned literals: `line-height: 1.2` (Ops G-2) and `font-variant-numeric: tabular-nums`.
+    // Stylelint cannot scope by selector, so the file is the scope and the selector is pinned in
+    // packages/mission-ui/test/ops-part-selectors.test.ts (`sk-pill-tag[data-ops-page-badge]::part(tag)`, its own attribute so that the row badge rules never reach the page pills; the other `::part` rules in
+    // the file are layout-only and need no grant: `sk-section-header[data-ops-section-head]::part(action)` (grid-row, justify-self) and
+    // `sk-section-header[data-ops-section-head]::part(header)` (grid-template-columns, grid-template-areas): the 588 px stack).
+    id: 'E-40',
+    files: ['sk-ops-screen/ops-page-parts.ts'],
+    properties: ['border', 'font-family', 'font-weight', 'font-variant-numeric', 'line-height'],
+    strict: ['font-family', 'font-weight'],
+    unstrict: ['line-height', 'font-variant-numeric'],
+    keywords: { border: ['solid'] },
+    values: { 'line-height': ['1.2'], 'font-variant-numeric': ['tabular-nums'] },
+    pinned: ['line-height', 'font-variant-numeric'],
+  },
+  {
+    // E-42 (CP-1 confirmed, narrowed; sunset: E-21's): the words-only wrapping keywords (`text-overflow`, `white-space`, and
+    // `overflow-wrap` as in E-21) for the Ops row and page part files. `overflow` needs no grant.
+    id: 'E-42',
+    files: ['sk-ops-screen/ops-row-parts.ts', 'sk-ops-screen/ops-page-parts.ts'],
+    properties: ['text-overflow', 'white-space', 'overflow-wrap'],
+    values: { 'text-overflow': ['ellipsis'], 'white-space': ['nowrap'], 'overflow-wrap': ['break-word'] },
+  },
+  {
+    // E-43 (CP-1 confirmed; sunset: spec-kitty-design long-token text treatment): `overflow-wrap: anywhere` for the id and the
+    // evidence value, in the row part file only.
+    id: 'E-43',
+    files: ['sk-ops-screen/ops-row-parts.ts'],
+    properties: ['overflow-wrap'],
+    values: { 'overflow-wrap': ['anywhere'] },
+  },
+  {
+    // Ops G-7 (pre-merge fix round 2, F-1; sunset: E-21's, or a spec-kitty-design pill that ellipsizes in its host; this file only): the
+    // keyword value `max-width: 100%` ONLY, for the row's status badge: the badge keeps its natural width (it does not shrink, A11Y-001)
+    // but is never wider than the row, so a host word longer than the row ellipsizes at the row edge instead of overflowing. Stylelint
+    // cannot scope by selector, so the file is the scope; the selector is pinned in
+    // packages/mission-ui/test/ops-part-selectors.test.ts (`sk-pill-tag[data-ops-badge]`, the only rule that sets `max-width`).
+    id: 'Ops G-7',
+    files: ['sk-ops-screen/ops-row-parts.ts'],
+    properties: ['max-width'],
+    values: { 'max-width': ['100%'] },
+    keywords: { 'max-width': ['100%'] },
+  },
+  {
+    // Ops G-4 (WP07 review 2026-10-11, narrowed; sunset: a spec-kitty-design state-card element; this file only): the empty and loading
+    // looks of the Ops state panel take the prototype's card: a token border width and colour with the keyword `dashed` (empty) or
+    // `solid` (loading), a token radius and a token surface. Token values and those two keywords only. Stylelint cannot scope by
+    // selector, so the file is the scope; the selectors are pinned in packages/mission-ui/test/ops-part-selectors.test.ts
+    // (`[data-ops-state] > .sk-empty-state` and its busy form; the error look gets no card).
+    id: 'Ops G-4',
+    files: ['sk-ops-screen/ops-state-parts.ts'],
+    properties: ['border', 'border-radius', 'background'],
+    keywords: { border: ['dashed', 'solid'] },
+  },
+  {
+    // Ops G-5 (WP07 review 2026-10-11; E-42 extended to the state part file, the keyword `overflow-wrap: anywhere` ONLY, no other E-42
+    // keyword; sunset: E-21's): a long profile in the empty look wraps instead of being clipped. The selector is pinned in
+    // packages/mission-ui/test/ops-part-selectors.test.ts (`code[data-empty-profile]`).
+    id: 'E-42',
+    files: ['sk-ops-screen/ops-state-parts.ts'],
+    properties: ['overflow-wrap'],
+    values: { 'overflow-wrap': ['anywhere'] },
+  },
+  {
+    // Ops G-6 (WP07 review 2026-10-11; sunset: a spec-kitty-design empty-state variant; this file only): the empty look's typography
+    // matches the prototype: a heading weight TOKEN (empty look) and `line-height: 1.5` on the empty and loading cards, inherited by their contents
+    // (the prototype's .empty-state and .state-loading set none, so they inherit 1.5), and `line-height: 1.3` on the empty heading only (the prototype's h2); the two pinned literals (as in E-40).
+    // The gap of 0 needs no grant. The selectors are pinned in packages/mission-ui/test/ops-part-selectors.test.ts.
+    id: 'Ops G-6',
+    files: ['sk-ops-screen/ops-state-parts.ts'],
+    properties: ['font-weight', 'line-height'],
+    strict: ['font-weight'],
+    unstrict: ['line-height'],
+    values: { 'line-height': ['1.5', '1.3'] },
+    pinned: ['line-height'],
+  },
 ];
 
 const LENGTH_UNITS = ['px', 'em', 'ch', 'vw', 'vh'];

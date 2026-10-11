@@ -10,12 +10,12 @@ import * as bulk from '../../packages/mission-ui/src/contract/bulk.ts';
 
 const detailBase = () => structuredClone(loadExamples(ROOT)['MissionDetail.populated']);
 
-test('the inventory has 121 fixtures: 102 valid, 4 host, 15 relaxed (30 of them are the Artifact Viewer documents, 17 the Drift documents)', () => {
+test('the inventory has 157 fixtures: 134 valid, 4 host, 19 relaxed (30 of them are the Artifact Viewer documents, 17 the Drift documents, 36 the Ops documents)', () => {
   const kinds = Object.values(FIXTURES).map((f) => f.kind);
-  assert.equal(kinds.length, 121);
-  assert.equal(kinds.filter((k) => k === 'valid').length, 102);
+  assert.equal(kinds.length, 157);
+  assert.equal(kinds.filter((k) => k === 'valid').length, 134);
   assert.equal(kinds.filter((k) => k === 'host').length, 4);
-  assert.equal(kinds.filter((k) => k === 'relaxed').length, 15);
+  assert.equal(kinds.filter((k) => k === 'relaxed').length, 19);
   const artifact = Object.values(FIXTURES).filter((f) => f.schema.startsWith('Artifact'));
   assert.equal(artifact.length, 30);
   assert.equal(artifact.filter((f) => f.kind === 'valid').length, 27);
@@ -38,7 +38,7 @@ test('the inventory has 121 fixtures: 102 valid, 4 host, 15 relaxed (30 of them 
 test('every relaxation named by a fixture exists, and every relaxation is used', () => {
   const used = new Set(Object.values(FIXTURES).filter((f) => f.relaxation).map((f) => f.relaxation));
   assert.deepEqual([...used].sort(), Object.keys(RELAXATIONS).sort());
-  assert.equal(used.size, 10);
+  assert.equal(used.size, 11);
   for (const [name, def] of Object.entries(FIXTURES).filter(([, f]) => f.relaxation)) {
     assert.ok(relaxationSchemas(RELAXATIONS[def.relaxation]).includes(def.schema), `${name}: the fixture and its relaxation name the same schema`);
   }

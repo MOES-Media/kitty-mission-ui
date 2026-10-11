@@ -17,3 +17,4 @@ export * from './artifact-refusals.js';
 export * from './artifact-copy.js';
 export * from './markdown.js';
 export * from './drift-copy.js';
+export * from './ops-copy.js';

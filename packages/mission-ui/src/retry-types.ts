@@ -47,8 +47,17 @@ export interface DriftRetryDetail {
   target: 'drift-report';
 }
 
+/**
+ * The retry of one Ops page (the Ops screen's payload, joined to the event union only, as the Drift member is). It carries no Mission or Work Package id: the screen has neither. No cursor
+ * retries the first page (and a refused cursor starts again from the newest); a cursor retries the page after it.
+ */
+export interface OpsPageRetryDetail {
+  target: 'ops-page';
+  cursor?: string;
+}
+
 /** The payload of every `sk-retry-load`, whichever screen dispatches it. */
-export type RetryLoadEventDetail = RetryLoadDetail | SkArtifactRetryDetail | DriftRetryDetail;
+export type RetryLoadEventDetail = RetryLoadDetail | SkArtifactRetryDetail | DriftRetryDetail | OpsPageRetryDetail;
 
 declare global {
   interface HTMLElementEventMap {

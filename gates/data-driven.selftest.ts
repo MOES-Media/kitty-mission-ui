@@ -1,6 +1,7 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { ESLint, Linter } from 'eslint';
+import tseslint from 'typescript-eslint';
 import { describe, expect, it, vi } from 'vitest';
 import { parse } from 'yaml';
 
@@ -42,8 +43,26 @@ interface ConfigModule {
   DRIFT_REFUSAL_WORDS: string[];
   SOURCE_CODE_WORDS: string[];
   DRIFT_WORDS: string[];
+  OPS_OUTCOME_WORDS: string[];
+  OPS_CLOSED_BY_WORDS: string[];
+  OPS_MODE_WORDS: string[];
+  OPS_EVIDENCE_KIND_WORDS: string[];
+  OPS_STATUS_WORDS: string[];
+  OPS_REFUSAL_WORDS: string[];
+  OPS_CURSOR_REFUSAL_CODE: string;
+  OPS_BARE_WORDS: string[];
+  OPS_WORDS: string[];
+  OPS_UNDERSCORED: string[];
   S8B_METHODS: string[];
   ALLOW_LIST: string[];
+  OPS_BARE_IGNORES: string[];
+  OPS_BARE_ENTRIES: SelectorEntry[];
+  BASE_ENTRIES: SelectorEntry[];
+  OPS_BARE_RULE: string;
+  OPS_KEYED_IGNORES: string[];
+  OPS_KEYED_ENTRIES: SelectorEntry[];
+  OPS_UNKEYED_ENTRIES: SelectorEntry[];
+  OPS_KEYED_RULE: string;
 }
 
 async function loadConfig(): Promise<ConfigModule> {
@@ -55,10 +74,13 @@ async function lint(code: string, filename: string = ELEMENT_FILE): Promise<Lint
   return new Linter({ configType: 'flat' }).verify(code, loaded.default, { filename });
 }
 
+/** The rule ids of the gate: the core rule, and the same rule under the names of the two Ops bare-word blocks (BOUNDARY-001). */
+const DATA_DRIVEN_RULES = ['no-restricted-syntax', 'data-driven-ops/no-restricted-syntax', 'data-driven-ops-keyed/no-restricted-syntax'];
+
 /** The selector ids of the data-driven errors in a lint result (rule id and severity checked, message parsed). */
 function selectorIds(messages: Linter.LintMessage[]): string[] {
   return messages
-    .filter((m) => m.ruleId === 'no-restricted-syntax' && m.severity === 2)
+    .filter((m) => DATA_DRIVEN_RULES.includes(m.ruleId ?? '') && m.severity === 2)
     .map((m) => /^data-driven: (S[\w.]+) /.exec(m.message)?.[1] ?? `UNPARSED(${m.message})`);
 }
 
@@ -103,6 +125,19 @@ const EXPECTED_DRIFT_WORDS = [
   'snapshot_disagrees_with_event_log', 'snapshot_or_event_log_missing', 'lane_branch_missing', 'event_log', 'status_json', 'lanes_json',
   'materialize_status', 'mission_not_found', 'drift_scan_unreadable', 'SNAPSHOT_DRIFT', 'SNAPSHOT_DRIFT_PROVENANCE', 'SNAPSHOT_DRIFT_TERMINAL', 'CORRUPT_JSON',
 ];
+// The vocabulary of the Ops screen (mission-ui#11, plan D-12): the enums of the vendored Ops schemas and the page-cursor refusal
+// constant, written out here independently of the schemas. `done` is already gated as a lane.
+const EXPECTED_OPS_OUTCOME_WORDS = ['done', 'failed', 'abandoned'];
+const EXPECTED_OPS_CLOSED_BY_WORDS = ['agent', 'doctor_sweep'];
+const EXPECTED_OPS_MODE_WORDS = ['task_execution', 'advisory', 'mission_step', 'query'];
+const EXPECTED_OPS_EVIDENCE_KIND_WORDS = ['repo_path', 'url', 'text'];
+const EXPECTED_OPS_STATUS_WORDS = ['open', 'closed'];
+const EXPECTED_OPS_REFUSAL_WORDS = ['ops_unreadable'];
+const EXPECTED_OPS_CURSOR_REFUSAL_CODE = 'invalid_page_cursor';
+// Gate words (literals, anywhere outside the allow-list), then the common identifiers matched only in a comparison or case label.
+const EXPECTED_OPS_WORDS = ['abandoned', 'doctor_sweep', 'task_execution', 'mission_step', 'repo_path', 'ops_unreadable', 'invalid_page_cursor'];
+const EXPECTED_OPS_UNDERSCORED = ['doctor_sweep', 'task_execution', 'mission_step', 'repo_path', 'ops_unreadable', 'invalid_page_cursor'];
+const EXPECTED_OPS_BARE_WORDS = ['open', 'closed', 'agent', 'query', 'text', 'url', 'failed', 'advisory'];
 const EXPECTED_METHODS = ['at', 'slice', 'splice', 'with', 'toSpliced'];
 const EXPECTED_ENTRY_IDS = [
   'S1', 'S1b.1', 'S1b.2', 'S2', 'S3a', 'S3b', 'S3c.1', 'S3c.2', 'S4', 'S5', 'S5b.1', 'S5b.2', 'S5b.3', 'S6', 'S7',
@@ -110,11 +145,14 @@ const EXPECTED_ENTRY_IDS = [
   'S12.1', 'S12.2', 'S13.1', 'S13.2', 'S13.3', 'S13.4', 'S13.5', 'S14.1', 'S14.2', 'S14.3', 'S14.4',
   'S15.1', 'S15.2', 'S15.3', 'S15.4', 'S15.5', 'S16.1', 'S16.2', 'S16.3', 'S16.4', 'S16.5', 'S16.6', 'S16.7', 'S16.8', 'S16.9', 'S16.10', 'S16.11',
   'S17.1', 'S17.2', 'S17.3', 'S17.4', 'S17.5',
+  'S18.1', 'S18.2', 'S18.3', 'S18.4', 'S18.5', 'S19.1', 'S19.2', 'S19.3', 'S19.4',
+  'S19.5', 'S19.6', 'S19.7', 'S19.9', 'S19.10', 'S19.11',
 ];
 // The fixtures on #5's tip, and the new ones of the Artifact Viewer extension.
 const FIXTURES_BEFORE = 46;
 const FIXTURES_ADDED = 21;
 const FIXTURES_DRIFT = 7;
+const FIXTURES_OPS = 15;
 
 describe('data-driven gate self-test: configuration', () => {
   it('declares the vocabulary of the contract and every selector entry, each with a distinct id', async () => {
@@ -139,6 +177,16 @@ describe('data-driven gate self-test: configuration', () => {
     expect(cfg.DRIFT_REFUSAL_WORDS).toEqual(EXPECTED_DRIFT_REFUSAL_WORDS);
     expect(cfg.SOURCE_CODE_WORDS).toEqual(EXPECTED_SOURCE_CODE_WORDS);
     expect(cfg.DRIFT_WORDS).toEqual(EXPECTED_DRIFT_WORDS);
+    expect(cfg.OPS_OUTCOME_WORDS).toEqual(EXPECTED_OPS_OUTCOME_WORDS);
+    expect(cfg.OPS_CLOSED_BY_WORDS).toEqual(EXPECTED_OPS_CLOSED_BY_WORDS);
+    expect(cfg.OPS_MODE_WORDS).toEqual(EXPECTED_OPS_MODE_WORDS);
+    expect(cfg.OPS_EVIDENCE_KIND_WORDS).toEqual(EXPECTED_OPS_EVIDENCE_KIND_WORDS);
+    expect(cfg.OPS_STATUS_WORDS).toEqual(EXPECTED_OPS_STATUS_WORDS);
+    expect(cfg.OPS_REFUSAL_WORDS).toEqual(EXPECTED_OPS_REFUSAL_WORDS);
+    expect(cfg.OPS_CURSOR_REFUSAL_CODE).toBe(EXPECTED_OPS_CURSOR_REFUSAL_CODE);
+    expect(cfg.OPS_WORDS).toEqual(EXPECTED_OPS_WORDS);
+    expect(cfg.OPS_UNDERSCORED).toEqual(EXPECTED_OPS_UNDERSCORED);
+    expect(cfg.OPS_BARE_WORDS).toEqual(EXPECTED_OPS_BARE_WORDS);
     expect(cfg.STATUS_WORDS).toEqual(EXPECTED_STATUS_WORDS);
     expect(cfg.UNDERSCORED).toEqual(EXPECTED_UNDERSCORED);
     expect(cfg.S8B_METHODS).toEqual(EXPECTED_METHODS);
@@ -146,22 +194,25 @@ describe('data-driven gate self-test: configuration', () => {
     expect(ids).toEqual(EXPECTED_ENTRY_IDS);
     expect(cfg.SELECTOR_ENTRIES.length).toBe(EXPECTED_ENTRY_IDS.length);
     expect(new Set(ids).size).toBe(EXPECTED_ENTRY_IDS.length);
-    expect(EXPECTED_ENTRY_IDS.length).toBe(40 + 16 + 5);
+    expect(EXPECTED_ENTRY_IDS.length).toBe(40 + 16 + 5 + 15);
   });
 
   it('turns inline configuration off', async () => {
     const cfg = await loadConfig();
+    // all three blocks: the gate, the Ops bare-word block (BOUNDARY-001) and the Ops keyed-lookup block; each is unsilenceable on its own
     const scoped = cfg.default.filter((c) => c.linterOptions?.noInlineConfig === true);
-    expect(scoped.length).toBe(1);
+    expect(scoped.length).toBe(3);
+    expect(cfg.default.length).toBe(3);
   });
 });
 
 describe('data-driven gate self-test: positive fixtures', () => {
-  it('has the 46 positive fixtures of #5, the 21 of the Artifact Viewer and the 7 of the Drift screen, and no other file', () => {
-    expect(positives.length).toBe(FIXTURES_BEFORE + FIXTURES_ADDED + FIXTURES_DRIFT);
-    expect(readdirSync(FIXTURE_DIR).length).toBe(FIXTURES_BEFORE + FIXTURES_ADDED + FIXTURES_DRIFT);
+  it('has the 46 positive fixtures of #5, the 21 of the Artifact Viewer, the 7 of the Drift screen and the 15 of the Ops screen, and no other file', () => {
+    expect(positives.length).toBe(FIXTURES_BEFORE + FIXTURES_ADDED + FIXTURES_DRIFT + FIXTURES_OPS);
+    expect(readdirSync(FIXTURE_DIR).length).toBe(FIXTURES_BEFORE + FIXTURES_ADDED + FIXTURES_DRIFT + FIXTURES_OPS);
     expect(positives.filter((f) => /^s1[56]-/.test(f)).length).toBe(FIXTURES_ADDED);
     expect(positives.filter((f) => /^s17-/.test(f)).length).toBe(FIXTURES_DRIFT);
+    expect(positives.filter((f) => /^s1[89]-/.test(f)).length).toBe(FIXTURES_OPS);
   });
 
   for (const name of positives) {
@@ -525,6 +576,215 @@ describe('data-driven gate self-test: the source codes agree with the DriftFindi
   });
 });
 
+describe('data-driven gate self-test: every word of the Ops vocabularies', () => {
+  it('reads the vocabulary from the vendored schemas: every enum member and the cursor code is a lane, a gate word or a bare word', async () => {
+    const cfg = await loadConfig();
+    const all = [
+      ...cfg.OPS_OUTCOME_WORDS,
+      ...cfg.OPS_CLOSED_BY_WORDS,
+      ...cfg.OPS_MODE_WORDS,
+      ...cfg.OPS_EVIDENCE_KIND_WORDS,
+      ...cfg.OPS_STATUS_WORDS,
+      ...cfg.OPS_REFUSAL_WORDS,
+      cfg.OPS_CURSOR_REFUSAL_CODE,
+    ];
+    expect(all.length).toBe(16);
+    const covered = new Set([...cfg.WORDS, ...cfg.OPS_WORDS, ...cfg.OPS_BARE_WORDS]);
+    expect(all.filter((w) => !covered.has(w))).toEqual([]);
+    // the three lists partition the vocabulary: a word is a lane, a gate word or a bare word, never two
+    expect(new Set(all).size).toBe(16);
+    expect(cfg.OPS_WORDS.filter((w) => cfg.WORDS.includes(w) || cfg.OPS_BARE_WORDS.includes(w))).toEqual([]);
+    expect(cfg.OPS_BARE_WORDS.filter((w) => cfg.WORDS.includes(w))).toEqual([]);
+  });
+
+  it('reports each gate word as a literal (S18.1), in any case, and the underscored ones inside a longer string (S18.3)', async () => {
+    const cfg = await loadConfig();
+    let ran = 0;
+    for (const w of cfg.OPS_WORDS) {
+      for (const v of [w, w.toUpperCase()]) {
+        expect(selectorIds(await lint(`export const x = '${v}';\n`)), v).toContain('S18.1');
+        ran += 1;
+      }
+    }
+    expect(ran).toBe(14);
+    let inside = 0;
+    for (const w of cfg.OPS_UNDERSCORED) {
+      expect(selectorIds(await lint(`export const x = 'tone-${w}';\n`)), w).toEqual(['S18.3']);
+      expect(selectorIds(await lint(`export const x = \`tone-${w}\`;\n`)), w).toEqual(['S18.4']);
+      expect(selectorIds(await lint(`export const x = { ${w}: 1 };\n`)), w).toEqual(['S18.5']);
+      inside += 1;
+    }
+    expect(inside).toBe(6);
+  });
+
+  it('reports each bare word only in a comparison (S19.1, S19.3) or a case label (S19.2, S19.4), as a string or a template', async () => {
+    const cfg = await loadConfig();
+    let ran = 0;
+    for (const w of cfg.OPS_BARE_WORDS) {
+      expect(selectorIds(await lint(`export const f = (s: string): boolean => s === '${w}';\n`)), w).toEqual(['S19.1']);
+      expect(selectorIds(await lint(`export const f = (s: string): boolean => '${w}' !== s;\n`)), w).toEqual(['S19.1']);
+      expect(selectorIds(await lint(`export const f = (s: string): boolean => s == '${w.toUpperCase()}';\n`)), w).toEqual(['S19.1']);
+      expect(selectorIds(await lint(`export function f(s: string): number {\n  switch (s) {\n    case '${w}':\n      return 1;\n    default:\n      return 0;\n  }\n}\n`)), w).toEqual(['S19.2']);
+      expect(selectorIds(await lint(`export const f = (s: string): boolean => s === \`${w}\`;\n`)), w).toEqual(['S19.3']);
+      expect(selectorIds(await lint(`export function f(s: string): number {\n  switch (s) {\n    case \`${w}\`:\n      return 1;\n    default:\n      return 0;\n  }\n}\n`)), w).toEqual(['S19.4']);
+      // not a bare word: a template with an expression, a plain string, an object key, a member read (positive control: the six above are)
+      expect(selectorIds(await lint(`export const f = (s: string, t: string): boolean => s === \`${w}\${t}\`;\n`)), w).toEqual([]);
+      expect(selectorIds(await lint(`export const x = '${w}';\n`)), w).toEqual([]);
+      expect(selectorIds(await lint(`export const o = { ${w}: 1 };\n`)), w).toEqual([]);
+      expect(selectorIds(await lint(`export const f = (o: { ${w}: string }): string => o.${w};\n`)), w).toEqual([]);
+      ran += 1;
+    }
+    expect(ran).toBe(8);
+  });
+
+  it('reports each bare word in the shapes of #7 (BOUNDARY-006): a search or key argument, an array receiver, a quoted or computed key, a computed read', async () => {
+    const cfg = await loadConfig();
+    let ran = 0;
+    for (const w of cfg.OPS_BARE_WORDS) {
+      for (const method of ['includes', 'indexOf', 'lastIndexOf']) {
+        expect(selectorIds(await lint(`export const f = (s: string): boolean => s.${method}('${w}') !== false;\n`)), `${method} ${w}`).toEqual(['S19.5']);
+        expect(selectorIds(await lint(`export const f = (s: string): unknown => ['${w}', 'neutral'].${method}(s);\n`)), `array ${method} ${w}`).toEqual(['S19.6']);
+      }
+      for (const method of ['get', 'has']) expect(selectorIds(await lint(`export const f = (m: Map<string, number>): unknown => m.${method}('${w.toUpperCase()}');\n`)), `${method} ${w}`).toEqual(['S19.7']);
+      expect(selectorIds(await lint(`export const o = { '${w}': 1 };\n`)), w).toEqual(['S19.9']);
+      expect(selectorIds(await lint(`export const o = { ['${w}']: 1 };\n`)), w).toEqual(['S19.10']);
+      expect(selectorIds(await lint(`export const f = (o: Record<string, number>): number | undefined => o['${w}'];\n`)), w).toEqual(['S19.11']);
+      ran += 1;
+    }
+    expect(ran).toBe(8);
+  });
+
+  it('reports each bare word as an expression-free template argument, as startsWith or endsWith, and in a Set or Map built from it (F-5)', async () => {
+    const cfg = await loadConfig();
+    let ran = 0;
+    for (const w of cfg.OPS_BARE_WORDS) {
+      for (const method of ['includes', 'indexOf', 'lastIndexOf', 'startsWith', 'endsWith']) {
+        expect(selectorIds(await lint(`export const f = (s: string): unknown => s.${method}(\`${w}\`);\n`)), `template ${method} ${w}`).toEqual(['S19.5']);
+      }
+      for (const method of ['startsWith', 'endsWith']) {
+        expect(selectorIds(await lint(`export const f = (s: string): boolean => s.${method}('${w}');\n`)), `${method} ${w}`).toEqual(['S19.5']);
+      }
+      for (const method of ['get', 'has']) expect(selectorIds(await lint(`export const f = (m: Map<string, number>): unknown => m.${method}(\`${w}\`);\n`)), `template ${method} ${w}`).toEqual(['S19.7']);
+      expect(selectorIds(await lint(`export const f = (s: string): boolean => new Set(['${w}', 'neutral']).has(s);\n`)), `set ${w}`).toEqual(['S19.6']);
+      expect(selectorIds(await lint(`export const f = (s: string): boolean => new Set([\`${w}\`]).has(s);\n`)), `set template ${w}`).toEqual(['S19.6']);
+      expect(selectorIds(await lint(`export const f = (s: string): unknown => new Map([['${w}', 1]]).get(s);\n`)), `map ${w}`).toEqual(['S19.6']);
+      ran += 1;
+    }
+    expect(ran).toBe(8);
+  });
+
+  it('reports each bare word as a template computed read, in an array searched with some, find or filter, and before the in operator (F-5, round 3)', async () => {
+    const cfg = await loadConfig();
+    let ran = 0;
+    for (const w of cfg.OPS_BARE_WORDS) {
+      expect(selectorIds(await lint(`export const f = (o: Record<string, number>): number | undefined => o[\`${w}\`];\n`)), `computed template ${w}`).toEqual(['S19.11']);
+      for (const method of ['some', 'every', 'find', 'findIndex', 'findLast', 'findLastIndex', 'filter']) {
+        expect(selectorIds(await lint(`export const f = (s: string): unknown => ['${w}', 'neutral'].${method}((x) => x === s);\n`)).filter((id) => id !== 'S19.1'), `array ${method} ${w}`).toEqual(['S19.6']);
+        expect(selectorIds(await lint(`export const f = (s: string): unknown => [\`${w}\`].${method}((x) => x.length > s.length);\n`)), `template array ${method} ${w}`).toEqual(['S19.6']);
+      }
+      expect(selectorIds(await lint(`export const f = (o: object): boolean => '${w}' in o;\n`)), `in ${w}`).toEqual(['S19.7']);
+      expect(selectorIds(await lint(`export const f = (o: object): boolean => \`${w}\` in o;\n`)), `in template ${w}`).toEqual(['S19.7']);
+      ran += 1;
+    }
+    expect(ran).toBe(8);
+  });
+
+  it('keeps the round-3 shapes silent for other words, for an expression and for a variable left side (positive controls: the shapes above fire)', async () => {
+    const silent = [
+      'export const f = (o: Record<string, number>): number | undefined => o[`neutral`];\n',
+      'export const f = (o: Record<string, number>, w: string): number | undefined => o[`${w}`];\n',
+      "export const f = (s: string): unknown => ['alpha', 'beta'].some((x) => x === s);\n",
+      "export const f = (s: string): unknown => ['alpha'].find((x) => x === s);\n",
+      "export const f = (o: object): boolean => 'neutral' in o;\n",
+      'export const f = (o: object, k: string): boolean => k in o;\n',
+    ];
+    for (const code of silent) expect(selectorIds(await lint(code)), code).toEqual([]);
+    expect(silent.length).toBe(6);
+    expect(selectorIds(await lint("export const f = (o: object): boolean => 'text' in o;\n"))).toEqual(['S19.7']);
+  });
+
+  it('keeps those shapes silent for other words and for a template with an expression (positive controls: the shapes above fire)', async () => {
+    const silent = [
+      'export const f = (s: string): boolean => s.includes(`neutral`);\n',
+      'export const f = (s: string, w: string): boolean => s.includes(`${w}`);\n',
+      "export const f = (s: string): boolean => s.startsWith('neutral');\n",
+      "export const f = (s: string): boolean => s.endsWith(`neutral`);\n",
+      "export const f = (s: string): boolean => new Set(['alpha', 'beta']).has(s);\n",
+      "export const f = (s: string): unknown => new Map([['alpha', 1]]).get(s);\n",
+      "export const f = (k: string): unknown => new Set([k]).has(k);\n",
+    ];
+    for (const code of silent) expect(selectorIds(await lint(code)), code).toEqual([]);
+    expect(silent.length).toBe(7);
+    expect(selectorIds(await lint('export const f = (s: string): boolean => s.includes(`text`);\n'))).toEqual(['S19.5']);
+  });
+
+  it('keeps the same shapes silent when no bare word is in them, and the identifier key (not copied from #7) silent (positive controls: the shapes above fire)', async () => {
+    const silent = [
+      "export const f = (s: string): boolean => s.includes('neutral');\n",
+      "export const f = (s: string): number => ['alpha', 'beta'].indexOf(s);\n",
+      "export const f = (m: Map<string, number>): number | undefined => m.get('neutral');\n",
+      'export const f = (m: Map<string, number>, k: string): number | undefined => m.get(k);\n',
+      "export const o = { 'neutral': 1, ['another']: 2 };\n",
+      "export const f = (o: Record<string, number>): number | undefined => o['neutral'];\n",
+      // an identifier key named like a bare word is a legitimate key (#7's S16.8 would flag it; it is not copied)
+      'export const o = { text: 1, url: 2, open: true };\n',
+      'export const f = (o: Record<string, number>, k: string): number | undefined => o[k];\n',
+    ];
+    for (const code of silent) expect(selectorIds(await lint(code)), code).toEqual([]);
+    expect(silent.length).toBe(8);
+    expect(selectorIds(await lint("export const f = (s: string): boolean => s.includes('text');\n"))).toEqual(['S19.5']);
+  });
+
+  it('finds exactly the expected violations in one file that holds one of each class (counted, so the gate cannot pass vacuously)', async () => {
+    const cfg = await loadConfig();
+    const anywhere = cfg.OPS_WORDS.map((w, i) => `export const a${i} = '${w}';`);
+    const bare = cfg.OPS_BARE_WORDS.map((w, i) => `export const b${i} = (s: string): boolean => s === '${w}';`);
+    const clean = cfg.OPS_BARE_WORDS.map((w, i) => `export const c${i} = { ${w}: '' };`);
+    const messages = await lint(`${[...anywhere, ...bare, ...clean].join('\n')}\n`);
+    const ids = selectorIds(messages);
+    // 7 gate words (6 of them underscored, so S18.1 and S18.3 each) and 8 bare words (S19.1 each); the 8 bare-word keys are silent
+    expect(anywhere.length + bare.length + clean.length).toBe(23);
+    expect(ids.filter((i) => i === 'S18.1').length).toBe(7);
+    expect(ids.filter((i) => i === 'S18.3').length).toBe(6);
+    expect(ids.filter((i) => i === 'S19.1').length).toBe(8);
+    expect(ids.length).toBe(21);
+  });
+
+  it('keeps the bare words as plain identifiers and properties silent, while their twin in a comparison is reported', async () => {
+    const silent = [
+      'export const row = { text: "x", url: "y", agent: "z", query: "q", open: true, closed: false, failed: 0, advisory: "" };',
+      'export interface Cell {\n  text: string;\n  url: string | null;\n}',
+      'export const f = (o: { text: string; url: string }): string => o.text + o.url;',
+      'export const g = (evidence: { url: string }): string => evidence.url;',
+      'export class C {\n  text = "";\n  url = "";\n}',
+      'export const { text, url } = { text: "", url: "" };',
+    ];
+    for (const code of silent) expect(selectorIds(await lint(`${code}\n`)), code).toEqual([]);
+    expect(silent.length).toBe(6);
+    expect(selectorIds(await lint("export const f = (o: { text: string }): boolean => o.text === 'text';\n"))).toEqual(['S19.1']);
+    expect(selectorIds(await lint("export const f = (o: { url: string }): boolean => 'url' === o.url;\n"))).toEqual(['S19.1']);
+  });
+
+  it('exempts the Ops words in defaults and contract paths and reports them in an element', async () => {
+    const code = "export const f = (s: string): boolean => s === 'doctor_sweep' || s === 'open';\n";
+    let ran = 0;
+    for (const file of ['packages/sample/src/defaults/ops-copy.ts', 'packages/sample/src/contract/types.ts']) {
+      expect((await lint(code, file)).map((m) => m.ruleId), file).toEqual([null]);
+      ran += 1;
+    }
+    expect(ran).toBe(2);
+    expect(selectorIds(await lint(code, ELEMENT_FILE)).sort()).toEqual(['S18.1', 'S18.3', 'S19.1']);
+  });
+
+  it('does not touch the earlier vocabularies: a lane, a verdict word and a staleness word are still reported once', async () => {
+    expect(selectorIds(await lint("export const x = 'blocked';\n"))).toEqual(['S1']);
+    expect(selectorIds(await lint("export const x = 'changes_requested';\n"))).toEqual(['S13.1', 'S13.3']);
+    expect(selectorIds(await lint("export const f = (s: string): boolean => s === 'stale';\n"))).toEqual(['S14.1']);
+    // `done` is a lane word and is reported as one, not twice
+    expect(selectorIds(await lint("export const x = 'done';\n"))).toEqual(['S1']);
+  });
+});
+
 describe('data-driven gate self-test: negative fixtures', () => {
   const NEGATIVE: Record<string, string> = {
     'progress.done read': 'export const f = (progress: { done: number; total: number }) => progress.done + progress.total;',
@@ -561,17 +821,22 @@ describe('data-driven gate self-test: negative fixtures', () => {
     'shorthand other': 'export const f = (other: string) => ({ other });',
     'type member of other': 'export interface R {\n  other: string;\n}',
     'variable named research': 'export const f = (): number => {\n  const research = 1;\n  return research;\n};',
+    'object key text': 'export const c = { text: "x" };',
+    'object key url': 'export const c = { url: "x" };',
+    'member read evidence.url': 'export const f = (e: { url: string }) => e.url;',
+    'type member agent': 'export interface R {\n  agent: string;\n}',
+    'variable named open': 'export const f = (): boolean => {\n  const open = true;\n  return open;\n};',
   };
 
   it('has the declared number of negative cases', () => {
-    expect(Object.keys(NEGATIVE).length).toBe(19 + 11 + 4);
+    expect(Object.keys(NEGATIVE).length).toBe(19 + 11 + 4 + 5);
   });
 
   for (const [name, code] of Object.entries(NEGATIVE)) {
     it(`stays silent on ${name}`, async () => {
       const messages = await lint(`${code}\n`);
       // Messages without a rule id (a configuration notice) do not count in this case only.
-      expect(messages.filter((m) => m.ruleId === 'no-restricted-syntax').map((m) => m.message)).toEqual([]);
+      expect(messages.filter((m) => DATA_DRIVEN_RULES.includes(m.ruleId ?? '')).map((m) => m.message)).toEqual([]);
     });
   }
 
@@ -655,6 +920,181 @@ describe('data-driven gate self-test: inline configuration', () => {
       expect(errors[0]?.message.startsWith('data-driven: S1 ')).toBe(true);
     }
   });
+
+  it('still reports an Ops bare word under a directive that names the Ops block rule (BOUNDARY-001)', async () => {
+    const line = "// eslint-disable-next-line data-driven-ops/no-restricted-syntax\nexport const f = (s: string): boolean => s === 'failed';\n";
+    const block = "/* eslint-disable */\nexport const g = (s: string): boolean => s === 'failed';\n";
+    for (const code of [line, block]) {
+      const errors = (await lint(code)).filter((m) => m.ruleId === 'data-driven-ops/no-restricted-syntax');
+      expect(errors.length).toBe(1);
+      expect(errors[0]?.severity).toBe(2);
+      expect(errors[0]?.message.startsWith('data-driven: S19.1 ')).toBe(true);
+    }
+  });
+
+  it('still reports a keyed Ops lookup under a directive that names the keyed block rule', async () => {
+    const line = "// eslint-disable-next-line data-driven-ops-keyed/no-restricted-syntax\nexport const f = (m: Map<string, number>): boolean => m.has('failed');\n";
+    const block = "/* eslint-disable */\nexport const g = (m: Map<string, number>): boolean => m.has('failed');\n";
+    for (const code of [line, block]) {
+      const errors = (await lint(code)).filter((m) => m.ruleId === 'data-driven-ops-keyed/no-restricted-syntax');
+      expect(errors.length).toBe(1);
+      expect(errors[0]?.severity).toBe(2);
+      expect(errors[0]?.message.startsWith('data-driven: S19.7 ')).toBe(true);
+    }
+  });
+});
+
+// BOUNDARY-001 (operator ruling (b)): the Ops bare-word shapes (S19) run in their own block, which ignores the Artifact Viewer's
+// markdown renderer. `text` is a markdown-it token type there and an Ops evidence class here; it stays in the Ops list and #7's
+// code is not changed. Both halves are proven: `text` is refused in an Ops file, and logic/markdown/ is not scanned by the Ops
+// block (while every other selector still scans it).
+describe('data-driven gate self-test: the Ops bare-word block (BOUNDARY-001)', () => {
+  const OPS_FILE = 'packages/mission-ui/src/elements/sk-ops-screen/ops-row-parts.ts';
+  const MARKDOWN_FILES = ['packages/mission-ui/src/logic/markdown/model.ts', 'packages/mission-ui/src/logic/markdown/render.ts', 'packages/mission-ui/src/logic/markdown/nested/deep.ts'];
+  const TEXT_COMPARE = "export const f = (t: { type: string }): boolean => t.type === 'text';\n";
+  const TEXT_CASE = "export function f(t: { type: string }): number {\n  switch (t.type) {\n    case 'text':\n      return 1;\n    default:\n      return 0;\n  }\n}\n";
+
+  it('splits the selectors: the S19 entries live in the Ops block only, every other entry in the gate block', async () => {
+    const cfg = await loadConfig();
+    const ids = (entries: SelectorEntry[]) => entries.map((e) => /^data-driven: (S[\w.]+) /.exec(e.message)?.[1]);
+    expect(ids(cfg.OPS_BARE_ENTRIES)).toEqual(['S19.1', 'S19.2', 'S19.3', 'S19.4', 'S19.5', 'S19.6', 'S19.7', 'S19.9', 'S19.10', 'S19.11']);
+    expect(ids(cfg.BASE_ENTRIES).some((id) => id?.startsWith('S19.'))).toBe(false);
+    expect(cfg.BASE_ENTRIES.length + cfg.OPS_BARE_ENTRIES.length).toBe(cfg.SELECTOR_ENTRIES.length);
+    expect(cfg.OPS_BARE_WORDS).toContain('text');
+    expect(cfg.OPS_BARE_IGNORES).toEqual(['packages/mission-ui/src/logic/markdown/**']);
+    expect(cfg.OPS_KEYED_IGNORES).toEqual([...cfg.OPS_BARE_IGNORES, 'packages/mission-ui/src/elements/sk-open-project-dialog/sk-open-project-dialog.ts']);
+    expect(ids(cfg.OPS_KEYED_ENTRIES)).toEqual(['S19.7']);
+    expect(ids(cfg.OPS_UNKEYED_ENTRIES)).toEqual(['S19.1', 'S19.2', 'S19.3', 'S19.4', 'S19.5', 'S19.6', 'S19.9', 'S19.10', 'S19.11']);
+    const [gate, ops, keyed] = cfg.default;
+    expect(gate?.ignores).toEqual(cfg.ALLOW_LIST);
+    expect(ops?.ignores).toEqual([...cfg.ALLOW_LIST, ...cfg.OPS_BARE_IGNORES]);
+    expect(Object.keys(ops?.rules ?? {})).toEqual([cfg.OPS_BARE_RULE]);
+    expect(keyed?.ignores).toEqual([...cfg.ALLOW_LIST, ...cfg.OPS_KEYED_IGNORES]);
+    expect(Object.keys(keyed?.rules ?? {})).toEqual([cfg.OPS_KEYED_RULE]);
+  });
+
+  it('refuses `text` compared or used as a case label in an Ops file (S19.1, S19.2)', async () => {
+    expect(selectorIds(await lint(TEXT_COMPARE, OPS_FILE))).toEqual(['S19.1']);
+    expect(selectorIds(await lint(TEXT_CASE, OPS_FILE))).toEqual(['S19.2']);
+    // the same in any other element file
+    expect(selectorIds(await lint(TEXT_COMPARE, ELEMENT_FILE))).toEqual(['S19.1']);
+  });
+
+  it('does not scan logic/markdown/ with the Ops block, and every other selector still scans it', async () => {
+    let ran = 0;
+    for (const file of MARKDOWN_FILES) {
+      expect(selectorIds(await lint(TEXT_COMPARE, file)), file).toEqual([]);
+      expect(selectorIds(await lint(TEXT_CASE, file)), file).toEqual([]);
+      // positive controls: a lane word, an artifact bare word and an Ops underscored word are still refused there
+      expect(selectorIds(await lint("export const x = 'blocked';\n", file)), file).toEqual(['S1']);
+      expect(selectorIds(await lint("export const f = (s: string): boolean => s === 'spec';\n", file)), file).toEqual(['S16.1']);
+      expect(selectorIds(await lint("export const x = 'doctor_sweep';\n", file)).sort(), file).toEqual(['S18.1', 'S18.3']);
+      ran += 1;
+    }
+    expect(ran).toBe(3);
+  });
+
+  it("exempts the open-project dialog from S19.7 alone (Lit's changed.has('open')), and every other selector still scans it", async () => {
+    const DIALOG = 'packages/mission-ui/src/elements/sk-open-project-dialog/sk-open-project-dialog.ts';
+    const LIT = "export const f = (changed: Map<string, unknown>): boolean => changed.has('open') && changed.get('open') === true;\n";
+    expect(selectorIds(await lint(LIT, DIALOG))).toEqual([]);
+    // positive controls: the same code in an Ops file is refused by S19.7, and the gate block still scans the dialog
+    expect(selectorIds(await lint(LIT, OPS_FILE))).toEqual(['S19.7', 'S19.7']);
+    expect(selectorIds(await lint("export const x = 'blocked';\n", DIALOG))).toEqual(['S1']);
+    // the other Ops bare-word shapes still scan the dialog: a comparison, a case label, a search and a quoted key all fire
+    expect(selectorIds(await lint("export const f = (s: string): boolean => s === 'closed';\n", DIALOG))).toEqual(['S19.1']);
+    expect(selectorIds(await lint(TEXT_CASE, DIALOG))).toEqual(['S19.2']);
+    expect(selectorIds(await lint("export const f = (s: string): boolean => s.includes('open');\n", DIALOG))).toEqual(['S19.5']);
+    expect(selectorIds(await lint("export const o = { 'open': 1 };\n", DIALOG))).toEqual(['S19.9']);
+    expect(selectorIds(await lint("export const x = 'doctor_sweep';\n", DIALOG)).sort()).toEqual(['S18.1', 'S18.3']);
+    // the ignore names that one file: a sibling file of the dialog is scanned by the Ops block
+    expect(selectorIds(await lint(LIT, 'packages/mission-ui/src/elements/sk-open-project-dialog/dialog-parts.ts'))).toEqual(['S19.7', 'S19.7']);
+  });
+
+  it('scans look-alike paths with the Ops block: the ignore is logic/markdown/ of the package and nothing wider', async () => {
+    for (const file of ['packages/mission-ui/src/logic/markdown.ts', 'packages/mission-ui/src/logic/markdown-copy.ts', 'packages/mission-ui/src/elements/markdown/x.ts', 'packages/other/src/logic/markdown/model.ts']) {
+      expect(selectorIds(await lint(TEXT_COMPARE, file)), file).toEqual(['S19.1']);
+    }
+  });
+});
+
+// R-ops-1 (contracts/gates.md): the selectors that keep an item-derived value out of a link, an address or markup in the Ops part
+// files. They live in eslint.config.mjs (scoped to elements/sk-ops-screen/*-parts.ts) and are exercised here on their own, so the
+// proof does not depend on the typed-lint run. The plant in gates/plants/eslint proves the scoped rule inside `pnpm lint`.
+describe('R-ops-1: the Ops parts-file selectors', () => {
+  const CONFIG = new URL('../eslint.config.mjs', import.meta.url).href;
+  interface Opsconfig {
+    OPS_PARTS_GLOB: string;
+    opsPartsRestrictions: SelectorEntry[];
+  }
+  async function loadOps(): Promise<Opsconfig> {
+    return (await import(CONFIG)) as Opsconfig;
+  }
+  async function lintParts(code: string): Promise<string[]> {
+    const { opsPartsRestrictions } = await loadOps();
+    const config: Linter.Config[] = [
+      { files: ['**/*.ts'], languageOptions: { parser: tseslint.parser, sourceType: 'module' }, rules: { 'no-restricted-syntax': ['error', ...opsPartsRestrictions] } },
+    ];
+    const messages = new Linter({ configType: 'flat' }).verify(code, config, { filename: 'packages/sample/src/elements/sk-ops-screen/ops-row-parts.ts' });
+    return messages.filter((m) => m.ruleId === 'no-restricted-syntax').map((m) => /^ops-parts: (R-ops-1\.\w) /.exec(m.message)?.[1] ?? m.message);
+  }
+  const tpl = (attr: string): string => `import { html } from 'lit';\nexport const t = (v: string) => html\`${attr}\`;\n`;
+
+  it('is scoped to the parts files of the Ops screen and declares five entries with distinct ids', async () => {
+    const { OPS_PARTS_GLOB, opsPartsRestrictions } = await loadOps();
+    expect(OPS_PARTS_GLOB).toBe('packages/*/src/elements/sk-ops-screen/*-parts.ts');
+    const ids = opsPartsRestrictions.map((e) => /^ops-parts: (R-ops-1\.\w) /.exec(e.message)?.[1]);
+    expect(ids).toEqual(['R-ops-1.a', 'R-ops-1.b', 'R-ops-1.c', 'R-ops-1.d', 'R-ops-1.e']);
+  });
+
+  it('refuses unsafeHTML and unsafeSVG, as an identifier and as an import', async () => {
+    // an import specifier is two identifier nodes (imported and local), so the identifier entry fires twice beside the source entry
+    expect((await lintParts("import { unsafeHTML } from 'lit/directives/unsafe-html.js';\n")).sort()).toEqual(['R-ops-1.a', 'R-ops-1.a', 'R-ops-1.b']);
+    expect((await lintParts("import { unsafeSVG } from 'lit/directives/unsafe-svg.js';\n")).sort()).toEqual(['R-ops-1.a', 'R-ops-1.a', 'R-ops-1.b']);
+    expect(await lintParts('export const x = (v: string) => unsafeHTML(v);\n')).toEqual(['R-ops-1.a']);
+  });
+
+  it('refuses innerHTML: a read, an assignment and a computed name', async () => {
+    expect(await lintParts('export const r = (e: Element) => e.innerHTML;\n')).toEqual(['R-ops-1.c']);
+    expect(await lintParts('export const w = (e: Element, v: string) => { e.innerHTML = v; };\n')).toEqual(['R-ops-1.c']);
+    expect(await lintParts("export const w = (e: Element, v: string) => { e['innerHTML'] = v; };\n")).toEqual(['R-ops-1.d']);
+  });
+
+  it('refuses an attribute binding named href, src, srcset, action, formaction or xlink:href', async () => {
+    const names = ['href', 'src', 'srcset', 'action', 'formaction', 'xlink:href'];
+    let ran = 0;
+    for (const name of names) {
+      expect(await lintParts(tpl(`<sk-x ${name}=\${v}></sk-x>`)), name).toEqual(['R-ops-1.e']);
+      expect(await lintParts(tpl(`<sk-x ${name}="\${v}"></sk-x>`)), `${name} quoted`).toEqual(['R-ops-1.e']);
+      expect(await lintParts(tpl(`<sk-x ${name}="/p/\${v}"></sk-x>`)), `${name} concatenated`).toEqual(['R-ops-1.e']);
+      expect(await lintParts(tpl(`<sk-x .${name}=\${v}></sk-x>`)), `${name} property`).toEqual(['R-ops-1.e']);
+      expect(await lintParts(tpl(`<sk-x ?${name}=\${v}></sk-x>`)), `${name} boolean`).toEqual(['R-ops-1.e']);
+      expect(await lintParts(tpl(`<sk-x ${name.toUpperCase()} = \${v}></sk-x>`)), `${name} upper case`).toEqual(['R-ops-1.e']);
+      ran += 1;
+    }
+    expect(ran).toBe(6);
+    // the svg tag is covered as the html tag is
+    expect(await lintParts("import { svg } from 'lit';\nexport const t = (v: string) => svg`<use xlink:href=${v}></use>`;\n")).toEqual(['R-ops-1.e']);
+  });
+
+  it('keeps ordinary bindings, static values, look-alike names and plain words silent (positive controls above)', async () => {
+    const silent = [
+      tpl('<sk-x label=${v}></sk-x>'),
+      tpl('<sk-x data-src=${v} data-href="${v}"></sk-x>'),
+      tpl('<sk-x resrc=${v} hreflang=${v}></sk-x>'),
+      tpl('<sk-x href="/static" title="${v}"></sk-x>'),
+      tpl('<p>href = ${v}</p>'),
+      tpl('<bdi>${v}</bdi>'),
+      "export const href = 1;\nexport const src = (e: { src: string }) => e.src;\n",
+      "export const f = (e: Element) => e.textContent;\n",
+    ];
+    let ran = 0;
+    for (const code of silent) {
+      expect(await lintParts(code), code).toEqual([]);
+      ran += 1;
+    }
+    expect(ran).toBe(8);
+  });
 });
 
 describe('data-driven gate self-test: the real sources', () => {
@@ -679,5 +1119,36 @@ describe('data-driven gate self-test: the real sources', () => {
     );
     expect(scanned.length).toBeGreaterThan(0);
     expect(results.length).toBe(scanned.length);
+  });
+});
+
+// Aliasing lit's `css` hides the template from postcss-lit (and so from every Stylelint rule). The selector lives in
+// eslint-rules/index.mjs and applies to every package source file; the plant in gates/plants/eslint proves it inside `pnpm lint`.
+describe('css alias ban', () => {
+  const RULES = new URL('../eslint-rules/index.mjs', import.meta.url).href;
+  async function lintCss(code: string): Promise<string[]> {
+    const { elementSyntaxRestrictions } = (await import(RULES)) as { elementSyntaxRestrictions: SelectorEntry[] };
+    const config: Linter.Config[] = [
+      { files: ['**/*.ts'], languageOptions: { parser: tseslint.parser, sourceType: 'module' }, rules: { 'no-restricted-syntax': ['error', ...elementSyntaxRestrictions] } },
+    ];
+    const messages = new Linter({ configType: 'flat' }).verify(code, config, { filename: 'packages/sample/src/x.ts' });
+    return messages.filter((m) => m.ruleId === 'no-restricted-syntax').map((m) => m.message);
+  }
+
+  it('refuses an aliased css import, from lit and from a lit subpath', async () => {
+    const cases = ["import { css as styles } from 'lit';\n", "import { css as c, html } from 'lit';\n", "import { css as c } from 'lit/static-html.js';\n"];
+    let ran = 0;
+    for (const code of cases) {
+      const messages = await lintCss(code);
+      expect(messages.filter((m) => m.startsWith("Do not alias lit's css tag")).length, code).toBe(1);
+      ran += 1;
+    }
+    expect(ran).toBe(3);
+  });
+
+  it('accepts the plain css import and an alias of another name (positive controls)', async () => {
+    expect((await lintCss("import { css } from 'lit';\nexport const s = css`:host { display: block; }`;\n")).length).toBe(0);
+    expect((await lintCss("import { LitElement as L } from 'lit';\nexport const x = L;\n")).length).toBe(0);
+    expect((await lintCss("import { css as c } from './local.js';\nexport const x = c;\n")).length).toBe(0);
   });
 });

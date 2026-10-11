@@ -1,11 +1,11 @@
 /// <reference types="vite/client" />
-// The public surface of the Missions and Pipeline elements and of the Work Package screen, frozen. The committed manifest is
+// The public surface of the Missions and Pipeline elements and of the Work Package and Ops screens, frozen. The committed manifest is
 // the contract: this test pins what it lists (tags, attributes, events) and the run-time defaults of every property,
 // so a later work package that changes the surface fails here and reports the change instead of making it.
 import { describe, expect, it } from 'vitest';
 import manifest from '../custom-elements.json';
 import '../src/index.js';
-import { BOARD_LABEL, DEFAULT_LANE_GROUPS, PHASES_LABEL } from '../src/defaults/index.js';
+import { BOARD_LABEL, CURSOR_REFUSAL_CODE, DEFAULT_LANE_GROUPS, OPS_COPY, PHASES_LABEL } from '../src/defaults/index.js';
 import type { ShellLayout } from '../src/shell-types.js';
 
 interface ManifestMember {
@@ -32,7 +32,7 @@ for (const mod of manifest.modules as { declarations?: ManifestDeclaration[] }[]
   }
 }
 
-const NEW_TAGS = ['sk-missions-screen', 'sk-pipeline-screen', 'sk-filter-toggle-group', 'sk-phase-bar', 'sk-work-package-board', 'sk-work-package-screen'];
+const NEW_TAGS = ['sk-missions-screen', 'sk-pipeline-screen', 'sk-filter-toggle-group', 'sk-phase-bar', 'sk-work-package-board', 'sk-work-package-screen', 'sk-ops-screen'];
 
 /** tag, property name, attribute (undefined = property only), default as a run-time value. */
 const SURFACE: [string, string, string | undefined, unknown][] = [
@@ -75,7 +75,25 @@ const SURFACE: [string, string, string | undefined, unknown][] = [
   ['sk-work-package-screen', 'now', 'now', null],
   ['sk-work-package-screen', 'labels', undefined, null],
   ['sk-work-package-screen', 'errorMessage', 'error-message', ''],
+  ['sk-ops-screen', 'status', 'status', 'loading'],
+  ['sk-ops-screen', 'project', undefined, null],
+  ['sk-ops-screen', 'items', undefined, []],
+  ['sk-ops-screen', 'pageInfo', undefined, null],
+  ['sk-ops-screen', 'totalCount', 'total-count', 0],
+  ['sk-ops-screen', 'skippedCount', 'skipped-count', 0],
+  ['sk-ops-screen', 'profile', 'profile', null],
+  ['sk-ops-screen', 'loadingMore', 'loading-more', false],
+  ['sk-ops-screen', 'loadMoreError', undefined, null],
+  ['sk-ops-screen', 'refusalCode', 'refusal-code', null],
+  ['sk-ops-screen', 'labels', undefined, null],
+  ['sk-ops-screen', 'errorMessage', 'error-message', ''],
 ];
+
+/**
+ * The one list of `sk-retry-load` declarers (BOUNDARY-004): every screen that dispatches the shared retry event, each with its own
+ * member of `RetryLoadEventDetail`. A screen that adds the event is added here, and only here.
+ */
+const RETRY_LOAD_DECLARERS = ['sk-artifact-screen', 'sk-drift-screen', 'sk-open-project-dialog', 'sk-ops-screen', 'sk-projects-screen', 'sk-work-package-screen'];
 
 /** tag, the exact set of events its manifest entry declares (own dispatches and `@fires` of child events). */
 const EVENTS: [string, string[]][] = [
@@ -85,18 +103,19 @@ const EVENTS: [string, string[]][] = [
   ['sk-phase-bar', []],
   ['sk-work-package-board', ['sk-select-work-package']],
   ['sk-work-package-screen', ['sk-open-artifact', 'sk-open-mission', 'sk-retry-load', 'sk-select-work-package']],
+  ['sk-ops-screen', ['sk-load-more', 'sk-retry-load']],
 ];
 
 describe('surface freeze', () => {
-  it('registers the six tags and lists each in the committed manifest', () => {
-    expect(NEW_TAGS).toHaveLength(6);
+  it('registers the seven tags and lists each in the committed manifest', () => {
+    expect(NEW_TAGS).toHaveLength(7);
     let checked = 0;
     for (const tag of NEW_TAGS) {
       expect(customElements.get(tag), tag).toBeDefined();
       expect(declarations.has(tag), tag).toBe(true);
       checked += 1;
     }
-    expect(checked).toBe(6);
+    expect(checked).toBe(7);
   });
 
   it('lists every property of the contracts with its attribute and default in the manifest', () => {
@@ -121,7 +140,7 @@ describe('surface freeze', () => {
     expect(checked).toBe(SURFACE.length);
   });
 
-  it('declares exactly the nine events of the contracts, per element', () => {
+  it('declares exactly the nine events of the contracts, per element (the Ops screen adds no new name)', () => {
     let checked = 0;
     const all = new Set<string>();
     for (const [tag, expected] of EVENTS) {
@@ -130,7 +149,7 @@ describe('surface freeze', () => {
       for (const name of names) all.add(name);
       checked += 1;
     }
-    expect(checked).toBe(6);
+    expect(checked).toBe(7);
     expect([...all].sort()).toEqual([
       'sk-filter-change',
       'sk-load-more',
@@ -142,6 +161,19 @@ describe('surface freeze', () => {
       'sk-select-work-package',
       'sk-view-artifacts',
     ]);
+  });
+
+  it('names the declarers of the two shared events exactly: sk-load-more (Missions, Ops) and sk-retry-load (the one list)', () => {
+    const declarersOf = (name: string): string[] =>
+      [...declarations]
+        .filter(([, decl]) => (decl.events ?? []).some((event) => event.name === name))
+        .map(([tag]) => tag)
+        .sort();
+    expect(declarersOf('sk-load-more')).toEqual(['sk-missions-screen', 'sk-ops-screen']);
+    expect(declarersOf('sk-retry-load')).toEqual(RETRY_LOAD_DECLARERS);
+    expect(RETRY_LOAD_DECLARERS).toHaveLength(6);
+    // Positive control: the helper finds a one-declarer event too.
+    expect(declarersOf('sk-search')).toEqual(['sk-missions-screen']);
   });
 
   it('names "open a Mission" once, verb first: no element declares sk-mission-open (D-01)', () => {
@@ -159,7 +191,7 @@ describe('surface freeze', () => {
     expect(declared).not.toContain('sk-mission-open');
   });
 
-  it('marks the two screens with the required status property and no slots or parts anywhere', () => {
+  it('marks the four screens with the required status property and no slots or parts anywhere', () => {
     for (const tag of NEW_TAGS) {
       const decl = declarations.get(tag);
       expect(decl?.slots ?? [], `${tag} slots`).toEqual([]);
@@ -169,6 +201,7 @@ describe('surface freeze', () => {
       'sk-missions-screen',
       'sk-pipeline-screen',
       'sk-work-package-screen',
+      'sk-ops-screen',
     ]);
   });
 
@@ -253,7 +286,102 @@ describe('surface freeze: the Work Package screen (ten properties, four events)'
   });
 });
 
+describe('surface freeze: the Ops screen (twelve properties, two events)', () => {
+  const tag = 'sk-ops-screen';
+  const properties = SURFACE.filter(([t]) => t === tag);
+
+  it('has exactly twelve properties and two events, no slot and no part', () => {
+    expect(properties).toHaveLength(12);
+    const declared = (declarations.get(tag)?.members ?? []).filter((m) => m.kind === 'field');
+    expect(declared.map((m) => m.name).sort()).toEqual(properties.map(([, name]) => name).sort());
+    expect(declared).toHaveLength(12);
+    expect(declarations.get(tag)?.events).toHaveLength(2);
+    expect(declarations.get(tag)?.slots ?? []).toEqual([]);
+    expect(declarations.get(tag)?.cssParts ?? []).toEqual([]);
+  });
+
+  it('declares exactly the seven attributes of the contract, and every other property is property-only', () => {
+    const declared = (declarations.get(tag)?.attributes ?? []).map((a) => a.name).sort();
+    expect(declared).toEqual(['error-message', 'loading-more', 'profile', 'refusal-code', 'skipped-count', 'status', 'total-count']);
+    expect(properties.filter(([, , attribute]) => attribute === undefined).map(([, name]) => name)).toEqual(['project', 'items', 'pageInfo', 'loadMoreError', 'labels']);
+  });
+
+  it('has twelve reactive properties and exactly the seven attributes at run time', () => {
+    const ctor = customElements.get(tag) as unknown as { elementProperties: Map<string, unknown>; observedAttributes: string[] };
+    expect([...ctor.elementProperties.keys()].sort()).toEqual(properties.map(([, name]) => name).sort());
+    expect(ctor.elementProperties.size).toBe(12);
+    expect([...ctor.observedAttributes].sort()).toEqual(['error-message', 'loading-more', 'profile', 'refusal-code', 'skipped-count', 'status', 'total-count']);
+  });
+
+  it('reflects status, and nothing else', async () => {
+    const screen = document.createElement(tag) as HTMLElement & { status: string; totalCount: number; profile: string | null };
+    document.body.append(screen);
+    screen.status = 'ready';
+    screen.totalCount = 4;
+    screen.profile = 'a-profile';
+    await (screen as unknown as { updateComplete: Promise<boolean> }).updateComplete;
+    expect(screen.getAttribute('status')).toBe('ready');
+    expect(screen.hasAttribute('total-count')).toBe(false);
+    expect(screen.hasAttribute('profile')).toBe(false);
+    screen.remove();
+  });
+
+  it('declares no method of its own beyond the lifecycle hooks, the two dispatch methods and the private helpers', () => {
+    // The screen file is frozen after this work package: a new method, public or not, is a change of the file and shows here.
+    const proto = customElements.get(tag)?.prototype as object;
+    const own = Object.getOwnPropertyNames(proto).filter((name) => typeof Object.getOwnPropertyDescriptor(proto, name)?.value === 'function');
+    expect(own.sort()).toEqual(
+      ['announcementText', 'constructor', 'loadMore', 'moveFocusIntoView', 'pageView', 'render', 'renderLook', 'retryPage', 'retryPayload', 'updated', 'willUpdate'].sort(),
+    );
+    expect((declarations.get(tag)?.members ?? []).filter((m) => m.kind === 'method')).toEqual([]);
+  });
+
+  it('shares the two events with the earlier screens: sk-retry-load carries the Ops member of the event union, sk-load-more the Missions detail (compile-time)', () => {
+    const screen = document.createElement(tag);
+    const seen: string[] = [];
+    screen.addEventListener('sk-load-more', (event) => seen.push(event.detail.cursor));
+    screen.addEventListener('sk-retry-load', (event) => {
+      // the Ops member joins the event union only; `RetryLoadDetail` (the Work Package and Projects payload) stays exact
+      const detail: import('../src/index.js').RetryLoadEventDetail = event.detail;
+      seen.push(detail.target === 'ops-page' ? (detail.cursor ?? 'first-page') : 'other');
+    });
+    screen.dispatchEvent(new CustomEvent('sk-load-more', { detail: { cursor: 'c1' } }));
+    screen.dispatchEvent(new CustomEvent('sk-retry-load', { detail: { target: 'ops-page' } }));
+    screen.dispatchEvent(new CustomEvent('sk-retry-load', { detail: { target: 'ops-page', cursor: 'c2' } }));
+    expect(seen).toEqual(['c1', 'first-page', 'c2']);
+  });
+});
+
 describe('the public type surface (BOUNDARY-004)', () => {
+  it('exports the Ops screen and its host-facing types from the package entry (the copy is reached through labels.copy, not exported)', async () => {
+    const entry = await import('../src/index.js');
+    expect(entry.SkOpsScreen).toBeDefined();
+    // The package entry exports no `defaults` module (as for the other screens): the copy keys and the refusal code are read from
+    // `src/defaults/ops-copy.ts` here, and a host rewords the copy through `labels.copy`.
+    expect(Object.keys(entry)).not.toContain('OPS_COPY');
+    expect(Object.keys(entry)).not.toContain('CURSOR_REFUSAL_CODE');
+    expect([OPS_COPY.loadMore, CURSOR_REFUSAL_CODE]).toEqual(['Load more', 'invalid_page_cursor']);
+    const screen = new entry.SkOpsScreen();
+    // Compile-time: each of these names must resolve from the package entry, or `tsc` fails this file.
+    const items: import('../src/index.js').OpsInvocationView[] = screen.items;
+    const status: import('../src/index.js').OpsScreenStatus = screen.status;
+    const failure: import('../src/index.js').OpsLoadMoreError | null = screen.loadMoreError;
+    const labels: import('../src/index.js').OpsLabelHooks | null = screen.labels;
+    const row = null as import('../src/index.js').OpsRowView | null;
+    // The three member types of OpsRowView are exported too, so a consumer can name every part of a row view.
+    const fact: import('../src/index.js').OpsFact | null = row?.facts[0] ?? null;
+    const factKind: import('../src/index.js').OpsFactKind | null = fact?.kind ?? null;
+    const shown: import('../src/index.js').OpsEvidenceDisplay | null = row?.evidence ?? null;
+    const retry: import('../src/index.js').OpsPageRetryDetail = { target: 'ops-page' };
+    const screenRetry: import('../src/index.js').SkOpsRetryLoadDetail = retry;
+    // @ts-expect-error the Ops member is not part of RetryLoadDetail
+    const notWp: import('../src/index.js').RetryLoadDetail = { target: 'ops-page' };
+    void notWp;
+    expect(screenRetry).toBe(retry);
+    const evidence: import('../src/index.js').OpsEvidenceView | null = null;
+    expect([items, status, failure, labels, row, fact, factKind, shown, retry, evidence]).toEqual([[], 'loading', null, null, null, null, null, null, { target: 'ops-page' }, null]);
+  });
+
   it('exports the Work Package record and detail view types the screen takes as properties', async () => {
     const entry = await import('../src/index.js');
     expect(entry.SkWorkPackageScreen).toBeDefined();
@@ -362,10 +490,10 @@ describe('surface freeze: the Projects screen (five properties, three events) an
       .filter(([, declaration]) => (declaration.events ?? []).some((e) => e.name === 'sk-retry-load'))
       .map(([tag]) => tag)
       .sort();
-    expect(retryDeclarers).toEqual(['sk-artifact-screen', 'sk-drift-screen', 'sk-open-project-dialog', 'sk-projects-screen', 'sk-work-package-screen']);
+    expect(retryDeclarers).toEqual(RETRY_LOAD_DECLARERS);
     // `some` per tag would pass a component that declares the event twice: count every declaration of the name.
     const retryDeclarations = [...declarations.values()].reduce((total, declaration) => total + (declaration.events ?? []).filter((e) => e.name === 'sk-retry-load').length, 0);
-    expect(retryDeclarations).toBe(5);
+    expect(retryDeclarations).toBe(6);
   });
 
   it('marks the Projects screen, and not the dialog, as a screen with the `@screen` line the manifest gate looks for', async () => {
