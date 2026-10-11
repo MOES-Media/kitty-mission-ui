@@ -251,3 +251,16 @@ test('the generated fixtures source escapes bidirectional controls, so the commi
   assert.equal(n, 11);
   assert.ok(source.includes('\\u202e'), 'the override is written as an escape (positive control)');
 });
+
+test('the generated fixtures source escapes the Arabic letter mark as well (positive control: a plain letter stays raw)', async () => {
+  const mark = String.fromCharCode(0x061c);
+  const docs = { probe: { text: `a${mark}b`, plain: 'c' } };
+  const source = await generateFixturesSource(ROOT, {
+    buildFixtures: () => docs,
+    bulk,
+    registry: { probe: { satisfies: 'Probe' } },
+  });
+  assert.equal(source.includes(mark), false, 'no raw U+061C');
+  assert.ok(source.includes('a\\u061cb'), 'written as an escape');
+  assert.ok(source.includes('plain: "c"'), 'positive control');
+});
