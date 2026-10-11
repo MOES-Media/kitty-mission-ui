@@ -106,7 +106,7 @@ test('positive control: the repository itself passes every check, and the checks
   assert.equal(clean.summary.fixtures, 121);
   assert.equal(clean.summary.anchorFiles, 5);
   assert.equal(clean.summary.bulkPages, 2);
-  assert.equal(clean.summary.bulkDocuments, 5, 'two listings and three contents');
+  assert.equal(clean.summary.bulkDocuments, 6, 'two listings, three contents and the Drift report');
   assert.ok(clean.summary.c7Files > 0);
 });
 
@@ -626,7 +626,8 @@ test('guard: a C7 scan over no files gives guard', async () => {
 const BULK_DOCUMENT_LABELS = ['bulk listing of 1000', 'bulk truncated listing of 1000', 'bulk large markdown', 'bulk long line', 'bulk over-budget markdown'];
 
 test('checkBulk validates each generator output against the contract, and the checks counted every one of them', async () => {
-  assert.equal(clean.summary.bulkDocuments, BULK_DOCUMENT_LABELS.length);
+  // the five Artifact Viewer documents and the Drift report (one bulkDocuments table, mission-ui#10 BOUNDARY-009)
+  assert.equal(clean.summary.bulkDocuments, BULK_DOCUMENT_LABELS.length + 1);
   assert.deepEqual(clean.problems, []);
 });
 
@@ -710,9 +711,17 @@ test('C4: an Artifact relaxed fixture that holds a known kind or code passes the
 });
 
 // ---- the Drift fixtures (mission-ui#10) ----
-test('C4 Drift: the bulk report of 1000 findings is counted, validated and clean', async () => {
-  assert.equal(clean.summary.bulkReports, 1);
+test('C4 Drift: the bulk report of 1000 findings is a bulkDocuments row: counted there, validated and clean, with no second channel', async () => {
+  assert.equal(clean.summary.bulkDocuments, 6);
+  assert.equal('bulkReports' in clean.summary, false);
   assert.deepEqual(clean.problems, []);
+});
+
+test('C5 Drift: the bulk report goes through its row\'s coherence hook (driftFailures), naming the report', async () => {
+  const root = tempRepo();
+  edit(root, 'packages/mission-ui/src/contract/bulk.ts', 'for (let i = 0; i < count; i += 1) findings.push(makeDriftFinding(i));', 'for (let i = 0; i < count; i += 1) findings.unshift(makeDriftFinding(i));');
+  const r = await check(root);
+  assert.ok(r.problems.some((p) => p.token === TOKENS.incoherent && /bulk Drift report/.test(p.message) && p.rules?.includes('key-order')), r.problems.map((p) => `${p.token}: ${p.message}`).join(' | '));
 });
 
 test('C4 Drift: a bulk generator that returns 1001 findings breaks maxItems, and the equality is checked in the gate itself', async () => {

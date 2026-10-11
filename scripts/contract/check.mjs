@@ -356,7 +356,7 @@ export function driftFailures(report) {
   return failed;
 }
 
-function checkCoherence(docs, registry, bulkPages, bulkReports = {}) {
+function checkCoherence(docs, registry, bulkPages, bulkHooks = {}) {
   const out = [];
   let records = 0;
   const run = (label, rec, isDetail, skipPhases) => {
@@ -378,9 +378,10 @@ function checkCoherence(docs, registry, bulkPages, bulkReports = {}) {
       if (rules.length) out.push(problem(TOKENS.incoherent, `fixture ${name} is incoherent (rule ${rules.join(', ')})`, { rules }));
     }
   }
-  for (const [label, report] of Object.entries(bulkReports)) {
+  // a generated document whose bulkDocuments row names a C5 hook (the Drift report: driftFailures)
+  for (const [label, { doc, coherence }] of Object.entries(bulkHooks)) {
     records += 1;
-    const rules = driftFailures(report);
+    const rules = coherence(doc);
     if (rules.length) out.push(problem(TOKENS.incoherent, `${label} is incoherent (rule ${rules.join(', ')})`, { rules }));
   }
   for (const [label, page] of Object.entries(bulkPages)) page.items.forEach((item, i) => run(`${label} item ${i}`, item, false, false));
@@ -398,7 +399,11 @@ const BULK_CONTENT_BYTES = 262144;
 const FIXTURES_FILE_CEILING = 1048576;
 const PROBE_LENGTH = 200;
 
-/** The generated documents, by label, each with the schema it must satisfy and the call that builds it. The content paths are listed in the generated listing. */
+/**
+ * The generated documents, by label, each with the schema it must satisfy and the call that builds it. The content paths are
+ * listed in the generated listing. A row with `coherence` is also checked by that C5 hook (the Drift report: key and lane
+ * order, unique keys, unequal lane words).
+ */
 function bulkDocuments(bulk) {
   const open = ['notes/large.md', 'notes/long-line.md', 'notes/over-budget.md'];
   return {
@@ -407,6 +412,7 @@ function bulkDocuments(bulk) {
     'bulk large markdown': { schema: 'ArtifactContent', build: () => bulk.makeLargeMarkdown(BULK_CONTENT_BYTES, open[0]) },
     'bulk long line': { schema: 'ArtifactContent', build: () => bulk.makeLongLine(BULK_CONTENT_BYTES, open[1]) },
     'bulk over-budget markdown': { schema: 'ArtifactContent', build: () => bulk.makeOverBudgetMarkdown(open[2]) },
+    'bulk Drift report': { schema: 'DriftReport', build: () => bulk.makeDriftReport(DRIFT_MAX_FINDINGS), coherence: driftFailures },
   };
 }
 
@@ -416,27 +422,22 @@ function probeOf(doc) {
     const line = doc.content.split('\n').find((l) => l.length >= PROBE_LENGTH);
     return JSON.stringify(line ? line.slice(0, PROBE_LENGTH) : doc.content.slice(0, PROBE_LENGTH)).slice(1, -1);
   }
+  if (Array.isArray(doc.findings)) return JSON.stringify(doc.findings[Math.floor(doc.findings.length / 2)]).slice(1, -1);
   return JSON.stringify(doc.entries[Math.floor(doc.entries.length / 2)].path).slice(1, -1);
 }
 
 async function checkBulk(root) {
   const bulk = await loadBulk(root);
   const pages = { 'bulk page of 40': bulk.makeMissionPage(40, true), 'bulk page of 500': bulk.makeMissionPage(500, true) };
-  const reports = { 'bulk Drift report': bulk.makeDriftReport(DRIFT_MAX_FINDINGS) };
   const out = [];
   const v = await validators(root, 'MissionOverviewPage');
   for (const [label, page] of Object.entries(pages)) {
     const r = validateWith(v, page);
     if (!r.valid) out.push(problem(TOKENS.violates, `${label} violates the closed contract: ${summarise(r.errors)}`));
   }
-  const dv = await validators(root, 'DriftReport');
-  for (const [label, report] of Object.entries(reports)) {
-    const r = validateWith(dv, report);
-    if (!r.valid) out.push(problem(TOKENS.violates, `${label} violates the closed contract: ${summarise(r.errors)}`));
-    if (report.findings.length !== DRIFT_MAX_FINDINGS) out.push(problem(TOKENS.violates, `${label} holds ${report.findings.length} findings; the bulk report holds exactly ${DRIFT_MAX_FINDINGS}`));
-  }
   const documents = {};
-  for (const [label, { schema, build }] of Object.entries(bulkDocuments(bulk))) {
+  const hooks = {};
+  for (const [label, { schema, build, coherence }] of Object.entries(bulkDocuments(bulk))) {
     let doc;
     try {
       doc = build();
@@ -445,9 +446,11 @@ async function checkBulk(root) {
       continue;
     }
     documents[label] = doc;
+    if (coherence) hooks[label] = { doc, coherence };
     const r = validateWith(await validators(root, schema), doc);
     if (!r.valid) out.push(problem(TOKENS.violates, `${label} violates the closed contract: ${summarise(r.errors)}`));
     if (schema === 'ArtifactListing' && doc.entries.length !== BULK_LISTING_ENTRIES) out.push(problem(TOKENS.guard, `${label} holds ${doc.entries.length} entries, not ${BULK_LISTING_ENTRIES}`));
+    if (schema === 'DriftReport' && doc.findings.length !== DRIFT_MAX_FINDINGS) out.push(problem(TOKENS.violates, `${label} holds ${doc.findings.length} findings; the bulk report holds exactly ${DRIFT_MAX_FINDINGS}`));
     if (schema === 'ArtifactContent' && doc.sizeBytes > BULK_CONTENT_BYTES) out.push(problem(TOKENS.guard, `${label} is ${doc.sizeBytes} bytes, over the cap of ${BULK_CONTENT_BYTES}`));
   }
   // never stored: no stored file holds a slice of a generated document, and the stored fixtures stay under their ceiling
@@ -462,7 +465,7 @@ async function checkBulk(root) {
   for (const [label, doc] of Object.entries(documents)) {
     if (stored.includes(probeOf(doc))) out.push(problem(TOKENS.guard, `a generated document is stored in ${LAYOUT.fixtures}: ${label}`));
   }
-  return { problems: out, pages, reports, documents };
+  return { problems: out, pages, documents, hooks };
 }
 
 // ---- C6 ---------------------------------------------------------------------------------------------------------
@@ -506,7 +509,7 @@ function currentUsername() {
   }
 }
 
-function checkHygieneScope(root, docs, bulkPages, bulkReports = {}) {
+function checkHygieneScope(root, docs, bulkPages) {
   const out = [];
   const files = [
     ...listFiles(join(root, LAYOUT.vendor)).map((f) => `${LAYOUT.vendor}/${f}`),
@@ -535,7 +538,7 @@ function checkHygieneScope(root, docs, bulkPages, bulkReports = {}) {
       if (texts.some((t) => re.test(t))) out.push(problem(TOKENS.hygiene, `${label} contains the username of the account running the gate`));
     };
     hit('generated fixture values', stringValues(docs));
-    hit('bulk generator output', stringValues([bulkPages, bulkReports]));
+    hit('bulk generator output', stringValues(bulkPages));
     for (const file of authoredFiles(root).filter(isAuthored)) hit(file, [readText(root, file)]);
   }
   return { problems: out, scanned: files.length };
@@ -572,15 +575,15 @@ export async function runChecks({ root = ROOT, deps = {}, requireMain = false } 
   problems.push(...fx.problems);
   const bulk = await checkBulk(root);
   problems.push(...bulk.problems);
-  const c5 = checkCoherence(fx.docs, registry, bulk.pages, bulk.reports);
+  const c5 = checkCoherence(fx.docs, registry, bulk.pages, bulk.hooks);
   problems.push(...c5.problems);
-  const c6 = checkHygieneScope(root, fx.docs, { ...bulk.pages, ...bulk.documents }, bulk.reports);
+  const c6 = checkHygieneScope(root, fx.docs, { ...bulk.pages, ...bulk.documents });
   problems.push(...c6.problems);
   const c7 = checkProvisional(root);
   problems.push(...c7.problems);
   return {
     problems,
-    summary: { vendoredFiles: c1.files, anchorFiles: c1.anchors, fixtures: fx.count, bulkPages: Object.keys(bulk.pages).length, bulkReports: Object.keys(bulk.reports).length, bulkDocuments: Object.keys(bulk.documents).length, coherenceRecords: c5.records, hygieneFiles: c6.scanned, c7Files: c7.files },
+    summary: { vendoredFiles: c1.files, anchorFiles: c1.anchors, fixtures: fx.count, bulkPages: Object.keys(bulk.pages).length, bulkDocuments: Object.keys(bulk.documents).length, coherenceRecords: c5.records, hygieneFiles: c6.scanned, c7Files: c7.files },
   };
 }
 
@@ -589,7 +592,7 @@ async function main() {
   for (const p of problems) process.stdout.write(`contract: ${p.token}: ${p.message}\n`);
   if (problems.length === 0) {
     const s = summary;
-    process.stdout.write(`contract gate: ok (${s.vendoredFiles} vendored files, ${s.anchorFiles} anchor files, ${s.fixtures} fixtures, ${s.bulkPages} bulk pages, ${s.bulkReports} bulk report, ${s.bulkDocuments} bulk documents, ${s.coherenceRecords} records checked for coherence, ${s.hygieneFiles} files in the hygiene scope, ${s.c7Files} files in the provisional scan)\n`);
+    process.stdout.write(`contract gate: ok (${s.vendoredFiles} vendored files, ${s.anchorFiles} anchor files, ${s.fixtures} fixtures, ${s.bulkPages} bulk pages, ${s.bulkDocuments} bulk documents, ${s.coherenceRecords} records checked for coherence, ${s.hygieneFiles} files in the hygiene scope, ${s.c7Files} files in the provisional scan)\n`);
     return 0;
   }
   process.stdout.write(`contract gate: ${problems.length} problem(s)\n`);
