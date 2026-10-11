@@ -293,16 +293,17 @@ describe('AV-26: linked Work Packages', () => {
     expect(pills.length).toBe(2);
     for (const pill of pills) {
       const style = getComputedStyle(pill);
-      // Derived, not a literal: the box is its line height (the library's 1.5 times the font size, a unitless ratio on the pill itself, so
-      // the fallback font of a runner cannot move it) plus the block padding; both padding values are asserted so a change turns this red.
+      // The font size is pinned to its token value (--sk-text-xs, 0.75rem = 12px) and the box is its line height (the library's 1.5 times
+      // the font size, a unitless ratio on the pill itself, so the fallback font of a runner cannot move it) plus the block padding, so
+      // the height is exactly 26: a larger or smaller pill, or a changed padding, turns this red.
       const px = (value: string): number => parseFloat(value);
+      expect(px(style.fontSize)).toBe(12);
       expect(px(style.paddingTop)).toBe(4);
       expect(px(style.paddingBottom)).toBe(4);
       expect(px(style.paddingLeft)).toBe(12);
       expect(px(style.paddingRight)).toBe(12);
-      expect(Math.abs(px(style.lineHeight) / px(style.fontSize) - 1.5)).toBeLessThan(0.001);
-      expect(pill.getBoundingClientRect().height).toBeCloseTo(px(style.lineHeight) + px(style.paddingTop) + px(style.paddingBottom), 1);
-      expect(px(style.lineHeight) + px(style.paddingTop) + px(style.paddingBottom), 'the prototype pill, above the 24px of NFR-015').toBeGreaterThanOrEqual(26);
+      expect(px(style.lineHeight)).toBe(18);
+      expect(pill.getBoundingClientRect().height, 'the prototype pill, above the 24px of NFR-015').toBe(26);
       expect([style.borderTopWidth, style.borderRightWidth, style.borderBottomWidth, style.borderLeftWidth]).toEqual(['0px', '0px', '0px', '0px']);
       expect(style.cursor).toBe('pointer');
     }
