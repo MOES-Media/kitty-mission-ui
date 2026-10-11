@@ -1,0 +1,53 @@
+{
+  "rows": {
+    "#10": {
+      "evidence_ref": "<auto-classified: no action required>",
+      "fr": null,
+      "nfr": null,
+      "repo": null,
+      "sc": null,
+      "scope": null,
+      "source_file": "spec.md",
+      "title": "<auto-classified: pr_or_commit_ref>",
+      "verdict": "not-applicable",
+      "wp": null
+    },
+    "#11": {
+      "evidence_ref": "Sibling Ops mission (mission-ui#11) cited as parallel work with disjoint new files; shared-file rule in plan.md and tasks-notes.md; no work owed here",
+      "fr": null,
+      "nfr": null,
+      "repo": null,
+      "sc": null,
+      "scope": null,
+      "source_file": "spec.md",
+      "title": "<fill at WP-implementation time>",
+      "verdict": "not-applicable",
+      "wp": null
+    },
+    "#5776": {
+      "evidence_ref": "spec-kitty issue whose Mission Status contract this mission consumes; the contract re-vendor is owned by mission-ui#9, WP01 only checks the precondition",
+      "fr": null,
+      "nfr": null,
+      "repo": null,
+      "sc": null,
+      "scope": null,
+      "source_file": "spec.md",
+      "title": "<fill at WP-implementation time>",
+      "verdict": "not-applicable",
+      "wp": null
+    },
+    "#5881": {
+      "evidence_ref": "spec-kitty PR landing #5776; cited as the re-vendor precondition (WP01 stop-check), no work owed by this mission",
+      "fr": null,
+      "nfr": null,
+      "repo": null,
+      "sc": null,
+      "scope": null,
+      "source_file": "spec.md",
+      "title": "<fill at WP-implementation time>",
+      "verdict": "not-applicable",
+      "wp": null
+    }
+  },
+  "schema_version": 1
+}

@@ -1,0 +1,349 @@
+{
+  "mission_slug": "drift-screen-01M4C93T",
+  "mission_number": "3",
+  "mission_type": "software-dev",
+  "overall_verdict": "pass",
+  "criteria": [
+    {
+      "criterion_id": "FR-001",
+      "description": "Verify FR-001 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/surface-freeze.test.ts, packages/mission-ui/test/drift-types.test.ts: pin sk-drift-screen's eleven properties and six events (names, defaults, typed use without casts) and open-string view types",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-11T12:19:52.125199+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-002",
+      "description": "Verify FR-002 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-drift-screen.header.test.ts: h1 title and subtitle from defaults, header drawn in every state, scoped scan names the Mission by slug/id, Rescan button named 'Rescan'",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-11T12:20:06.772940+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-003",
+      "description": "Verify FR-003 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-drift-screen.time.test.ts, packages/mission-ui/test/sk-drift-screen.header.test.ts, packages/mission-ui/test/drift-report.test.ts: relative text from now, ISO fallback when now is null, full instant in title, time hook wins, unparseable shown as given",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-11T12:20:09.607761+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-004",
+      "description": "Verify FR-004 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-drift-screen.header.test.ts, packages/mission-ui/test/sk-drift-screen.events-list.test.ts, packages/mission-ui/test/sk-drift-screen.rescan-busy.test.ts: sk-rescan-drift emitted once with missionId, nothing while rescanning (aria-busy, focus kept, report stays)",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-11T12:20:11.245764+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-005",
+      "description": "Verify FR-005 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-drift-screen.list-keys.test.ts, packages/mission-ui/test/drift-keys.test.ts: listbox/option roles, report order kept unsorted, roving tab stop, Up/Left/Down/Right wrap, Home/End, single item stays, no other key",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-11T12:20:12.875292+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-006",
+      "description": "Verify FR-006 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-drift-screen.list-keys.test.ts, packages/mission-ui/test/drift-finding.test.ts: row shows summary title, slug or missionId, severity word and tone, raw word with neutral tone for unknown severity",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-11T12:20:14.492553+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-007",
+      "description": "Verify FR-007 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/drift-report.test.ts, packages/mission-ui/test/sk-drift-screen.list-keys.test.ts: headSummary counts findings.length with per-severity roll-up and danger-tone head badge; draws count/badge, no badge without danger",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-11T12:20:16.122251+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-008",
+      "description": "Verify FR-008 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-drift-screen.skeleton.test.ts, packages/mission-ui/test/sk-drift-screen.states.test.ts, packages/mission-ui/test/drift-report.test.ts: ready with null report or non-array findings draws loading, never clean; announces nothing",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-11T12:20:17.749208+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-009",
+      "description": "Verify FR-009 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-drift-screen.states.test.ts, packages/mission-ui/test/sk-drift-screen.announce.test.ts, packages/mission-ui/test/drift-report.test.ts: scoped scan with foreign finding is not loaded and announces nothing (paired with unscoped ready positive control)",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-11T12:20:19.392475+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-010",
+      "description": "Verify FR-010 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-drift-screen.detail.test.ts: contract summary is the h2, kicker holds severity and kind words, raw words for unknown kind/severity, source-code mono tag under title (DR-32)",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-11T12:20:21.031653+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-011",
+      "description": "Verify FR-011 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/drift-finding.test.ts, packages/mission-ui/test/sk-drift-screen.detail.test.ts: explanation keyed by kind+sourceCode pair, none for unknown pair, no branch named for git-decided finding",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-11T12:20:22.657980+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-012",
+      "description": "Verify FR-012 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-drift-screen.detail.test.ts: Authoritative side panel with authority word in neutral pill, raw word for unknown authority, derived side and file in Facts",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-11T12:20:24.301598+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-013",
+      "description": "Verify FR-013 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-drift-screen.table.test.ts, packages/mission-ui/test/drift-finding.test.ts: real th scope=col headers, differing rows in given order, not-present for null side, lane vocabulary, no table for empty rows, one sentence for corrupt JSON",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-11T12:20:25.938236+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-014",
+      "description": "Verify FR-014 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-drift-screen.resolution.test.ts, packages/mission-ui/test/drift-finding.test.ts: command from defaults template with Copy and result region only for known remedy and slug; none for null/unknown remedy or unlisted Mission",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-11T12:20:27.731007+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-015",
+      "description": "Verify FR-015 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-drift-screen.events-detail.test.ts, packages/mission-ui/test/sk-drift-screen.skeleton.test.ts: EV-3 sk-copy-command exact {text,missionId,remedy}, clipboard never written, no event without a command",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-11T12:20:29.422263+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-016",
+      "description": "Verify FR-016 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-drift-screen.events-detail.test.ts, packages/mission-ui/test/sk-drift-screen.detail.test.ts: EV-4 sk-open-mission {missionId,slug} from Mission link; unlisted Mission shows id and no link",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-11T12:20:31.037767+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-017",
+      "description": "Verify FR-017 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-drift-screen.detail.test.ts: Facts shows Mission link, File in mono and Derived side word in order, each only when present",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-11T12:20:32.674140+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-018",
+      "description": "Verify FR-018 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-drift-screen.states.test.ts, packages/mission-ui/test/drift-report.test.ts, packages/mission-ui/test/sk-drift-screen.list-keys.test.ts: truncation notice states first N shown with N=findings.length, no total claimed, roll-up labelled as covering shown findings",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-11T12:20:34.306845+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-019",
+      "description": "Verify FR-019 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-drift-screen.states.test.ts: 'No drift found' with last scan; empty status and ready-with-no-findings look the same; never claims everything is consistent",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-11T12:20:35.971136+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-020",
+      "description": "Verify FR-020 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-drift-screen.states.test.ts, packages/mission-ui/test/sk-drift-screen.events-list.test.ts: refusal words by code with generic fallback, Retry emits sk-retry-load {target drift-report, missionId}, not-found 'Return to Missions' emits sk-open-missions",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-11T12:20:40.259960+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-021",
+      "description": "Verify FR-021 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-drift-screen.resolution.test.ts, packages/mission-ui/test/sk-drift-screen.edge.test.ts: stale copyResult at press ignored, result shown only for the pressed finding and dropped on selection/report change, manual selects command text with fallback",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-11T12:20:41.864340+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-022",
+      "description": "Verify FR-022 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-drift-screen.events-list.test.ts, packages/mission-ui/test/sk-drift-screen.edge.test.ts, packages/mission-ui/test/sk-drift-screen.states.test.ts: incoming selectedFinding never re-emitted, host ignoring event leaves selection, unmatched/null key marks nothing and draws choose-a-finding detail",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-11T12:20:43.480035+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-023",
+      "description": "Verify FR-023 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "scripts/drift-story-catalogue.test.mjs: checkShellWiring passes on the real frame (current nav-drift, flush) and fails when either is removed; packages/mission-ui/test/surface-freeze.test.ts: SkDriftScreen exported from src/index.ts",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-11T12:20:57.518275+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-024",
+      "description": "Verify FR-024 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-drift-screen.tiers.test.ts, packages/mission-ui/test/sk-drift-screen.skeleton.test.ts: 1280/1100/800/620 tiers, columns follow container, :state(shell-mobile) set at 620 and not at 800, thresholds 800/799 of the container",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-11T12:20:59.115559+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-025",
+      "description": "Verify FR-025 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-drift-screen.a11y.test.ts: Tab order Rescan, listbox (one stop), Mission link, Copy with focus rings; no trap; Enter/Space act; focus lost to an update moves to the list, else title, else root",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-11T12:21:00.713219+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-026",
+      "description": "Verify FR-026 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/drift-announce.test.ts, packages/mission-ui/test/sk-drift-screen.announce.test.ts, packages/mission-ui/test/sk-drift-screen.skeleton.test.ts: one polite status region; announces loading, ready (count, last scan), rescanned, refusal and copy results; mismatched or unshown data announces nothing",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-11T12:21:02.297869+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-027",
+      "description": "Verify FR-027 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "gates/data-driven.selftest.ts: data-driven gate covers every Drift vocabulary word with plants; packages/mission-ui/test/drift-part-copy.test.ts: part files hold no copy; packages/mission-ui/test/drift-defaults.test.ts: words/tones/templates in defaults with raw fallback",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-11T12:21:03.923916+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-028",
+      "description": "Verify FR-028 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/drift-finding.test.ts: buildFindingView builds title, kicker, explanation, authority/file words, command and lane rows as a pure function over plain objects (no DOM); packages/mission-ui/test/drift-types.test.ts",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-11T12:21:05.549822+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-029",
+      "description": "Verify FR-029 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "scripts/contract/drift-fixtures.test.mjs: 17 Drift registry entries incl. both refusal codes, unknown kind/severity/authority/remedy, unlisted Mission, scoped and foreign-finding scoped reports, 40-lane report; packages/mission-ui/test/sk-drift-screen.perf.test.ts: 1000-finding report",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-11T12:21:07.143527+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-030",
+      "description": "Verify FR-030 is satisfied",
+      "proof_type": "visual_baseline",
+      "evidence": "scripts/drift-story-catalogue.test.mjs: 33 matrix rows map to 38 stories (exact counts, negative cases); 146 committed drift baselines in apps/storybook/tests/visual/__snapshots__ driven by stories.visual.spec.ts; scripts/check-manifest.mjs manifest gate",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-11T12:21:08.732631+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-031",
+      "description": "Verify FR-031 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-drift-screen.skeleton.test.ts, packages/mission-ui/test/sk-drift-screen.events-list.test.ts, packages/mission-ui/test/sk-drift-screen.events-detail.test.ts: every event EV-1..EV-6 with exact payload and positive controls; incoming selection not re-emitted; Rescan while rescanning emits nothing",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-11T12:21:10.320473+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-032",
+      "description": "Verify FR-032 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "scripts/stylelint-exceptions.test.mjs ('Drift exceptions' block, E-35..E-39): each declaration passes only in its listed file and fails elsewhere, with plants; packages/mission-ui/test/drift-part-selectors.test.ts: ::part selectors pinned per file and exist in library cssParts",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-11T12:21:13.547454+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-033",
+      "description": "Verify FR-033 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/drift-retry.test.ts: driftRetryDetail builds {missionId,target:'drift-report'} and the union narrows on target; packages/mission-ui/test/surface-freeze.test.ts: RetryLoadDetail and DriftRetryDetail pinned, sk-retry-load typed for the Drift member",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-11T12:21:15.161422+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-034",
+      "description": "Verify FR-034 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "scripts/gate-proof.mjs local on the consolidated tree (lane-h = mission branch): 12 of 12 gates pass clean and fail with their plant (contract, data-driven, eslint, hygiene, manifest, no-io, preflight, storybook-build, stylelint, typecheck, unit-tests, visual); verdict pass",
+      "pass_fail": "pass",
+      "verified_by": "<user>",
+      "verified_at": "2026-10-11T12:42:55.458636+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    }
+  ],
+  "negative_invariants": []
+}

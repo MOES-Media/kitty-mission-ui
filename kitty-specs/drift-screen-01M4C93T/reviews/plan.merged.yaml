@@ -1,0 +1,147 @@
+schema: review-findings/v1
+complete: true
+phase: plan
+lens_group: merged
+mission: drift-screen-01M4C93T
+note: R2 mechanical merge, no deduplication was needed (no two findings cite the same section with the same claim)
+findings:
+- id: PLAN-GOV-001
+  lens: Scope / consistency of spec and plan
+  severity: 3
+  title: spec.md FR-023 still says the shell nav item is added; plan amendment A-1 says it already exists
+  evidence:
+  - artifact: "spec.md \xA7 FR-023 ('the shell's nav item added (serialised with Ops ...)')"
+  - artifact: plan.md / research.md D-12, A-1
+  - code: 'packages/mission-ui/src/elements/sk-mission-shell/fixtures.ts:16 ({ id: ''nav-drift'', label: ''Drift'', ... })'
+  claim: A WP agent reading the spec would add a nav item and a serialisation step that does not exist; the plan treats the fix as an operator-gated amendment although it is a plain factual correction.
+  remediation: Correct FR-023 in spec.md (nav item exists; the work is the story with current nav-drift and flush plus the exports) and drop A-1 from the CP-1 list, keeping a line in the Clarifications.
+- id: PLAN-GOV-002
+  lens: Directive (canonical CLI flow)
+  severity: 2
+  title: The plan was written by hand and spec-kitty agent mission setup-plan was not run
+  evidence:
+  - artifact: tracer-tooling-friction.md (2026-10-08 entry)
+  claim: The skill says phase work goes through the spec-kitty commands; skipping setup-plan could leave mission state unaware of the plan.
+  remediation: Run setup-plan, or prove the state does not depend on it.
+- id: PLAN-GOV-003
+  lens: Ledger / operator record
+  severity: 1
+  title: operator-questions.md Q10 (a) still reads "re-vendor lands on this planning branch", superseded by the ruling
+  evidence:
+  - artifact: "operator-questions.md \xA7 Q10 (a)"
+  - artifact: "spec.md \xA7 Clarifications, Operator rulings 2026-10-08"
+  claim: Two documents disagree on where the re-vendor happens.
+  remediation: 'Add a "Ruled 2026-10-08" header to operator-questions.md pointing at the Clarifications and marking Q10 (a) as amended (no stacked branches, #9 re-vendors, start from main).'
+- id: PLAN-GOV-004
+  lens: Scope / consistency of spec and plan
+  severity: 2
+  title: spec.md "Open Questions" section still describes the questions as pending and the Clarifications omit the plan-time facts
+  evidence:
+  - artifact: "spec.md \xA7 Open Questions ('Ten genuine forks ... are in operator-questions.md')"
+  claim: After the rulings the section should say they are ruled; the spec also says "the state matrix has 32 rows" in no place but the report, and the story count is wrong in plan (see PLAN-VERIFY-003).
+  remediation: Rewrite the section as "all ruled 2026-10-08, as recommended".
+- id: PLAN-ARCH-001
+  lens: Layering / contracts (event surface)
+  severity: 3
+  title: The shipped retryDetail() builder cannot build the drift member; the plan does not say a new builder is needed
+  evidence:
+  - artifact: "contracts/sk-drift-screen.md \xA7 Events (sk-retry-load row); plan.md IC-02"
+  - code: packages/mission-ui/src/logic/wp-retry.ts:38-45 (retryDetail returns null when props.mission === null and requires a wpId; target type is the two WP members)
+  claim: 'The drift retry payload is { missionId: string | null, target: ''drift-report'' }; a whole-project scan has a null missionId and no wpId, so reusing retryDetail would make the control inert. IC-02
+    lists only "the DriftRetryDetail union member".'
+  remediation: IC-02 adds a separate pure builder driftRetryDetail(missionId) next to the union member, with a test that the whole-project case yields missionId null and is not inert, and that the two existing
+    members still type-check.
+- id: PLAN-ARCH-002
+  lens: Layering / platform risk
+  severity: 2
+  title: 'The Charter Check asserts "no-io: the Selection API is not on the banned list" without a check, and the typing of ShadowRoot.getSelection is not in lib.dom'
+  evidence:
+  - artifact: "plan.md \xA7 Gates (no-io row) and Charter Check (No I/O row); research.md D-08"
+  - code: eslint.no-io.config.mjs:91-104 (type-cast, computed access and aliasing of document are banned)
+  claim: Selecting the command text inside a shadow root needs either document.getSelection() or a non-standard shadowRoot.getSelection(); the latter needs a cast the gate bans, the former is shadow-blind
+    in some engines. The plan marks this "pass".
+  remediation: 'Make S5''s exit check include a no-io-clean, typecheck-clean implementation of manual selection (not a story-only hack), and change the Charter Check cell to "pass-with-condition: S5".'
+- id: PLAN-ARCH-003
+  lens: Blast radius (parallel missions)
+  severity: 2
+  title: Three missions append to the same contract registry, LabelHooks, retry union and stylelint table; the plan names them but gives no rule for the order
+  evidence:
+  - artifact: "plan.md \xA7 Shared files (cross-mission paragraph)"
+  claim: 'The rule is only "whoever lands second rebases"; with #9 first by ruling, #10 and #11 are unordered, and the conflicting files include a hash-pinned registry whose literal floors are counted by
+    tests.'
+  remediation: 'State that #9 re-vendors first (ruled), that #10 and #11 each append only their own entries and re-derive any count literal from the tree at rebase time, and that IC-01 and IC-02 re-read
+    the files at dispatch.'
+- id: PLAN-VERIFY-001
+  lens: Silent-success
+  severity: 4
+  title: A copyResult left over from an earlier copy would announce "Copied" at the moment Copy is pressed, before the host has answered
+  evidence:
+  - artifact: "spec.md \xA7 FR-021; operator-questions.md Q5 (a); contracts/sk-drift-screen.md (copyResult row)"
+  claim: FR-021 says a result is shown only for the finding whose Copy was pressed, but not that a result already present at press time is stale. If the host forgets to reset copyResult, or resets it after
+    the screen has re-rendered, the screen reports success for a copy that never happened or failed.
+  remediation: 'The screen clears its displayed result and its pending key at press time and accepts as an answer only a CHANGE of copyResult observed after the press (in updated()); a value equal to the
+    one present at press is ignored. Test: copyResult already ''copied'' when Copy is pressed announces nothing until it changes to null and back, and a result for a different pending finding is dropped.'
+- id: PLAN-VERIFY-002
+  lens: Falsifiability
+  severity: 3
+  title: DR-21 pass condition "no flicker" cannot fail
+  evidence:
+  - artifact: "spec.md \xA7 State matrix DR-21"
+  claim: A test cannot assert the absence of a visual flicker, so the row is vacuously passable.
+  remediation: 'Reword to a DOM property: the option and detail elements present before the rescan are the same nodes after the new report arrives (no remount), the Rescan button keeps focus, aria-busy
+    is true then false, and exactly one rescanned announcement is made.'
+- id: PLAN-VERIFY-003
+  lens: Falsifiability / counts
+  severity: 2
+  title: The plan says 31 stories; the state matrix has 33 rows (DR-07a and DR-07b are two) and DR-09 has no story, so 32
+  evidence:
+  - artifact: "spec.md \xA7 State matrix (DR-01..DR-32 with 07a/07b)"
+  - artifact: plan.md Summary, Scale/Scope, Charter Check, IC-07, Traceability (31)
+  claim: A count that does not match the matrix makes the IC-07 exit check wrong from the start.
+  remediation: Change every 31 to 32 in plan.md and state "33 rows, 32 stories".
+- id: PLAN-VERIFY-004
+  lens: Sequencing / write scope
+  severity: 3
+  title: DR-01 and DR-24 (list plus detail together) are assigned to chains that cannot render them whole
+  evidence:
+  - artifact: "plan.md \xA7 Traceability (DR-01..DR-08 to IC-05)"
+  - artifact: "plan.md \xA7 IC-04, IC-05 (parallel chains; the other chain's parts are stubs)"
+  claim: In IC-05 the list part is a stub and in IC-04 the detail part is a stub, so the default ready story (DR-01) and the scoped story (DR-24) show a half screen in the lane that owns them and their
+    side-by-side captures cannot be judged.
+  remediation: DR-01 and DR-24 belong to IC-06 (after the merge of both chains); IC-04 and IC-05 captures are cropped to their own region and say so; the IC-04 and IC-05 exit checks name the region, not
+    the whole screen.
+- id: PLAN-VERIFY-005
+  lens: Falsifiability
+  severity: 3
+  title: Listbox arrow semantics are unspecified (wrap or clamp, Left/Right, the case of one item)
+  evidence:
+  - artifact: "spec.md \xA7 DR-17, FR-005"
+  - code: 'kitty-desktop prototype.js bindArrowKeys: ArrowLeft/Up previous, ArrowRight/Down next, modulo wrap, Home/End'
+  claim: Two implementers would pick different behaviour and the test cannot decide between them.
+  remediation: 'Follow the prototype exactly: Up/Left previous and Down/Right next, wrapping, Home first and End last, no other keys, one item stays; pin it in logic/drift-keys.ts with a table test, and
+    record the Left/Right acceptance as an a11y note rather than a drift.'
+- id: PLAN-VERIFY-006
+  lens: Revert discipline
+  severity: 2
+  title: Exit checks of IC-04, IC-05 and IC-06 do not require a test that fails when the change is reverted
+  evidence:
+  - artifact: "plan.md \xA7 IC-04, IC-05, IC-06 exit checks (IC-01, IC-02 have revert checks)"
+  claim: The review-overlay's revert discipline is stated for two of the seven WPs only.
+  remediation: Add "each new test shown red against the reverted part" to the exit checks of IC-03b to IC-07.
+- id: PLAN-VERIFY-007
+  lens: Silent-success
+  severity: 2
+  title: A ready report with a malformed shape (findings not an array) is not covered
+  evidence:
+  - artifact: "data-model.md \xA7 effectiveState; spec.md \xA7 Edge Cases"
+  claim: A host passing a hand-built object would make the screen throw in render or draw an empty list that reads as "no drift".
+  remediation: effectiveState treats a report whose findings is not an array as not loaded (loading look), never as clean, with a unit test and a foreign-shape story-free test.
+- id: PLAN-VERIFY-008
+  lens: Falsifiability
+  severity: 2
+  title: Behaviour when the host does not apply sk-select-finding is unspecified
+  evidence:
+  - artifact: "spec.md \xA7 FR-022; research.md D-03"
+  claim: Focus and tabindex move on arrow keys, aria-selected follows the property; a host that ignores the event leaves focus on one option and selection on another.
+  remediation: 'State the controlled-component rule: aria-selected and the detail follow selectedFinding only; the roving focus is internal; after every update the roving tabindex re-syncs to the selected
+    option when focus is not inside the list. Test with a host that ignores the event.'

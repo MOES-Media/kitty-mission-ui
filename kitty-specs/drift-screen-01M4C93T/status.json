@@ -1,0 +1,302 @@
+{
+  "event_count": 81,
+  "last_event_id": "01M4NECKZ60BM2T0BCSW4B1AXS",
+  "materialized_at": "2026-10-11T12:18:19.238160+00:00",
+  "mission_number": "3",
+  "mission_slug": "drift-screen-01M4C93T",
+  "mission_type": "software-dev",
+  "schema_version": 2,
+  "summary": {
+    "approved": 0,
+    "blocked": 0,
+    "canceled": 0,
+    "claimed": 0,
+    "done": 8,
+    "for_review": 0,
+    "in_progress": 0,
+    "in_review": 0,
+    "planned": 0
+  },
+  "work_packages": {
+    "WP01": {
+      "actor": "merge",
+      "agent": "user",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
+      "force_count": 0,
+      "implementer_of_record": "claude",
+      "lane": "done",
+      "last_event_id": "01M4NECCB0X3J4JYGAB2F52W2H",
+      "last_transition_at": "2026-10-11T12:18:11.424383+00:00",
+      "model": "__resolved_model_absent__",
+      "notes": [
+        "WP01: Drift view types, 17 registry fixtures + drift-vocabulary-open relaxation with plant, 1000-finding bulk generator validated by gate contract, changelog lines. All gates green; gate-proof visual leg flaky under load (stability timeouts) at baseline and after."
+      ],
+      "provider": "__resolved_provider_absent__",
+      "review_result": {
+        "feedback_path": "<workspace>/ui10/kitty-specs/drift-screen-01M4C93T/tasks/WP01-drift-contract-wiring-fixtures/review-cycle-1.md",
+        "reference": "review-cycle://drift-screen-01M4C93T/WP01-drift-contract-wiring-fixtures/review-cycle-1.md",
+        "reviewer": "user",
+        "verdict": "approved"
+      },
+      "role": "reviewer",
+      "shell_pid": 1753268,
+      "shell_pid_created_at": "1791612597.58",
+      "subtasks": {
+        "T001": "done",
+        "T002": "done",
+        "T003": "done",
+        "T004": "done",
+        "T005": "done",
+        "T006": "done"
+      }
+    },
+    "WP02": {
+      "actor": "merge",
+      "agent": "user",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
+      "force_count": 1,
+      "implementer_of_record": "claude",
+      "lane": "done",
+      "last_event_id": "01M4NECFEJQVMR9N97VF6BCCQ8",
+      "last_transition_at": "2026-10-11T12:18:14.610396+00:00",
+      "model": "__resolved_model_absent__",
+      "notes": [
+        "Defaults, 5 logic modules, retry member, data-driven gate extended to the drift vocabulary (S15.1-S15.5); 6 new test files; gates green",
+        "Review cycle 1 fixed: pair-keyed explanation, positive controls, loop counts",
+        "Cycle 1 verified by orchestrator: pair-keyed explanation red-first, controls and loop counts added; full suite 1143 green"
+      ],
+      "provider": "__resolved_provider_absent__",
+      "review": null,
+      "review_result": {
+        "feedback_path": "<workspace>/ui10/kitty-specs/drift-screen-01M4C93T/tasks/WP02-drift-defaults-logic-gate-extension/review-cycle-2.md",
+        "reference": "review-cycle://drift-screen-01M4C93T/WP02-drift-defaults-logic-gate-extension/review-cycle-2.md",
+        "reviewer": "user",
+        "verdict": "approved"
+      },
+      "role": "reviewer",
+      "shell_pid": 1850250,
+      "shell_pid_created_at": "1791613860.53",
+      "subtasks": {
+        "T007": "done",
+        "T008": "done",
+        "T009": "done",
+        "T010": "done",
+        "T011": "done",
+        "T012": "done"
+      }
+    },
+    "WP03": {
+      "actor": "merge",
+      "agent": "user",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
+      "force_count": 0,
+      "implementer_of_record": "claude",
+      "lane": "done",
+      "last_event_id": "01M4NECG2WS36GG5ZMCD0R9R56",
+      "last_transition_at": "2026-10-11T12:18:15.260244+00:00",
+      "model": "__resolved_model_absent__",
+      "notes": [
+        "S1-S6 spikes done; CP-1 packet written; spike code removed, tip tree equals base tree",
+        "Spike WP: tip tree equals base (db7539f), packet reviewed by orchestrator, CP-1 ruled"
+      ],
+      "provider": "__resolved_provider_absent__",
+      "review_result": {
+        "feedback_path": "<workspace>/ui10/kitty-specs/drift-screen-01M4C93T/tasks/WP03-drift-foundation-spikes/review-cycle-1.md",
+        "reference": "review-cycle://drift-screen-01M4C93T/WP03-drift-foundation-spikes/review-cycle-1.md",
+        "reviewer": "user",
+        "verdict": "approved"
+      },
+      "role": "reviewer",
+      "shell_pid": 1910054,
+      "shell_pid_created_at": "1791615912.06",
+      "subtasks": {
+        "T013": "done",
+        "T014": "done",
+        "T015": "done",
+        "T016": "done",
+        "T017": "done",
+        "T018": "done"
+      }
+    },
+    "WP04": {
+      "actor": "merge",
+      "agent": "user",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
+      "force_count": 1,
+      "implementer_of_record": "claude",
+      "lane": "done",
+      "last_event_id": "01M4NECGPDCA4CB9KRKE06NYK5",
+      "last_transition_at": "2026-10-11T12:18:15.885699+00:00",
+      "model": "__resolved_model_absent__",
+      "notes": [
+        "Surface frozen (11 props, 6 events), layout, part stubs, CP-1 grants with pins and plants, manifest regenerated once; all gates green except visual (not run)",
+        "Review cycle 1 addressed: skeleton tests resilient, counts, callback wiring, E-39/E-37 addendum grants, part-selector pin, gate-proof eslint ok",
+        "Cycle 1 verified by orchestrator: grants, part pins, wiring test; typecheck, lint, lint:styles, test:scripts green; pnpm test 1208 green on rerun (first run load-22 flakes)"
+      ],
+      "provider": "__resolved_provider_absent__",
+      "review": null,
+      "review_result": {
+        "feedback_path": "<workspace>/ui10/kitty-specs/drift-screen-01M4C93T/tasks/WP04-drift-skeleton-layout-surface-freeze/review-cycle-2.md",
+        "reference": "review-cycle://drift-screen-01M4C93T/WP04-drift-skeleton-layout-surface-freeze/review-cycle-2.md",
+        "reviewer": "user",
+        "verdict": "approved"
+      },
+      "role": "reviewer",
+      "shell_pid": 3143974,
+      "shell_pid_created_at": "1791618857.26",
+      "subtasks": {
+        "T019": "done",
+        "T020": "done",
+        "T021": "done",
+        "T022": "done",
+        "T023": "done",
+        "T024": "done"
+      }
+    },
+    "WP05": {
+      "actor": "merge",
+      "agent": "user",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
+      "force_count": 1,
+      "implementer_of_record": "claude",
+      "lane": "done",
+      "last_event_id": "01M4NECHFDPNVES9PAAM5M54WZ",
+      "last_transition_at": "2026-10-11T12:18:16.685689+00:00",
+      "model": "__resolved_model_absent__",
+      "notes": [
+        "Header, head, listbox, states, stories DR-14..23/30/31, 4 test files; gates green except visual/build-storybook not run",
+        "Cycle 1 rulings applied: meta gap, listbox label, data-rescan",
+        "Independent review approved: coverage, keys, live region, defaults copy, header and list measured equal to the prototype"
+      ],
+      "provider": "__resolved_provider_absent__",
+      "review": null,
+      "review_result": {
+        "feedback_path": "<workspace>/ui10/kitty-specs/drift-screen-01M4C93T/tasks/WP05-drift-header-list-states/review-cycle-2.md",
+        "reference": "review-cycle://drift-screen-01M4C93T/WP05-drift-header-list-states/review-cycle-2.md",
+        "reviewer": "user",
+        "verdict": "approved"
+      },
+      "role": "reviewer",
+      "shell_pid": 1423309,
+      "shell_pid_created_at": "1791621713.38",
+      "subtasks": {
+        "T025": "done",
+        "T026": "done",
+        "T027": "done",
+        "T028": "done",
+        "T029": "done",
+        "T030": "done"
+      }
+    },
+    "WP06": {
+      "actor": "merge",
+      "agent": "user",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
+      "force_count": 1,
+      "implementer_of_record": "claude",
+      "lane": "done",
+      "last_event_id": "01M4NECJ7RVQVWEYD56C5CKA2F",
+      "last_transition_at": "2026-10-11T12:18:17.464870+00:00",
+      "model": "__resolved_model_absent__",
+      "notes": [
+        "Detail, lane table, resolution parts, stories DR-02..DR-32, 4 test files (38 tests); one change request (Mission link leak of sk-button::part rules)",
+        "Cycle 1 applied: scoped button part rules, labels and S5 fallback in defaults",
+        "Independent review approved: copy path, scoped rules, defaults, table and resolution measured equal to the prototype"
+      ],
+      "provider": "__resolved_provider_absent__",
+      "review": null,
+      "review_result": {
+        "feedback_path": "<workspace>/ui10/kitty-specs/drift-screen-01M4C93T/tasks/WP06-drift-detail-table-resolution/review-cycle-2.md",
+        "reference": "review-cycle://drift-screen-01M4C93T/WP06-drift-detail-table-resolution/review-cycle-2.md",
+        "reviewer": "user",
+        "verdict": "approved"
+      },
+      "role": "reviewer",
+      "shell_pid": 1466834,
+      "shell_pid_created_at": "1791621758.89",
+      "subtasks": {
+        "T031": "done",
+        "T032": "done",
+        "T033": "done",
+        "T034": "done",
+        "T035": "done",
+        "T036": "done"
+      }
+    },
+    "WP07": {
+      "actor": "merge",
+      "agent": "user",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
+      "force_count": 1,
+      "implementer_of_record": "claude",
+      "lane": "done",
+      "last_event_id": "01M4NECK5ZXS92429ZWHP6NAZ9",
+      "last_transition_at": "2026-10-11T12:18:18.431461+00:00",
+      "model": "__resolved_model_absent__",
+      "notes": [
+        "WP07: 4 folds (td colour, copy read-back announce, select-once, test nits), tiers/a11y/perf/time/edge tests, DR-01/24/25-29 stories. Change requests: row-title leak, scannedAt undefined, Mission link centring.",
+        "WP07 cycle 1: row-title scope, no last scan without a time, Mission link text-align start; it.fails removed",
+        "Independent review approved: folds and fixes with reverts, private screen method, 13 edge cases, a11y, overflowing table at 620 shot"
+      ],
+      "provider": "__resolved_provider_absent__",
+      "review": null,
+      "review_result": {
+        "feedback_path": "<workspace>/ui10/kitty-specs/drift-screen-01M4C93T/tasks/WP07-drift-tiers-accessibility-edge-cases/review-cycle-2.md",
+        "reference": "review-cycle://drift-screen-01M4C93T/WP07-drift-tiers-accessibility-edge-cases/review-cycle-2.md",
+        "reviewer": "user",
+        "verdict": "approved"
+      },
+      "role": "reviewer",
+      "shell_pid": 3365556,
+      "shell_pid_created_at": "1791626334.63",
+      "subtasks": {
+        "T037": "done",
+        "T038": "done",
+        "T039": "done",
+        "T040": "done",
+        "T041": "done",
+        "T042": "done"
+      }
+    },
+    "WP08": {
+      "actor": "merge",
+      "agent": "user",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
+      "force_count": 0,
+      "implementer_of_record": "claude",
+      "lane": "done",
+      "last_event_id": "01M4NECKZ60BM2T0BCSW4B1AXS",
+      "last_transition_at": "2026-10-11T12:18:19.238160+00:00",
+      "model": "__resolved_model_absent__",
+      "notes": [
+        "WP08: 38 baselines (screens-drift-*), catalogue test, docs, CI timeouts 18/43, WP07 folds, font-independent literals, G-9 busy Rescan padding (E-37) with DR-21 baseline, README G-9 fold, in-place stylelint plant fix. Warm-up plus 5 consecutive visual runs green on b3e8728, full gate-proof pass (12 gates).",
+        "Review passed; streak 5/5 and gate-proof 12/12 on b3e8728"
+      ],
+      "provider": "__resolved_provider_absent__",
+      "review_result": {
+        "feedback_path": "<workspace>/ui10/kitty-specs/drift-screen-01M4C93T/tasks/WP08-drift-integration-baselines-docs/review-cycle-1.md",
+        "reference": "review-cycle://drift-screen-01M4C93T/WP08-drift-integration-baselines-docs/review-cycle-1.md",
+        "reviewer": "user",
+        "verdict": "approved"
+      },
+      "role": "reviewer",
+      "shell_pid": 1336400,
+      "shell_pid_created_at": "1791671952.61",
+      "subtasks": {
+        "T043": "done",
+        "T044": "done",
+        "T045": "done",
+        "T046": "done",
+        "T047": "done"
+      }
+    }
+  }
+}
