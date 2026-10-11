@@ -151,6 +151,41 @@ export default tseslint.config(
     rules: { 'no-restricted-syntax': ['error', ...withoutClassBan, classOnly(['sk-empty-state', 'sk-progress'])] },
   },
   {
+    // Exception E-36 (Drift screen; CP-1 confirmed 2026-10-10; gap: no listbox/option element, sunset: a listbox/option element, spec-kitty/spec-kitty-design#527):
+    // the finding list is a listbox of raw `<button type="button" role="option" ...>` rows, in this one file. Only that tag with
+    // that attribute order is allowed raw; inputs, selects, textareas and every other button stay banned, and class= and
+    // style= stay banned.
+    files: ['packages/*/src/elements/sk-drift-screen/list-parts.ts'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        ...elementSyntaxRestrictions.map((entry) =>
+          entry.message.startsWith('Raw <button>')
+            ? {
+                selector: String.raw`TaggedTemplateExpression:matches([tag.name=/^(html|svg)$/], [tag.property.name=/^(html|svg)$/]) > TemplateLiteral > TemplateElement[value.raw=/<(input|select|textarea)\b|<button\b(?!\s+type="button"\s+role="option")/i]`,
+                message: 'Only <button type="button" role="option"> is allowed raw in this file (E-36); other raw controls are forbidden.',
+              }
+            : entry,
+        ),
+      ],
+    },
+  },
+  {
+    // Drift screen, the adopted library families (same shape as E-17; the data-table family is the CP-1 ruling F-2 option C):
+    // one override per file that draws a family, written now so that no region work package needs a lint-config edit. A file not
+    // listed (the screen file, header, list, resolution and panel parts) carries no class.
+    files: ['packages/*/src/elements/sk-drift-screen/table-parts.ts'],
+    rules: { 'no-restricted-syntax': ['error', ...withoutClassBan, classOnly(['sk-data-table'])] },
+  },
+  {
+    files: ['packages/*/src/elements/sk-drift-screen/detail-parts.ts'],
+    rules: { 'no-restricted-syntax': ['error', ...withoutClassBan, classOnly(['sk-facts'])] },
+  },
+  {
+    files: ['packages/*/src/elements/sk-drift-screen/state-parts.ts'],
+    rules: { 'no-restricted-syntax': ['error', ...withoutClassBan, classOnly(['sk-empty-state', 'sk-progress'])] },
+  },
+  {
     // Elements never import story-only helpers (research D-02): story-support is for stories and fixtures.
     files: ['packages/*/src/elements/**/*.ts'],
     ignores: ['**/*.stories.ts', '**/fixtures.ts'],

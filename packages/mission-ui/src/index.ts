@@ -1,5 +1,6 @@
 // The single place custom elements are registered. Element modules do not self-register, so importing one (from a
 // test, a story or another package) never throws on a duplicate definition; the guard makes this entry idempotent.
+import { SkDriftScreen } from './elements/sk-drift-screen/sk-drift-screen.js';
 import { SkFilterToggleGroup } from './elements/sk-filter-toggle-group/sk-filter-toggle-group.js';
 import { SkMissionSample } from './elements/sk-mission-sample/sk-mission-sample.js';
 import { SkMissionShell } from './elements/sk-mission-shell/sk-mission-shell.js';
@@ -41,8 +42,12 @@ if (!customElements.get('sk-work-package-board')) {
 if (!customElements.get('sk-work-package-screen')) {
   customElements.define('sk-work-package-screen', SkWorkPackageScreen);
 }
+if (!customElements.get('sk-drift-screen')) {
+  customElements.define('sk-drift-screen', SkDriftScreen);
+}
 
 export {
+  SkDriftScreen,
   SkFilterToggleGroup,
   SkMissionSample,
   SkMissionShell,
@@ -55,6 +60,14 @@ export {
   SkWorkPackageScreen,
 };
 export { SHELL_MOBILE_STATE, ShellTierController } from './shell-tier.js';
+export type {
+  DriftCopyResult,
+  DriftScreenStatus,
+  SkCopyCommandDetail,
+  SkDriftRetryLoadDetail,
+  SkRescanDriftDetail,
+  SkSelectFindingDetail,
+} from './elements/sk-drift-screen/sk-drift-screen.js';
 export type { SkFilterChangeDetail } from './elements/sk-filter-toggle-group/sk-filter-toggle-group.js';
 export type { SkLoadMoreDetail, SkOpenMissionDetail, SkSearchDetail } from './elements/sk-missions-screen/sk-missions-screen.js';
 export type { SkOpenMissionsDetail, SkViewArtifactsDetail } from './elements/sk-pipeline-screen/sk-pipeline-screen.js';
@@ -73,7 +86,17 @@ export type {
   LaneGroup,
   StateBadge,
 } from './logic/types.js';
+export type { DriftRetryDetail, RetryLoadDetail } from './logic/wp-retry.js';
 export type {
+  DriftFinding,
+  DriftFindingKey,
+  DriftFindingView,
+  DriftMissionName,
+  DriftRefusal,
+  DriftRefusalCode,
+  DriftReport,
+  DriftReportView,
+  LaneComparisonView,
   MissionDetailView,
   MissionOverviewView,
   PageInfo,

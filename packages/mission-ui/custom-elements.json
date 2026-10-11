@@ -4,6 +4,293 @@
   "modules": [
     {
       "kind": "javascript-module",
+      "path": "src/elements/sk-drift-screen/detail-parts.ts",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/elements/sk-drift-screen/header-parts.ts",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/elements/sk-drift-screen/list-parts.ts",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/elements/sk-drift-screen/panel-parts.ts",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/elements/sk-drift-screen/resolution-parts.ts",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/elements/sk-drift-screen/sk-drift-screen.ts",
+      "declarations": [
+        {
+          "kind": "class",
+          "description": "The Drift screen. Read-only (C-003): it only asks the host to scan again, to retry, to open a Mission, or to copy a command.",
+          "name": "SkDriftScreen",
+          "members": [
+            {
+              "kind": "field",
+              "name": "status",
+              "type": {
+                "text": "DriftScreenStatus"
+              },
+              "default": "'loading'",
+              "description": "The view state; unknown values collapse to `empty`, except `not-found`.",
+              "attribute": "status",
+              "reflects": true
+            },
+            {
+              "kind": "field",
+              "name": "report",
+              "type": {
+                "text": "DriftReportView | null"
+              },
+              "default": "null",
+              "description": "The drift report (contract `DriftReport`, widened by the vocabulary-open relaxation); null while none was loaded."
+            },
+            {
+              "kind": "field",
+              "name": "selectedFinding",
+              "type": {
+                "text": "DriftFindingKey | null"
+              },
+              "default": "null",
+              "description": "The selected finding's key. Host-owned: an incoming change is never re-emitted."
+            },
+            {
+              "kind": "field",
+              "name": "missionId",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "description": "The scope: non-empty means a scoped scan of that Mission.",
+              "attribute": "mission-id"
+            },
+            {
+              "kind": "field",
+              "name": "missions",
+              "type": {
+                "text": "Readonly<Record<string, DriftMissionName>> | null"
+              },
+              "default": "null",
+              "description": "Host data: the names of the Missions the findings belong to, by `missionId`."
+            },
+            {
+              "kind": "field",
+              "name": "rescanning",
+              "type": {
+                "text": "boolean"
+              },
+              "default": "false",
+              "description": "True while a rescan is in flight: the report stays visible and the button is busy.",
+              "attribute": "rescanning"
+            },
+            {
+              "kind": "field",
+              "name": "copyResult",
+              "type": {
+                "text": "DriftCopyResult | null"
+              },
+              "default": "null",
+              "description": "The host's answer to the last `sk-copy-command`; the host resets it to null on the event, then answers.",
+              "attribute": "copy-result"
+            },
+            {
+              "kind": "field",
+              "name": "refusalCode",
+              "type": {
+                "text": "string | null"
+              },
+              "default": "null",
+              "description": "The refusal code of a refused scan, read only when `status` is `error`; unknown or null gives the generic words.",
+              "attribute": "refusal-code"
+            },
+            {
+              "kind": "field",
+              "name": "now",
+              "type": {
+                "text": "string | null"
+              },
+              "default": "null",
+              "description": "RFC 3339 instant for relative times; null shows the ISO text as given.",
+              "attribute": "now"
+            },
+            {
+              "kind": "field",
+              "name": "labels",
+              "type": {
+                "text": "LabelHooks | null"
+              },
+              "default": "null",
+              "description": "Label hooks for the drift words (kind, severity, authority, derived side, refusal) and the shared lane and time hooks."
+            },
+            {
+              "kind": "field",
+              "name": "errorMessage",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "description": "Overrides the refusal words of the error state.",
+              "attribute": "error-message"
+            }
+          ],
+          "events": [
+            {
+              "name": "sk-select-finding",
+              "type": {
+                "text": "CustomEvent<SkSelectFindingDetail>"
+              },
+              "description": "a finding was chosen by click, Enter, Space or a navigation key; never for an incoming `selectedFinding`"
+            },
+            {
+              "name": "sk-rescan-drift",
+              "type": {
+                "text": "CustomEvent<SkRescanDriftDetail>"
+              },
+              "description": "Rescan was activated (nothing while `rescanning`)"
+            },
+            {
+              "name": "sk-copy-command",
+              "type": {
+                "text": "CustomEvent<SkCopyCommandDetail>"
+              },
+              "description": "Copy was activated on the suggested resolution; the host writes the clipboard"
+            },
+            {
+              "name": "sk-open-mission",
+              "type": {
+                "text": "CustomEvent<SkOpenMissionDetail>"
+              },
+              "description": "the Mission link in the detail was activated"
+            },
+            {
+              "name": "sk-open-missions",
+              "type": {
+                "text": "CustomEvent<SkOpenMissionsDetail>"
+              },
+              "description": "\"Return to Missions\" was activated"
+            },
+            {
+              "name": "sk-retry-load",
+              "type": {
+                "text": "CustomEvent<SkDriftRetryLoadDetail>"
+              },
+              "description": "Retry was activated (`drift-report`)"
+            }
+          ],
+          "attributes": [
+            {
+              "name": "status",
+              "type": {
+                "text": "DriftScreenStatus"
+              },
+              "default": "'loading'",
+              "description": "The view state; unknown values collapse to `empty`, except `not-found`.",
+              "fieldName": "status"
+            },
+            {
+              "name": "mission-id",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "description": "The scope: non-empty means a scoped scan of that Mission.",
+              "fieldName": "missionId"
+            },
+            {
+              "name": "rescanning",
+              "type": {
+                "text": "boolean"
+              },
+              "default": "false",
+              "description": "True while a rescan is in flight: the report stays visible and the button is busy.",
+              "fieldName": "rescanning"
+            },
+            {
+              "name": "copy-result",
+              "type": {
+                "text": "DriftCopyResult | null"
+              },
+              "default": "null",
+              "description": "The host's answer to the last `sk-copy-command`; the host resets it to null on the event, then answers.",
+              "fieldName": "copyResult"
+            },
+            {
+              "name": "refusal-code",
+              "type": {
+                "text": "string | null"
+              },
+              "default": "null",
+              "description": "The refusal code of a refused scan, read only when `status` is `error`; unknown or null gives the generic words.",
+              "fieldName": "refusalCode"
+            },
+            {
+              "name": "now",
+              "type": {
+                "text": "string | null"
+              },
+              "default": "null",
+              "description": "RFC 3339 instant for relative times; null shows the ISO text as given.",
+              "fieldName": "now"
+            },
+            {
+              "name": "error-message",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "description": "Overrides the refusal words of the error state.",
+              "fieldName": "errorMessage"
+            }
+          ],
+          "superclass": {
+            "name": "LitElement",
+            "package": "lit"
+          },
+          "tagName": "sk-drift-screen",
+          "customElement": true
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "SkDriftScreen",
+          "declaration": {
+            "name": "SkDriftScreen",
+            "module": "src/elements/sk-drift-screen/sk-drift-screen.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/elements/sk-drift-screen/state-parts.ts",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/elements/sk-drift-screen/table-parts.ts",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
       "path": "src/elements/sk-filter-toggle-group/sk-filter-toggle-group.ts",
       "declarations": [
         {
