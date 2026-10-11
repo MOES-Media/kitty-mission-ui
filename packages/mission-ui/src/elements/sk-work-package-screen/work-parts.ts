@@ -47,8 +47,8 @@ export interface ArtifactLinkView {
 
 /** Each link only when non-null; the region is not drawn when both are null. */
 export interface ArtifactLinksView {
-  readonly spec: ArtifactLinkView | null;
-  readonly prompt: ArtifactLinkView | null;
+  readonly specLink: ArtifactLinkView | null;
+  readonly promptLink: ArtifactLinkView | null;
   /** True while there is no Mission: the actions are drawn inert. */
   readonly inert: boolean;
 }
@@ -136,6 +136,6 @@ export const renderArtifactLinks: (view: ArtifactLinksView, onOpenArtifact: (pat
     link === null
       ? nothing
       : html`<sk-button variant="secondary" ?disabled=${view.inert} @click=${view.inert ? nothing : () => onOpenArtifact(link.path, link.kind)}>${renderFileIcon()}${label}</sk-button>`;
-  if (view.spec === null && view.prompt === null) return nothing;
-  return html`<div data-links>${action(OPEN_SPEC_LABEL, view.spec)}${action(OPEN_PROMPT_LABEL, view.prompt)}</div>`;
+  if (view.specLink === null && view.promptLink === null) return nothing;
+  return html`<div data-links>${action(OPEN_SPEC_LABEL, view.specLink)}${action(OPEN_PROMPT_LABEL, view.promptLink)}</div>`;
 };

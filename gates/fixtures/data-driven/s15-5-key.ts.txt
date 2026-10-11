@@ -1,0 +1,2 @@
+// expect: S15.5
+export const m = { analysis_report: 1 };

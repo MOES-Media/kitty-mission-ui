@@ -102,9 +102,11 @@ test('positive control: the repository itself passes every check, and the checks
   // independent literals, deliberately not computed from PIN.files (a pin and a directory that shrink together would
   // keep a derived floor green); edited deliberately at each re-pin
   assert.equal(clean.summary.vendoredFiles, 200);
-  assert.equal(clean.summary.fixtures, 74);
+  assert.equal(clean.summary.fixtures, Object.keys(FIXTURES).length, 'every registry entry was validated');
+  assert.equal(clean.summary.fixtures, 104);
   assert.equal(clean.summary.anchorFiles, 5);
   assert.equal(clean.summary.bulkPages, 2);
+  assert.equal(clean.summary.bulkDocuments, 5, 'two listings and three contents');
   assert.ok(clean.summary.c7Files > 0);
 });
 
@@ -560,13 +562,14 @@ test('C7: the contract directory itself may name stream identifiers', async () =
 });
 
 // ---- guards ----
-test('guard: a registry of 73 entries against 74 exports is reported with both counts', async () => {
+test('guard: a registry one entry short of its exports is reported with both counts', async () => {
   const root = tempRepo();
   const registry = without(FIXTURES, 'pageLong');
-  assert.equal(Object.keys(registry).length, 73);
+  const exported = Object.keys(FIXTURES).length;
+  assert.equal(Object.keys(registry).length, exported - 1);
   const r = await check(root, { registry });
   assert.ok(tokens(r).includes(TOKENS.unregistered));
-  assert.match(r.problems.find((p) => p.token === TOKENS.unregistered).message, /73.*74|74.*73/);
+  assert.match(r.problems.find((p) => p.token === TOKENS.unregistered).message, new RegExp(`${exported - 1}.*${exported}|${exported}.*${exported - 1}`));
 });
 
 test('guard: a PIN.files of 199 keys against 200 files gives file set', async () => {
@@ -617,4 +620,91 @@ test('guard: a C7 scan over no files gives guard', async () => {
   const src = join(root, 'packages/mission-ui/src');
   for (const name of readdirSync(src)) if (name !== 'contract') rmSync(join(src, name), { recursive: true });
   assert.deepEqual(tokens(await check(root)), [TOKENS.guard]);
+});
+
+// ---- the generated documents of the Artifact Viewer (bulk.ts): validated against the contract, never stored ----
+const BULK_DOCUMENT_LABELS = ['bulk listing of 1000', 'bulk truncated listing of 1000', 'bulk large markdown', 'bulk long line', 'bulk over-budget markdown'];
+
+test('checkBulk validates each generator output against the contract, and the checks counted every one of them', async () => {
+  assert.equal(clean.summary.bulkDocuments, BULK_DOCUMENT_LABELS.length);
+  assert.deepEqual(clean.problems, []);
+});
+
+test('checkBulk: a listing generator that emits an invalid entry gives the violation token, naming the listing', async () => {
+  const root = tempRepo();
+  edit(root, 'packages/mission-ui/src/contract/bulk.ts', 'readable: true,', 'readable: 1,');
+  const r = await check(root);
+  assert.ok(tokens(r).includes(TOKENS.violates), tokens(r).join());
+  assert.ok(r.problems.some((p) => p.token === TOKENS.violates && /bulk listing of 1000/.test(p.message)), r.problems.map((p) => p.message).join(' | '));
+  assert.ok(r.problems.some((p) => p.token === TOKENS.violates && /bulk truncated listing of 1000/.test(p.message)));
+});
+
+test('checkBulk: a content generator that emits an invalid document gives the violation token for all three contents', async () => {
+  const root = tempRepo();
+  edit(root, 'packages/mission-ui/src/contract/bulk.ts', "encoding: 'utf-8' as const,", "encoding: 'latin1' as never,");
+  const r = await check(root);
+  for (const label of BULK_DOCUMENT_LABELS.slice(2)) assert.ok(r.problems.some((p) => p.token === TOKENS.violates && p.message.includes(label)), `${label}: ${r.problems.map((p) => p.message).join(' | ')}`);
+});
+
+test('checkBulk: a listing of another size than 1000 entries gives guard (a stand-in of ten entries would validate and prove nothing)', async () => {
+  const root = tempRepo();
+  edit(root, 'packages/mission-ui/src/contract/bulk.ts', 'export const BULK_LISTING_SIZE = 1000;', 'export const BULK_LISTING_SIZE = 10;');
+  const r = await check(root);
+  assert.ok(r.problems.some((p) => p.token === TOKENS.guard && /1000/.test(p.message)), r.problems.map((p) => `${p.token}: ${p.message}`).join(' | '));
+});
+
+test('checkBulk: a generated document written into the stored fixtures gives guard (the content of the large generator, whole)', async () => {
+  const root = tempRepo();
+  const bulk = await loadBulk(root);
+  const large = bulk.makeLargeMarkdown(262144, 'spec.md');
+  const deps = await mutateDocs(root, (d) => {
+    d.contentMarkdown.content = large.content;
+    d.contentMarkdown.sizeBytes = large.sizeBytes;
+  });
+  const r = await check(root, deps);
+  assert.ok(r.problems.some((p) => p.token === TOKENS.guard && /generated document/.test(p.message)), r.problems.map((p) => `${p.token}: ${p.message}`).join(' | '));
+});
+
+test('checkBulk: the stored fixtures file over its size ceiling gives guard, and the clean file is well under it (positive control)', async () => {
+  const size = Buffer.byteLength(readFileSync(join(ROOT, LAYOUT.fixtures)));
+  assert.ok(size < 1_048_576 / 2, `the stored fixtures are ${size} bytes`);
+  const root = tempRepo();
+  const deps = await mutateDocs(root, (d) => {
+    d.contentMarkdown.content = `${'x'.repeat(200)}\n`.repeat(6000);
+  });
+  const r = await check(root, deps);
+  assert.ok(r.problems.some((p) => p.token === TOKENS.guard && /ceiling/.test(p.message)), r.problems.map((p) => `${p.token}: ${p.message}`).join(' | '));
+});
+
+// ---- C4 over the three relaxed Artifact fixtures: the relaxation is the only deviation they may carry ----
+const ARTIFACT_RELAXED = [
+  ['listingUnknownKind', 'artifact-kind-open', (d) => { d.entries[0].kind = 7; }, (d) => { d.entries[0].kind = 'spec'; }],
+  ['contentUnknownKind', 'artifact-kind-open', (d) => { d.kind = ''; }, (d) => { d.kind = 'spec'; }],
+  ['refusalUnknownCode', 'refusal-code-open', (d) => { d.code = 7; }, (d) => { d.code = 'not_found'; d.status = 404; }],
+];
+
+test('C4: an Artifact relaxed fixture with a deviation its relaxation does not cover fails even the relaxed schema (the reverted-must-fail token)', async () => {
+  let n = 0;
+  for (const [name, relaxation, break_] of ARTIFACT_RELAXED) {
+    const root = tempRepo();
+    const deps = await mutateDocs(root, (d) => break_(d[name]));
+    const r = await check(root, deps);
+    assert.deepEqual(tokens(r), [TOKENS.relaxation], `${name}: ${tokens(r).join()}`);
+    assert.ok(r.problems.some((p) => p.message.includes(`fails even the ${relaxation} schema`)), r.problems.map((p) => p.message).join(' | '));
+    n += 1;
+  }
+  assert.equal(n, 3);
+});
+
+test('C4: an Artifact relaxed fixture that holds a known kind or code passes the strict schema, so its relaxation entry is stale', async () => {
+  let n = 0;
+  for (const [name, relaxation, , known] of ARTIFACT_RELAXED) {
+    const root = tempRepo();
+    const deps = await mutateDocs(root, (d) => known(d[name]));
+    const r = await check(root, deps);
+    assert.deepEqual(tokens(r), [TOKENS.relaxation], `${name}: ${tokens(r).join()}`);
+    assert.ok(r.problems.some((p) => p.message.includes(`passes the strict schema: the ${relaxation} entry is stale`)), r.problems.map((p) => p.message).join(' | '));
+    n += 1;
+  }
+  assert.equal(n, 3);
 });

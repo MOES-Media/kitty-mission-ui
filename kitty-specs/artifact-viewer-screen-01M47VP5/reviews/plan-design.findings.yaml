@@ -1,0 +1,281 @@
+schema: review-findings/v1
+complete: true
+phase: plan
+lens_group: design
+mission: artifact-viewer-screen-01M47VP5
+findings:
+  - id: PLAN-DESIGN-001
+    lens: module design / gate design
+    severity: 3
+    title: Per-file ESLint overrides (E-25, E-26) replace no-restricted-syntax and would silently drop the new renderer rules
+    evidence:
+      - artifact: "plan.md IC-04 (D-06 rules added to eslint.config.mjs) and IC-06 (E-26 classOnly overrides, E-25 raw-button allowance); contracts/gates.md 'Lint rules for the renderer' rule 4 (no href/src in any template of elements/sk-artifact-screen/)"
+      - code: "eslint.config.mjs:62 and :74 (base blocks: no-restricted-syntax set to elementSyntaxRestrictions) and eslint.config.mjs:83-127 (every per-file override re-declares no-restricted-syntax as ...withoutClassBan plus classOnly, i.e. it REPLACES the array)"
+    claim: >-
+      In flat config a later block that sets a rule replaces the option array of the earlier block; it does not merge. Every existing per-file exception rebuilds the whole array from elementSyntaxRestrictions. The plan adds the D-06 rules (rule 4 is scoped to elements/sk-artifact-screen/, rule 3 to all of packages/*/src) in IC-04 but gives no statement about where they live. If they are a separate block, the E-26 overrides on inspector-parts.ts, state-parts.ts, refusal-parts.ts and the E-25 override on tab-parts.ts (all in the scoped directory) turn rule 4 (no href) and any other new restriction OFF in exactly those files, and no listed test would notice: each rule has its own violating and clean case, but no case runs through an overridden file. The 'leak case' wording covers the exception's own leak, not the loss of unrelated rules.
+    remediation: >-
+      State in plan.md IC-04 and gates.md that the D-06 rules are appended to elementSyntaxRestrictions in eslint-rules/index.mjs (path-scoped inside the selector, not by files:), so withoutClassBan carries them into every override; or give IC-06 an explicit test that calls ESLint.calculateConfigForFile for each overridden screen file and asserts every D-06 message is still present. Add that test to IC-06 exit checks.
+
+  - id: PLAN-DESIGN-002
+    lens: module design
+    severity: 3
+    title: The shared sk-retry-load union has no neutral home and requires editing #5's element from this mission
+    evidence:
+      - artifact: "research.md D-04 ('The edit to #5's one declaration is made by IC-06 if #5 is present'); plan.md 'Build base' table row sk-retry-load; contracts/sk-artifact-screen.md 'Events'"
+      - artifact: "#5 contracts/sk-work-package-screen.md Events table: sk-retry-load payload { missionId, wpId, target } declared by the Work Package screen (read from feat/work-package-screen-5)"
+      - code: "packages/mission-ui/src/elements/sk-mission-sample/sk-mission-sample.ts:10 and :26 (the existing pattern: the payload type and the @fires live in the one declaring element)"
+    claim: >-
+      One HTMLElementEventMap key (sk-retry-load) must have exactly one declare global. The plan makes the key's single declaration live in #5's screen file and has this mission's IC-06 rewrite it to a union. That file is outside IC-06's write scope (the Shared files table never lists sk-work-package-screen.ts), it only exists on base A or after #5 is implemented, and on base B-without-code the mission invents a declaration that #5 must later adopt. Two elements each owning half of one shared type, with the edit direction depending on landing order, is the opposite of one home. SkRetryLoadDetail also appears in the #5 defaults contract (retryDetail returns SkRetryLoadDetail), so renaming it to SkWorkPackageRetryDetail ripples into #5's tasks.
+    remediation: >-
+      FORK: (a) a neutral file, for example src/retry-types.ts (as shell-types.ts is neutral for shell events), exporting SkWorkPackageRetryDetail, SkArtifactRetryDetail, the union SkRetryLoadDetail and the single declare global; both screens import it, and whichever mission lands first creates it (the second only adds its member). Recommended. (b) keep #5's file as the home and make the edit a named, reported exception in the Shared files table with the exact one-line diff. Whichever is chosen, add the file or the row to the Shared files table and to the merge-order list.
+
+  - id: PLAN-DESIGN-003
+    lens: module design
+    severity: 3
+    title: Markdown parse trigger is circular with the rule that the screen compares no media type; cache key is the content object
+    evidence:
+      - artifact: "data-model.md 'ArtifactView': resolveArtifactView receives markdown: MarkdownResult | null and itself decides markdown from mediaType; plan.md IC-06 'the parse cache in willUpdate'; research.md D-07 ('cached by the screen in willUpdate on content identity')"
+      - artifact: "contracts/gates.md self-check: 'The screen file compares no mediaType, kind or code'"
+    claim: >-
+      The screen's willUpdate must decide whether to call buildMarkdownModel before resolveArtifactView has said whether the file is markdown. Either the screen compares mediaType (breaking its own rule and the data-driven intent), or it parses every document, including 256 KiB JSON or YAML, as markdown and discards the result (a wasted parse that can also produce a fallback no one shows). The cache key is content identity: a host that rebuilds the content object per render (a spread, a structuredClone, a fresh fetch of the same text) re-parses a 256 KiB document each time and the NFR-006 'no re-parse' proof (node identity) holds only for a stable object. The entryPaths Set that classifyLink needs ('built once per listing') is a second cache that the plan never places.
+    remediation: >-
+      Put the decision in logic: add a pure markdownFor(content) (or give resolveArtifactView a lazy thunk) that returns null unless content.mediaType equals MARKDOWN_MEDIA_TYPE, and have willUpdate call only that. Key the cache on the pair (content.content string, content.mediaType) by value, not on object identity, and say so in D-07. Name the second cache (listing identity to the path-to-kind Map) in the same willUpdate paragraph. Add one test per cache: same string in a new object does not re-parse; non-markdown never reaches parse.
+
+  - id: PLAN-DESIGN-004
+    lens: module design
+    severity: 2
+    title: renderMarkdown must classify links but the file table says render.ts imports only lit; link kind lookup needs a Map not a Set
+    evidence:
+      - artifact: "contracts/markdown-renderer.md 'Files': render.ts imports lit only, model.ts imports 'links.ts types'; renderMarkdown(blocks, handlers, entryPaths, openPath); links.ts classifyLink(destination, openPath, entryPaths)"
+      - artifact: "data-model.md Events: sk-select-artifact kind is the listing entry's kind"
+    claim: >-
+      The node model stores the raw destination (data-model.md says so), so classification happens in render.ts, which therefore imports links.ts, contradicting the import column. It also reclassifies every link on every re-render (the model is cached, the classification is not), and classifyLink takes a Set of paths, yet the event needs the matched entry's kind, which a Set cannot give; the screen would do a second lookup over up to 1000 entries per click.
+    remediation: >-
+      Decide once. Preferred: classify inside the cached step (model result carries a LinkTarget per link, keyed to the listing through the cache of PLAN-DESIGN-003) so render.ts is lit-only and render is pure drawing; or keep render-time classification and update the imports table. In both cases pass a ReadonlyMap path-to-kind and let classifyLink return { kind: 'artifact', path, entryKind } so the screen file compares nothing.
+
+  - id: PLAN-DESIGN-005
+    lens: module design
+    severity: 3
+    title: buildArtifactTree can hand the shell a current id that no row shows as selected, and an unreadable leaf cannot be opened
+    evidence:
+      - artifact: "research.md D-16 ('unavailable is !readable', current = the selected leaf); D-04 (a link to an unreadable entry emits sk-select-artifact so the host shows the refusal); plan.md IC-02 'the selected leaf current'"
+      - code: "packages/mission-ui/src/elements/sk-shell-tree/sk-shell-tree.ts:189-190 (a leaf is a route only when unavailable is not true and href is non-empty; selected is route && id === current)"
+      - code: "packages/mission-ui/src/elements/sk-mission-shell/sk-mission-shell.ts:494-501 (any non-empty tree.current removes aria-current from the nav item)"
+    claim: >-
+      For an entry with readable false the helper marks the node unavailable. The shell then renders it as a non-link row with no click handler (so a user cannot select it from the tree and see the refusal), and if the host nevertheless selects it (via a markdown link, which D-04 allows) current is non-empty, the shell clears aria-current on the nav item, and no tree row is selected: the page has no aria-current at all. The contract for current says 'the id of the selected leaf or empty' with no rule for this case.
+    remediation: >-
+      FORK: (a) never mark a leaf unavailable; keep it a normal selectable row with a text-bearing meta word ('unreadable', from defaults/) so the refusal is reachable and aria-current stays true. (b) keep unavailable and return current '' whenever the selected leaf is unavailable (so the shell keeps the nav item current), and document that unreadable entries are reached only by link. Add the case to the IC-02 tree tests and a shell-composition test.
+
+  - id: PLAN-DESIGN-006
+    lens: module design
+    severity: 3
+    title: expandedIds write-back from sk-tree-toggle rebuilds the whole tree DOM and loses focus; ancestor-forced-open undoes a manual collapse
+    evidence:
+      - artifact: "quickstart.md host snippet: tree.addEventListener('sk-tree-toggle', (e) => toggle(e.detail)) then buildArtifactTree(..., { expandedIds }); research.md D-16 (ancestors of the selection are expanded on every build, AV-19 'documented trade-off')"
+      - code: "packages/mission-ui/src/elements/sk-shell-tree/sk-shell-tree.ts (the items property doc 'Replacing the array resets folder state'), :163 (willUpdate resets openState on items change), :235 (keyed(this.items, ...) recreates every details element when the array identity changes)"
+    claim: >-
+      buildArtifactTree returns a new nodes array on every call. If the host writes the toggled folder into expandedIds and rebuilds (the quickstart shows exactly that), keyed() throws away and re-creates every folder and leaf (up to 1000 entries), the focused summary element is destroyed, keyboard focus drops to the body, and the user's scroll position in the sidebar can reset. Separately, an ancestor of the selected path is forced open on each build, so the user cannot collapse the folder that contains the open file at all (the plan calls this a trade-off but it makes the toggle event pointless for that folder and, with write-back, produces a visible flicker). The plan never says whether the host must write back.
+    remediation: >-
+      FORK: (a) document that the host must NOT write toggles back: the shell tree keeps its own open state while items is stable, expandedIds is the initial and selection-driven state only, and the host rebuilds only when entries or selectedPath change (memoised on those identities); remove the write-back from quickstart. (b) keep write-back but make buildArtifactTree return the previous array when the output is structurally equal (an optional previous argument), and drop the forced-open rule for folders the user explicitly collapsed. Add a test in the shell composition: toggle a folder, the focused summary survives.
+
+  - id: PLAN-DESIGN-007
+    lens: module design / single source of truth
+    severity: 2
+    title: No inverse of the tree id and href mapping; the host snippet uses an undefined pathOfNode
+    evidence:
+      - artifact: "contracts/defaults.md TREE_ID_PREFIX, ARTIFACT_HREF_PREFIX; research.md D-16 (id = prefix + path, href = prefix + encodeURIComponent(path)); quickstart.md: tree.addEventListener('sk-navigate', (e) => open(pathOfNode(e.detail.id)))"
+      - code: "packages/mission-ui/src/shell-types.ts:81-84 (ShellNavigateDetail carries id and href only)"
+    claim: >-
+      The prefix constants live in defaults/ and the encoding lives in buildArtifactTree, but the host needs the inverse to turn sk-navigate into a path. Nothing provides it, so each host re-implements the prefix strip, and the single home of the prefix is lost at the first consumer.
+    remediation: >-
+      Add pathOfArtifactNode(id): string | null next to buildArtifactTree in logic/artifact-tree.ts (reads TREE_ID_PREFIX, returns null for a foreign id), export it, use it in quickstart.md, and unit-test the round trip over odd paths (spaces, unicode, percent signs, a path that starts with the prefix text).
+
+  - id: PLAN-DESIGN-008
+    lens: single source of truth
+    severity: 2
+    title: Path splitting and resolution is written three times (tree, link classifier, Work Package matcher)
+    evidence:
+      - artifact: "research.md D-16 (folders from path segments), D-08/markdown-renderer.md row 8 (resolve against the directory of openPath with . and .. by string operations), data-model.md matchWorkPackage (first segment after WP_CONTAINER_SEGMENT, leading token)"
+    claim: >-
+      artifact-tree.ts, markdown/links.ts and artifact-wp.ts each split a path on the separator and treat segments; the separator, the empty-segment rule and the 'above the root' rule are each decided separately. The inert-versus-artifact outcome of a link and the node a path lands on in the tree must agree (a link that resolves to path P must select the tree leaf with id prefix+P); with three implementations they can drift.
+    remediation: >-
+      Add logic/artifact-path.ts (splitPath, dirOf, resolveRelative returning string | null for 'above root') with one data-held PATH_SEPARATOR in defaults/, used by all three; add one cross-check test: for every entry in the 1000-entry fixture, resolveRelative of its own relative name from its directory returns its own path and the tree builds a leaf with the matching id.
+
+  - id: PLAN-DESIGN-009
+    lens: single source of truth
+    severity: 2
+    title: resolveArtifactFacts re-implements resolveActivity for the Modified fact
+    evidence:
+      - artifact: "data-model.md ArtifactFacts: Modified = listing entry modifiedAt through the time hook, relativeTime against now, else the ISO string"
+      - code: "packages/mission-ui/src/logic/time.ts:30-33 (resolveActivity: null gives NO_ACTIVITY_TEXT, else hooks.time, else relativeTime(iso, now), else iso)"
+    claim: >-
+      The described rule is resolveActivity minus its null branch. Writing it again in artifact-facts.ts duplicates logic whose fallbacks (unparsable input returned unchanged, future time as 'just now') the Work Package screen and the board already rely on.
+    remediation: >-
+      Call resolveActivity(entry.modifiedAt ?? null, now, hooks) in resolveArtifactFacts and omit the Modified row when modifiedAt is absent; state in contracts/defaults.md that no time logic is added by this mission.
+
+  - id: PLAN-DESIGN-010
+    lens: single source of truth
+    severity: 2
+    title: Six-state status property has no normaliser and the stated collapse rule contradicts the shell's pattern
+    evidence:
+      - artifact: "contracts/sk-artifact-screen.md Properties: 'An unknown status, contentStatus or view value collapses to the default (the shell's normaliseViewState pattern)'; defaults loading, ready, rendered"
+      - code: "packages/mission-ui/src/view-state.ts:2-9 (ViewState is four values; an unknown value collapses to empty, not to a default of loading; VIEW_STATES is the one list)"
+    claim: >-
+      normaliseViewState knows four states and collapses to empty; this screen has six listing states and a different collapse target (loading), so the cited pattern does not apply as written and the plan declares a second state vocabulary next to ViewState without saying how they relate. An unknown status collapsing to loading shows a permanent spinner instead of the data-less 'empty' of the other screens.
+    remediation: >-
+      Define ArtifactStatus as ViewState plus the two additions (type-level extension of VIEW_STATES, one list), add normaliseArtifactStatus beside normaliseViewState, and decide the collapse target explicitly (recommend empty, as the shell and #4, so a host bug is visible rather than an endless loading look). Update the contract line and add the unknown-value tests for status and contentStatus.
+
+  - id: PLAN-DESIGN-011
+    lens: single source of truth / module design
+    severity: 2
+    title: LabelHooks extension is described two ways and edits a #4 file that #5 may also edit
+    evidence:
+      - artifact: "contracts/defaults.md last paragraph (LabelHooks gains kind, refusal, mediaType, size); data-model.md property labels: ArtifactLabelHooks | null (LabelHooks plus optional ...); plan.md IC-02 'LabelHooks gains the optional kind and refusal hooks (one edit of logic/types.ts)' (only two hooks named)"
+      - code: "packages/mission-ui/src/logic/types.ts:29-35 (LabelHooks: phase, lane, state, time)"
+    claim: >-
+      Three statements disagree: the hooks are added to the shared LabelHooks, or live in a separate ArtifactLabelHooks, and IC-02 names two hooks where the contract names four. Editing the shared interface is a cross-mission merge point (the #5 plan reserves hooks in logic/labels.ts and passes LabelHooks | null to its screen), and widening LabelHooks for every screen gives the Missions and Pipeline screens hooks they never read.
+    remediation: >-
+      Choose the separate interface: export ArtifactLabelHooks extends LabelHooks in logic/types.ts as an append-only block (or in a new logic/artifact-types.ts so no shared line is touched), list all four hooks in IC-02, and delete the 'LabelHooks gains' sentence from defaults.md.
+
+  - id: PLAN-DESIGN-012
+    lens: single source of truth
+    severity: 1
+    title: Statements about the not_found code and the 256 KiB text contradict each other or duplicate a unit word
+    evidence:
+      - artifact: "research.md D-11 ('not_found ... shared with #5's detail refusal table: both tables live in defaults/') versus D-12 ('the not_found key is the same string as #5's; no code shares a table with it'); plan.md Summary 'not_found shared with #5'"
+      - artifact: "contracts/defaults.md SIZE_CAP_TEXT '256 KiB' and formatArtifactSize unit table (KiB, MiB)"
+      - code: "#5 contracts/defaults.md DETAIL_REFUSAL_WORDS (not_found and source_unreadable; a different table with different sentences)"
+    claim: >-
+      The two tables are not shared; they are two independent tables that happen to use one key string, which is fine because defaults/ is the allow-list, but the artifacts say both 'shared' and 'not shared', which will mislead a reviewer asked to check for one home. Separately SIZE_CAP_TEXT repeats the 'KiB' unit word that formatArtifactSize owns.
+    remediation: >-
+      Reword D-11 to 'two tables, one key spelling, both in the allow-list; no code is read from the other mission's table'. Derive the cap text from a data constant LISTING_SIZE_LIMIT_BYTES (262144) through formatArtifactSize so the unit word has one home, or keep the literal and note it as a deliberate display copy.
+
+  - id: PLAN-DESIGN-013
+    lens: data-driven gate
+    severity: 3
+    title: E-22 is not implementable with the existing exception mechanism (ch unit, unstrict, px on max-width) and the plan does not say the mechanism must change
+    evidence:
+      - artifact: "contracts/gates.md E-22: 'pinned literals: max-width: 800px, max-width: 68ch, line-height: 1.65, text-decoration: underline, cursor: pointer'"
+      - code: "stylelint.config.mjs:13-41 (max-width and line-height are in STRICT_PROPERTIES), :414 (base unit-allowed-list ['%','fr']), :321-364 (the only unit grants are pxProperties and emProperties; no other unit can be granted), :326 and :339 (unstrict is the only way to take a strict property out)"
+    claim: >-
+      max-width: 68ch needs the ch unit, which unit-allowed-list rejects and the EXCEPTIONS merge cannot grant (it knows only px and em). max-width and line-height are strict properties, so pinning them needs unstrict entries and the pinned-values form, which E-22 does not name. text-decoration and cursor are not in LAYOUT_PROPERTIES and need to be added to the property allow-list with pinned keywords. IC-06 owns this config and expects 'proof cases', but would discover mid-work that the exception machinery needs a new unit grant, a change to a gate that the plan lists as unchanged.
+    remediation: >-
+      Rewrite E-22 as a concrete EXCEPTIONS entry (files, properties, unstrict, values, pxProperties) and add to IC-06 an explicit sub-task 'add chProperties to the exception merge, with unit-allowed-list and declaration-property-unit-disallowed-list cases and a reverted-must-fail proof'. FORK for the measure: (a) extend the mechanism to ch (small, general); (b) express the paragraph measure with the reading-width token request G-19 and keep only max-width: 800px as px, dropping 68ch.
+
+  - id: PLAN-DESIGN-014
+    lens: build base and exceptions
+    severity: 2
+    title: E-22 and E-23 overlap on one file, grant properties the base already allows, and E-22 has no filed sunset issue
+    evidence:
+      - artifact: "contracts/gates.md E-22 (padding, margin, gap, font-size, color, border ... on prose-styles.ts; sunset 'issue to be filed at PR time') and E-23 (border, padding, font-family, font-size, color on table, th, td in the same prose-styles.ts); E-24 grants overflow-wrap: normal"
+      - code: "stylelint.config.mjs:43 (LAYOUT_PROPERTIES contains padding, margin, gap, width; they are also strict, so token values need no exception) and the E-04 entry comment 'issue pending' as the weaker precedent"
+    claim: >-
+      The merge keys exceptions by file, so E-22 and E-23 are one grant on prose-styles.ts; the per-element-selector scoping implied by 'on table, th, td' is not enforceable (the config comment says Stylelint cannot scope by selector). Listing padding, margin and gap in E-22 is not an exception at all. Granting them twice inflates the exception count and the review surface. E-24's overflow-wrap: normal is the initial value; it is needed only if something inherits break-word, which no artifact shows. E-22 and E-23 sunset on issues not yet filed, weaker than E-08 to E-16 which cite filed design-library issues.
+    remediation: >-
+      Merge E-22 and E-23 into one entry for prose-styles.ts that lists only the properties outside LAYOUT_PROPERTIES (color, font-*, background, border, border-radius, line-height, border-collapse, text-decoration, cursor, outline-*); delete padding, margin, gap. Make E-24 drop overflow-wrap unless S-A2 shows a failing case. File the G-14, G-15, G-19 design-library issues before CP-1 so each exception cites a number at approval.
+
+  - id: PLAN-DESIGN-015
+    lens: build base and exceptions
+    severity: 2
+    title: "FORK: E-25 hand-paints a segmented look although the repo already adopts the library's segmented-choice family under E-01"
+    evidence:
+      - artifact: "research.md D-13 (candidates (a) sk-button role=tab, (b) raw button with token paint) and G-16 ('No tabs or segmented-choice element'); contracts/gates.md E-25 (border, per-corner radius, background, color, padding, font-size, font-weight and focus-ring grants)"
+      - code: "packages/mission-ui/src/library-sheets.ts:15 (segmentedChoiceSheet adopted); eslint.config.mjs:95-113 (E-01: the filter group's raw button with the class sk-segmented-choice__item); stylelint.config.mjs E-14 (the joined segmented look already needed an exception)"
+    claim: >-
+      The plan evaluates only two controls and treats the segmented look as new paint, which re-implements a library primitive's look with CSS (charter 'Elements over CSS') and adds a second, larger stylelint grant for the same visual as E-14. A third candidate exists: the adopted segmented-choice family used as E-01 does, with role=tab and aria-selected on the raw button. Whether the family's selectors key on aria-pressed or on a modifier class is unverified here (the library package is not installed in this checkout), so the spike must settle it.
+    remediation: >-
+      FORK: (a) add variant (c) to S-A5, 'raw button with the segmented-choice family classes plus role=tab', and prefer it when its active look works with aria-selected or a modifier class; E-25 then shrinks to the ESLint raw-button allowance and a classOnly row, with no Stylelint paint grant. (b) if (c) fails, keep E-25 but cite the spike evidence for each paint property. Record the finding that the library has the family in G-16.
+
+  - id: PLAN-DESIGN-016
+    lens: build base and exceptions
+    severity: 3
+    title: Merge-order list omits shared files, and the facts sheet and gate constants are written by both missions
+    evidence:
+      - artifact: "plan.md 'Build base' merge-order consequence lists index.ts, custom-elements.json, package.json, both lint configs, both CHANGELOGs, library-sheets.ts; 'Shared files' puts the facts sheet in IC-06 and the data-driven config in IC-02"
+      - artifact: "#5 plan.md 'Shared files': library-sheets.ts gets the event-timeline AND facts sheets in IC-03b; eslint.data-driven.config.mjs, gates/fixtures/data-driven/**, gates/data-driven.selftest.ts are extended in IC-02; stylelint.config.mjs and eslint.config.mjs in IC-03b"
+      - code: "gates/data-driven.selftest.ts:49,62 (EXPECTED_WORDS and the equality assert on cfg.WORDS; the selector-count guards named in gates.md change in the same commit)"
+    claim: >-
+      #5 and this mission both extend the same gate files with count-pinned constants (EXPECTED_WORDS, word counts, selector counts) and both add a factsSheet export to library-sheets.ts; whichever lands second hits a conflict that is not a text merge but a semantic one (two sets of counts, a duplicate export). The merge-order paragraph names only 'both lint configs' and omits the data-driven trio, defaults/index.ts, logic/types.ts, contract/types.ts, contract/bulk.ts, the registry.test.mjs and overlays.test.mjs literal counts, story-support/shell-frame.ts, surface-freeze.test.ts, gates/plants/**, scripts/stylelint-exceptions.test.mjs and ci.yml timeouts. The IC-06 text builds a facts sheet unconditionally.
+    remediation: >-
+      Replace the paragraph with a complete table 'file / what each mission adds / who resolves how' (including the data-driven constants: derive counts from the arrays, not literals, so a merge needs no arithmetic). In IC-06 write 'add the facts sheet only if library-sheets.ts has none; otherwise import it' and add the same rule for the REVIEW_CYCLE constant and the retry type (see PLAN-DESIGN-002). Add a reviewer check: after the second mission lands, all gate self-tests are re-run on the merged tree.
+
+  - id: PLAN-DESIGN-017
+    lens: build base and sequencing
+    severity: 3
+    title: "FORK: the plan leaves Base A or B open, so five branch points make IC-01, IC-02 and IC-06 non-deterministic for task generation"
+    evidence:
+      - artifact: "plan.md 'Build base' ('The plan does not choose'); branch points: contracts re-vendor mechanism (--sha versus --from-repo), REVIEW_CYCLE_ARTIFACT_KIND (import versus define), sk-retry-load (edit #5 versus declare), exception numbering (E-17 to E-21 present or documented gap), facts sheet (exists or create), contract literals (#5's counts)"
+    claim: >-
+      Each of those branch points changes which files an IC writes and which tests it carries, so the tasks phase cannot give exact owned_files or exit checks without picking a base. The plan's own statement that the orchestrator asks the operator at dispatch moves a design decision past planning, after the lanes and write scopes are fixed.
+    remediation: >-
+      FORK: (a) decide at CP-1 or before tasks: Base A only (IC-01 is blocked until #5 merges; state this as the entry condition, and shrink every branch point to the single present case); (b) keep both but add a delta table 'IC / Base A / Base B' listing the exact file differences for the six branch points above, so tasks can be generated for either and the orchestrator picks one at dispatch. Recommended: (a), because #5 is planned and tasked and Base B has the highest rebase risk for the contract files.
+
+  - id: PLAN-DESIGN-018
+    lens: IC write scope and sequencing
+    severity: 3
+    title: The truncation note is assigned to both chains, so the two parallel chains do not have disjoint write scopes
+    evidence:
+      - artifact: "contracts/sk-artifact-screen.md Part signatures: renderDocument (rendered body, the redaction line, the truncation note) in document-parts.ts, owned by IC-07 (plan.md IC-07); plan.md IC-09: 'the truncation note (DA-10) in the document pane header band'"
+    claim: >-
+      IC-09 (chain Y) is told to deliver a note that the signature table places inside document-parts.ts, a chain X file. The plan's disjointness claim ('chain X: IC-07, IC-08; chain Y: IC-09; disjoint writes') is therefore false for this one item, and the fallback (serialise IC-09 after IC-08) is only triggered by a merge conflict that may arrive late.
+    remediation: >-
+      Give the truncation note to one owner. Either move it to IC-07 (document-parts.ts, where the signature already puts it; IC-09 keeps only its story of the truncated tree) or move the note into a function in inspector-parts.ts or a new truncation-parts.ts owned by IC-09 and called from the screen file by IC-06's stub. Update both the IC text and the signature table, and add an owned-files disjointness check to the IC-10 merge step.
+
+  - id: PLAN-DESIGN-019
+    lens: IC reviewability
+    severity: 2
+    title: "FORK: IC-01, IC-02 and IC-06 each carry more than one reviewable concern"
+    evidence:
+      - artifact: "plan.md IC-01 (baseline, contract re-vendor, fixtures and overlays, two relaxations, dependency install with supply-chain record, spike S-A0); IC-02 (six defaults modules, six logic functions, data-driven gate extension, LabelHooks edit); IC-06 (skeleton, layout, eight stubs, five dispatch methods, surface freeze, facts sheet, shell-frame option, E-22 to E-27 in two lint configs, manifest regeneration)"
+    claim: >-
+      A reviewer must judge a security-sensitive dependency decision, a contract re-pin and a fixture inventory in one WP; the gate extension (a change to a gate the whole repo depends on) rides with vocabulary logic; and IC-06 combines the public surface freeze with three lint-config changes. The review of the gate and exception changes needs different evidence (reverted-must-fail proofs) than the element skeleton (event tests).
+    remediation: >-
+      FORK: (a) split into IC-01a (re-vendor, relaxations, fixtures), IC-01b (markdown-it dependency, supply-chain record, S-A0), IC-02a (defaults and logic), IC-02b (data-driven extension), IC-06a (exceptions and lint config with proof cases), IC-06b (skeleton and surface freeze); the serial foundation absorbs the extra WPs with no cost in parallelism. (b) keep the grouping and add a per-concern exit-check subsection and a reviewer instruction to review each concern against its own evidence.
+
+  - id: PLAN-DESIGN-020
+    lens: data-driven gate
+    severity: 2
+    title: Refusal-code source and the 'exactly 7' guard contradict the claim that a vocabulary change widens the gate with no edit; media types are not gated at all
+    evidence:
+      - artifact: "contracts/gates.md 'The data-driven extension': 'read from the vendored contract (so a vocabulary change widens the gate with no edit)' and 'the seven codes from the code: fields of examples/ArtifactRefusal.*.yaml (a guard asserts exactly 7 files and 7 codes)'"
+      - code: "eslint.data-driven.config.mjs:19-24 (existing words come from schema enums MissionPhase.yaml and StatusLane.yaml, not from example files)"
+    claim: >-
+      The existing gate reads enums from schema files; the new one reads codes from example files, which are one-per-code documentation and not a vocabulary definition. A new code arrives with a new example file (or none): the guard then fails the gate (loud, but an edit is needed), or a code without an example is missed silently. The claim of 'no edit' is false and the source is weaker than the schema. Also the markdown media type and the other media-type words are a branch condition of the screen yet are not gate words, so a literal 'text/markdown' in logic or an element would pass.
+    remediation: >-
+      Read the codes from the refusal schema's enum or if/then branches when present (verify against the pinned tree at IC-01) and fall back to examples only with the guard failing loudly, and reword gates.md to 'a vocabulary change fails the count guard until reviewed'. Add the media type values (ArtifactContent mediaType enum or the MEDIA_TYPE_WORDS keys read from the schema) as gate words, or add a repository grep test that 'text/markdown' appears only in defaults/artifact-media.ts and the contract directory.
+
+  - id: PLAN-DESIGN-021
+    lens: data-driven gate
+    severity: 2
+    title: The bare-word comparison selectors have known holes that the plan does not list, and the self-test false-positive set is thin
+    evidence:
+      - artifact: "contracts/gates.md: bare words (spec, quickstart, research, contract, checklist, other) matched 'only in comparisons (===, !==, includes argument) and case labels'"
+      - code: "eslint.data-driven.config.mjs:1-17 (header 'Known limitations' lists what the gate misses; the new selectors need their own entries); the S1 and S5 entries of SELECTOR_ENTRIES (exact-value and identifier anchors)"
+    claim: >-
+      A comparison-only selector misses ['spec', 'plan'].includes(kind) (the literal is an array element, not the call argument), set.has('spec'), kind.startsWith('spec'), a lookup via a local const initialised from a literal in the same file, and an object literal whose KEY is the bare word outside defaults/ ({ spec: x }), which S5 skips for these words unlike lane words. SC-004 and NFR-009 rely on the gate for a thirteenth kind, so the gap matters. The false-positive plan names a property 'other' and prose 'research'; it omits the realistic cases for this code base: the import path segment 'contract', a CSS selector or data attribute containing 'contract', and a fixture named by kind in a story file (allow-listed).
+    remediation: >-
+      Add selectors for ArrayExpression elements inside a .includes receiver, Map/Set has/get with a bare literal, and bare-word object keys in packages/*/src outside the allow-list (checking first that no existing key such as contract, research or other collides; grep found no existing comparison of these words in packages/mission-ui/src), and add each hole that stays open to the file's Known limitations header. Extend the false-positive self-test cases with the import-path and data-attribute cases above, and make the foreign-vocabulary test of IC-10 the stated backstop.
+
+  - id: PLAN-DESIGN-022
+    lens: dynamic-pipeline alignment
+    severity: 3
+    title: "FORK: the labels hooks cover words only, so icons, Work Package link kinds, container segment, copy and budget cannot arrive as props although the spec says they come in as data"
+    evidence:
+      - artifact: "spec.md 'The dynamic-pipeline constraint' ('Artifact kind words, kind icons, folder names, media-type labels, refusal wording, the render budget and badge tones come in as data' and 'a later pipeline ... must need no change to this element, only different props'); FR-031 (tab labels and notices come from defaults/ or the labels property)"
+      - artifact: "contracts/defaults.md: ARTIFACT_KIND_WORDS icon, WORK_PACKAGE_LINK_KINDS, WP_CONTAINER_SEGMENT, TOKEN_SEPARATOR, MARKDOWN_BUDGET, EXTERNAL_LINK_SCHEMES, MARKDOWN_MEDIA_TYPE are module constants; hooks are kind, refusal, mediaType, size (strings only)"
+    claim: >-
+      The only runtime inputs are string hooks. A pipeline that adds a kind cannot give it an icon, cannot declare that its files link a Work Package, cannot move the container segment, and cannot change tab labels or notices, because none has a property or hook; they change only by editing defaults/, i.e. the element. The same holds for the budget. That is 'defaults, not data in', which is how the board handles lanes only for words. The plan restates the spec sentence in D-20 as satisfied without noting the gap.
+    remediation: >-
+      FORK: (a) add one optional structural input, for example a vocabulary property typed ArtifactVocabulary (kind table with label and icon, wpLinkKinds, container segment, markdown media type, tab and notice copy) that defaults to the defaults/ module, and have the logic functions take it as an argument; (b) keep constants in defaults/ and record in the spec, by amendment A-5 at CP-1, that only words are runtime data and that structure constants are defaults-only until the dynamic pipeline mission. Either way correct D-20 and FR-031 so they state which inputs are props.
+
+  - id: PLAN-DESIGN-023
+    lens: module design
+    severity: 1
+    title: markdown/index.ts re-exports the lit-importing renderer next to the pure model; buildMarkdownModel parameter type is ambiguous
+    evidence:
+      - artifact: "contracts/markdown-renderer.md Files: index.ts re-exports buildMarkdownModel, renderMarkdown and types; model.ts signature buildMarkdownModel(content) while data-model.md passes the content"
+      - code: "packages/mission-ui/src/logic (no file imports lit today; src/logic/index.ts is the barrel for plain TypeScript)"
+    claim: >-
+      The logic directory is DOM-free and lit-free today. A single index.ts that exports both the model and render.ts makes any importer of the model load lit, which defeats the 'node-testable, no lit import' property for the model and breaks the dependency direction promised by 'logic importing lit' being confined to render.ts. The parameter of buildMarkdownModel is called content, which reads as the ArtifactContent object while the pre-parse guards need only the string.
+    remediation: >-
+      Do not re-export render.ts from logic/index.ts or from a barrel the model tests import; give the renderer its own entry (logic/markdown/render.ts imported directly by document-parts.ts). Type the parameter as the source string, and let the cache of PLAN-DESIGN-003 pass content.content.

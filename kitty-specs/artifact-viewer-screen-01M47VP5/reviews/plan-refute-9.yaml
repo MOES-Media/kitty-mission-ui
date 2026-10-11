@@ -1,0 +1,29 @@
+schema: review-refute/v1
+complete: true
+phase: plan
+batch: 9
+verdicts:
+  - id: PLAN-A11Y-006
+    verdict: confirmed
+    reason: markdown-renderer.md makes an external image placeholder its own link control while a link wraps its children, the corpus list has no image-in-link entry, so nested role=link is unspecified.
+  - id: PLAN-A11Y-007
+    verdict: confirmed
+    reason: research.md D-14 says name equal to link text plus a hidden suffix and lists a "not a followable link" suffix, while the contract gives suffixes to external and artifact links only and inert links just a title span.
+  - id: PLAN-A11Y-008
+    verdict: confirmed
+    reason: sk-artifact-screen.md line 47 declares both panels tabpanel labelled by the tab with no tabs=none case, and the prototype fallback panel is labelled by the Rendered tab.
+  - id: PLAN-A11Y-009
+    verdict: confirmed
+    reason: plan.md line 96 and prototype.css (.reading-layout > .inspector order -1) put the inspector first visually while the aside follows the document in the DOM, and AV-32 is a single 1280 story; FORK stands.
+  - id: PLAN-A11Y-010
+    verdict: confirmed
+    reason: The prototype has prefers-reduced-motion and forced-colors blocks and a background-only selected segment, while grep of the mission artifacts finds no forced, reduced or prefers- text and E-25 lists no border marker.
+  - id: PLAN-A11Y-011
+    verdict: confirmed
+    reason: gates.md E-22 lists no outline properties while E-23, E-24 and E-25 grant the E-16 ring properties, and the story catalogue has only AV-31 and AV-32 for focus.
+  - id: PLAN-A11Y-012
+    verdict: confirmed
+    reason: plan.md line 248 files the one-glyph collapse (G-17) as "not amendments" although AV-15, AV-29, FR-003 and DA-3 speak of kind icons, and the contract names no source element for the toolbar file icon.
+  - id: PLAN-A11Y-013
+    verdict: confirmed
+    reason: prototype.css has .raw-view min(900px,100%) and .document-toolbar min-height 68px, E-24 allows no width or min-height, and the mission artifacts hold no 68px item and DA-22 does not rule on the 900px measure.

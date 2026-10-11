@@ -1,45 +1,17 @@
 import { DETAIL_REFUSAL_GENERIC, DETAIL_REFUSAL_WORDS } from '../defaults/index.js';
 import { lookup } from './lookup.js';
+import type { WorkPackageRetryMember } from '../retry-types.js';
 
-/** The retry of the whole Work Package read. */
-export interface WorkPackageRetryDetail {
-  missionId: string;
-  wpId: string;
-  target: 'work-package';
-}
-
-/** The retry of the detail regions only. */
-export interface DetailRetryDetail {
-  missionId: string;
-  wpId: string;
-  target: 'detail';
-}
-
-/** The retry of one Projects list entry; `key` is the host's entry identity. */
-export interface ProjectRetryDetail {
-  target: 'project';
-  key: string;
-}
-
-/** The retry of the whole Projects list. */
-export interface ProjectsRetryDetail {
-  target: 'projects';
-}
-
-/** The retry of the folder listing of the open-project dialog. */
-export interface FoldersRetryDetail {
-  target: 'folders';
-}
-
-/** The two Work Package members: the only ones `retryDetail` builds. */
-export type WorkPackageRetryMember = WorkPackageRetryDetail | DetailRetryDetail;
-
-/**
- * The payload of `sk-retry-load`: a union discriminated by `target`. `HTMLElementEventMap['sk-retry-load']` can be declared
- * once, so a later screen adds its own member here (with its own `target` word) instead of declaring the event again.
- * The screen's `SkRetryLoadDetail` is this type.
- */
-export type RetryLoadDetail = WorkPackageRetryMember | ProjectRetryDetail | ProjectsRetryDetail | FoldersRetryDetail;
+// The payload types live in the neutral `src/retry-types.ts`; these re-exports keep the earlier names.
+export type {
+  DetailRetryDetail,
+  FoldersRetryDetail,
+  ProjectRetryDetail,
+  ProjectsRetryDetail,
+  RetryLoadDetail,
+  WorkPackageRetryDetail,
+  WorkPackageRetryMember,
+} from '../retry-types.js';
 
 /** What the builder reads from the host's properties. */
 export interface RetryProps {

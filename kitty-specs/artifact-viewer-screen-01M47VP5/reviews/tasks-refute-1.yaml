@@ -1,0 +1,39 @@
+schema: review-refute/v1
+complete: true
+phase: tasks
+batch: 1
+verdicts:
+- id: TASKS-DECOMP-001
+  verdict: confirmed
+  reason: grep of the WP02 file line 105 finds the parenthetical shape list, and grep of plan.md, research.md
+    and contracts/ finds no list of corpus shapes for S-A0, so it is the author's invention.
+- id: TASKS-DECOMP-002
+  verdict: confirmed
+  reason: WP06 line 141 holds the 14-width list followed by 'the sampling list also includes 689, 719,
+    ...', which repeats a subset and reads as a second list.
+- id: TASKS-DECOMP-003
+  verdict: confirmed
+  reason: plan.md has zero occurrences of role="group"; only research.md S-A4 names it, as a thing the
+    spike tests, while WP11 states it as an instruction.
+- id: TASKS-SEQ-001
+  verdict: confirmed
+  reason: WP01 subtask 1 says 'WP report only (no file)', plan.md Gates places the baseline with IC-01a
+    only, and no plan or notes line names a durable home or says the dispatch carries it.
+- id: TASKS-SEQ-002
+  verdict: confirmed
+  reason: grep for 'hokepoint' in tasks-notes.md finds nothing, and the sk review-overlay Tasks seq lens
+    requires shared CI gates and event contracts to be called out; WP03, WP05, WP07, WP08 and WP13 own
+    such surfaces.
+- id: TASKS-SEQ-003
+  verdict: confirmed
+  reason: wps.yaml gives WP12 dependencies [WP10] only and tasks-notes.md states the merge but no rule
+    that dispatch waits for WP11's approval.
+- id: TASKS-COVER-001
+  verdict: confirmed
+  reason: grep of WP04 shows 'as the plan text describes' (line 121) with no A-8 text in the file, grep
+    of WP01 shows the Build-base table cited and absent, and a script found no 'Spec amendments', 'Build
+    base' or 'CP-1 asks' text in any of the 13 prompts.
+- id: TASKS-COVER-002
+  verdict: confirmed
+  reason: 'diffing the prompts'' test-rules paragraph against #4 research.md D-34 shows rules 3 and 5
+    reworded, rule 6 replaced by an invented rule, and D-19 absent.'

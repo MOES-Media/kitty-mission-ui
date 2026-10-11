@@ -16,6 +16,9 @@ const PATHS: Record<ShellIcon, TemplateResult> = {
   artifacts: svg`<path d="M6 3h8l4 4v14H6zM14 3v5h5"/>`,
   file: svg`<path d="M6 3h8l4 4v14H6zM14 3v5h5"/>`,
   folder: svg`<path d="M3 7h7l2 2h9v10H3z"/>`,
+  // The artifact kind icons of the Artifact Viewer (prototype 05-artifact.html, research and data-model rows).
+  magnifier: svg`<circle cx="11" cy="11" r="6"/><path d="m16 16 4 4"/>`,
+  table: svg`<path d="M5 5h14v14H5zM5 10h14"/>`,
   // No prototype glyph for these three (the prototype uses a text arrow and has no mobile drawer): kept local.
   menu: svg`<path d="M4 7h16M4 12h16M4 17h16"/>`,
   close: svg`<path d="m6 6 12 12M18 6 6 18"/>`,

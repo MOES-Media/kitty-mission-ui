@@ -1,11 +1,45 @@
-{
-  "gate": "eslint",
-  "ciCommand": "pnpm lint",
-  "expectFailPattern": "plantEslintUnused",
-  "overlays": [
-    {
-      "target": "packages/mission-ui/src/plant-eslint.ts",
-      "source": "plant-eslint.ts.plant"
-    }
-  ]
-}
+[
+  {
+    "gate": "eslint",
+    "ciCommand": "pnpm lint",
+    "expectFailPattern": "plantEslintUnused",
+    "overlays": [
+      {
+        "target": "packages/mission-ui/src/plant-eslint.ts",
+        "source": "plant-eslint.ts.plant"
+      }
+    ]
+  },
+  {
+    "gate": "eslint",
+    "ciCommand": "pnpm lint",
+    "expectFailPattern": "markdown-renderer: R3",
+    "overlays": [
+      {
+        "target": "packages/mission-ui/src/logic/markdown/render.ts",
+        "edits": [
+          {
+            "find": "const DIGITS = /^[0-9]{1,9}$/;",
+            "replace": "const DIGITS = /^[0-9]{1,9}$/;\nexport const plantParser = new DOMParser();"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "gate": "eslint",
+    "ciCommand": "pnpm lint",
+    "expectFailPattern": "markdown-renderer: R4",
+    "overlays": [
+      {
+        "target": "packages/mission-ui/src/logic/markdown/render.ts",
+        "edits": [
+          {
+            "find": "return html`<hr>`;",
+            "replace": "return html`<hr .innerHTML=${String(block.kind)}>`;"
+          }
+        ]
+      }
+    ]
+  }
+]

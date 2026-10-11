@@ -208,12 +208,21 @@ export async function applyPlant(cwd, plantRoot, plant) {
   return written;
 }
 
-/** Put every written target back: tracked files from HEAD, untracked ones removed. */
+/**
+ * Put every written target back: tracked files from HEAD, untracked ones removed. Git must answer; when it cannot
+ * (for example "dubious ownership" in a container whose checkout belongs to another user) this throws rather than
+ * guess, because guessing "untracked" would delete a tracked source file.
+ */
 export function restorePlant(cwd, targets) {
   for (const t of targets) {
-    const tracked = git(cwd, ['ls-files', '--error-unmatch', '--', t]).status === 0;
-    if (tracked) git(cwd, ['checkout', 'HEAD', '--', t]);
-    else rmSync(join(cwd, t), { force: true });
+    const listed = git(cwd, ['--literal-pathspecs', 'ls-files', '--', t]);
+    if (listed.status !== 0) throw new Error(`cannot restore ${t}: git ls-files exited ${listed.status}: ${listed.err.trim()}`);
+    if (listed.out.trim() === '') {
+      rmSync(join(cwd, t), { force: true });
+      continue;
+    }
+    const back = git(cwd, ['--literal-pathspecs', 'checkout', 'HEAD', '--', t]);
+    if (back.status !== 0) throw new Error(`cannot restore ${t}: git checkout exited ${back.status}: ${back.err.trim()}`);
   }
 }
 

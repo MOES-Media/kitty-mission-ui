@@ -1,0 +1,22 @@
+schema: review-findings/v1
+phase: tasks
+lens_group: fresh
+mission: artifact-viewer-screen-01M47VP5
+tree: 6488bf0
+conduct_note: 'Fresh sweep round 2 on 6488bf0: read the generated prompts'' own text end to end (WP09,
+  WP12, WP13 in full, the rest by script), in-session by the orchestrator (no sub-agents).'
+findings:
+- id: TASKS-FRESH-002
+  lens: Padding and vacuous text
+  severity: 2
+  title: Every subtask's 'Purpose' line repeats the subtask title
+  evidence:
+  - artifact: 'tasks/WP09-document-pane.md subtask ''Toolbar and tablist'': ''**Purpose**: Toolbar and
+      tablist (`toolbar-parts.ts`, `tab-parts.ts`).'' directly under the same words as the heading; the
+      same shape in all 94 subtasks of the 13 prompts'
+  - artifact: 'sk review-overlay Tasks decomp lens: ''No padding, no vacuous tasks'''
+  claim: The Purpose line adds no information; it is generated from the title. A reader skimming for the
+    purpose of a subtask finds a tautology, and a reviewer cannot tell whether a purpose was thought about.
+  remediation: Drop the generated Purpose line; the title, the numbered steps, the files and the validation
+    line already carry the purpose, and the plan text embedded below gives the reason.
+complete: true

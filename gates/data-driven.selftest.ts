@@ -30,6 +30,10 @@ interface ConfigModule {
   NEW_WORDS: string[];
   NEW_UNDERSCORED: string[];
   NEW_BARE_WORDS: string[];
+  ARTIFACT_KINDS: string[];
+  ARTIFACT_CODES: string[];
+  ARTIFACT_UNDERSCORED: string[];
+  ARTIFACT_BARE_WORDS: string[];
   S8B_METHODS: string[];
   ALLOW_LIST: string[];
 }
@@ -69,15 +73,28 @@ const EXPECTED_NEW_WORDS = ['changes_requested', 'unchanged', 'not_applicable', 
 const EXPECTED_NEW_UNDERSCORED = ['changes_requested', 'not_applicable', 'planning_artifact_repo_root_shared_workspace', 'live_claim_process', 'schema_drift'];
 // Common identifiers: matched only in comparisons and case labels.
 const EXPECTED_NEW_BARE_WORDS = ['changed', 'unknown', 'fresh', 'stale', 'healthy'];
+// The vocabulary the Artifact Viewer extension reads: the ArtifactKind enum and the ArtifactRefusalCode enum of the vendored
+// schemas, written out here independently of them, in the schemas' order. The count guards: exactly 12 kinds and 7 codes.
+const EXPECTED_ARTIFACT_KINDS = ['review_cycle', 'work_package_prompt', 'spec', 'plan', 'tasks', 'data_model', 'quickstart', 'analysis_report', 'research', 'contract', 'checklist', 'other'];
+const EXPECTED_ARTIFACT_CODES = ['invalid_artifact_path', 'not_found', 'artifact_too_large', 'artifact_not_text', 'artifact_secret', 'artifact_unreadable', 'artifact_listing_unreadable'];
+// Gate words (literals, anywhere outside the allow-list): every underscored kind and code.
+const EXPECTED_ARTIFACT_UNDERSCORED = ['review_cycle', 'work_package_prompt', 'data_model', 'analysis_report', ...EXPECTED_ARTIFACT_CODES];
+// Ordinary words: matched only in comparisons, case labels, includes, Map and Set calls and as object keys. `plan` and
+// `tasks` are phase words and already gated everywhere, so they are not repeated here.
+const EXPECTED_ARTIFACT_BARE_WORDS = ['spec', 'quickstart', 'research', 'contract', 'checklist', 'other'];
 const EXPECTED_METHODS = ['at', 'slice', 'splice', 'with', 'toSpliced'];
 const EXPECTED_ENTRY_IDS = [
   'S1', 'S1b.1', 'S1b.2', 'S2', 'S3a', 'S3b', 'S3c.1', 'S3c.2', 'S4', 'S5', 'S5b.1', 'S5b.2', 'S5b.3', 'S6', 'S7',
   'S7b.1', 'S7b.2', 'S7b.3', 'S7b.4', 'S8a.1', 'S8a.2', 'S8b.1', 'S8b.2', 'S8c.1', 'S8c.2', 'S9.1', 'S9.2', 'S10', 'S11',
   'S12.1', 'S12.2', 'S13.1', 'S13.2', 'S13.3', 'S13.4', 'S13.5', 'S14.1', 'S14.2', 'S14.3', 'S14.4',
+  'S15.1', 'S15.2', 'S15.3', 'S15.4', 'S15.5', 'S16.1', 'S16.2', 'S16.3', 'S16.4', 'S16.5', 'S16.6', 'S16.7', 'S16.8', 'S16.9', 'S16.10', 'S16.11',
 ];
+// The fixtures on #5's tip, and the new ones of the Artifact Viewer extension.
+const FIXTURES_BEFORE = 46;
+const FIXTURES_ADDED = 21;
 
 describe('data-driven gate self-test: configuration', () => {
-  it('declares the vocabulary of the contract and the 40 selector entries, each with a distinct id', async () => {
+  it('declares the vocabulary of the contract and every selector entry, each with a distinct id', async () => {
     const cfg = await loadConfig();
     expect(cfg.WORDS).toEqual(EXPECTED_WORDS);
     expect(cfg.VERDICT_WORDS).toEqual(EXPECTED_VERDICT_WORDS);
@@ -88,13 +105,18 @@ describe('data-driven gate self-test: configuration', () => {
     expect(cfg.NEW_WORDS).toEqual(EXPECTED_NEW_WORDS);
     expect(cfg.NEW_UNDERSCORED).toEqual(EXPECTED_NEW_UNDERSCORED);
     expect(cfg.NEW_BARE_WORDS).toEqual(EXPECTED_NEW_BARE_WORDS);
+    expect(cfg.ARTIFACT_KINDS).toEqual(EXPECTED_ARTIFACT_KINDS);
+    expect(cfg.ARTIFACT_CODES).toEqual(EXPECTED_ARTIFACT_CODES);
+    expect(cfg.ARTIFACT_UNDERSCORED).toEqual(EXPECTED_ARTIFACT_UNDERSCORED);
+    expect(cfg.ARTIFACT_BARE_WORDS).toEqual(EXPECTED_ARTIFACT_BARE_WORDS);
     expect(cfg.STATUS_WORDS).toEqual(EXPECTED_STATUS_WORDS);
     expect(cfg.UNDERSCORED).toEqual(EXPECTED_UNDERSCORED);
     expect(cfg.S8B_METHODS).toEqual(EXPECTED_METHODS);
     const ids = cfg.SELECTOR_ENTRIES.map((e) => /^data-driven: (S[\w.]+) /.exec(e.message)?.[1]);
     expect(ids).toEqual(EXPECTED_ENTRY_IDS);
-    expect(cfg.SELECTOR_ENTRIES.length).toBe(40);
-    expect(new Set(ids).size).toBe(40);
+    expect(cfg.SELECTOR_ENTRIES.length).toBe(EXPECTED_ENTRY_IDS.length);
+    expect(new Set(ids).size).toBe(EXPECTED_ENTRY_IDS.length);
+    expect(EXPECTED_ENTRY_IDS.length).toBe(40 + 16);
   });
 
   it('turns inline configuration off', async () => {
@@ -105,9 +127,10 @@ describe('data-driven gate self-test: configuration', () => {
 });
 
 describe('data-driven gate self-test: positive fixtures', () => {
-  it('has the 46 positive fixtures and no other file', () => {
-    expect(positives.length).toBe(46);
-    expect(readdirSync(FIXTURE_DIR).length).toBe(46);
+  it('has the 46 positive fixtures of #5 and the 21 of the Artifact Viewer, and no other file', () => {
+    expect(positives.length).toBe(FIXTURES_BEFORE + FIXTURES_ADDED);
+    expect(readdirSync(FIXTURE_DIR).length).toBe(FIXTURES_BEFORE + FIXTURES_ADDED);
+    expect(positives.filter((f) => /^s1[56]-/.test(f)).length).toBe(FIXTURES_ADDED);
   });
 
   for (const name of positives) {
@@ -236,10 +259,91 @@ describe('data-driven gate self-test: every word of the verdict, change-state an
     expect(all.filter((w) => !covered.has(w))).toEqual([]);
   });
 
-  // The gate does not read ArtifactKind or the refusal codes; the reviewer self-check list and the foreign-value tests do.
-  it('does not read the artifact kind or the refusal codes', async () => {
-    expect(selectorIds(await lint("export const x = 'review_cycle';\n"))).toEqual([]);
+  // The detail refusal codes of #5 are not read by this gate: only the artifact kinds and the seven artifact codes are.
+  it('does not read the detail refusal codes of the Work Package screen (positive control: the artifact words are read)', async () => {
     expect(selectorIds(await lint("export const x = 'source_unreadable';\n"))).toEqual([]);
+    expect(selectorIds(await lint("export const x = 'review_cycle';\n")).sort()).toEqual(['S15.1', 'S15.3']);
+  });
+});
+
+describe('data-driven gate self-test: every word of the artifact kind and refusal code vocabularies', () => {
+  it('guards exactly 12 kinds and 7 codes, read from the vendored enums', async () => {
+    const cfg = await loadConfig();
+    expect(cfg.ARTIFACT_KINDS.length).toBe(12);
+    expect(cfg.ARTIFACT_CODES.length).toBe(7);
+    expect(EXPECTED_ARTIFACT_KINDS.length).toBe(12);
+    expect(EXPECTED_ARTIFACT_CODES.length).toBe(7);
+  });
+
+  it('reads every kind and code as a gate word, a bare word or a word an earlier selector already gates', async () => {
+    const cfg = await loadConfig();
+    const all = [...cfg.ARTIFACT_KINDS, ...cfg.ARTIFACT_CODES];
+    expect(all.length).toBe(19);
+    const earlier = new Set(cfg.WORDS);
+    const covered = new Set([...cfg.ARTIFACT_UNDERSCORED, ...cfg.ARTIFACT_BARE_WORDS, ...earlier]);
+    expect(all.filter((w) => !covered.has(w))).toEqual([]);
+    expect(all.filter((w) => earlier.has(w))).toEqual(['plan', 'tasks']);
+    expect(cfg.ARTIFACT_UNDERSCORED.length + cfg.ARTIFACT_BARE_WORDS.length).toBe(all.length - 2);
+  });
+
+  it('reports each underscored word as a literal (S15.1, S15.3), in any case, as a template, inside a string, inside a template and as a key', async () => {
+    const cfg = await loadConfig();
+    let ran = 0;
+    for (const w of cfg.ARTIFACT_UNDERSCORED) {
+      for (const v of [w, w.toUpperCase()]) {
+        expect(selectorIds(await lint(`export const x = '${v}';\n`)).sort(), v).toEqual(['S15.1', 'S15.3']);
+      }
+      expect(selectorIds(await lint(`export const x = \`${w}\`;\n`)).sort(), w).toEqual(['S15.2', 'S15.4']);
+      expect(selectorIds(await lint(`export const x = 'kind-${w}';\n`)), w).toEqual(['S15.3']);
+      expect(selectorIds(await lint(`export const x = \`kind-${w}-\${y}\`;\n`)), w).toEqual(['S15.4']);
+      expect(selectorIds(await lint(`export const m = { ${w}: 1 };\n`)), w).toEqual(['S15.5']);
+      ran += 1;
+    }
+    expect(ran).toBe(11);
+  });
+
+  it('reports each bare word in a comparison, a case label, an includes call, a Map or Set call and as an object key, and nowhere else', async () => {
+    const cfg = await loadConfig();
+    let ran = 0;
+    for (const w of cfg.ARTIFACT_BARE_WORDS) {
+      expect(selectorIds(await lint(`export const f = (s: string): boolean => s === '${w}';\n`)), w).toEqual(['S16.1']);
+      expect(selectorIds(await lint(`export const f = (s: string): boolean => '${w.toUpperCase()}' !== s;\n`)), w).toEqual(['S16.1']);
+      expect(selectorIds(await lint(`export function f(s: string): number {\n  switch (s) {\n    case '${w}':\n      return 1;\n    default:\n      return 0;\n  }\n}\n`)), w).toEqual(['S16.2']);
+      expect(selectorIds(await lint(`export const f = (s: string): boolean => s === \`${w}\`;\n`)), w).toEqual(['S16.3']);
+      expect(selectorIds(await lint(`export function f(s: string): number {\n  switch (s) {\n    case \`${w}\`:\n      return 1;\n    default:\n      return 0;\n  }\n}\n`)), w).toEqual(['S16.4']);
+      expect(selectorIds(await lint(`export const f = (s: string): boolean => s.includes('${w}');\n`)), w).toEqual(['S16.5']);
+      expect(selectorIds(await lint(`export const f = (k: string): boolean => ['${w}'].includes(k);\n`)), w).toEqual(['S16.6']);
+      expect(selectorIds(await lint(`export const f = (m: Map<string, number>): number | undefined => m.get('${w}');\n`)), w).toEqual(['S16.7']);
+      expect(selectorIds(await lint(`export const f = (m: Set<string>): boolean => m.has('${w}');\n`)), w).toEqual(['S16.7']);
+      expect(selectorIds(await lint(`export const m = { ${w}: 1 };\n`)), w).toEqual(['S16.8']);
+      expect(selectorIds(await lint(`export const m = { '${w}': 1 };\n`)), w).toEqual(['S16.9']);
+      // the bypasses of the WP03 review: a computed key, indexOf and lastIndexOf, and a computed read
+      expect(selectorIds(await lint(`export const m = { ['${w}']: 1 };\n`)), w).toEqual(['S16.9']);
+      expect(selectorIds(await lint(`export const f = (k: string): number => ['${w}'].indexOf(k);\n`)), w).toEqual(['S16.6']);
+      expect(selectorIds(await lint(`export const f = (k: string): number => ['${w}'].lastIndexOf(k);\n`)), w).toEqual(['S16.6']);
+      expect(selectorIds(await lint(`export const f = (a: string[]): number => a.indexOf('${w}');\n`)), w).toEqual(['S16.5']);
+      expect(selectorIds(await lint(`export const f = (o: Record<string, number>): number | undefined => o['${w}'];\n`)), w).toEqual(['S16.10']);
+      expect(selectorIds(await lint(`export const f = (o: Record<string, number>): number | undefined => o[\`${w}\`];\n`)), w).toEqual(['S16.11']);
+      expect(selectorIds(await lint(`export const m = { [\`${w}\`]: 1 };\n`)), w).toEqual(['S16.11']);
+      // the same word as a plain string, as a member read, an unrelated call argument and in a template with an expression is not flagged
+      expect(selectorIds(await lint(`export const x = '${w}';\n`)), w).toEqual([]);
+      expect(selectorIds(await lint(`export const f = (item: { ${w}: string }): string => item.${w};\n`)), w).toEqual([]);
+      expect(selectorIds(await lint(`export const f = (s: string, t: string): boolean => s === \`${w}\${t}\`;\n`)), w).toEqual([]);
+      expect(selectorIds(await lint(`export const f = (s: string): string => s.concat('${w}');\n`)), w).toEqual([]);
+      ran += 1;
+    }
+    expect(ran).toBe(6);
+  });
+
+  it('does not report a word in the allow-list, and reports it in an element', async () => {
+    const code = "export const f = (k: string): boolean => k === 'other' || k === 'review_cycle';\n";
+    let ran = 0;
+    for (const file of ['packages/sample/src/defaults/artifact-kinds.ts', 'packages/sample/src/contract/types.ts', 'packages/sample/src/elements/x/x.stories.ts']) {
+      expect((await lint(code, file)).map((m) => m.ruleId), file).toEqual([null]);
+      ran += 1;
+    }
+    expect(ran).toBe(3);
+    expect(selectorIds(await lint(code, ELEMENT_FILE)).sort()).toEqual(['S15.1', 'S15.3', 'S16.1']);
   });
 });
 
@@ -299,10 +403,21 @@ describe('data-driven gate self-test: negative fixtures', () => {
     'variable named stale': 'export const f = (): boolean => {\n  const stale = true;\n  return stale;\n};',
     'type member fresh': 'export interface R {\n  fresh: boolean;\n}',
     'comparison with a variable': 'export const f = (s: string, t: string): boolean => s === t;',
+    'member read of other': 'export const f = (item: { other: string }): string => item.other;',
+    'member read of spec': 'export const f = (item: { spec: string }): string => item.spec;',
+    'import path segment contract': "import { a } from 'contract';\nexport const b = a;",
+    'relative import through a contract folder': "import { a } from '../contract/types.js';\nexport const b = a;",
+    'data attribute containing contract': 'export const h = html`<div data-contract="x"></div>`;',
+    'css attribute selector containing contract': 'export const c = css`[data-contract] { margin: 0; }`;',
+    'prose containing research': 'export const t = `research notes and other things`;',
+    'destructured other': 'export const f = (props: { other: string }): string => {\n  const { other } = props;\n  return other;\n};',
+    'shorthand other': 'export const f = (other: string) => ({ other });',
+    'type member of other': 'export interface R {\n  other: string;\n}',
+    'variable named research': 'export const f = (): number => {\n  const research = 1;\n  return research;\n};',
   };
 
   it('has the declared number of negative cases', () => {
-    expect(Object.keys(NEGATIVE).length).toBe(19);
+    expect(Object.keys(NEGATIVE).length).toBe(19 + 11);
   });
 
   for (const [name, code] of Object.entries(NEGATIVE)) {
@@ -319,6 +434,10 @@ describe('data-driven gate self-test: negative fixtures', () => {
     expect(selectorIds(await lint('export const c = css`.g { grid-template-columns: repeat(5, 1fr); }`;\n'))).toEqual(['S12.1']);
     expect(selectorIds(await lint('export const f = (phases: string[]) => phases.length > 3;\n'))).toEqual(['S9.1']);
     expect(selectorIds(await lint("export const f = (o: { changed: boolean }, s: string) => o.changed && s === 'changed';\n"))).toEqual(['S14.1']);
+    // the artifact words: the twins of the negative cases above are reported
+    expect(selectorIds(await lint("export const f = (item: { other: string }, s: string) => item.other && s === 'other';\n"))).toEqual(['S16.1']);
+    expect(selectorIds(await lint("export const m = { other: 1 };\n"))).toEqual(['S16.8']);
+    expect(selectorIds(await lint('export const t = `x` + (s === `research`);\n'))).toEqual(['S16.3']);
   });
 });
 

@@ -1,0 +1,191 @@
+schema: review-merged/v1
+phase: tasks
+note: merged findings whose R3 verdict is confirmed; none refuted in round 1
+findings:
+- id: TASKS-DECOMP-001
+  lens: Invented content
+  severity: 2
+  title: WP02 invents a list of corpus shapes for spike S-A0 step one
+  evidence:
+  - artifact: 'tasks/WP02-dependency-supply-chain-and-spike-s-a0-step-one.md, subtask ''Spike S-A0 step
+      one'', step 2: ''(single long line, deep nesting, many inline tokens, a large table, plain prose)'''
+  - artifact: 'plan.md IC-01b and research.md S-A0 row: ''a node timing table per corpus shape at 256
+      KiB'' with no list of shapes'
+  claim: The parenthetical shape list appears in neither the plan nor research.md; a WP agent would read
+    it as binding and the table the orchestrator copies into D-05 would be built on the author's guess
+    of the shapes, not on the plan's corpus.
+  remediation: Drop the parenthetical; say the shapes are the corpus shapes of FR-009 and `contracts/markdown-renderer.md`
+    (the shapes IC-04 will use), without enumerating a list the plan does not hold.
+- id: TASKS-DECOMP-002
+  lens: Concrete, no confusion
+  severity: 2
+  title: WP06 S-A6 subtask states the viewport sampling list twice with two different contents
+  evidence:
+  - artifact: 'tasks/WP06-foundation-spikes-and-cp-1-evidence.md, subtask ''S-A6'': ''For each viewport
+      1280, 1100, 1099, 1000, 832, 831, 801, 800, 799, 732, 720, 719, 689 and 620 px (the sampling list
+      also includes 689, 719, ...)'''
+  - artifact: research.md S-A6 row lists 1280, 1100, 1099, 1000, 832, 831, 801, 800, 799, 732, 720, 719,
+      689 and 620; plan.md 'Screen layout' lists 689 to 1100 plus 1280, 1000 and 620
+  claim: The parenthetical 'also includes' repeats a subset of the first list, so a reader cannot tell
+    whether the list is 14 widths or a longer one.
+  remediation: State the one 14-width list of research.md S-A6 and say the plan's sampling list is the
+    same set.
+- id: TASKS-DECOMP-003
+  lens: Over-claim before CP-1
+  severity: 2
+  title: WP11 fixes the inspector as a div role=group before spike S-A4 and CP-1 decide it
+  evidence:
+  - artifact: 'tasks/WP11-inspector-work-package-links-and-tree-stories.md, subtask ''Inspector groups'':
+      ''a `div role="group"`'''
+  - artifact: 'research.md S-A4 row: the inspector ''as a div role=group (not an aside ...)'' is what
+      the spike tests; plan.md IC-09 does not name the element'
+  claim: The prompt turns a spike hypothesis into an instruction; if CP-1 rules otherwise the WP agent
+    holds a stale instruction.
+  remediation: Say 'the container role the S-A4 spike measured and CP-1 ruled (the spike tested a `div
+    role=group`, not an `aside`)'.
+- id: TASKS-SEQ-001
+  lens: Baseline honesty (sequencing)
+  severity: 3
+  title: The green baseline is recorded only in WP01's report, so later WPs and reviewers have no durable
+    reference
+  evidence:
+  - artifact: 'tasks/WP01-contract-re-vendor-and-fixtures.md subtask 1: ''WP report only (no file)'''
+  - artifact: 'every WP prompt, ''Gates this work package must pass'': reds are to be classed against
+      the WP01 baseline; plan.md Gates: ''IC-01a records the green baseline of every gate command on main'''
+  - artifact: every WP 'Gates this work package must pass' paragraph; tasks/WP01 subtask 1
+  claim: Every later WP and reviewer is told to class a red as pre-existing or introduced against a record
+    that lives only in one WP report. After WP01's context ends nothing in the tree or in the dispatch
+    names it, so a pre-existing red can be attributed to a later WP (the failure the sk overlay's baseline
+    rule exists to prevent).
+  remediation: 'WP01 hands the baseline table to the orchestrator in its report; the orchestrator writes
+    it into `tracer-approach.md` (orchestrator-owned) and names it in every dispatch. State this in WP01,
+    in the shared gates text of every WP and in tasks-notes.md. Also (from TASKS-VERIFY-003): add to the
+    shared gates paragraph that a red gate is classed against the baseline table named in the dispatch:
+    absent from it means introduced and fixed, present means reported as pre-existing and not fixed here.'
+  also_filed_as:
+  - TASKS-VERIFY-003
+- id: TASKS-SEQ-002
+  lens: Chokepoints
+  severity: 3
+  title: tasks-notes.md does not call out the chokepoint WPs (shared gates, shared event contract, shared
+    config)
+  evidence:
+  - artifact: 'sk review-overlay Tasks seq lens: ''any WP touching ... the event contract or a shared
+      CI gate is called out'''
+  - artifact: 'WP03 (data-driven gate), WP05 (eslint rules, no-io script, plants, unit-tests timeout),
+      WP07 (Stylelint grant), WP08 (`sk-retry-load` shared event typing with #5, manifest freeze), WP13
+      (`ci.yml`, root `package.json`) own shared gates and contracts; tasks-notes.md has no such section'
+  claim: These five WPs serialise the mission whether or not the plan admits it; the notes name chains
+    X and Y but not the chokepoints, so the orchestrator is not reminded that a change request against
+    any of them blocks every later WP.
+  remediation: Add a 'Chokepoints' section to tasks-notes.md naming WP03, WP05, WP07, WP08 and WP13 with
+    the shared surface each owns and the rule that a change request to them is raised before the chains
+    start.
+- id: TASKS-SEQ-003
+  lens: Dispatch order of WP12
+  severity: 2
+  title: WP12 is dependency-unordered with WP11, so the tool will allow its dispatch before chain Y is
+    approved
+  evidence:
+  - artifact: 'wps.yaml: WP12 dependencies [WP10] (the plan''s shape); tasks-notes.md ''Dependency graph''
+      describes the merge but no dispatch gate'
+  claim: Only WP12's first subtask stops it; nothing in the orchestrator notes says 'do not run `implement
+    WP12` until WP10 and WP11 are both approved and the merge and disjointness checks are done'.
+  remediation: Add the explicit dispatch rule to tasks-notes.md (the plan's lane mechanics item 3 already
+    implies it).
+- id: TASKS-COVER-001
+  lens: Rulings carried verbatim
+  severity: 4
+  title: Plan amendments A-1 to A-10, DA-41, 'Spec rows read as amended', the Build-base table and the
+    CP-1 asks are not carried into the WP prompts
+  evidence:
+  - artifact: 'tasks/WP*.md: each prompt embeds the IC section, the shared-file rows, lane mechanics and
+      the spec Clarifications, and nothing from plan.md ''Spec amendments'', ''Build base'' or ''CP-1
+      asks'''
+  - artifact: 'tasks/WP04-markdown-model-parse-budget-links.md Context: ''the revert instructions are
+      in the plan text below''; the revert text is in plan.md A-8 and is not below'
+  - artifact: 'tasks/WP01-contract-re-vendor-and-fixtures.md subtask 1: ''re-read each row of the plan''s
+      "What this mission needs from #5" table''; the table is not in the prompt'
+  - artifact: 'plan.md ''Spec rows read as amended by the rulings'': AV-32, FR-035, NFR-003, FR-012, DA-23
+      and NFR-005 as amended; a reviewer holding spec.md rows would judge WP09 and WP12 against superseded
+      text'
+  claim: The rulings that change what a WP must build (A-1 layout rule and AV-33 to AV-35, A-3 union,
+    A-5 icons, A-6 DA-39 and DA-40, A-7 NFR-014 and NFR-015, A-8 link narrowings, A-9 thirteen properties,
+    A-10 no multiplier, DA-41 bidi notice) are only in plan.md. A WP agent or reviewer given the WP file
+    alone implements or judges against the old spec rows, which is a wrong implementation or a false reject;
+    and two prompts point at plan text that they do not contain.
+  remediation: Embed, verbatim and per WP, the amendment blocks the WP touches (WP02 A-2; WP03 A-4, A-5,
+    A-9; WP04 A-8; WP05 A-4, A-8, A-10; WP06 A-1, A-6; WP07 A-4, A-6; WP08 A-1, A-3, A-9; WP09 A-6, A-7,
+    A-8; WP10 A-3, A-7; WP11 A-5, A-6, A-7; WP12 A-1, A-7, A-9, A-10; WP13 all), the DA-41 paragraph where
+    it applies (WP09, WP13), the 'Spec rows read as amended' paragraph (WP09, WP10, WP11, WP12, WP13),
+    the Build-base section (WP01, WP08, WP13), the 'Screen layout' paragraph and table (WP06, WP08, WP12)
+    and the CP-1 asks (WP06, WP07, WP08).
+- id: TASKS-COVER-002
+  lens: Rulings carried verbatim (test rules)
+  severity: 3
+  title: 'The test-quality rules in the WP prompts are a paraphrase with an invented rule and changed
+    wording instead of the verbatim #4 D-34 rules the plan says are copied in'
+  evidence:
+  - artifact: 'plan.md ''PR shape and wrap-up'': ''the test-quality rules of #4 D-34 and the drift register
+      status are copied in'''
+  - artifact: kitty-specs/missions-and-pipeline-screens-01M40SKZ/research.md D-34 rules 1 to 6; the prompts'
+      'Test quality rules' paragraph rewrites rules 3 and 5, drops rule 6 and adds an invented rule (6)
+      about empty-set guards
+  claim: 'The binding text is a copy, not a paraphrase; the paraphrase also weakens rule 3 with an exception
+    (''except where a test says so'') that D-34 does not have, and research.md D-19 (this mission''s test
+    strategy: Chromium-only, scripts/ node tests, ?raw scans, request absence, hard ceilings) is not in
+    the prompts at all.'
+  remediation: 'Replace the paragraph with D-34 rules 1 to 5 verbatim from #4 research.md, add this mission''s
+    research.md D-19 verbatim, and keep the empty-set guard as a clearly labelled addition that does not
+    alter rule 3.'
+- id: TASKS-COVER-003
+  lens: Story coverage
+  severity: 2
+  title: AV-26 is named in no work package
+  evidence:
+  - artifact: 'scripted scan of the 13 prompts (own text, before ''Plan text for this work package''):
+      AV-26 found in none; WP11 names AV-24, AV-25, AV-27, AV-28, AV-29 and the range ''AV-24 to AV-29''
+      only in its story-title line'
+  - artifact: 'spec.md State Matrix: AV-26 ''Inspector: Linked Work Packages present (pills, actionable)
+      and absent'''
+  claim: AV-26 (linked Work Package pills present and absent, pills emit `sk-select-work-package`) is
+    covered only by a range; the subtask that builds the pills does not name it, so the story and its
+    present-and-absent pair could be missed.
+  remediation: Name AV-26 in WP11's Work Package subtask and require both the present and the absent state.
+- id: TASKS-COVER-004
+  lens: Traceability to the plan
+  severity: 2
+  title: 'tasks.md shows ''Plan Concerns: IC-01'' for WP01 and WP02 and ''IC-06'' for WP07 and WP08, and
+    the notes do not explain it'
+  evidence:
+  - artifact: tasks.md WP01, WP02, WP07, WP08 headers; wps.yaml plan_concern_refs; tracer-tooling-friction
+      entry on the IC-## regex
+  claim: The plan names IC-01a, IC-01b, IC-06a and IC-06b; the tool accepts only IC-##, so the generated
+    file reads as a mismatch with the plan.
+  remediation: Add the mapping (IC-01a and IC-01b recorded as IC-01; IC-06a and IC-06b recorded as IC-06,
+    a tool constraint) to tasks-notes.md.
+- id: TASKS-VERIFY-001
+  lens: Owned files versus plan
+  severity: 3
+  title: WP08's manifest-text assertion may land in a file WP08 does not own
+  evidence:
+  - artifact: 'tasks/WP08-skeleton-layout-and-surface-freeze.md, subtask ''Story-frame options, registration,
+      manifest, surface freeze'': ''existing manifest check or the surface-freeze test'''
+  - artifact: 'plan.md IC-06b: ''carried by the existing manifest check or the surface-freeze test'';
+      the manifest check is `scripts/check-manifest.mjs`, not in WP08''s owned_files (which has `test/surface-freeze.test.ts`)'
+  claim: Left open, the implementer may edit `scripts/check-manifest.mjs`, a shared gate script outside
+    the owned files and outside the plan's shared-files table, and no exit check proves the assertion
+    fails when the 'untrusted' word is removed.
+  remediation: 'Commit WP08 to the owned `test/surface-freeze.test.ts` for the assertion and add the revert
+    proof: removing the word ''untrusted'' from the `@fires` text of `sk-open-link` fails that test.'
+- id: TASKS-VERIFY-002
+  lens: Testable exit checks
+  severity: 2
+  title: WP06's 'tip tree equals its base tree' has no command
+  evidence:
+  - artifact: tasks/WP06-foundation-spikes-and-cp-1-evidence.md Acceptance 1; plan.md IC-05 exit check
+      'the tip tree equals its base tree'
+  claim: The check is stated as a property, not as something a reviewer can run; the reviewer must invent
+    the comparison.
+  remediation: 'State the command: `git diff --exit-code <WP05 tip sha> HEAD` prints nothing and exits
+    0, and `git ls-tree -r HEAD -- spikes/` is empty.'

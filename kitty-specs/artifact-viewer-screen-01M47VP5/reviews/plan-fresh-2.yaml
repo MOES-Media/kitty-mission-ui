@@ -1,0 +1,76 @@
+schema: review-findings/v1
+complete: true
+phase: plan
+lens_group: fresh2
+mission: artifact-viewer-screen-01M47VP5
+findings:
+  - id: "PLAN-FRESH2-001"
+    lens: "debugger-debbie: stale-copy divergence"
+    severity: 2
+    title: "E-22 sunset cell still says the design-library issues are filed before CP-1, contradicting the round-2 draft-then-file rule"
+    evidence:
+      - artifact: "contracts/gates.md, exceptions table row E-22, last cell: 'G-14 (sk-prose) and G-19 (reading-width token); the design-library issues are filed before CP-1'"
+      - artifact: "contracts/gates.md line 5, research.md Library gaps heading and plan.md Operator checkpoint item 3 (all changed in round 2): the orchestrator DRAFTS the issues before CP-1 and FILES them only on the operator's word given at CP-1; 'no outward work precedes that word'"
+    claim: "Round 2 changed the filing rule in three places but missed the fourth copy. A WP brief or reviewer that reads the E-22 row will file the issues before the operator has ruled, which is the unrequested outward work the round-2 text was written to prevent."
+    remediation: "Replace the E-22 sunset sentence with 'the design-library issues are drafted before CP-1 and filed on the operator's word at CP-1', or drop the sentence and point to the one rule in the gates.md preamble. Add a grep check for 'filed before' to the reviewer self-check list."
+  - id: "PLAN-FRESH2-002"
+    lens: "debugger-debbie: dormant mask (gate runs too late)"
+    severity: 2
+    title: "The C-009 terminology exit check is added to IC-01 and IC-04 only, but the word is most likely to leak in IC-06 to IC-10"
+    evidence:
+      - artifact: "plan.md IC-01 and IC-04 'Exit checks' now start with 'pnpm test:terminology green'; the IC-07 purpose (AV-03 story 'Markdown full syntax'), IC-06 fixtures.ts, IC-09 and IC-10 stories and doc comments carry no such exit check"
+      - artifact: "plan.md PR shape: 'IC-01 and IC-04 run pnpm test:terminology as an exit check'"
+      - artifact: "quickstart.md 'Everyday commands' and 'Manual checks before handing a WP over' do not list pnpm test:terminology"
+      - artifact: "<repo>/scripts/terminology.test.mjs:43-47 asserts scan(ROOT) is empty and runs inside test:scripts (package.json test:scripts; ci.yml 'pnpm hygiene && pnpm test:scripts'), so the real tree is only enforced at CI on the PR"
+    claim: "The gate scans every .ts, .md, .json and .css file under packages/*/src for the whole word, case-insensitive. The files authored after IC-04 (stories, fixtures.ts builders, doc comments, CSS comments, story names for AV-03) are exactly where the spec's own row title 'Markdown feature set' will be copied. With the check only on IC-01 and IC-04, a WP in IC-06 to IC-10 hands over a red tree that is first seen on the PR CI run, after compaction."
+    remediation: "State pnpm test:terminology as an exit check of every WP that writes under packages/*/src (IC-02, IC-03, IC-06 to IC-10, IC-11), add it to the quickstart command table and to the manual-checks list, and keep the brief sentence."
+  - id: "PLAN-FRESH2-003"
+    lens: "debugger-debbie: scope divergence between rule and base config"
+    severity: 3
+    title: "R4 is scoped to every html template under elements/sk-artifact-screen/**, which includes the stories and fixtures that need property bindings"
+    evidence:
+      - artifact: "contracts/gates.md R4: 'over every html template under logic/markdown/ and elements/sk-artifact-screen/' reports any binding starting with '.' or '?' and any attribute outside the allowlist; no ignore for stories or fixtures"
+      - artifact: "plan.md Technical Context Constraints: 'in this mission's directories any attribute outside an allowlist and every property binding'; plan.md structure lists *.stories.ts (4 files) and fixtures.ts in the element directory"
+      - artifact: "<repo>/packages/mission-ui/src/elements/sk-pipeline-screen/sk-pipeline-screen.stories.ts:44-48: html`<sk-pipeline-screen status=${...} missions-href=${...} .mission=${args.mission}`; <repo>/eslint.config.mjs:130-133 shows the base already excludes '**/*.stories.ts' and '**/fixtures.ts' from the elements-block rules"
+    claim: "Stories must set object properties (`.listing`, `.content`, `.workPackages`, `.labels`) and arbitrary attributes on the screen, and shellFrame composition uses more. As written R4 reports every one of them, so IC-06 (which writes the stories' prerequisites) and IC-07 to IC-10 either fail pnpm lint or add inline disables that noInlineConfig forbids. This is the file glob of the rule, not the held question of which attributes the allowlist holds."
+    remediation: "Add `ignores: ['**/*.stories.ts', '**/fixtures.ts']` to the R4 block (as the base elements block does) and add a self-test case that a story-shaped template with `.listing=${x}` is clean while the same template in a part file is reported; state it in gates.md R4 and the Constraints line."
+  - id: "PLAN-FRESH2-004"
+    lens: "debugger-debbie: cross-file contradiction"
+    severity: 2
+    title: "Behaviour rule 2 (Raw view equals content character for character) contradicts the new empty-file rows 9a and 9b"
+    evidence:
+      - artifact: "contracts/sk-artifact-screen.md Behaviour rules, rule 2: 'Raw view equals content character for character (a test compares textContent)'"
+      - artifact: "data-model.md rows 9a and 9b (round 2): body 'raw' draws the empty-state form 'This file is empty.' in both tabs; contentEmpty has content ''"
+      - artifact: "plan.md IC-07: 'the escaped-source equality test (content character for character)'"
+    claim: "For an empty file the Raw body is the empty-state text, so a textContent equality test against '' fails, or the test must silently skip the case. The rule has no carve-out and the two documents now disagree."
+    remediation: "Amend rule 2 and the IC-07 equality test to 'for every non-empty file; an empty file draws the empty-state form in the Raw tab (rows 9a and 9b)', and give the empty case its own assertion."
+  - id: "PLAN-FRESH2-005"
+    lens: "debugger-debbie: model divergence (pure output vs held state)"
+    severity: 2
+    title: "ArtifactView.selectedTab is a pure output of resolveArtifactView, but the selected tab is state held in the screen; the new row 9a adds 'selectedTab is view'"
+    evidence:
+      - artifact: "data-model.md ArtifactView: 'selectedTab: rendered | raw'; row 9a 'selectedTab is `view`'; row 9b 'selectedTab: raw'; the totality sentence lists no `view` or tab input"
+      - artifact: "contracts/defaults.md resolveArtifactView input list includes `view` but no held tab"
+      - artifact: "contracts/sk-artifact-screen.md rule 1 and data-model State and transitions: the selected tab is held by sk-artifact-screen.ts, seeded by `view`, changed by onSelect"
+    claim: "After a user clicks Raw, `view` is still 'rendered', so the resolver's selectedTab would be stale; the table then says three different things (the prop name `view`, a tab id, a held state). IC-02 writes one test per row and cannot tell what selectedTab must be."
+    remediation: "Remove selectedTab from ArtifactView (the screen's held tab decides which panel is shown, the resolver says only tabs and body), or add the held tab as an explicit resolver input and rename the overloaded word. Fix rows 9a, 9b and the 'For document' sentence to match."
+  - id: "PLAN-FRESH2-006"
+    lens: "debugger-debbie: coverage gap (untested branch)"
+    severity: 2
+    title: "The markdown empty-file branch (row 9a, both tabs) has no fixture, story or element-level proof"
+    evidence:
+      - artifact: "data-model.md row 9a: 'a unit case built inline from contentEmpty with the markdown media type, not a new fixture'"
+      - artifact: "plan.md IC-07: 'the empty-file body (a call of renderEmptyForm from state-parts.ts; AV-07, both tabs for a markdown file)'"
+      - artifact: "contracts/contract-pin.md Pairing: AV-07 uses contentEmpty; the contract example ArtifactContent.empty.yaml has path notes/empty.txt, mediaType text/plain"
+      - artifact: "spec.md Edge cases: 'Rendered and Raw tabs both show it'"
+    claim: "The only AV-07 story is the text/plain file, which is row 9b with no tablist. The spec edge case (a markdown file, two tabs, both showing 'This file is empty.', panel names kept, no dangling aria-controls) is covered by an IC-02 pure unit test only; IC-07's text claims it but names no fixture, test or baseline, so the one DOM behaviour that differs from 9b is unproved."
+    remediation: "Add an IC-07 element test (inline content built from contentEmpty with the markdown media type, positive control: the same content with text/plain shows no tablist) asserting both tabs render the empty-state text and the tabpanel/aria-labelledby wiring; or register a markdown empty overlay and a story. State which in IC-07 and the Pairing table."
+  - id: "PLAN-FRESH2-007"
+    lens: "debugger-debbie: stale-copy divergence"
+    severity: 1
+    title: "G-21 is conditional in gates.md but listed unconditionally in plan.md"
+    evidence:
+      - artifact: "contracts/gates.md line 5: 'G-14, G-15, G-16 (reworded), G-19, G-20 and (if E-28 applies) G-21'; research.md G-21 'conditional on S-A4 outcome (c)'"
+      - artifact: "plan.md Operator checkpoint item 3: 'G-14 to G-16 and G-19 to G-21'; plan.md Charter Check 'gaps G-14 to G-21'; IC-11 PR inputs 'gaps G-14 to G-21'"
+    claim: "If S-A4 picks outcome (a) or (b), no E-28 exists and the plan still has the orchestrator draft and the PR description list G-21, an issue with nothing to sunset."
+    remediation: "Write 'G-21 only if E-28 applies' in plan.md item 3, the Charter Check row and the IC-11 PR inputs, or state that G-21 is drafted regardless and filed only if S-A4 outcome (c) holds."

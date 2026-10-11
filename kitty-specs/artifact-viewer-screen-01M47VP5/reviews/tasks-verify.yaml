@@ -1,0 +1,56 @@
+schema: review-verify/v1
+complete: true
+phase: tasks
+round: 1
+tree: 856e724
+results:
+- id: TASKS-DECOMP-001
+  status: resolved
+  reason: 'WP02 no longer lists corpus shapes; it ties the table to the FR-009 corpus shapes and asks
+    the report to name the shapes timed (grep: old text absent, new text present at 856e724).'
+- id: TASKS-DECOMP-002
+  status: resolved
+  reason: WP06 states the one 14-width list of research.md S-A6 and says the plan's list is the same set;
+    the 'also includes' clause is gone.
+- id: TASKS-DECOMP-003
+  status: resolved
+  reason: WP11 now says the container role is as S-A4 measured and CP-1 ruled and names the spike's div
+    role=group as a test, not an instruction.
+- id: TASKS-SEQ-001
+  status: resolved
+  reason: WP01 subtask 1 hands the baseline to the orchestrator for tracer-approach.md; tasks-notes.md
+    has a Baseline paragraph; all 13 prompts carry the 'classed against the baseline table' sentence in
+    the gates paragraph (this also closes TASKS-VERIFY-003).
+- id: TASKS-SEQ-002
+  status: resolved
+  reason: tasks-notes.md has a Chokepoints section naming WP03, WP05, WP07, WP08 and WP13 with the shared
+    surface each owns and the open-PR check result.
+- id: TASKS-SEQ-003
+  status: resolved
+  reason: tasks-notes.md has a Dispatch rule for WP12 (WP10 and WP11 approved, merge, manifest regeneration
+    only, disjointness check).
+- id: TASKS-COVER-001
+  status: resolved
+  reason: 'scripted check: every amendment block in the mapping is present verbatim in its WP, ''Spec
+    rows read as amended'' in WP09 to WP13, the Build-base section in WP01, WP08 and WP13, the layout
+    paragraph in WP06, WP08 and WP12, the CP-1 asks in WP06 to WP08, DA-41 in WP09 and WP13; the verbatim
+    script (no unverified line) passes.'
+- id: TASKS-COVER-002
+  status: resolved
+  reason: 'all 13 prompts carry #4 D-34 rules 1 to 5 and this mission''s D-19 verbatim, the paraphrase
+    and its exception are gone and no rule 6 is invented.'
+- id: TASKS-COVER-003
+  status: resolved
+  reason: WP11's Work Package subtask opens with AV-26 present and absent.
+- id: TASKS-COVER-004
+  status: resolved
+  reason: tasks-notes.md has a Plan concern refs paragraph mapping IC-01a and IC-01b to IC-01 and IC-06a
+    and IC-06b to IC-06 as a tool constraint.
+- id: TASKS-VERIFY-001
+  status: resolved
+  reason: WP08's assertion is placed in the owned test/surface-freeze.test.ts with a revert proof; scripts/check-manifest.mjs
+    is named as not owned.
+- id: TASKS-VERIFY-002
+  status: resolved
+  reason: WP06 Acceptance 1 now gives `git ls-tree -r HEAD -- spikes/` and `git diff --exit-code <WP05
+    tip sha> HEAD`.

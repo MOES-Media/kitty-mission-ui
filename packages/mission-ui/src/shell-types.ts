@@ -17,6 +17,8 @@ export type ShellIcon =
   | 'artifacts'
   | 'file'
   | 'folder'
+  | 'magnifier'
+  | 'table'
   | 'menu'
   | 'close'
   | 'back';

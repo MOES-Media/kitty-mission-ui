@@ -1,6 +1,6 @@
 // Large synthetic pages for the 500-Mission test (NFR-006) and the long-list story. Pure functions, no value imports
 // (only `import type`, erased), so plain Node loads this file too and gate `contract` validates its output.
-import type { HistoryEntry, MissionOverview, MissionOverviewPage, OwnedFile, Subtask } from './types.js';
+import type { ArtifactContent, ArtifactEntry, ArtifactListing, HistoryEntry, MissionOverview, MissionOverviewPage, OwnedFile, Subtask } from './types.js';
 
 const ALPHABET = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
 const DIGEST = '3a7bd3e2360a3d29eea436fcfb7e44c735d117c42d1c1835420b6b9942dd4f1b';
@@ -169,4 +169,148 @@ export function makeOwnedFiles(count: number): OwnedFile[] {
     });
   }
   return out;
+}
+
+// ---- Artifact Viewer: a 1000-entry listing and the large documents of the stories (NFR-006, AV-05, AV-30) ----------
+// Pure, deterministic, never registered and never stored: a registered fixture is a literal in fixtures.generated.ts, and
+// hundreds of KiB of text there would be byte-compared by check C3. Gate `contract` validates every output (checkBulk).
+
+/** The most entries a listing holds (the contract's maxItems); a listing built for the truncated story holds exactly this many. */
+export const BULK_LISTING_SIZE = 1000;
+/** The size cap of the contract: a larger file is refused 413, so no generated document is larger. */
+const ARTIFACT_SIZE_CAP = 262_144;
+/** The list items of the over-budget document: dense `- a` bullets, six flattened tokens each, so 40,000 of them are about 240,000 tokens in about 160 KB. */
+const OVER_BUDGET_ITEMS = 40_000;
+const BULK_MISSION_ID = '01JZCB3C4D5E6F7G8H9JKMNPQT';
+const LISTING_TIME = Date.UTC(2026, 8, 23, 8, 0, 0);
+const WORDS = ['amber', 'basalt', 'cedar', 'dune', 'ember', 'fjord', 'garnet', 'harbor', 'indigo', 'juniper', 'kelp', 'lagoon', 'meadow', 'nickel', 'onyx', 'pebble'];
+
+const MEDIA_TYPES = new Map<string, string>([
+  ['md', 'text/markdown'],
+  ['json', 'application/json'],
+  ['yaml', 'application/yaml'],
+  ['yml', 'application/yaml'],
+  ['jsonl', 'application/x-ndjson'],
+  ['csv', 'text/csv'],
+]);
+
+const WORK_PACKAGE_PROMPT = /^tasks\/WP\d{2,}-[^/]+\.md$/;
+const REVIEW_CYCLE = /^tasks\/[^/]+\/review-cycle-[1-9]\d*\.md$/;
+const ROOT_KINDS = new Map<string, ArtifactEntry['kind']>([
+  ['spec.md', 'spec'],
+  ['plan.md', 'plan'],
+  ['tasks.md', 'tasks'],
+  ['data-model.md', 'data_model'],
+  ['quickstart.md', 'quickstart'],
+  ['analysis-report.md', 'analysis_report'],
+  ['research.md', 'research'],
+]);
+
+/** The class of a file, decided from its path by the ordered rule of the contract (the first match wins). */
+function kindOf(path: string): ArtifactEntry['kind'] {
+  if (REVIEW_CYCLE.test(path)) return 'review_cycle';
+  if (WORK_PACKAGE_PROMPT.test(path)) return 'work_package_prompt';
+  const root = ROOT_KINDS.get(path);
+  if (root) return root;
+  if (path.startsWith('research/')) return 'research';
+  if (path.startsWith('contracts/')) return 'contract';
+  if (path.startsWith('checklists/')) return 'checklist';
+  return 'other';
+}
+
+/** The media type of a file, decided from its extension and never from its content. */
+function mediaTypeOf(path: string): string {
+  const name = path.slice(path.lastIndexOf('/') + 1);
+  const dot = name.lastIndexOf('.');
+  return (dot >= 0 ? MEDIA_TYPES.get(name.slice(dot + 1)) : undefined) ?? 'text/plain';
+}
+
+const byteOrder = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0);
+const pad = (n: number, width: number): string => String(n).padStart(width, '0');
+
+/**
+ * A listing of `count` files in a nested tree of folders (never more than the contract's 1000), in byte order, every
+ * file readable. `include` names paths that must be in the listing (the path a content generator is opened at); they
+ * count towards `count`. `truncated` is only the flag: a truncated listing still holds `count` entries.
+ */
+export function makeArtifactListing(count: number, options: { truncated: boolean; include?: readonly string[] }): ArtifactListing {
+  const include = options.include ?? [];
+  if (!Number.isInteger(count) || count < 0 || count > BULK_LISTING_SIZE) throw new RangeError(`a listing holds 0 to ${BULK_LISTING_SIZE} entries, not ${count}`);
+  if (include.length > count) throw new RangeError(`${include.length} forced paths do not fit in ${count} entries`);
+  if (new Set(include).size !== include.length) throw new RangeError('the forced paths repeat');
+  const paths: string[] = [...include];
+  for (let i = 0; paths.length < count; i += 1) {
+    const area = `area-${pad(Math.floor(i / 100), 2)}`;
+    const file = `note-${pad(i, 4)}.md`;
+    paths.push(i % 7 === 0 ? `${area}/${file}` : `${area}/group-${pad(Math.floor(i / 20) % 5, 2)}/${file}`);
+  }
+  paths.sort(byteOrder);
+  const entries: ArtifactEntry[] = paths.map((path, i) => ({
+    path,
+    kind: kindOf(path),
+    sizeBytes: 100 + ((i * 37) % 5000),
+    modifiedAt: new Date(LISTING_TIME + i * 60_000).toISOString().replace('.000Z', 'Z'),
+    readable: true,
+  }));
+  return { missionId: BULK_MISSION_ID, entries, truncated: options.truncated };
+}
+
+/** The content of one file at `path`: the class and the media type follow the path, the size is measured, nothing is redacted. */
+function contentOf(path: string, text: string): ArtifactContent {
+  return {
+    path,
+    kind: kindOf(path),
+    mediaType: mediaTypeOf(path),
+    encoding: 'utf-8' as const,
+    sizeBytes: new TextEncoder().encode(text).length,
+    redacted: false,
+    content: text,
+  };
+}
+
+/** `length` characters of running words, no line break; the last character is never a space. */
+function runOfWords(length: number, from: number): string {
+  let out = '';
+  for (let i = from; out.length < length; i += 1) out += `${WORDS[i % WORDS.length]} `;
+  const cut = out.slice(0, length);
+  return cut.endsWith(' ') ? `${cut.slice(0, -1)}x` : cut;
+}
+
+/**
+ * A valid markdown document of exactly `bytes` bytes (ASCII, so characters equal bytes): headings, paragraphs of about a
+ * thousand characters and short lists. Every line is far below the pre-parse line limit and the token count is small, so
+ * the model resolves it to a document, not to the fallback (the pinned expectation of IC-03 and of the NFR-006 test).
+ */
+export function makeLargeMarkdown(bytes: number, path: string): ArtifactContent {
+  if (!Number.isInteger(bytes) || bytes < 1024 || bytes > ARTIFACT_SIZE_CAP) throw new RangeError(`a large document is 1024 to ${ARTIFACT_SIZE_CAP} bytes, not ${bytes}`);
+  const parts: string[] = ['# Large document\n\n'];
+  let length = parts[0]?.length ?? 0;
+  for (let block = 0; length < bytes; block += 1) {
+    const text =
+      block % 25 === 0
+        ? `## Section ${block / 25 + 1}\n\n`
+        : block % 10 === 0
+          ? `- ${runOfWords(60, block)}\n- ${runOfWords(60, block + 3)}\n- ${runOfWords(60, block + 7)}\n\n`
+          : `${runOfWords(900 + (block % 5) * 40, block)}\n\n`;
+    parts.push(text);
+    length += text.length;
+  }
+  return contentOf(path, `${parts.join('').slice(0, bytes - 1)}\n`);
+}
+
+/** One unbroken line of exactly `bytes` characters, no line break at all: past the pre-parse line limit of the model. */
+export function makeLongLine(bytes: number, path: string): ArtifactContent {
+  if (!Number.isInteger(bytes) || bytes < 1 || bytes > ARTIFACT_SIZE_CAP) throw new RangeError(`a long line is 1 to ${ARTIFACT_SIZE_CAP} bytes, not ${bytes}`);
+  return contentOf(path, runOfWords(bytes, 0));
+}
+
+/**
+ * A valid markdown document, under the size cap, of one list with far more items than the token budget of the model
+ * allows (at least six flattened tokens per item), so the model resolves it to the fallback with the reason `budget`.
+ * Every line is short; that the model really falls back is pinned by IC-03, where the parser exists.
+ */
+export function makeOverBudgetMarkdown(path: string): ArtifactContent {
+  const lines: string[] = ['# Over budget', ''];
+  for (let i = 0; i < OVER_BUDGET_ITEMS; i += 1) lines.push('- a');
+  return contentOf(path, `${lines.join('\n')}\n`);
 }

@@ -1,0 +1,9 @@
+// expect: S16.2
+export function f(s: string): number {
+  switch (s) {
+    case 'research':
+      return 1;
+    default:
+      return 0;
+  }
+}

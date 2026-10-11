@@ -1,0 +1,29 @@
+schema: review-refute/v1
+complete: true
+phase: plan
+batch: 4
+verdicts:
+  - id: PLAN-SECURE-001
+    verdict: confirmed
+    reason: "Probe on markdown-it 15.0.2 gives 3 top-level tokens but 80,002 flattened tokens at level 20,000 for matched nested emphasis, and the Budget section never says depth and counts walk inline children."
+  - id: PLAN-SECURE-002
+    verdict: confirmed
+    reason: "Rule 4 is modelled on the whitespace-prefixed class= regex, so a Lit .href=${x} or ?href= binding is unmatched, and D-06 claiming rule 4 is sound for templates ignores static-named property bindings."
+  - id: PLAN-SECURE-003
+    verdict: confirmed
+    reason: "Probe shows javascript:, data: and the autolink form parse to literal text with no link_open, so link-table rows 1 and 7 are dead for those schemes and the corpus expected-text must be the literal source."
+  - id: PLAN-SECURE-004
+    verdict: confirmed
+    reason: "Row 5 checks the host regex on the unlowercased string, accepts userinfo (http://a@b/) and any length, row 6 passes mailto:?bcc=a@x (probe shows link_open), and title is set only on inert links."
+  - id: PLAN-SECURE-005
+    verdict: confirmed
+    reason: "contracts/sk-artifact-screen.md Events and spec EV-2 carry no host re-validation obligation; it appears only in research D-08."
+  - id: PLAN-SECURE-006
+    verdict: confirmed
+    reason: "Assertion (4) names a bare PerformanceObserver with no baseline or positive control, and only two plants (an href path and a DOMParser lint) exist, with no requirement for the corpus escape token to be emitted by every failure."
+  - id: PLAN-SECURE-007
+    verdict: confirmed
+    reason: "Probe shows image attrs alt is empty with the alt text only in image.children, and [![a](http://r/p.png)](b.md) yields link_open wrapping image, which the contract maps to nested controls with no flattening or no-nesting rule."
+  - id: PLAN-SECURE-008
+    verdict: confirmed
+    reason: "Probe confirms table alignment exists only as style text-align strings, start is a number, and a [^1]/[^1]: n pair becomes an ordinary link, contradicting the contract's sentence that footnotes appear as literal text."

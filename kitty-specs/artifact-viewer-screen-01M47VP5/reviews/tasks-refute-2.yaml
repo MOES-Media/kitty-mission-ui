@@ -1,0 +1,20 @@
+schema: review-refute/v1
+complete: true
+phase: tasks
+batch: 2
+verdicts:
+- id: TASKS-COVER-003
+  verdict: confirmed
+  reason: the scripted scan listed AV-26 with an empty hit list; WP11's subtasks name AV-24, AV-25, AV-27,
+    AV-28 and AV-29 only.
+- id: TASKS-COVER-004
+  verdict: confirmed
+  reason: 'tasks.md headers read ''Plan Concerns: IC-01'' for WP01 and WP02, and tasks-notes.md has no
+    mapping line.'
+- id: TASKS-VERIFY-001
+  verdict: confirmed
+  reason: plan.md IC-06b says 'existing manifest check or the surface-freeze test'; scripts/check-manifest.mjs
+    exists and is in no WP's owned_files, while test/surface-freeze.test.ts is WP08's.
+- id: TASKS-VERIFY-002
+  verdict: confirmed
+  reason: WP06 Acceptance 1 states the property 'tip tree equals its base tree' without a command.

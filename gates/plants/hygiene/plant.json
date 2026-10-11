@@ -1,7 +1,7 @@
 [
   {
     "gate": "hygiene",
-    "ciCommand": "pnpm hygiene && pnpm test:scripts",
+    "ciCommand": "pnpm hygiene && pnpm test:scripts && pnpm test:terminology",
     "expectFailPattern": "plant-hygiene-token",
     "overlays": [
       {
@@ -13,7 +13,7 @@
   },
   {
     "gate": "hygiene",
-    "ciCommand": "pnpm hygiene && pnpm test:scripts",
+    "ciCommand": "pnpm hygiene && pnpm test:scripts && pnpm test:terminology",
     "expectFailPattern": "email-address",
     "overlays": [
       {
@@ -25,7 +25,7 @@
   },
   {
     "gate": "hygiene",
-    "ciCommand": "pnpm hygiene && pnpm test:scripts",
+    "ciCommand": "pnpm hygiene && pnpm test:scripts && pnpm test:terminology",
     "expectFailPattern": "plant-hygiene-node-test",
     "overlays": [
       {

@@ -12,7 +12,7 @@ import {
   LAYOUT, ROOT, changelogTopVersionOf, infoVersionOf, listFiles, readPin, readText, vendoredDigest, vendoredHashes,
 } from './common.mjs';
 import { generateFixturesSource, generateTypesSource, importTs, loadBulk } from './generate.mjs';
-import { FIXTURES, RELAXATIONS, errorAllowed } from './registry.mjs';
+import { FIXTURES, RELAXATIONS, errorAllowed, relaxationSchemas } from './registry.mjs';
 import { SYNTHETIC_ACTORS } from './overlays.mjs';
 import { compile, loadSchema, relaxedSchema, stripHost, validateWith } from './validate.mjs';
 
@@ -200,7 +200,7 @@ async function checkFixtureDoc(root, name, def, doc) {
   // relaxed: passes the relaxed schema, FAILS the strict one, and every strict error lies inside the allowed paths
   const rel = RELAXATIONS[def.relaxation];
   if (!rel) return [problem(TOKENS.relaxation, `${where} names the unknown relaxation ${def.relaxation}`)];
-  if (rel.schema !== def.schema) return [problem(TOKENS.relaxation, `${where} validates against ${def.schema} but the ${def.relaxation} relaxation patches the schema ${rel.schema}`)];
+  if (!relaxationSchemas(rel).includes(def.schema)) return [problem(TOKENS.relaxation, `${where} validates against ${def.schema} but the ${def.relaxation} relaxation patches the schema ${relaxationSchemas(rel).join(' and ')}`)];
   const relaxed = validateWith(await validators(root, def.schema, def.relaxation), stripped);
   const strict = validateWith(await validators(root, def.schema), stripped);
   if (!relaxed.valid) out.push(problem(TOKENS.relaxation, `${where} fails even the ${def.relaxation} schema: ${summarise(relaxed.errors)}`));
@@ -345,6 +345,35 @@ function checkCoherence(docs, registry, bulkPages) {
   return { problems: out, records };
 }
 
+// The documents of the Artifact Viewer's generators: the listing is the contract's own limit (a literal of this gate, not read
+// from bulk.ts, so a generator shrunk to a stand-in cannot pass), the sizes are the contract's cap.
+const BULK_LISTING_ENTRIES = 1000;
+const BULK_CONTENT_BYTES = 262144;
+// The stored fixtures hold 30 short documents; a generated document written into them would show as size first.
+const FIXTURES_FILE_CEILING = 1048576;
+const PROBE_LENGTH = 200;
+
+/** The generated documents, by label, each with the schema it must satisfy and the call that builds it. The content paths are listed in the generated listing. */
+function bulkDocuments(bulk) {
+  const open = ['notes/large.md', 'notes/long-line.md', 'notes/over-budget.md'];
+  return {
+    'bulk listing of 1000': { schema: 'ArtifactListing', build: () => bulk.makeArtifactListing(BULK_LISTING_ENTRIES, { truncated: false, include: open }) },
+    'bulk truncated listing of 1000': { schema: 'ArtifactListing', build: () => bulk.makeArtifactListing(BULK_LISTING_ENTRIES, { truncated: true, include: open }) },
+    'bulk large markdown': { schema: 'ArtifactContent', build: () => bulk.makeLargeMarkdown(BULK_CONTENT_BYTES, open[0]) },
+    'bulk long line': { schema: 'ArtifactContent', build: () => bulk.makeLongLine(BULK_CONTENT_BYTES, open[1]) },
+    'bulk over-budget markdown': { schema: 'ArtifactContent', build: () => bulk.makeOverBudgetMarkdown(open[2]) },
+  };
+}
+
+/** A slice from the middle of a generated document's text: it must not appear in a stored file. */
+function probeOf(doc) {
+  if (typeof doc.content === 'string') {
+    const line = doc.content.split('\n').find((l) => l.length >= PROBE_LENGTH);
+    return JSON.stringify(line ? line.slice(0, PROBE_LENGTH) : doc.content.slice(0, PROBE_LENGTH)).slice(1, -1);
+  }
+  return JSON.stringify(doc.entries[Math.floor(doc.entries.length / 2)].path).slice(1, -1);
+}
+
 async function checkBulk(root) {
   const bulk = await loadBulk(root);
   const pages = { 'bulk page of 40': bulk.makeMissionPage(40, true), 'bulk page of 500': bulk.makeMissionPage(500, true) };
@@ -354,7 +383,34 @@ async function checkBulk(root) {
     const r = validateWith(v, page);
     if (!r.valid) out.push(problem(TOKENS.violates, `${label} violates the closed contract: ${summarise(r.errors)}`));
   }
-  return { problems: out, pages };
+  const documents = {};
+  for (const [label, { schema, build }] of Object.entries(bulkDocuments(bulk))) {
+    let doc;
+    try {
+      doc = build();
+    } catch (err) {
+      out.push(problem(TOKENS.guard, `${label} could not be built: ${err.message}`));
+      continue;
+    }
+    documents[label] = doc;
+    const r = validateWith(await validators(root, schema), doc);
+    if (!r.valid) out.push(problem(TOKENS.violates, `${label} violates the closed contract: ${summarise(r.errors)}`));
+    if (schema === 'ArtifactListing' && doc.entries.length !== BULK_LISTING_ENTRIES) out.push(problem(TOKENS.guard, `${label} holds ${doc.entries.length} entries, not ${BULK_LISTING_ENTRIES}`));
+    if (schema === 'ArtifactContent' && doc.sizeBytes > BULK_CONTENT_BYTES) out.push(problem(TOKENS.guard, `${label} is ${doc.sizeBytes} bytes, over the cap of ${BULK_CONTENT_BYTES}`));
+  }
+  // never stored: no stored file holds a slice of a generated document, and the stored fixtures stay under their ceiling
+  let stored = '';
+  try {
+    stored = readText(root, LAYOUT.fixtures);
+  } catch {
+    // an unreadable fixtures file is reported by C3 and the fixture check, not here
+  }
+  const bytes = Buffer.byteLength(stored);
+  if (bytes > FIXTURES_FILE_CEILING) out.push(problem(TOKENS.guard, `${LAYOUT.fixtures} is ${bytes} bytes, over the ceiling of ${FIXTURES_FILE_CEILING}`));
+  for (const [label, doc] of Object.entries(documents)) {
+    if (stored.includes(probeOf(doc))) out.push(problem(TOKENS.guard, `a generated document is stored in ${LAYOUT.fixtures}: ${label}`));
+  }
+  return { problems: out, pages, documents };
 }
 
 // ---- C6 ---------------------------------------------------------------------------------------------------------
@@ -466,13 +522,13 @@ export async function runChecks({ root = ROOT, deps = {}, requireMain = false } 
   problems.push(...bulk.problems);
   const c5 = checkCoherence(fx.docs, registry, bulk.pages);
   problems.push(...c5.problems);
-  const c6 = checkHygieneScope(root, fx.docs, bulk.pages);
+  const c6 = checkHygieneScope(root, fx.docs, { ...bulk.pages, ...bulk.documents });
   problems.push(...c6.problems);
   const c7 = checkProvisional(root);
   problems.push(...c7.problems);
   return {
     problems,
-    summary: { vendoredFiles: c1.files, anchorFiles: c1.anchors, fixtures: fx.count, bulkPages: Object.keys(bulk.pages).length, coherenceRecords: c5.records, hygieneFiles: c6.scanned, c7Files: c7.files },
+    summary: { vendoredFiles: c1.files, anchorFiles: c1.anchors, fixtures: fx.count, bulkPages: Object.keys(bulk.pages).length, bulkDocuments: Object.keys(bulk.documents).length, coherenceRecords: c5.records, hygieneFiles: c6.scanned, c7Files: c7.files },
   };
 }
 
@@ -481,7 +537,7 @@ async function main() {
   for (const p of problems) process.stdout.write(`contract: ${p.token}: ${p.message}\n`);
   if (problems.length === 0) {
     const s = summary;
-    process.stdout.write(`contract gate: ok (${s.vendoredFiles} vendored files, ${s.anchorFiles} anchor files, ${s.fixtures} fixtures, ${s.bulkPages} bulk pages, ${s.coherenceRecords} records checked for coherence, ${s.hygieneFiles} files in the hygiene scope, ${s.c7Files} files in the provisional scan)\n`);
+    process.stdout.write(`contract gate: ok (${s.vendoredFiles} vendored files, ${s.anchorFiles} anchor files, ${s.fixtures} fixtures, ${s.bulkPages} bulk pages, ${s.bulkDocuments} bulk documents, ${s.coherenceRecords} records checked for coherence, ${s.hygieneFiles} files in the hygiene scope, ${s.c7Files} files in the provisional scan)\n`);
     return 0;
   }
   process.stdout.write(`contract gate: ${problems.length} problem(s)\n`);

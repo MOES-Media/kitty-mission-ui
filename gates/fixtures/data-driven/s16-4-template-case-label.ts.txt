@@ -1,0 +1,9 @@
+// expect: S16.4
+export function f(s: string): number {
+  switch (s) {
+    case `quickstart`:
+      return 1;
+    default:
+      return 0;
+  }
+}

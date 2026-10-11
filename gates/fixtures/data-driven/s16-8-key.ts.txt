@@ -1,0 +1,2 @@
+// expect: S16.8
+export const m = { other: 1 };

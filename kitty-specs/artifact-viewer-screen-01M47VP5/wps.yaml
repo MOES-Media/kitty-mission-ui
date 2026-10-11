@@ -1,0 +1,472 @@
+work_packages:
+  - id: WP01
+    title: "Contract re-vendor, fixtures and relaxations"
+    dependencies: []
+    owned_files:
+      - "contracts/spec-kitty/**"
+      - "scripts/contract/**"
+      - "packages/mission-ui/src/contract/**"
+    requirement_refs:
+      - FR-038
+      - FR-044
+      - C-002
+      - NFR-007
+      - NFR-010
+      - C-008
+    plan_concern_refs:
+      - IC-01
+    subtasks:
+      - T001
+      - T002
+      - T003
+      - T004
+      - T005
+      - T006
+      - T007
+    prompt_file: "tasks/WP01-contract-re-vendor-and-fixtures.md"
+    agent_profile: implementer-ivan
+    role: implementer
+  - id: WP02
+    title: "markdown-it dependency, supply-chain record and spike S-A0 step one"
+    dependencies: [WP01]
+    owned_files:
+      - "packages/mission-ui/package.json"
+      - "pnpm-lock.yaml"
+    requirement_refs:
+      - FR-043
+      - C-013
+      - NFR-013
+    plan_concern_refs:
+      - IC-01
+    subtasks:
+      - T008
+      - T009
+      - T010
+      - T011
+      - T012
+    prompt_file: "tasks/WP02-dependency-supply-chain-and-spike-s-a0-step-one.md"
+    agent_profile: implementer-ivan
+    role: implementer
+  - id: WP03
+    title: "Defaults, logic and data-driven extension"
+    dependencies: [WP02]
+    owned_files:
+      - "packages/mission-ui/src/defaults/**"
+      - "packages/mission-ui/src/logic/artifact-*.ts"
+      - "packages/mission-ui/src/shell-types.ts"
+      - "packages/mission-ui/src/shell-icons.ts"
+      - "packages/mission-ui/test/artifact-*.test.ts"
+      - "packages/mission-ui/test/vocabulary-homes.test.ts"
+      - "eslint.data-driven.config.mjs"
+      - "gates/data-driven.selftest.ts"
+      - "gates/fixtures/data-driven/**"
+    requirement_refs:
+      - FR-018
+      - FR-020
+      - FR-021
+      - FR-022
+      - FR-025
+      - FR-026
+      - FR-027
+      - FR-028
+      - FR-030
+      - FR-031
+      - FR-033
+      - FR-042
+      - C-004
+      - C-007
+      - NFR-009
+      - NFR-011
+      - FR-034
+      - FR-037
+    plan_concern_refs:
+      - IC-02
+    subtasks:
+      - T013
+      - T014
+      - T015
+      - T016
+      - T017
+      - T018
+      - T019
+      - T020
+    prompt_file: "tasks/WP03-defaults-logic-and-data-driven-extension.md"
+    agent_profile: implementer-ivan
+    role: implementer
+  - id: WP04
+    title: "Markdown model: parse, budget and links"
+    dependencies: [WP03]
+    owned_files:
+      - "packages/mission-ui/src/logic/markdown/parse.ts"
+      - "packages/mission-ui/src/logic/markdown/model.ts"
+      - "packages/mission-ui/src/logic/markdown/links.ts"
+      - "packages/mission-ui/src/logic/markdown/budget.ts"
+      - "packages/mission-ui/test/markdown-parse*.test.ts"
+      - "packages/mission-ui/test/markdown-model*.test.ts"
+      - "packages/mission-ui/test/markdown-links*.test.ts"
+      - "packages/mission-ui/test/markdown-budget*.test.ts"
+      - "packages/mission-ui/test/markdown-source*.test.ts"
+    requirement_refs:
+      - FR-005
+      - FR-006
+      - FR-007
+      - FR-008
+      - FR-009
+      - C-014
+      - NFR-006
+    plan_concern_refs:
+      - IC-03
+    subtasks:
+      - T021
+      - T022
+      - T023
+      - T024
+      - T025
+      - T026
+    prompt_file: "tasks/WP04-markdown-model-parse-budget-links.md"
+    agent_profile: implementer-ivan
+    role: implementer
+  - id: WP05
+    title: "Markdown renderer, hostile corpus and plants (the security gate)"
+    dependencies: [WP04]
+    owned_files:
+      - "packages/mission-ui/src/logic/markdown/render.ts"
+      - "packages/mission-ui/src/logic/markdown/index.ts"
+      - "packages/mission-ui/test/markdown-corpus.test.ts"
+      - "packages/mission-ui/test/markdown-corpus-model.test.ts"
+      - "packages/mission-ui/test/support/walk-allowed*.ts"
+      - "packages/mission-ui/test/walk-allowed*.test.ts"
+      - "eslint.config.mjs"
+      - "eslint-rules/**"
+      - "gates/markdown-lint.selftest.ts"
+      - "gates/plants/**"
+      - "scripts/bundle-budget.test.mjs"
+    requirement_refs:
+      - FR-005
+      - FR-006
+      - FR-007
+      - FR-008
+      - FR-009
+      - FR-010
+      - FR-044
+      - C-014
+      - NFR-005
+      - NFR-006
+      - NFR-012
+      - NFR-013
+      - SC-003
+      - FR-043
+    plan_concern_refs:
+      - IC-04
+    subtasks:
+      - T027
+      - T028
+      - T029
+      - T030
+      - T031
+      - T032
+    prompt_file: "tasks/WP05-markdown-renderer-corpus-and-plants.md"
+    agent_profile: implementer-ivan
+    role: implementer
+  - id: WP06
+    title: "Foundation spikes S-A1 to S-A6 and CP-1 evidence"
+    dependencies: [WP05]
+    owned_files:
+      - "spikes/ic-05/**"
+      - "apps/storybook/.storybook/main.ts"
+    requirement_refs:
+      - FR-036
+      - FR-040
+      - NFR-008
+      - C-006
+    plan_concern_refs:
+      - IC-05
+    subtasks:
+      - T033
+      - T034
+      - T035
+      - T036
+      - T037
+      - T038
+      - T039
+      - T040
+      - T041
+    prompt_file: "tasks/WP06-foundation-spikes-and-cp-1-evidence.md"
+    agent_profile: frontend-freddy
+    role: implementer
+  - id: WP07
+    title: "Exceptions, Stylelint grant and lint configuration"
+    dependencies: [WP06]
+    owned_files:
+      - "stylelint.config.mjs"
+      - "scripts/stylelint-exceptions.test.mjs"
+    requirement_refs:
+      - FR-040
+      - C-005
+    plan_concern_refs:
+      - IC-06
+    subtasks:
+      - T042
+      - T043
+      - T044
+      - T045
+      - T046
+    prompt_file: "tasks/WP07-exceptions-stylelint-grant-and-lint-configuration.md"
+    agent_profile: implementer-ivan
+    role: implementer
+  - id: WP08
+    title: "Skeleton, layout and surface freeze"
+    dependencies: [WP07]
+    owned_files:
+      - "packages/mission-ui/src/elements/sk-artifact-screen/sk-artifact-screen.ts"
+      - "packages/mission-ui/src/elements/sk-artifact-screen/fixtures.ts"
+      - "packages/mission-ui/src/retry-types.ts"
+      - "packages/mission-ui/src/overflow-region.ts"
+      - "packages/mission-ui/src/logic/wp-retry.*"
+      - "packages/mission-ui/src/elements/sk-work-package-screen/sk-work-package-screen.*"
+      - "packages/mission-ui/src/story-support/shell-frame.ts"
+      - "packages/mission-ui/src/index.ts"
+      - "packages/mission-ui/custom-elements.json"
+      - "packages/mission-ui/test/surface-freeze.test.ts"
+      - "packages/mission-ui/test/sk-artifact-screen.skeleton*.test.ts"
+      - "packages/mission-ui/test/sk-artifact-screen.layout*.test.ts"
+      - "packages/mission-ui/test/sk-artifact-screen.overflow*.test.ts"
+      - "packages/mission-ui/test/overflow-region.multi*.test.ts"
+      - "packages/mission-ui/test/retry-types.*"
+    requirement_refs:
+      - FR-001
+      - FR-002
+      - FR-032
+      - FR-037
+      - FR-039
+      - FR-040
+      - C-001
+      - C-003
+      - C-005
+      - C-010
+    plan_concern_refs:
+      - IC-06
+    subtasks:
+      - T047
+      - T048
+      - T049
+      - T050
+      - T051
+      - T052
+      - T053
+      - T054
+    prompt_file: "tasks/WP08-skeleton-layout-and-surface-freeze.md"
+    agent_profile: frontend-freddy
+    role: implementer
+  - id: WP09
+    title: "Document pane (chain X)"
+    dependencies: [WP08]
+    owned_files:
+      - "packages/mission-ui/src/elements/sk-artifact-screen/toolbar-parts.ts"
+      - "packages/mission-ui/src/elements/sk-artifact-screen/tab-parts.ts"
+      - "packages/mission-ui/src/elements/sk-artifact-screen/document-parts.ts"
+      - "packages/mission-ui/src/elements/sk-artifact-screen/source-parts.ts"
+      - "packages/mission-ui/src/elements/sk-artifact-screen/prose-styles.ts"
+      - "packages/mission-ui/src/elements/sk-artifact-screen/document.stories.ts"
+      - "packages/mission-ui/test/sk-artifact-screen.tabs*.test.ts"
+      - "packages/mission-ui/test/sk-artifact-screen.links*.test.ts"
+      - "packages/mission-ui/test/sk-artifact-screen.document*.test.ts"
+      - "packages/mission-ui/test/sk-artifact-screen.source*.test.ts"
+      - "packages/mission-ui/test/sk-artifact-screen.notices*.test.ts"
+      - "packages/mission-ui/test/markdown-corpus.screen.test.ts"
+    requirement_refs:
+      - FR-002
+      - FR-003
+      - FR-004
+      - FR-005
+      - FR-006
+      - FR-007
+      - FR-008
+      - FR-009
+      - FR-010
+      - FR-011
+      - FR-012
+      - FR-013
+      - FR-014
+      - FR-035
+      - NFR-003
+      - NFR-011
+      - FR-032
+    plan_concern_refs:
+      - IC-07
+    subtasks:
+      - T055
+      - T056
+      - T057
+      - T058
+      - T059
+      - T060
+      - T061
+      - T062
+    prompt_file: "tasks/WP09-document-pane.md"
+    agent_profile: frontend-freddy
+    role: implementer
+  - id: WP10
+    title: "Refusals and states (chain X)"
+    dependencies: [WP09]
+    owned_files:
+      - "packages/mission-ui/src/elements/sk-artifact-screen/refusal-parts.ts"
+      - "packages/mission-ui/src/elements/sk-artifact-screen/state-parts.ts"
+      - "packages/mission-ui/src/elements/sk-artifact-screen/refusals-states.stories.ts"
+      - "packages/mission-ui/test/sk-artifact-screen.refusal*.test.ts"
+      - "packages/mission-ui/test/sk-artifact-screen.state*.test.ts"
+      - "packages/mission-ui/test/sk-artifact-screen.focus*.test.ts"
+      - "packages/mission-ui/test/sk-artifact-screen.announce*.test.ts"
+      - "packages/mission-ui/test/sk-artifact-screen.payload*.test.ts"
+    requirement_refs:
+      - FR-015
+      - FR-016
+      - FR-017
+      - FR-023
+      - FR-024
+      - FR-032
+      - FR-035
+      - SC-005
+    plan_concern_refs:
+      - IC-08
+    subtasks:
+      - T063
+      - T064
+      - T065
+      - T066
+      - T067
+      - T068
+      - T069
+    prompt_file: "tasks/WP10-refusals-and-states.md"
+    agent_profile: frontend-freddy
+    role: implementer
+  - id: WP11
+    title: "Inspector, Work Package links and tree stories (chain Y)"
+    dependencies: [WP08]
+    owned_files:
+      - "packages/mission-ui/src/elements/sk-artifact-screen/inspector-parts.ts"
+      - "packages/mission-ui/src/elements/sk-artifact-screen/inspector-tree.stories.ts"
+      - "packages/mission-ui/test/sk-artifact-screen.inspector*.test.ts"
+      - "packages/mission-ui/test/sk-artifact-screen.tree*.test.ts"
+      - "packages/mission-ui/test/sk-artifact-screen.treehost*.test.ts"
+    requirement_refs:
+      - FR-018
+      - FR-019
+      - FR-020
+      - FR-021
+      - FR-022
+      - FR-025
+      - FR-026
+      - FR-027
+      - FR-028
+      - FR-029
+      - FR-030
+      - FR-035
+      - FR-032
+    plan_concern_refs:
+      - IC-09
+    subtasks:
+      - T070
+      - T071
+      - T072
+      - T073
+      - T074
+      - T075
+      - T076
+    prompt_file: "tasks/WP11-inspector-work-package-links-and-tree-stories.md"
+    agent_profile: frontend-freddy
+    role: implementer
+  - id: WP12
+    title: "Tiers, accessibility and edge cases"
+    dependencies: [WP10]
+    owned_files:
+      - "packages/mission-ui/src/elements/sk-artifact-screen/tiers-edge-cases.stories.ts"
+      - "packages/mission-ui/test/sk-artifact-screen.tier*.test.ts"
+      - "packages/mission-ui/test/sk-artifact-screen.a11y*.test.ts"
+      - "packages/mission-ui/test/sk-artifact-screen.timing*.test.ts"
+      - "packages/mission-ui/test/sk-artifact-screen.media*.test.ts"
+      - "packages/mission-ui/test/sk-artifact-screen.composition*.test.ts"
+      - "packages/mission-ui/test/sk-artifact-screen.dynamic*.test.ts"
+      - "packages/mission-ui/test/sk-artifact-screen.truncation*.test.ts"
+      - "packages/mission-ui/test/sk-artifact-screen.eyebrow*.test.ts"
+    requirement_refs:
+      - FR-031
+      - FR-032
+      - FR-033
+      - FR-034
+      - FR-035
+      - FR-036
+      - NFR-002
+      - NFR-003
+      - NFR-004
+      - NFR-006
+      - NFR-009
+      - NFR-011
+      - SC-002
+      - SC-004
+      - SC-006
+      - SC-010
+      - C-007
+    plan_concern_refs:
+      - IC-10
+    subtasks:
+      - T077
+      - T078
+      - T079
+      - T080
+      - T081
+      - T082
+      - T083
+      - T084
+      - T085
+      - T086
+    prompt_file: "tasks/WP12-tiers-accessibility-and-edge-cases.md"
+    agent_profile: frontend-freddy
+    role: implementer
+  - id: WP13
+    title: "Integration, baselines and wrap-up inputs"
+    dependencies: [WP12]
+    owned_files:
+      - "apps/storybook/tests/visual/__snapshots__/**"
+      - "scripts/artifact-story-catalogue.test.mjs"
+      - "package.json"
+      - ".github/workflows/ci.yml"
+      - "README.md"
+      - "CHANGELOG.md"
+      - "packages/mission-ui/CHANGELOG.md"
+      - "packages/mission-ui/test/sk-artifact-screen.integration*.test.ts"
+    requirement_refs:
+      - FR-037
+      - FR-038
+      - FR-041
+      - FR-043
+      - NFR-001
+      - NFR-002
+      - NFR-008
+      - NFR-010
+      - NFR-013
+      - SC-001
+      - SC-007
+      - SC-008
+      - SC-009
+      - C-006
+      - C-009
+      - C-011
+      - C-012
+      - C-008
+      - C-010
+      - NFR-007
+    plan_concern_refs:
+      - IC-11
+    subtasks:
+      - T087
+      - T088
+      - T089
+      - T090
+      - T091
+      - T092
+      - T093
+      - T094
+    prompt_file: "tasks/WP13-integration-baselines-and-wrap-up-inputs.md"
+    agent_profile: frontend-freddy
+    role: implementer

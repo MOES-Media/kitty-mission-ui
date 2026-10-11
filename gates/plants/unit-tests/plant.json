@@ -1,16 +1,66 @@
-{
-  "gate": "unit-tests",
-  "ciCommand": "pnpm test",
-  "expectFailPattern": "plant-unit-slug",
-  "overlays": [
-    {
-      "target": "packages/mission-ui/src/elements/sk-mission-sample/sk-mission-sample.ts",
-      "edits": [
-        {
-          "find": "missionId: '', slug }",
-          "replace": "missionId: '', 'plant-unit-slug': slug }"
-        }
-      ]
-    }
-  ]
-}
+[
+  {
+    "gate": "unit-tests",
+    "ciCommand": "pnpm test",
+    "expectFailPattern": "plant-unit-slug",
+    "overlays": [
+      {
+        "target": "packages/mission-ui/src/elements/sk-mission-sample/sk-mission-sample.ts",
+        "edits": [
+          {
+            "find": "missionId: '', slug }",
+            "replace": "missionId: '', 'plant-unit-slug': slug }"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "gate": "unit-tests",
+    "ciCommand": "pnpm test",
+    "expectFailPattern": "Error: corpus escape: ",
+    "overlays": [
+      {
+        "target": "packages/mission-ui/src/logic/markdown/render.ts",
+        "edits": [
+          {
+            "find": "return control(label, target.title, LINK_SUFFIX.external, () => handlers.openExternal(href));",
+            "replace": "return html`<a role=\"link\" tabindex=\"0\" href=${href}>${label}</a>`;"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "gate": "unit-tests",
+    "ciCommand": "pnpm test",
+    "expectFailPattern": "Error: corpus escape: ",
+    "overlays": [
+      {
+        "target": "packages/mission-ui/src/logic/markdown/render.ts",
+        "edits": [
+          {
+            "find": "return image(node.alt, node.target, insideLink, handlers);",
+            "replace": "return html`<img src=${node.destination}>`;"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "gate": "unit-tests",
+    "ciCommand": "pnpm test",
+    "expectFailPattern": "Error: corpus escape: ",
+    "overlays": [
+      {
+        "target": "packages/mission-ui/src/logic/markdown/render.ts",
+        "edits": [
+          {
+            "find": "return html`<p>${renderInline(block.inline, false, handlers)}</p>`;",
+            "replace": "return html`<p .innerHTML=${block.inline.map((part) => (part.kind === 'text' ? part.text : '')).join('')}></p>`;"
+          }
+        ]
+      }
+    ]
+  }
+]
