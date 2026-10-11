@@ -21,6 +21,14 @@ import * as refusals from '../src/defaults/refusals.js';
 import * as review from '../src/defaults/review.js';
 import * as staleness from '../src/defaults/staleness.js';
 import * as wpCopy from '../src/defaults/wp-copy.js';
+import * as health from '../src/defaults/health.js';
+import * as projectsCopy from '../src/defaults/projects-copy.js';
+import * as artifactKinds from '../src/defaults/artifact-kinds.js';
+import * as artifactMedia from '../src/defaults/artifact-media.js';
+import * as artifactRefusals from '../src/defaults/artifact-refusals.js';
+import * as artifactCopy from '../src/defaults/artifact-copy.js';
+import * as markdown from '../src/defaults/markdown.js';
+import * as driftCopy from '../src/defaults/drift-copy.js';
 import indexSource from '../src/defaults/index.ts?raw';
 
 const enumOf = (yaml: string): string[] => (parse(yaml) as { enum: string[] }).enum;
@@ -257,10 +265,17 @@ describe('T007: the count and announcement texts', () => {
 
 describe('T007: no export name is shared with the other defaults (the one-line export of WP04 stays unambiguous)', () => {
   // The other defaults are read module by module: once `defaults/index.ts` re-exports this module, the index itself holds these names.
-  const others: Record<string, unknown>[] = [files, lanes, lifecycle, missionsCopy, phases, pipelineCopy, refusals, review, staleness, wpCopy];
+  // The ten of #5, the two of the Projects screen (#9), the five of the Artifact Viewer (#7) and the one of the Drift screen (#10).
+  const others: Record<string, unknown>[] = [
+    files, lanes, lifecycle, missionsCopy, phases, pipelineCopy, refusals, review, staleness, wpCopy,
+    health, projectsCopy, artifactKinds, artifactMedia, artifactRefusals, artifactCopy, markdown, driftCopy,
+  ];
 
   it('lists every other defaults module of defaults/index.ts, so a new module cannot go unseen', () => {
-    const names = ['files', 'lanes', 'lifecycle', 'missions-copy', 'phases', 'pipeline-copy', 'refusals', 'review', 'staleness', 'wp-copy'];
+    const names = [
+      'files', 'lanes', 'lifecycle', 'missions-copy', 'phases', 'pipeline-copy', 'refusals', 'review', 'staleness', 'wp-copy',
+      'health', 'projects-copy', 'artifact-kinds', 'artifact-media', 'artifact-refusals', 'artifact-copy', 'markdown', 'drift-copy',
+    ];
     const reExported = [...indexSource.matchAll(/export \* from '\.\/([a-z-]+)\.js';/g)].map((match) => match[1]);
     expect(others.length).toBe(names.length);
     expect(reExported.filter((name) => name !== 'ops-copy').sort()).toEqual([...names].sort());
@@ -270,7 +285,7 @@ describe('T007: no export name is shared with the other defaults (the one-line e
   it('has disjoint export names', () => {
     const mine = Object.keys(ops);
     const theirs = new Set(others.flatMap((mod) => Object.keys(mod)));
-    expect(others.length).toBe(10);
+    expect(others.length).toBe(18);
     expect(mine.length).toBeGreaterThan(15);
     expect(mine.filter((k) => theirs.has(k))).toEqual([]);
     // positive control: a name of the first module is seen by the same lookup that finds no shared name

@@ -20,9 +20,9 @@ const HANDLE = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/;
 const INSTANT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(Z|[+-]\d{2}:\d{2})$/;
 
 describe('generated Ops fixtures', () => {
-  it('the generated module exports 108 fixtures, 36 of them Ops (equality)', () => {
+  it('the generated module exports 157 fixtures, 36 of them Ops (equality)', () => {
     const names = Object.keys(generated);
-    expect(names.length).toBe(108);
+    expect(names.length).toBe(157);
     const ops = names.filter((n) => /^ops[A-Z]/.test(n) || n === 'opsCursorRefusal');
     expect(ops.length).toBe(36);
     expect(names.filter((n) => /^ops/.test(n)).length).toBe(36);
