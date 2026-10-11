@@ -47,6 +47,14 @@ export type Readiness = Schemas['Readiness'];
 export type ArtifactReference = Schemas['ArtifactReference'];
 export type ArtifactReferences = Schemas['ArtifactReferences'];
 
+// The Artifact Viewer screen reads these contract types (1.1); the aliases only name them.
+export type ArtifactListing = Schemas['ArtifactListing'];
+export type ArtifactEntry = Schemas['ArtifactEntry'];
+export type ArtifactContent = Schemas['ArtifactContent'];
+export type ArtifactKind = Schemas['ArtifactKind'];
+export type ArtifactRefusal = Schemas['ArtifactRefusal'];
+export type ArtifactRefusalCode = Schemas['ArtifactRefusalCode'];
+
 /** A phase whose name the screen has never seen (FR-014). */
 export type PhaseView = Omit<MissionPhase, 'name'> & { name: string };
 
@@ -99,6 +107,22 @@ export type WorkPackageDetailView = Omit<WorkPackageDetail, 'subtasks' | 'depend
   reviewCycles?: ReviewCycle[];
   workspace?: Workspace;
 };
+
+// ---- The Artifact Viewer's widened types. Each is a SUPERTYPE of its contract type, so a generated fixture is accepted
+// as the view type without a cast. The kind vocabulary and the refusal codes are provisional upstream: a kind or a code
+// the screen has never seen must survive (the contract enums are closed).
+
+/** A listing entry whose kind is an open string. */
+export type ArtifactEntryView = Omit<ArtifactEntry, 'kind'> & { kind: string };
+
+/** A listing whose entries carry open kinds. */
+export type ArtifactListingView = Omit<ArtifactListing, 'entries'> & { entries: ArtifactEntryView[] };
+
+/** The content of one artifact with an open kind. */
+export type ArtifactContentView = Omit<ArtifactContent, 'kind'> & { kind: string };
+
+/** A refusal whose code is an open string (the `satisfies` target of the unknown-code fixture). */
+export type ArtifactRefusalView = Omit<ArtifactRefusal, 'code'> & { code: string };
 
 // ---- The Drift screen's types (mission-ui#10). The generated types are strict and closed; the view types widen ONLY the
 // vocabulary fields to open strings (the contract's own descriptions call the sets provisional), so a word the screen has

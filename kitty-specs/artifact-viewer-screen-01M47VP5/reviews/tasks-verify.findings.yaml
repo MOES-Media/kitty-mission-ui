@@ -1,0 +1,50 @@
+schema: review-findings/v1
+complete: true
+phase: tasks
+lens_group: verify
+mission: artifact-viewer-screen-01M47VP5
+profile: debugger-debbie
+conduct_note: 'Run in-session by the orchestrator (the operator constraint for this phase is no sub-agents),
+  as one lens group after the other, from commit 74d3147. Profile resolved from the installed catalog
+  with `spec-kitty agent profile show` (squad-delegate mode); no profile data was edited. Mechanical checks
+  (dependency edges, requirement ids, story ids, verbatim embeds, owned-file overlap) were scripted, not
+  judged. Lenses: testability of exit checks, per-AC test strategy, red-first, baseline, owned files versus
+  what the plan says the WP writes.'
+findings:
+- id: TASKS-VERIFY-001
+  lens: Owned files versus plan
+  severity: 3
+  title: WP08's manifest-text assertion may land in a file WP08 does not own
+  evidence:
+  - artifact: 'tasks/WP08-skeleton-layout-and-surface-freeze.md, subtask ''Story-frame options, registration,
+      manifest, surface freeze'': ''existing manifest check or the surface-freeze test'''
+  - artifact: 'plan.md IC-06b: ''carried by the existing manifest check or the surface-freeze test'';
+      the manifest check is `scripts/check-manifest.mjs`, not in WP08''s owned_files (which has `test/surface-freeze.test.ts`)'
+  claim: Left open, the implementer may edit `scripts/check-manifest.mjs`, a shared gate script outside
+    the owned files and outside the plan's shared-files table, and no exit check proves the assertion
+    fails when the 'untrusted' word is removed.
+  remediation: 'Commit WP08 to the owned `test/surface-freeze.test.ts` for the assertion and add the revert
+    proof: removing the word ''untrusted'' from the `@fires` text of `sk-open-link` fails that test.'
+- id: TASKS-VERIFY-002
+  lens: Testable exit checks
+  severity: 2
+  title: WP06's 'tip tree equals its base tree' has no command
+  evidence:
+  - artifact: tasks/WP06-foundation-spikes-and-cp-1-evidence.md Acceptance 1; plan.md IC-05 exit check
+      'the tip tree equals its base tree'
+  claim: The check is stated as a property, not as something a reviewer can run; the reviewer must invent
+    the comparison.
+  remediation: 'State the command: `git diff --exit-code <WP05 tip sha> HEAD` prints nothing and exits
+    0, and `git ls-tree -r HEAD -- spikes/` is empty.'
+- id: TASKS-VERIFY-003
+  lens: Baseline (verify)
+  severity: 3
+  title: Red-first and revert checks are stated, but the baseline needed to class a red is not tied to
+    any WP exit check
+  evidence:
+  - artifact: every WP 'Gates this work package must pass' paragraph; tasks/WP01 subtask 1
+  claim: 'See TASKS-SEQ-001: the exit checks say ''green'' for gates that may be red on the base for reasons
+    the mission did not introduce, and no exit check says to compare with the recorded baseline.'
+  remediation: 'Add to the shared gates paragraph: a gate that is red is classed against the baseline
+    table the orchestrator names in the dispatch; a red absent from the baseline is introduced and fixed,
+    a red present in it is reported as pre-existing and not fixed here.'

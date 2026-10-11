@@ -1,0 +1,346 @@
+{
+  "event_count": 103,
+  "last_event_id": "01M4J93A1BD0JF1JF9CGY4GGVP",
+  "materialized_at": "2026-10-10T06:48:07.979383+00:00",
+  "mission_number": "3",
+  "mission_slug": "projects-screen-01M4C939",
+  "mission_type": "software-dev",
+  "schema_version": 2,
+  "summary": {
+    "approved": 0,
+    "blocked": 0,
+    "canceled": 0,
+    "claimed": 0,
+    "done": 9,
+    "for_review": 0,
+    "in_progress": 0,
+    "in_review": 0,
+    "planned": 0
+  },
+  "work_packages": {
+    "WP01": {
+      "actor": "merge",
+      "agent": "user",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
+      "force_count": 0,
+      "implementer_of_record": "claude",
+      "lane": "done",
+      "last_event_id": "01M4J91R870D56RYHJZK9RYE8Z",
+      "last_transition_at": "2026-10-10T06:47:16.999300+00:00",
+      "model": "__resolved_model_absent__",
+      "notes": [
+        "Re-vendored contract at 805e122 (provenance main), two Project overlays with revert proofs, all gates green, visual 175 passed / 174 baselines unchanged"
+      ],
+      "provider": "__resolved_provider_absent__",
+      "review_result": {
+        "feedback_path": "<workspace>/ui9/kitty-specs/projects-screen-01M4C939/tasks/WP01-contract-re-vendor/review-cycle-1.md",
+        "reference": "review-cycle://projects-screen-01M4C939/WP01-contract-re-vendor/review-cycle-1.md",
+        "reviewer": "user",
+        "verdict": "approved"
+      },
+      "role": "reviewer",
+      "shell_pid": 1671703,
+      "shell_pid_created_at": "1791448116.14",
+      "subtasks": {
+        "T001": "done",
+        "T002": "done",
+        "T003": "done",
+        "T004": "done",
+        "T005": "done",
+        "T006": "done"
+      }
+    },
+    "WP02": {
+      "actor": "merge",
+      "agent": "user",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
+      "force_count": 0,
+      "implementer_of_record": "claude",
+      "lane": "done",
+      "last_event_id": "01M4J91RXAS674CWST57D28GHQ",
+      "last_transition_at": "2026-10-10T06:47:17.674192+00:00",
+      "model": "__resolved_model_absent__",
+      "notes": [
+        "Union (3 members in logic/wp-retry.ts), wrapper types, health/copy defaults, entry/row/retry logic, data-driven ProjectHealth gate; all gates green"
+      ],
+      "provider": "__resolved_provider_absent__",
+      "review_result": {
+        "feedback_path": "<workspace>/ui9/kitty-specs/projects-screen-01M4C939/tasks/WP02-defaults-logic-retry-union-data-driven/review-cycle-1.md",
+        "reference": "review-cycle://projects-screen-01M4C939/WP02-defaults-logic-retry-union-data-driven/review-cycle-1.md",
+        "reviewer": "user",
+        "verdict": "approved"
+      },
+      "role": "reviewer",
+      "shell_pid": 1729103,
+      "shell_pid_created_at": "1791448891.28",
+      "subtasks": {
+        "T007": "done",
+        "T008": "done",
+        "T009": "done",
+        "T010": "done",
+        "T011": "done",
+        "T012": "done",
+        "T013": "done",
+        "T014": "done"
+      }
+    },
+    "WP03": {
+      "actor": "merge",
+      "agent": "user",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
+      "force_count": 2,
+      "implementer_of_record": "claude",
+      "lane": "done",
+      "last_event_id": "01M4J91SFZPVS9MCWNE3KHQ75W",
+      "last_transition_at": "2026-10-10T06:47:18.271104+00:00",
+      "model": "__resolved_model_absent__",
+      "notes": [
+        "Shell picker layout (IC-03): 8721c9e; gates green, visual 175 passed",
+        "Review cycle 1 fixes: loop count, positive control",
+        "Review cycle 2: loop counts",
+        "Cycle 2 verified by orchestrator: loop counts added; full suite 1065 green"
+      ],
+      "provider": "__resolved_provider_absent__",
+      "review": null,
+      "review_result": {
+        "feedback_path": "<workspace>/ui9/kitty-specs/projects-screen-01M4C939/tasks/WP03-shell-picker-layout/review-cycle-3.md",
+        "reference": "review-cycle://projects-screen-01M4C939/WP03-shell-picker-layout/review-cycle-3.md",
+        "reviewer": "user",
+        "verdict": "approved"
+      },
+      "role": "reviewer",
+      "shell_pid": 1728005,
+      "shell_pid_created_at": "1791448877.04",
+      "subtasks": {
+        "T015": "done",
+        "T016": "done",
+        "T017": "done",
+        "T018": "done",
+        "T019": "done"
+      }
+    },
+    "WP04": {
+      "actor": "merge",
+      "agent": "user",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
+      "force_count": 0,
+      "implementer_of_record": "claude",
+      "lane": "done",
+      "last_event_id": "01M4J91T3N4XYW9MNYF6SXBC2N",
+      "last_transition_at": "2026-10-10T06:47:18.901345+00:00",
+      "model": "__resolved_model_absent__",
+      "notes": [
+        "Spikes S1-S8 done, CP-1 packet written, spike code removed, tip tree equals base tree",
+        "Spike WP: tip tree equals base (313100c), packet reviewed by orchestrator"
+      ],
+      "provider": "__resolved_provider_absent__",
+      "review_result": {
+        "feedback_path": "<workspace>/ui9/kitty-specs/projects-screen-01M4C939/tasks/WP04-foundation-spikes/review-cycle-1.md",
+        "reference": "review-cycle://projects-screen-01M4C939/WP04-foundation-spikes/review-cycle-1.md",
+        "reviewer": "user",
+        "verdict": "approved"
+      },
+      "role": "reviewer",
+      "shell_pid": 1799274,
+      "shell_pid_created_at": "1791449995.16",
+      "subtasks": {
+        "T020": "done",
+        "T021": "done",
+        "T022": "done",
+        "T023": "done",
+        "T024": "done",
+        "T025": "done",
+        "T026": "done"
+      }
+    },
+    "WP05": {
+      "actor": "merge",
+      "agent": "user",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
+      "force_count": 2,
+      "implementer_of_record": "claude",
+      "lane": "done",
+      "last_event_id": "01M4J91TPFDKFAN2APSZ59Z2ES",
+      "last_transition_at": "2026-10-10T06:47:19.504022+00:00",
+      "model": "__resolved_model_absent__",
+      "notes": [
+        "Skeletons, surface freeze, E-31..E-34 + DP-22 grants with proofs; all gates green (visual not run)",
+        "Review cycle 1: E-32(c) drawn, E-33(b), E-34(b), subtle eyebrow; gates green (visual not run)",
+        "Review cycle 2: E-32(d), dialog spacing, loop counts, reflects; gates green (visual not run)",
+        "Cycle 2 verified by orchestrator: review must-fixes applied, E-32(d) pinned; typecheck, lint:styles, test:scripts, test 1148 green"
+      ],
+      "provider": "__resolved_provider_absent__",
+      "review": null,
+      "review_result": {
+        "feedback_path": "<workspace>/ui9/kitty-specs/projects-screen-01M4C939/tasks/WP05-skeletons-layout-surface-freeze/review-cycle-3.md",
+        "reference": "review-cycle://projects-screen-01M4C939/WP05-skeletons-layout-surface-freeze/review-cycle-3.md",
+        "reviewer": "user",
+        "verdict": "approved"
+      },
+      "role": "reviewer",
+      "shell_pid": 1940305,
+      "shell_pid_created_at": "1791454050.66",
+      "subtasks": {
+        "T027": "done",
+        "T028": "done",
+        "T029": "done",
+        "T030": "done",
+        "T031": "done",
+        "T032": "done"
+      }
+    },
+    "WP06": {
+      "actor": "merge",
+      "agent": "user",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
+      "force_count": 2,
+      "implementer_of_record": "claude",
+      "lane": "done",
+      "last_event_id": "01M4J937ZWJT0HB90YYG86QDTW",
+      "last_transition_at": "2026-10-10T06:48:05.884164+00:00",
+      "model": "__resolved_model_absent__",
+      "notes": [
+        "WP06 regions: header, rows, states, notice, 22 stories, 75 tests; gates green; screenshots in scratchpad; uncovered typography/progress/button-icon drift reported to the orchestrator",
+        "WP06 cycle 1: E-34(c) type, sk-progress sheet, title ellipsis, 18px heading; gates green; accessible-name item needs a ruling",
+        "WP06 cycle 2: contract fixtures, exact computed names, E-34(d) button; gates green",
+        "Cycle 2 verified by orchestrator: contract-derived fixtures, exact computed names, E-34(d) pinned; typecheck, lint:styles, test:scripts, test:contract, contract:check --require-main, test 1214 green"
+      ],
+      "provider": "__resolved_provider_absent__",
+      "review": null,
+      "review_result": {
+        "feedback_path": "<workspace>/ui9/kitty-specs/projects-screen-01M4C939/tasks/WP06-screen-regions/review-cycle-3.md",
+        "reference": "review-cycle://projects-screen-01M4C939/WP06-screen-regions/review-cycle-3.md",
+        "reviewer": "user",
+        "verdict": "approved"
+      },
+      "role": "reviewer",
+      "shell_pid": 3192373,
+      "shell_pid_created_at": "1791458892.75",
+      "subtasks": {
+        "T033": "done",
+        "T034": "done",
+        "T035": "done",
+        "T036": "done",
+        "T037": "done",
+        "T038": "done",
+        "T039": "done",
+        "T040": "done"
+      }
+    },
+    "WP07": {
+      "actor": "merge",
+      "agent": "user",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
+      "force_count": 1,
+      "implementer_of_record": "claude",
+      "lane": "done",
+      "last_event_id": "01M4J938MSMAJHF0KHQEAXK0P5",
+      "last_transition_at": "2026-10-10T06:48:06.553897+00:00",
+      "model": "__resolved_model_absent__",
+      "notes": [
+        "WP07 dialog parts, E-33(c)/E-31(c)/E-32(e) fidelity grants, ready&&valid fix; gates green",
+        "WP07 review cycle 1 fixes: live tabindex, width-2 outline, E-31(d), E-32(f); gates green",
+        "Cycle 1 verified by orchestrator: live() tab stop with red test, width-2 focus pin, E-31(d)/E-32(f) pinned; typecheck, lint, lint:styles, test:scripts, test 1176 green"
+      ],
+      "provider": "__resolved_provider_absent__",
+      "review": null,
+      "review_result": {
+        "feedback_path": "<workspace>/ui9/kitty-specs/projects-screen-01M4C939/tasks/WP07-open-project-dialog-parts/review-cycle-2.md",
+        "reference": "review-cycle://projects-screen-01M4C939/WP07-open-project-dialog-parts/review-cycle-2.md",
+        "reviewer": "user",
+        "verdict": "approved"
+      },
+      "role": "reviewer",
+      "shell_pid": 2086900,
+      "shell_pid_created_at": "1791457457.87",
+      "subtasks": {
+        "T041": "done",
+        "T042": "done",
+        "T043": "done",
+        "T044": "done",
+        "T045": "done",
+        "T046": "done",
+        "T047": "done"
+      }
+    },
+    "WP08": {
+      "actor": "merge",
+      "agent": "user",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
+      "force_count": 1,
+      "implementer_of_record": "claude",
+      "lane": "done",
+      "last_event_id": "01M4J939B4DD2ZM403513Y8NH8",
+      "last_transition_at": "2026-10-10T06:48:07.268415+00:00",
+      "model": "__resolved_model_absent__",
+      "notes": [
+        "WP08 tiers, a11y, edge cases: 5 test files + tiers stories; Stylelint proof union; E-31(d) drawn in rows; gates green",
+        "WP08 cycle 1 fixes: forced-colours emulation, light theme, emit flags, health word, perf warm-up",
+        "Cycle 1 verified by orchestrator: cdp forced-colors emulation with control, emit flags, exact health prefix, warmed perf; typecheck, lint, test:scripts, test 1289 green"
+      ],
+      "provider": "__resolved_provider_absent__",
+      "review": null,
+      "review_result": {
+        "feedback_path": "<workspace>/ui9/kitty-specs/projects-screen-01M4C939/tasks/WP08-tiers-accessibility-edge-cases/review-cycle-2.md",
+        "reference": "review-cycle://projects-screen-01M4C939/WP08-tiers-accessibility-edge-cases/review-cycle-2.md",
+        "reviewer": "user",
+        "verdict": "approved"
+      },
+      "role": "reviewer",
+      "shell_pid": 271254,
+      "shell_pid_created_at": "1791460596.98",
+      "subtasks": {
+        "T048": "done",
+        "T049": "done",
+        "T050": "done",
+        "T051": "done",
+        "T052": "done",
+        "T053": "done",
+        "T054": "done",
+        "T055": "done"
+      }
+    },
+    "WP09": {
+      "actor": "merge",
+      "agent": "user",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
+      "force_count": 0,
+      "implementer_of_record": "claude",
+      "lane": "done",
+      "last_event_id": "01M4J93A1BD0JF1JF9CGY4GGVP",
+      "last_transition_at": "2026-10-10T06:48:07.979383+00:00",
+      "model": "__resolved_model_absent__",
+      "notes": [
+        "Integration, 36 baselines, ci.yml timeouts (operator-approved), docs; five clean visual runs; gate-proof pass on rerun",
+        "Independent review approved: all 36 baselines read in the pinned container against the prototype, ci.yml two values only, docs match the manifest"
+      ],
+      "provider": "__resolved_provider_absent__",
+      "review_result": {
+        "feedback_path": "<workspace>/ui9/kitty-specs/projects-screen-01M4C939/tasks/WP09-integration-baselines-docs/review-cycle-1.md",
+        "reference": "review-cycle://projects-screen-01M4C939/WP09-integration-baselines-docs/review-cycle-1.md",
+        "reviewer": "user",
+        "verdict": "approved"
+      },
+      "role": "reviewer",
+      "shell_pid": 3426538,
+      "shell_pid_created_at": "1791465907.92",
+      "subtasks": {
+        "T056": "done",
+        "T057": "done",
+        "T058": "done",
+        "T059": "done",
+        "T060": "done",
+        "T061": "done"
+      }
+    }
+  }
+}

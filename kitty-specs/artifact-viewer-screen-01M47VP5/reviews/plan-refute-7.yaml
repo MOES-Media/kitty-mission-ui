@@ -1,0 +1,29 @@
+schema: review-refute/v1
+complete: true
+phase: plan
+batch: 7
+verdicts:
+  - id: PLAN-DESIGN-013
+    verdict: confirmed
+    reason: stylelint.config.mjs exceptionOverrides builds unit-allowed-list from only '%','fr' plus px/em via pxProperties/emProperties, so max-width 68ch cannot be granted, and E-22 does not name unstrict or a ch mechanism.
+  - id: PLAN-DESIGN-014
+    verdict: confirmed
+    reason: padding, margin and gap are in both LAYOUT_PROPERTIES and STRICT_PROPERTIES so token values need no grant, E-22 and E-23 key on the same file prose-styles.ts (merged per file), and E-22/E-23 sunsets cite no filed issue.
+  - id: PLAN-DESIGN-015
+    verdict: confirmed
+    reason: FORK stands; research D-13 weighs only sk-button role=tab versus a raw painted button, while library-sheets.ts adopts segmentedChoiceSheet and eslint.config.mjs E-01 already allows a raw button with the sk-segmented-choice__item class.
+  - id: PLAN-DESIGN-016
+    verdict: confirmed
+    reason: plan.md merge-order paragraph lists only index.ts, manifest, package.json, lint configs, CHANGELOGs and library-sheets.ts, omitting the data-driven trio and count-pinned constants that both missions extend (IC-02 in plan.md shared-files list), and IC-06 creates the facts sheet unconditionally.
+  - id: PLAN-DESIGN-017
+    verdict: confirmed
+    reason: FORK stands; plan.md Build base states 'The plan does not choose' between Base A and B and leaves the orchestrator to ask at dispatch, while its own table shows IC-01 file content varying by base (re-vendor mechanism, retry-load, E-17 to E-21 gap, REVIEW_CYCLE).
+  - id: PLAN-DESIGN-018
+    verdict: confirmed
+    reason: contracts/sk-artifact-screen.md puts the truncation note in renderDocument in document-parts.ts (IC-07, chain X) while plan.md IC-09 (chain Y) assigns 'the truncation note (DA-10) in the document pane header band', so the disjoint-writes claim is false for this item.
+  - id: PLAN-DESIGN-019
+    verdict: confirmed
+    reason: FORK stands; plan.md IC-01, IC-02 and IC-06 each bundle several concerns (dependency supply-chain record with contract re-pin, gate extension with vocabulary logic, surface freeze with three lint-config changes), as quoted.
+  - id: PLAN-DESIGN-020
+    verdict: confirmed
+    reason: eslint.data-driven.config.mjs reads words from schema enums while gates.md reads the seven refusal codes from example files with an exactly-7 guard (so 'no edit' is false; the real ArtifactRefusal schema holds codes as if/then consts), and mediaType is a free string not gated as words.

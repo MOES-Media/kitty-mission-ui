@@ -1,0 +1,13 @@
+schema: review-findings/v1
+phase: tasks
+lens_group: fresh
+mission: artifact-viewer-screen-01M47VP5
+tree: '6226594'
+conduct_note: 'Fresh sweep round 3 on 6226594: git diff 6488bf0..6226594 (Purpose lines removed) plus
+  the whole-tree mechanical checks: subtask headings equal frontmatter in 13 of 13, tool frontmatter unchanged
+  since 74d3147, every non-heading line after the plan-text section found in plan.md, spec.md or the two
+  research files or on the allow-list of generated lines, no absolute path, no prompt over 700 lines or
+  10 subtasks, finalize-tasks --validate-only passes with no would_modify and tasks.md not stale. In-session
+  by the orchestrator (no sub-agents).'
+findings: []
+complete: true

@@ -47,7 +47,12 @@ const fixturesHeader = (pin) => `/**
  */
 `;
 
-const literal = (doc) => JSON.stringify(doc, null, 2).replace(/^(\s*)"([A-Za-z_][A-Za-z0-9_]*)":/gm, '$1$2:');
+// A byte order mark inside a string is written as an escape: an invisible character in a generated file reviews as nothing.
+const BYTE_ORDER_MARK = new RegExp(String.fromCharCode(0xfeff), 'g');
+const literal = (doc) =>
+  JSON.stringify(doc, null, 2)
+    .replace(/^(\s*)"([A-Za-z_][A-Za-z0-9_]*)":/gm, '$1$2:')
+    .replace(BYTE_ORDER_MARK, `${String.fromCharCode(92)}uFEFF`);
 
 /** `buildFixtures` and `bulk` default to the repository's own; tests inject changed ones. */
 export async function generateFixturesSource(root = ROOT, deps = {}) {

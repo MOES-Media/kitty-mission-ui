@@ -4,6 +4,36 @@
 
 ### Added
 
+- `sk-projects-screen` (screen): the projects a host knows. Five properties (`status`, `entries`, `now`, `labels`,
+  `errorMessage`) and three events (`sk-open-project`, `sk-request-open-project`, `sk-retry-load`). Health, time and
+  screen words are read from `src/defaults/` (`#9`).
+- `sk-open-project-dialog` (widget): a modal folder picker. Five properties (`open`, `location`, `folders`, `selected`,
+  `status`) and three events (`sk-browse-folder`, `sk-confirm-open-project`, `sk-retry-load`); the host lists and picks
+  folders (`#9`).
+- `sk-mission-shell` `layout="picker"`: the top bar and the content slot only, with no sidebar, rail, hamburger or drawer
+  at any tier. `sk-retry-load` gains the targets `'project'`, `'projects'` and `'folders'` (`#9`).
+- `sk-artifact-screen` (screen): the artifacts of one Mission. Thirteen properties (`status`, `contentStatus`, `listing`,
+  `content`, `refusalCode`, `selectedPath`, `mission`, `workPackages`, `view`, `now`, `labels`, `errorMessage`,
+  `vocabulary`) and five events (`sk-select-artifact`, `sk-open-link`, `sk-select-work-package`, `sk-open-mission`,
+  `sk-retry-load`); `sk-retry-load` gains the members `'listing'` and `'content'` in `src/retry-types.ts` (`#7`). Slices:
+  - Contract re-vendor and fixtures: the artifact listing and content reads from the pinned contract, 13 example fixtures and
+    17 overlays, two relaxations and four bulk generators.
+  - Markdown-it dependency: `markdown-it` 15.0.2, exact, MIT.
+  - Defaults, logic and gate cases: `src/defaults/` and `src/logic/` for kinds, refusals, facts, sizes, the tree and the view
+    resolver, with the data-driven gate extended to the kind enum and the seven refusal codes.
+  - Markdown model: a token model with a size and block budget and a fallback to escaped source.
+  - Renderer, corpus, lint rules and plants: a closed allow-list renderer, the hostile-input corpus, ESLint rules R1 to R5 and
+    the plants that prove them.
+  - Exceptions, Stylelint grant and lint configuration: E-23 to E-30 and E-44 and E-45 as ruled, with the `ch` grant, the
+    table-cell floor (`min-width: 12ch`) and their leak tests.
+  - Skeleton, layout and surface freeze: the screen's regions, three tiers and the frozen surface.
+  - Document pane: the Rendered and Raw tabs, the eyebrow, links, tables that scroll in their own box and the raw block.
+  - Refusals and states: the seven refusals, loading, empty, not-found and error states and their announcements.
+  - Inspector, tree and Work Package links: file and Mission facts, the shell tree carrier and the linked Work Packages.
+  - Tiers, accessibility and edge cases: focus order and rings, forced colors, reduced motion, target size, scroll regions
+    that are tab stops only while they overflow, long paths, deep nesting, 1000 entries and a 256 KiB document.
+  - Integration and baselines: the 45 dark-theme baselines (255 in total), the row-to-story test in `test:scripts`, the host
+    composition test and NFR-006 timings (best of three after a warm-up).
 - `sk-drift-screen` (screen): the findings of a drift scan and the detail of the chosen one. Eleven properties (`status`,
   `report`, `selectedFinding`, `missionId`, `missions`, `rescanning`, `copyResult`, `refusalCode`, `now`, `labels`,
   `errorMessage`) and six events (`sk-select-finding`, `sk-rescan-drift`, `sk-copy-command`, `sk-open-mission`,
@@ -24,7 +54,7 @@
 - `sk-work-package-screen` `labels`: a lane has two kinds of word. The `state` hook draws the state badge, the dependency and
   subtask lane words and the cancellation badge; the `lane` hook draws the lane history's "from" and "to" words. A host that
   rewords a lane sets both (`#5`).
-- `ShellTierController` and `SHELL_MOBILE_STATE` are exported from the package entry (`@spec-kitty/mission-ui`) (`#5`).
+- `ShellTierController` and `SHELL_MOBILE_STATE` are exported from the package entry (`@moes-media/mission-ui`) (`#5`).
 - `ShellTierController` (`src/shell-tier.ts`): follows the enclosing `sk-mission-shell`'s public `tier` across shadow roots and
   sets the CSS custom state `:state(shell-mobile)` on its host while the tier is `mobile` (no attribute). The Work Package
   screen is its first consumer. Without `ElementInternals` custom states (or when `states.add` throws) it warns once per page and
@@ -110,6 +140,8 @@ design library are filed by the orchestrator at pull-request time, not from this
 | G-15 | `sk-context-sidebar` flips at 720px and its padding crowds a 3.5rem column | `compact` or icon-column mode | local icon column removed |
 
 ### Changed
+
+- The package is renamed from `@spec-kitty/mission-ui` to `@moes-media/mission-ui` and is licensed AGPL-3.0-or-later.
 
 - `sk-mission-sample` no longer self-registers (`src/index.ts` defines the tag once), composes `sk-notice` and
   `sk-section-header` through their slots, and exports `SkMissionRetryDetail` (typed events in

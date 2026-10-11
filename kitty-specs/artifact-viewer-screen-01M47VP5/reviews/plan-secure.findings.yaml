@@ -1,0 +1,153 @@
+schema: review-findings/v1
+complete: true
+phase: plan
+lens_group: secure
+mission: artifact-viewer-screen-01M47VP5
+findings:
+  - id: PLAN-SECURE-001
+    lens: resource-exhaustion
+    severity: 4
+    title: "Depth and count budgets are undefined for inline children, where markdown-it nests without limit"
+    evidence:
+      - artifact: "contracts/markdown-renderer.md \u00a7 Budget (maxTokens, maxDepth 'token level', maxNodes); research.md D-07 and R-05; plan.md IC-03 exit checks"
+      - artifact: "contracts/markdown-renderer.md \u00a7 Hostile corpus ('50,000 emphasis delimiters', 'nested > and nested - lists past maxDepth')"
+      - code: "probe, markdown-it 15.0.2 (npm pack), html:false linkify:false typographer:false: a 266,667-char paragraph of alternating '*a ', '_a ', '~~a ' openers closed in reverse returns md.parse().length == 3 top-level tokens, 159,999 inline children, max child level 40,000, in 96 ms. Top-level token max level is 1."
+      - code: "probe: 100 nested '> ' or nested lists stop at level 99 (maxNesting truncation, R-05 is right for block tokens), but inline emphasis/strike nesting is NOT capped by maxNesting."
+    claim: |
+      The plan states the checks as 'depth is checked on token level' and 'maxTokens 60000' without saying they walk token.children. md.parse() returns only block tokens plus one 'inline' token per paragraph, heading or cell; every emphasis, strong, strike, link, code and text token sits in inline.children. A scan of the returned array (the natural reading) sees 3 tokens at level 1 for a document that holds 160k inline tokens nested 40,000 deep, so maxTokens, maxNodes and maxDepth all pass vacuously. The model builder then recurses 40,000 deep (a RangeError caught as 'error' only if it is recursive) or, if it is iterative, the Lit render recurses 40,000 nested templates outside any try/catch, which throws inside the element update and leaves a blank pane (violates US6 AC2 and 'the pane is never empty'). R-05's mitigation and the planned depth test use nested block quotes, which do appear in the top-level array, so the test would pass against a broken inline check. The corpus shape '50,000 emphasis delimiters' is unspecified; unmatched delimiters (the common reading) parse to depth 1 and do not exercise this at all.
+    remediation: |
+      State in contracts/markdown-renderer.md § Budget that maxTokens, maxNodes and maxDepth are computed over the flattened stream including every inline token's children, that depth is the maximum of token.level (and open/close nesting) over all of them, and that the check runs BEFORE the model recursion, which must not recurse past maxDepth. Add three corpus entries: matched alternating nested emphasis/strong/strike (>= 25 and 40,000 deep), 60,001 inline tokens inside a single paragraph, and a table cell with deep inline nesting. Wrap the Lit render of the model in the same fail-closed fallback (or prove the depth cap makes a render throw impossible).
+
+  - id: PLAN-SECURE-002
+    lens: lint-enforceability
+    severity: 4
+    title: "Lint rule 4 (no href/src in templates) is a denylist that misses Lit property and boolean bindings, the actual injection sink"
+    evidence:
+      - artifact: "research.md D-06 rule (3) and (4) and the closing sentence ('(4) is sound for templates'); contracts/gates.md \u00a7 Lint rules for the renderer, items 3 and 4"
+      - code: "eslint-rules/index.mjs:6-9 (regexes are \\\\sclass\\\\s*= style, whitespace-prefixed, matched on TemplateElement value.raw)"
+      - code: "eslint.no-io.config.mjs header lines 7-8 ('Lit html`` template attributes that load URLs ... are not analysed') and the AssignmentExpression[left.property.name=...] selector, which sees JS assignments only"
+    claim: |
+      D-06 argues attribute names are static in Lit, hence a text selector for 'href'/'src' is sound. Static does not mean safe: Lit property bindings are static names with a prefix. <div .innerHTML=${text}>, <a .href=${dest}>, <iframe .srcdoc=${x}>, <a ?href=...> and .outerHTML/.src/.srcset are all valid templates that set a dangerous property from a document string. The planned rule 3 matches member expressions and identifiers (.innerHTML in JS), and the no-io rule matches AssignmentExpression, so neither sees '.innerHTML=' inside template text. Rule 4 as modelled on the class= regex requires whitespace before the name and an exact name, so '.href=', '?href=', 'xlink:href=', 'HREF =' with odd spacing and the no-space form role="link"href=... (accepted by the HTML parser) are also unmatched. The only remaining backstop is the dynamic corpus walk, which only catches sinks the 30-odd corpus entries happen to trigger. The 'sound for templates' statement is wrong and the gate is the plan's stated primary static control (operator ruling: no innerHTML).
+    remediation: |
+      Replace rule 4 with an allowlist rule scoped to logic/markdown/ and elements/sk-artifact-screen/: tokenise each html template's static chunks and error on (a) any binding whose name starts with '.' or '?' (property and boolean bindings), (b) any attribute name not in the contract's attribute allowlist (role, tabindex, title, scope, start, data-align, data-md, aria-label, aria-hidden) plus the '@click'/'@keydown' listener names, case-insensitively, regardless of whitespace or quoting before the name. Add self-test cases for '.innerHTML=${x}', '.href=${x}', '?href=${x}', 'HREF =', 'role="link"href=' (each violating) and for an allowed attribute (clean). Correct D-06's closing sentence.
+
+  - id: PLAN-SECURE-003
+    lens: link-classification
+    severity: 3
+    title: "javascript:/data:/vbscript:/file: never reach classifyLink; the inert-with-title behaviour the spec promises is not what markdown-it produces"
+    evidence:
+      - artifact: "spec.md N-Q12, FR-007, DA-19 ('everything else ... is inert text with the destination in title'); contracts/markdown-renderer.md \u00a7 Link rule row 7 and \u00a7 Hostile corpus ('[x](javascript:...) in every case and with embedded tab, newline and entity forms')"
+      - code: "probe, markdown-it 15.0.2: '[x](javascript:alert(1))', '[x](JaVaScRiPt:..)', '[x](&#106;avascript:..)', '[x](data:text/html,aa)', '[x](vbscript:x)', '[x](java\\\\tscript:x)', '<javascript:alert(1)>', '[x][r]' with '[r]: javascript:..' all produce a single text token holding the literal source (no link_open); '[x](http://)', '[x](//host/p)', '[x](%2e%2e/outside.md)' and '[x](<x:y>)'-style schemes DO produce link_open"
+    claim: |
+      markdown-it's validateLink (BAD_PROTO_RE: vbscript, javascript, file, data) rejects those destinations, so the parser emits literal text '[x](javascript:alert(1))' instead of a link. This is a safe outcome, but it differs from the plan's model in three testable ways: (1) rows 7 and 1 for those schemes are dead code for real documents (the link table unit tests pass, but the end-to-end behaviour differs); (2) the user sees the raw bracket syntax, not an inert link with a title, so the AC 'inert text with the destination in title' for javascript:/data: has no matching rendering and a corpus assertion written to that AC fails or, worse, gets weakened; (3) 'expected visible text' (R-08) for each of those corpus entries must be the literal source, which the plan does not say. The security property then depends on a library behaviour (validateLink default) that the plan neither records nor pins with a test.
+    remediation: |
+      In contracts/markdown-renderer.md and spec N-Q12 state the two-layer rule: markdown-it's validateLink turns javascript:, vbscript:, file: and data: (except image data URLs) into literal text; classifyLink is the second layer for everything validateLink lets through (other schemes such as x:y from autolinks, '//host', 'http://', relative). Give each corpus entry its true expected text (the literal source for the validateLink-rejected ones). Add a test that fails if md.validateLink is replaced or loosened (assert parse of '[x](javascript:1)' yields no link_open), and keep classifyLink unit rows for the schemes as defence in depth.
+
+  - id: PLAN-SECURE-004
+    lens: link-classification
+    severity: 3
+    title: "External href emitted as given with an unspecified and under-validated shape; destination invisible to the user"
+    evidence:
+      - artifact: "contracts/markdown-renderer.md \u00a7 Link rule rows 5 and 6 and 'Rendering' ('external and artifact links are a role=link; inert links carry title'); research.md D-08"
+      - code: "probe: markdown-it normalizeLink keeps scheme case ('HTTP://x' stays 'HTTP://x', hostname lowercased only for IDN-converted hosts), keeps userinfo, keeps mailto query"
+    claim: |
+      Row 5 lowercases the scheme but the host regex '^https?://[^/?#]+' is stated case-sensitive on the original string, so 'HTTP://EXAMPLE.COM' is inert by accident (fail closed but inconsistent with row 5's own case-folding; the unit table only lists JaVaScRiPt:). More importantly the emitted event carries the whole normalized destination: userinfo ('http://github.com@evil.example.invalid/', a classic spoof, accepted by [^/?#]+), no length bound (a 20,000-char destination fits maxLineChars and is put in the event; titleMax truncates only the title), and for mailto only 'a non-empty address follows', so 'mailto:?bcc=a@x&body=...' (prefilled recipient and body, a phishing vector) passes. Separately an external link carries no visible destination at all: title exists only on inert links, so the link text can read 'github.com/spec-kitty' while the href is elsewhere and a user cannot hover to see it before the host acts. The host re-validation promise does not repair spoofing, only scheme.
+    remediation: |
+      Specify in row 5/6: match the scheme and '^https?://' case-insensitively; reject (inert) an authority containing '@' (userinfo), or a destination longer than a data-held maxDestinationChars (suggest 2048); for mailto require '^mailto:[^?#\s]+$' with the address containing exactly one '@' and drop-to-inert when a query or fragment is present. Put the truncated destination in `title` for external links too (the title is already an allowed document-derived attribute) and amend the 'title only on inert links' sentence in the attribute allowlist. Add unit rows: 'HTTP://x', 'http://a@b/', 'mailto:?bcc=x', a 3000-char https URL.
+
+  - id: PLAN-SECURE-005
+    lens: link-classification
+    severity: 3
+    title: "The host contract for sk-open-link (host re-validates, screen opens nothing) exists only in research D-08"
+    evidence:
+      - artifact: "research.md D-08 last sentences ('the host contract states the host re-validates the scheme before opening')"
+      - artifact: "contracts/sk-artifact-screen.md \u00a7 Events (no sk-open-link payload semantics); data-model.md line 64 ('| sk-open-link | { href } | external markdown link')"
+      - artifact: "spec.md FR-032, EV-2 (no host obligation)"
+    claim: |
+      Safety of emitting a document-controlled href as a composed, bubbling event depends on the dashboard and Kitty Desktop host re-validating the scheme and opening it out of process. That obligation is stated in one research paragraph; the contract an integrator reads (contracts/sk-artifact-screen.md, the @fires JSDoc, and so the custom-elements manifest) says nothing. No test or gate checks that the obligation is documented. 'The stated host contract' is therefore not actually stated where it binds.
+    remediation: |
+      Add to contracts/sk-artifact-screen.md § Events and to the @fires description of sk-open-link (so it lands in the manifest): the href is untrusted document content, already limited to http, https and mailto by the screen, and the host MUST re-validate the scheme, MUST NOT navigate the host window or webview to it, and SHOULD show the destination before opening. Mirror as an EV-2 sentence in spec.md. Add a manifest-text assertion (the existing manifest gate can carry it) that the description contains the word 'untrusted'.
+
+  - id: PLAN-SECURE-006
+    lens: corpus-and-plants
+    severity: 3
+    title: "Corpus assertion (4) cannot see data: or failed image loads, and the two plants prove only one sink each"
+    evidence:
+      - artifact: "contracts/markdown-renderer.md \u00a7 Hostile corpus assertion (4) 'a PerformanceObserver records no resource load', and Plants (a), (b); contracts/gates.md \u00a7 Plants"
+      - code: "gates/plants/unit-tests/plant.json and gates/plants/eslint/plant.json (one plant object each, expectFailPattern is a token that must appear in output); scripts/gate-proof/lib.mjs:238-250 (a plant must exit non-zero and print its token)"
+    claim: |
+      Resource Timing does not report data: URLs and, depending on the browser, omits requests that fail at network level, which is exactly what a CI sandbox does to 'http://remote/p.png'; the browser test harness (Vite client, HMR) also creates resource entries, so the assertion needs a baseline and a positive control that the observer sees a deliberately created load (R-08 says every 'no X' needs one, but the contract does not list it for (4)). Image loading is therefore defended by assertion (1), the element allowlist, alone; the plants do not exercise it: plant (a) proves only the href-attribute path, plant (b) proves only the DOMParser lint message, and lint rules 2, 4 and 5 and the corpus element/attribute assertions have no proof that they bite. 'corpus escape' must also be the literal token the corpus test prints on failure and must be absent from a clean run (lib.mjs:235), which the contract does not require.
+    remediation: |
+      Add to the contract: assertion (4) uses a locally served image URL (so a real load succeeds and is recorded), filters entries to those after render start, and carries a positive control (a test-created <img> is observed). Add two plants: (c) render.ts emits an <img src> for the image node (expect 'corpus escape' via the element allowlist), (d) a property binding '.innerHTML=${text}' in render.ts (expect 'corpus escape' via assertions 1-3, and, once PLAN-SECURE-002 is fixed, a lint plant for it). State that every corpus failure message begins with the token 'corpus escape'.
+
+  - id: PLAN-SECURE-007
+    lens: xss-injection
+    severity: 3
+    title: "Image alt is not in the token's attrs, and an image or link nested in a link yields nested controls and double events"
+    evidence:
+      - artifact: "contracts/markdown-renderer.md \u00a7 Node union ('image { alt, destination }') and Rendering ('Images')"
+      - code: "probe, markdown-it 15.0.2: '![a *b* ![c](d) `e`\\\\nf](http://x \"ti\")' gives an image token with attrs [src, alt=''] and the alt text only in image.children (text, em_open, nested image, code_inline, softbreak); '[![a](http://r/p.png)](b.md)' yields link_open, image, link_close"
+    claim: |
+      The model must derive alt from image.children (attrs 'alt' is empty), and those children include em, nested image, code and softbreak tokens that the node mapping does not describe for this position; the plan neither says how alt is flattened nor how a nested image or an unsupported child inside alt is treated (fallback, or flatten to text). Separately the contract makes an external-destination image placeholder 'the whole placeholder is the external link control', and an image inside a link is common ('[![badge](https://...)](https://...)'): the result is an <a role=link> inside an <a role=link>, each with Enter and click handlers; one click bubbles from inner to outer and emits two events (sk-open-link for the image and sk-select-artifact or sk-open-link for the link), so assertion (5) 'exactly the expected event' cannot even be stated. The corpus lists links in table cells, headings and emphasis but not image-in-link or link-in-image-alt.
+    remediation: |
+      In the contract: image.alt is the concatenated plain text of image.children (text and code content, softbreak as a space; emphasis flattened; a nested image contributes its own alt; the result truncated to a data-held maxAltChars). An image that is a descendant of a link renders as plain text (no control), and links never nest controls: a link inside an image alt is flattened to text. Add corpus entries '[![a](http://r/p.png)](b.md)', '![[l](b.md)](http://r/p.png)' and nested-image alt, asserting exactly one event per activation and no nested a element.
+
+  - id: PLAN-SECURE-008
+    lens: xss-injection
+    severity: 2
+    title: "Token attribute details the model must read are unspecified (table alignment as a style string, list start, footnote-like definitions, link title)"
+    evidence:
+      - artifact: "contracts/markdown-renderer.md \u00a7 Node union ('Task-list markers, footnotes and definition lists ... appear as literal text'), What the renderer may write ('data-align a keyword chosen by a switch', 'start digits')"
+      - code: "probe, markdown-it 15.0.2: table cells carry attrs [['style','text-align:center']] (alignment exists only as a CSS string, none/left/right/center); ordered_list_open attrs [['start',3]] (a number; absent for 1; 9-digit limit enforced by the parser); '[^1]' with a '[^1]: n' definition becomes a link to 'n' with text '^1'; link_open carries [['href',..],['title',..]] with the title from the document"
+    claim: |
+      The contract says table alignment is a switch to a keyword, but the only source is a 'style' attribute string, so the implementation either parses it loosely (an 'includes' test) or copies an attribute; it must be an exact-match switch over the three known strings with 'none' as default, and the model must never forward attrs. 'start' is already a number from markdown-it, so the digits regex is redundant but must be applied to String(start) and a missing attr means 1. The footnote sentence is wrong for '[^1]: n': it produces a link, not literal text, so a corpus expectation written from the contract fails. The link/image 'title' (document text) is read by index or name unspecified; reading attrs by index risks picking up the document title as the href order changes.
+    remediation: |
+      Add a short 'token to node' table to the contract: alignment = exact match of attrs style to 'text-align:left|center|right' else none; start = Number.isSafeInteger and 0..999999999 else 1; href and src read by attribute name (never index); the 'title' attribute never read; model functions take only {type, tag, content, level, attrs-by-name}. Fix the footnote sentence (a definition '[^1]: n' becomes an ordinary reference link) and use that as a corpus entry.
+
+  - id: PLAN-SECURE-009
+    lens: unicode-spoofing
+    severity: 2
+    title: "R-09 cites the raw tab as a mitigation, but the raw tab shows bidirectional controls invisibly and reorders identically"
+    evidence:
+      - artifact: "research.md R-09 ('accepted residual: text is shown as it is; the raw tab shows the same characters')"
+      - artifact: "research.md D-15 (raw is one pre text binding)"
+    claim: |
+      The raw tab renders U+202E, U+2066 to U+2069 and similar as zero-width format controls, so it displays the same reordered text as the rendered tab and reveals nothing; it is not a mitigation. For a viewer whose documents are agent-written, link text and the inert-link title are exactly where reordering misleads (and external-link destinations are hidden, see PLAN-SECURE-004). The residual is a legitimate operator decision, but the plan records it with a wrong justification, and it was recorded for CP-1 without an option.
+    remediation: |
+      FORK: (a) correct R-09 to 'accepted, no mitigation' and have the operator rule at CP-1; (b) in the raw and fallback pre only, render U+202A to U+202E, U+2066 to U+2069 and U+200E/F as visible replacement glyphs (text transform in source-parts.ts, data-held code point list); (c) additionally wrap each document text container in dir='auto' with the CSS 'unicode-bidi: isolate' so overrides cannot leak across blocks. Recommend (a) plus (b).
+
+  - id: PLAN-SECURE-010
+    lens: link-classification
+    severity: 2
+    title: "Relative-link resolution leaves empty segments, trailing slash and legitimate spaces undefined"
+    evidence:
+      - artifact: "contracts/markdown-renderer.md \u00a7 Link rule rows 1 and 8; research.md D-08"
+    claim: |
+      Row 8 rejects a decoded destination containing any row-1 character, and row 1 includes whitespace, so '[x](<my file.md>)' (normalised to my%20file.md) can never link to a listing entry named 'my file.md' (ArtifactPath only forbids line breaks per research.md line 12). Row 8 also does not say what happens to empty segments ('a//b.md'), a trailing slash, or a '.' only destination; 'string operations only' leaves it to the implementer whether empty segments are dropped (resolving to a different path than written) or kept. Fail-closed on the first, ambiguity on the rest.
+    remediation: |
+      Row 8: after decoding reject only C0, DEL, U+0080-U+009F, NUL and backslash (not the space character U+0020); state that an empty segment makes the link inert; a trailing slash or '.'/'' result is inert; add unit rows for 'my%20file.md', 'a//b.md', 'dir/', '.', '%2e%2e/%2e%2e/x.md' and double-encoded '%252e%252e/x.md' (decoded once, literal, inert).
+
+  - id: PLAN-SECURE-011
+    lens: supply-chain
+    severity: 2
+    title: "Supply-chain record omits the advisory fixed by the pinned version and its provenance check is circular"
+    evidence:
+      - artifact: "plan.md Technical Context ('not below the patched versions of GHSA-253c-mchw-3w2r, GHSA-6v5v-wf23-fmfq, GHSA-38c4-r59v-3vqw'); research.md D-05 ('provenance of the tarball integrity hash from the lockfile')"
+      - code: "gh api repos/markdown-it/markdown-it/security-advisories lists GHSA-r7fv-28h4-cvq7 (smartquotes, patched 15.0.2 and 14.3.2, published 2026-09-11) and GHSA-6vfc-qv3f-vr6c (newline ReDoS, patched 12.3.2) which the plan does not name; GHSA-38c4-r59v-3vqw is not in that list"
+      - code: "npm view markdown-it@15.0.2 dist: integrity sha512-q4IGxMv56jCq...E6Qw== with registry signatures and no attestations/provenance entry; npm audit on a scratch install of 15.0.2: 0 vulnerabilities; published 2026-09-11, 14.3.2 published a day later"
+    claim: |
+      The pin (15.0.2) is correct and is exactly the version that fixes the newest advisory, but the DIRECTIVE_051 record does not name that advisory and cites one id (GHSA-38c4-r59v-3vqw) I could not find among the repository's published advisories; the record must be reproducible. 'Provenance of the integrity hash from the lockfile' is circular (pnpm writes the lockfile from the same registry response). The package has registry signatures but no npm provenance attestation, which should be recorded as the actual evidence level.
+    remediation: |
+      In D-05 record: the full advisory list for markdown-it with each patched version (including GHSA-r7fv-28h4-cvq7 and GHSA-6vfc-qv3f-vr6c; re-check or drop GHSA-38c4-r59v-3vqw), the registry dist.integrity compared against the lockfile entry, the result of 'npm audit signatures' (signatures present, no provenance attestation), the publish date, and a re-run of the advisory query at wrap-up (three advisories landed in three months).
+
+  - id: PLAN-SECURE-012
+    lens: lint-enforceability
+    severity: 2
+    title: "Import-restriction rule must cover subpaths, re-exports and require; as written only 'importable only by parse.ts' is stated"
+    evidence:
+      - artifact: "research.md D-06 rule (1); contracts/gates.md item 1"
+      - code: "eslint.no-io.config.mjs uses no-restricted-imports patterns (the same mechanism); markdown-it 15.0.2 package.json exports expose '.' and './browser' (bundled build)"
+    claim: |
+      'markdown-it' as a bare specifier is covered by a plain no-restricted-imports path, but 'markdown-it/browser' (the documented browser export, a different bundle with its own copy of the parser), 'export ... from', 'require()' in .cjs/.js files under packages/*/src (the glob covers script files) and 'import type' leave a second parser instance or an unrestricted entry point. Tests are out of scope of the rule (stated), so a test may import it, which is acceptable only if the test cannot ship.
+    remediation: |
+      Specify the rule as no-restricted-imports with both 'markdown-it' and the pattern 'markdown-it/**', plus a no-restricted-syntax for CallExpression[callee.name='require'][arguments.0.value=/^markdown-it/]; apply the exemption to parse.ts by an ESLint 'files' override for that single path, with a leak plant (an import in model.ts) in the self-test.

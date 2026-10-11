@@ -1,0 +1,421 @@
+schema: review-forks/v1
+phase: plan
+note: findings with more than one valid remedy; held for the operator (HALT)
+findings:
+- id: PLAN-CORRECT-001
+  lens: correctness-and-contract-fidelity
+  severity: 4
+  title: Renderer lint rule 2 bans .set( / .use( / .enable( / .disable( across packages/*/src and would fail existing code
+  evidence:
+  - artifact: "contracts/gates.md \xA7 Lint rules for the renderer (rule 2: '.enable(, .set(, .disable( only in parse.ts ... Rules apply to packages/*/src/**')"
+  - artifact: research.md D-06 (2)
+  - code: packages/mission-ui/src/elements/sk-shell-tree/sk-shell-tree.ts:155 and :181 (this.openState.set(...))
+  - code: packages/mission-ui/src/logic/summary.ts:14 (owner.set(lane, group))
+  claim: 'FORK: the rule as written is a name-based no-restricted-syntax selector on member calls named set, use, enable and disable, scoped to every file under packages/*/src except parse.ts. Map.prototype.set
+    is called in existing, merged code (sk-shell-tree.ts:155 and :181, logic/summary.ts:14), so the rule turns pnpm lint red on the base before this mission writes a line, and every future Map.set in buildArtifactTree
+    or the link resolver. An implementer would have to narrow the rule ad hoc, which is exactly the kind of un-reviewed weakening of a security gate the plan wants to prevent. A selector cannot tell a markdown-it
+    instance from a Map.'
+  remediation: 'Two valid options, pick one in the plan. (a) Scope rule 2''s set/use/enable/disable selectors by file glob to src/logic/markdown/** (minus parse.ts) and src/elements/sk-artifact-screen/**,
+    and keep render/renderInline/ renderToken/renderAttrs/.renderer repo-wide; add a leak case that proves the narrowed glob still refuses .use( in model.ts. (b) Drop set/use/enable/disable from the lint
+    list and make the guarantee structural: parse.ts exports only parseTokens(source) and never the MarkdownIt instance, which rule 1 (import allowed only in parse.ts) plus an export-shape test (parse.ts
+    has exactly one export) enforce. Either way, add an IC-04 exit check that pnpm lint is green on the unchanged base files.'
+  lens_group: correct
+  refute_reason: FORK stands; gates.md rule 2 bans .set( outside parse.ts across packages/*/src and sk-shell-tree.ts:155,181 and logic/summary.ts:14 call Map.set on the merged base.
+- id: PLAN-CORRECT-009
+  lens: correctness-and-contract-fidelity
+  severity: 3
+  title: 'Proposed exceptions E-22 to E-24 cannot express the renderer''s CSS: ch unit unsupported, text-align, code white-space and list properties missing'
+  evidence:
+  - artifact: 'contracts/gates.md E-22 (''max-width: 68ch''), E-23, E-24; contracts/markdown-renderer.md (data-align keyword attribute, pre/code blocks, ul/ol/li, hr)'
+  - code: 'stylelint.config.mjs:414 (''unit-allowed-list'': [''%'', ''fr'']) and :355-361 (exceptions can unlock only px and em through pxProperties and emProperties)'
+  - code: stylelint.config.mjs:60-148 (property-allowed-list is LAYOUT_PROPERTIES only; text-align, white-space, list-style, vertical-align, font-style, text-decoration, cursor are not in it)
+  claim: 'FORK: (1) E-22 pins ''max-width: 68ch'', but the exception machinery has no way to allow the ch unit (only px and em exist as unit grants), so E-22 as approved at CP-1 cannot be encoded without
+    a tooling change the plan does not mention. (2) The renderer emits data-align (left, center, right) on table cells, which needs text-align, absent from E-23''s allowed properties and from LAYOUT_PROPERTIES.
+    (3) Rendered fenced and indented code (pre code in prose-styles.ts) needs white-space and overflow handling, but E-24 grants white-space only to source-parts.ts. (4) lists and block quotes need list-style,
+    padding-inline-start, font-style, which are not listed. An exception discovered after CP-1 is a new operator decision mid-implementation.'
+  remediation: 'Complete the E-22 to E-24 tables before CP-1 from the markdown-renderer.md element list (add text-align with keyword values left, center, right; white-space and overflow-wrap keywords for
+    code in prose-styles.ts; the list and quote properties actually needed; vertical-align if kept). For 68ch choose one: (a) add a chProperties grant to exceptionOverrides() (IC-06 tooling edit with proof
+    cases, named in the plan) or (b) express the paragraph measure without the ch unit (for example a token-based max-width, S-A1 decides) and drop 68ch from E-22.'
+  lens_group: correct
+  refute_reason: FORK stands; stylelint.config.mjs unit-allowed-list grants only %, fr, px, em (no ch) and LAYOUT_PROPERTIES has no text-align, while E-22 pins max-width 68ch and E-23/E-24 omit text-align
+    for data-align cells and white-space for prose code.
+- id: PLAN-CORRECT-013
+  lens: internal-consistency-and-feasibility
+  severity: 3
+  title: 'Write-scope disjointness broken: the truncation note lives in document-parts.ts (IC-07, chain X) but is assigned to IC-09 (chain Y)'
+  evidence:
+  - artifact: "plan.md IC-09 ('the truncation note (DA-10) in the document pane header band. FR-021') versus IC-07 ('toolbar-parts, tab-parts, document-parts, source-parts, prose-styles') and \xA7 Shared\
+      \ files ('every *-parts.ts: the owning WP replaces stub bodies')"
+  - artifact: "contracts/sk-artifact-screen.md \xA7 Part signatures (renderDocument(...) 'rendered body, the redaction line, the truncation note') and \xA7 Regions (document-pane: truncation note)"
+  claim: 'FORK: renderDocument in document-parts.ts owns the truncation note, and that file is IC-07''s. IC-09 is declared parallel to chain X with disjoint writes and its affected surface is inspector-parts.ts
+    only, yet it must make AV-17 pass, whose note renders in the document pane. Either IC-09 edits document-parts.ts (breaking disjointness and risking the merge the orchestrator performs before IC-10)
+    or AV-17 cannot pass in chain Y.'
+  remediation: Two valid options. (a) Move the truncation note into IC-07's scope (it already owns renderDocument and the redaction line), leaving IC-09 only the AV-17 story and its test, which reads the
+    note through the screen. (b) Create a separate stub part (for example listing-note-parts.ts, signature in 'Part signatures') in IC-06 and assign it to IC-09. Update IC-07/IC-09 text, FR mapping and
+    the Shared files table to match.
+  lens_group: correct
+  refute_reason: FORK stands; contract Part signatures put the truncation note in renderDocument (document-parts.ts, IC-07 chain X) but plan IC-09 (chain Y, inspector-parts.ts only) is assigned the truncation
+    note in the document pane header band.
+- id: PLAN-SECURE-009
+  lens: unicode-spoofing
+  severity: 2
+  title: R-09 cites the raw tab as a mitigation, but the raw tab shows bidirectional controls invisibly and reorders identically
+  evidence:
+  - artifact: 'research.md R-09 (''accepted residual: text is shown as it is; the raw tab shows the same characters'')'
+  - artifact: research.md D-15 (raw is one pre text binding)
+  claim: 'The raw tab renders U+202E, U+2066 to U+2069 and similar as zero-width format controls, so it displays the same reordered text as the rendered tab and reveals nothing; it is not a mitigation.
+    For a viewer whose documents are agent-written, link text and the inert-link title are exactly where reordering misleads (and external-link destinations are hidden, see PLAN-SECURE-004). The residual
+    is a legitimate operator decision, but the plan records it with a wrong justification, and it was recorded for CP-1 without an option.
+
+    '
+  remediation: 'FORK: (a) correct R-09 to ''accepted, no mitigation'' and have the operator rule at CP-1; (b) in the raw and fallback pre only, render U+202A to U+202E, U+2066 to U+2069 and U+200E/F as
+    visible replacement glyphs (text transform in source-parts.ts, data-held code point list); (c) additionally wrap each document text container in dir=''auto'' with the CSS ''unicode-bidi: isolate'' so
+    overrides cannot leak across blocks. Recommend (a) plus (b).
+
+    '
+  lens_group: secure
+  refute_reason: research.md R-09 cites "the raw tab shows the same characters" while D-15 makes raw a plain pre text binding, which applies the same bidi reordering, so it is no mitigation and no option
+    was recorded.
+- id: PLAN-DESIGN-002
+  lens: module design
+  severity: 3
+  title: The shared sk-retry-load union has no neutral home and requires editing
+  evidence:
+  - artifact: 'research.md D-04 (''The edit to #5''s one declaration is made by IC-06 if #5 is present''); plan.md ''Build base'' table row sk-retry-load; contracts/sk-artifact-screen.md ''Events'''
+  - artifact: '#5 contracts/sk-work-package-screen.md Events table: sk-retry-load payload { missionId, wpId, target } declared by the Work Package screen (read from feat/work-package-screen-5)'
+  - code: 'packages/mission-ui/src/elements/sk-mission-sample/sk-mission-sample.ts:10 and :26 (the existing pattern: the payload type and the @fires live in the one declaring element)'
+  claim: 'One HTMLElementEventMap key (sk-retry-load) must have exactly one declare global. The plan makes the key''s single declaration live in #5''s screen file and has this mission''s IC-06 rewrite it
+    to a union. That file is outside IC-06''s write scope (the Shared files table never lists sk-work-package-screen.ts), it only exists on base A or after #5 is implemented, and on base B-without-code
+    the mission invents a declaration that #5 must later adopt. Two elements each owning half of one shared type, with the edit direction depending on landing order, is the opposite of one home. SkRetryLoadDetail
+    also appears in the #5 defaults contract (retryDetail returns SkRetryLoadDetail), so renaming it to SkWorkPackageRetryDetail ripples into #5''s tasks.'
+  remediation: 'FORK: (a) a neutral file, for example src/retry-types.ts (as shell-types.ts is neutral for shell events), exporting SkWorkPackageRetryDetail, SkArtifactRetryDetail, the union SkRetryLoadDetail
+    and the single declare global; both screens import it, and whichever mission lands first creates it (the second only adds its member). Recommended. (b) keep #5''s file as the home and make the edit
+    a named, reported exception in the Shared files table with the exact one-line diff. Whichever is chosen, add the file or the row to the Shared files table and to the merge-order list.'
+  lens_group: design
+  refute_reason: research.md D-04 has IC-06 edit
+- id: PLAN-DESIGN-005
+  lens: module design
+  severity: 3
+  title: buildArtifactTree can hand the shell a current id that no row shows as selected, and an unreadable leaf cannot be opened
+  evidence:
+  - artifact: research.md D-16 ('unavailable is !readable', current = the selected leaf); D-04 (a link to an unreadable entry emits sk-select-artifact so the host shows the refusal); plan.md IC-02 'the
+      selected leaf current'
+  - code: packages/mission-ui/src/elements/sk-shell-tree/sk-shell-tree.ts:189-190 (a leaf is a route only when unavailable is not true and href is non-empty; selected is route && id === current)
+  - code: packages/mission-ui/src/elements/sk-mission-shell/sk-mission-shell.ts:494-501 (any non-empty tree.current removes aria-current from the nav item)
+  claim: 'For an entry with readable false the helper marks the node unavailable. The shell then renders it as a non-link row with no click handler (so a user cannot select it from the tree and see the
+    refusal), and if the host nevertheless selects it (via a markdown link, which D-04 allows) current is non-empty, the shell clears aria-current on the nav item, and no tree row is selected: the page
+    has no aria-current at all. The contract for current says ''the id of the selected leaf or empty'' with no rule for this case.'
+  remediation: 'FORK: (a) never mark a leaf unavailable; keep it a normal selectable row with a text-bearing meta word (''unreadable'', from defaults/) so the refusal is reachable and aria-current stays
+    true. (b) keep unavailable and return current '''' whenever the selected leaf is unavailable (so the shell keeps the nav item current), and document that unreadable entries are reached only by link.
+    Add the case to the IC-02 tree tests and a shell-composition test.'
+  lens_group: design
+  refute_reason: 'Verified: sk-shell-tree selects only routes, and the shell clears aria-current on any non-empty current, so an unavailable selected leaf leaves no aria-current; FORK stands.'
+- id: PLAN-DESIGN-006
+  lens: module design
+  severity: 3
+  title: expandedIds write-back from sk-tree-toggle rebuilds the whole tree DOM and loses focus; ancestor-forced-open undoes a manual collapse
+  evidence:
+  - artifact: 'quickstart.md host snippet: tree.addEventListener(''sk-tree-toggle'', (e) => toggle(e.detail)) then buildArtifactTree(..., { expandedIds }); research.md D-16 (ancestors of the selection are
+      expanded on every build, AV-19 ''documented trade-off'')'
+  - code: packages/mission-ui/src/elements/sk-shell-tree/sk-shell-tree.ts (the items property doc 'Replacing the array resets folder state'), :163 (willUpdate resets openState on items change), :235 (keyed(this.items,
+      ...) recreates every details element when the array identity changes)
+  claim: buildArtifactTree returns a new nodes array on every call. If the host writes the toggled folder into expandedIds and rebuilds (the quickstart shows exactly that), keyed() throws away and re-creates
+    every folder and leaf (up to 1000 entries), the focused summary element is destroyed, keyboard focus drops to the body, and the user's scroll position in the sidebar can reset. Separately, an ancestor
+    of the selected path is forced open on each build, so the user cannot collapse the folder that contains the open file at all (the plan calls this a trade-off but it makes the toggle event pointless
+    for that folder and, with write-back, produces a visible flicker). The plan never says whether the host must write back.
+  remediation: 'FORK: (a) document that the host must NOT write toggles back: the shell tree keeps its own open state while items is stable, expandedIds is the initial and selection-driven state only, and
+    the host rebuilds only when entries or selectedPath change (memoised on those identities); remove the write-back from quickstart. (b) keep write-back but make buildArtifactTree return the previous array
+    when the output is structurally equal (an optional previous argument), and drop the forced-open rule for folders the user explicitly collapsed. Add a test in the shell composition: toggle a folder,
+    the focused summary survives.'
+  lens_group: design
+  refute_reason: 'Verified: keyed(items) recreates all rows, quickstart writes toggles back and rebuilds, and D-16 forces ancestors open; FORK stands.'
+- id: PLAN-DESIGN-013
+  lens: data-driven gate
+  severity: 3
+  title: E-22 is not implementable with the existing exception mechanism (ch unit, unstrict, px on max-width) and the plan does not say the mechanism must change
+  evidence:
+  - artifact: 'contracts/gates.md E-22: ''pinned literals: max-width: 800px, max-width: 68ch, line-height: 1.65, text-decoration: underline, cursor: pointer'''
+  - code: stylelint.config.mjs:13-41 (max-width and line-height are in STRICT_PROPERTIES), :414 (base unit-allowed-list ['%','fr']), :321-364 (the only unit grants are pxProperties and emProperties; no
+      other unit can be granted), :326 and :339 (unstrict is the only way to take a strict property out)
+  claim: 'max-width: 68ch needs the ch unit, which unit-allowed-list rejects and the EXCEPTIONS merge cannot grant (it knows only px and em). max-width and line-height are strict properties, so pinning
+    them needs unstrict entries and the pinned-values form, which E-22 does not name. text-decoration and cursor are not in LAYOUT_PROPERTIES and need to be added to the property allow-list with pinned
+    keywords. IC-06 owns this config and expects ''proof cases'', but would discover mid-work that the exception machinery needs a new unit grant, a change to a gate that the plan lists as unchanged.'
+  remediation: 'Rewrite E-22 as a concrete EXCEPTIONS entry (files, properties, unstrict, values, pxProperties) and add to IC-06 an explicit sub-task ''add chProperties to the exception merge, with unit-allowed-list
+    and declaration-property-unit-disallowed-list cases and a reverted-must-fail proof''. FORK for the measure: (a) extend the mechanism to ch (small, general); (b) express the paragraph measure with the
+    reading-width token request G-19 and keep only max-width: 800px as px, dropping 68ch.'
+  lens_group: design
+  refute_reason: stylelint.config.mjs exceptionOverrides builds unit-allowed-list from only '%','fr' plus px/em via pxProperties/emProperties, so max-width 68ch cannot be granted, and E-22 does not name
+    unstrict or a ch mechanism.
+- id: PLAN-DESIGN-015
+  lens: build base and exceptions
+  severity: 2
+  title: 'FORK: E-25 hand-paints a segmented look although the repo already adopts the library''s segmented-choice family under E-01'
+  evidence:
+  - artifact: research.md D-13 (candidates (a) sk-button role=tab, (b) raw button with token paint) and G-16 ('No tabs or segmented-choice element'); contracts/gates.md E-25 (border, per-corner radius,
+      background, color, padding, font-size, font-weight and focus-ring grants)
+  - code: 'packages/mission-ui/src/library-sheets.ts:15 (segmentedChoiceSheet adopted); eslint.config.mjs:95-113 (E-01: the filter group''s raw button with the class sk-segmented-choice__item); stylelint.config.mjs
+      E-14 (the joined segmented look already needed an exception)'
+  claim: 'The plan evaluates only two controls and treats the segmented look as new paint, which re-implements a library primitive''s look with CSS (charter ''Elements over CSS'') and adds a second, larger
+    stylelint grant for the same visual as E-14. A third candidate exists: the adopted segmented-choice family used as E-01 does, with role=tab and aria-selected on the raw button. Whether the family''s
+    selectors key on aria-pressed or on a modifier class is unverified here (the library package is not installed in this checkout), so the spike must settle it.'
+  remediation: 'FORK: (a) add variant (c) to S-A5, ''raw button with the segmented-choice family classes plus role=tab'', and prefer it when its active look works with aria-selected or a modifier class;
+    E-25 then shrinks to the ESLint raw-button allowance and a classOnly row, with no Stylelint paint grant. (b) if (c) fails, keep E-25 but cite the spike evidence for each paint property. Record the finding
+    that the library has the family in G-16.'
+  lens_group: design
+  refute_reason: FORK stands; research D-13 weighs only sk-button role=tab versus a raw painted button, while library-sheets.ts adopts segmentedChoiceSheet and eslint.config.mjs E-01 already allows a raw
+    button with the sk-segmented-choice__item class.
+- id: PLAN-DESIGN-017
+  lens: build base and sequencing
+  severity: 3
+  title: 'FORK: the plan leaves Base A or B open, so five branch points make IC-01, IC-02 and IC-06 non-deterministic for task generation'
+  evidence:
+  - artifact: 'plan.md ''Build base'' (''The plan does not choose''); branch points: contracts re-vendor mechanism (--sha versus --from-repo), REVIEW_CYCLE_ARTIFACT_KIND (import versus define), sk-retry-load
+      (edit #5 versus declare), exception numbering (E-17 to E-21 present or documented gap), facts sheet (exists or create), contract literals (#5''s counts)'
+  claim: Each of those branch points changes which files an IC writes and which tests it carries, so the tasks phase cannot give exact owned_files or exit checks without picking a base. The plan's own statement
+    that the orchestrator asks the operator at dispatch moves a design decision past planning, after the lanes and write scopes are fixed.
+  remediation: 'FORK: (a) decide at CP-1 or before tasks: Base A only (IC-01 is blocked until #5 merges; state this as the entry condition, and shrink every branch point to the single present case); (b)
+    keep both but add a delta table ''IC / Base A / Base B'' listing the exact file differences for the six branch points above, so tasks can be generated for either and the orchestrator picks one at dispatch.
+    Recommended: (a), because #5 is planned and tasked and Base B has the highest rebase risk for the contract files.'
+  lens_group: design
+  refute_reason: FORK stands; plan.md Build base states 'The plan does not choose' between Base A and B and leaves the orchestrator to ask at dispatch, while its own table shows IC-01 file content varying
+    by base (re-vendor mechanism, retry-load, E-17 to E-21 gap, REVIEW_CYCLE).
+- id: PLAN-DESIGN-019
+  lens: IC reviewability
+  severity: 2
+  title: 'FORK: IC-01, IC-02 and IC-06 each carry more than one reviewable concern'
+  evidence:
+  - artifact: plan.md IC-01 (baseline, contract re-vendor, fixtures and overlays, two relaxations, dependency install with supply-chain record, spike S-A0); IC-02 (six defaults modules, six logic functions,
+      data-driven gate extension, LabelHooks edit); IC-06 (skeleton, layout, eight stubs, five dispatch methods, surface freeze, facts sheet, shell-frame option, E-22 to E-27 in two lint configs, manifest
+      regeneration)
+  claim: A reviewer must judge a security-sensitive dependency decision, a contract re-pin and a fixture inventory in one WP; the gate extension (a change to a gate the whole repo depends on) rides with
+    vocabulary logic; and IC-06 combines the public surface freeze with three lint-config changes. The review of the gate and exception changes needs different evidence (reverted-must-fail proofs) than
+    the element skeleton (event tests).
+  remediation: 'FORK: (a) split into IC-01a (re-vendor, relaxations, fixtures), IC-01b (markdown-it dependency, supply-chain record, S-A0), IC-02a (defaults and logic), IC-02b (data-driven extension), IC-06a
+    (exceptions and lint config with proof cases), IC-06b (skeleton and surface freeze); the serial foundation absorbs the extra WPs with no cost in parallelism. (b) keep the grouping and add a per-concern
+    exit-check subsection and a reviewer instruction to review each concern against its own evidence.'
+  lens_group: design
+  refute_reason: FORK stands; plan.md IC-01, IC-02 and IC-06 each bundle several concerns (dependency supply-chain record with contract re-pin, gate extension with vocabulary logic, surface freeze with
+    three lint-config changes), as quoted.
+- id: PLAN-DESIGN-022
+  lens: dynamic-pipeline alignment
+  severity: 3
+  title: 'FORK: the labels hooks cover words only, so icons, Work Package link kinds, container segment, copy and budget cannot arrive as props although the spec says they come in as data'
+  evidence:
+  - artifact: spec.md 'The dynamic-pipeline constraint' ('Artifact kind words, kind icons, folder names, media-type labels, refusal wording, the render budget and badge tones come in as data' and 'a later
+      pipeline ... must need no change to this element, only different props'); FR-031 (tab labels and notices come from defaults/ or the labels property)
+  - artifact: 'contracts/defaults.md: ARTIFACT_KIND_WORDS icon, WORK_PACKAGE_LINK_KINDS, WP_CONTAINER_SEGMENT, TOKEN_SEPARATOR, MARKDOWN_BUDGET, EXTERNAL_LINK_SCHEMES, MARKDOWN_MEDIA_TYPE are module constants;
+      hooks are kind, refusal, mediaType, size (strings only)'
+  claim: The only runtime inputs are string hooks. A pipeline that adds a kind cannot give it an icon, cannot declare that its files link a Work Package, cannot move the container segment, and cannot change
+    tab labels or notices, because none has a property or hook; they change only by editing defaults/, i.e. the element. The same holds for the budget. That is 'defaults, not data in', which is how the
+    board handles lanes only for words. The plan restates the spec sentence in D-20 as satisfied without noting the gap.
+  remediation: 'FORK: (a) add one optional structural input, for example a vocabulary property typed ArtifactVocabulary (kind table with label and icon, wpLinkKinds, container segment, markdown media type,
+    tab and notice copy) that defaults to the defaults/ module, and have the logic functions take it as an argument; (b) keep constants in defaults/ and record in the spec, by amendment A-5 at CP-1, that
+    only words are runtime data and that structure constants are defaults-only until the dynamic pipeline mission. Either way correct D-20 and FR-031 so they state which inputs are props.'
+  lens_group: design
+  refute_reason: defaults.md confirms icon, WP link kinds, container segment, budget and copy are module constants while only string hooks (kind, refusal, mediaType, size) are runtime inputs, contradicting
+    the spec's data-in claim; FORK stands.
+- id: PLAN-A11Y-001
+  lens: visual-fidelity / container thresholds (A-1, DA-33, S-A6)
+  severity: 4
+  title: The 689 px two-column container threshold flips back to two columns in the shell's mobile tier (viewports 689 to 719 px), and S-A6 does not sample there
+  evidence:
+  - artifact: 'plan.md:93-99 (table: min-width 689 two columns; max-width 688 one column; third row ''below the shell''s mobile tier width (about 620 px viewport)'')'
+  - artifact: contracts/sk-artifact-screen.md:39 (thresholds 688/689 'from the prototype's 800 px viewport on the collapsed shell tier (viewport minus 112)')
+  - artifact: research.md:122 (S-A6 measures at 1280, 1100, 800, 620 px only)
+  - code: packages/mission-ui/src/elements/sk-mission-shell/sk-mission-shell.ts:33-34 (EXPANDED_QUERY min-width 1100px, COLLAPSED_QUERY min-width 720px)
+  - code: 'packages/mission-ui/src/elements/sk-mission-shell/sk-mission-shell.ts:156-169 (mission layout: expanded = rail + 240px sidebar + 1fr, collapsed = rail + rail + 1fr; mobile tier has no extra column,
+      so the content cell equals the viewport)'
+  - code: 'packages/mission-ui/src/elements/sk-mission-shell/sk-mission-shell.ts:455-465 (readTier: below 720 is ''mobile'')'
+  - artifact: prototype screens-opendesign-v2/prototype.css:922-929 (reading-layout one column at max-width 800px viewport) and :947-948 (toolbar stack and table block at max-width 620px)
+  claim: 'The tier arithmetic in the plan is right for the two wide tiers (verified: expanded cell = viewport - 296 = rail 56 + sidebar 240; collapsed cell = viewport - 112 = rail 56 + icon column 56; both
+    from the shell grid and the prototype layout tokens). It is wrong for the third. Below 720 px the shell is in its mobile tier and the content cell is the full viewport width, not viewport minus 112.
+    The cell width therefore is not monotonic in the viewport: 1099 px gives 987, 1100 gives 804, 800 gives 688, 720 gives 608, 719 gives 719. A single container rule "two columns from 689 px" then produces,
+    for viewports 689 to 719 px, two columns with a 419 px document next to a 270 px inspector, then one column again from 720 to 800 px, then two columns again from 801 px. The prototype is one column
+    for every viewport of 800 px or less. The same asymmetry hits the toolbar stack: prototype stacks at viewport <= 620; a container rule "cell <= 620" also fires at viewports 720 to 732 (collapsed tier,
+    cell 608 to 620) where the prototype does not stack. Plan row 3 calls 620 px "the shell''s mobile tier width", but the shell''s mobile tier starts below 720 px; 620 is the prototype''s own breakpoint.
+    The IC-06 layout test cases (1280, 1100, 800, 620) and the AV stories never visit 689 to 719 or 720 to 732, so the defect would pass every gate and the drift would be a REJECT only if a reviewer happened
+    to look.
+
+    '
+  remediation: 'FORK: choose how the container thresholds map to the prototype''s viewport behaviour.
+
+    (a) Raise the two-column minimum so it cannot be reached in the mobile tier and stays monotonic across the collapsed tier: for example two columns from a cell of 720 px (viewport 832 on the collapsed
+    tier, 720 to 799 never two columns on mobile because the cell is < 720 only up to 719). Record the 801 to 831 px window as confirmed drift in DA-33 at CP-1. Likewise pick the toolbar-stack threshold
+    so it also holds in both tiers, or accept and record the 720 to 732 window.
+
+    (b) Keep 688/689 as is and record, as DA-33 drift, that the viewport window 689 to 719 shows two columns; not recommended (a 419 px document column).
+
+    (c) Amend FR-036 to allow one narrow viewport media query (800 px) for the column switch, which reproduces the prototype exactly; this contradicts the spec''s "not viewport media queries" and needs
+    the operator.
+
+    In all cases: extend S-A6 to sample 689, 719, 720, 732, 799, 800, 801, 831, 832, 1099 and 1100 px in both shell tiers and write the cell width at each into contracts/sk-artifact-screen.md; add layout
+    cases at 719 and 720 px to IC-06 and fix plan.md:97 so "mobile tier" means below 720 px.
+
+    '
+  lens_group: a11y
+  refute_reason: The shell grid gives the mobile tier (below 720px) a full-viewport content cell, so a 689px container threshold yields two columns at viewports 689 to 719 and S-A6 samples only 1280/1100/800/620;
+    FORK stands.
+- id: PLAN-A11Y-003
+  lens: tab stops (NFR-003) / focusable scroll regions
+  severity: 3
+  title: Every table scroll box and both tabpanels are unconditionally focusable, which inflates tab stops, and the contract contradicts itself about when the document is a stop
+  evidence:
+  - artifact: contracts/sk-artifact-screen.md:47 (rendered article and raw block both tabindex='0'; table scroll box role=region tabindex=0)
+  - artifact: 'contracts/sk-artifact-screen.md:66 (focus order: ''the document pane (when scrollable), links and table scroll boxes in document order'')'
+  - artifact: spec.md:316 NFR-003 ('in no more tab stops than controls shown; a scrolling region counts as a control')
+  - artifact: research.md:119 (S-A3 tests the look of the scroll box, not whether it should be a stop)
+  - artifact: spec.md:390 DA-23 (both rendered and raw focusable)
+  claim: 'NFR-003 is satisfied only by definition: a scrolling region "counts as a control", so a document with twelve tables yields twelve extra tab stops even when no table overflows, plus the tabpanel
+    stop that already contains focusable links. The contract line 47 says unconditional tabindex=0; line 66 says "when scrollable". Both cannot hold, and nothing says how "scrollable" is decided (a ResizeObserver
+    or scrollWidth check at render, which is not specified or tested). Unconditional stops make keyboard traversal of a long spec.md tedious and the test "tab stops equal controls shown" vacuous. Also the
+    real scroller in the prototype is the .document-pane (prototype.css:846 overflow auto), while the plan puts tabindex on the tabpanel inside it and tabindex=-1 on the pane; which element a keyboard scroll
+    acts on is not tested.
+
+    '
+  remediation: 'FORK: (a) Make focusability conditional on overflow: a table box and the tabpanel get tabindex=0 only while scrollWidth/scrollHeight exceeds the client size (recomputed on ResizeObserver;
+    no timers), and AV tests assert both states with a positive control; (b) keep unconditional focusability for the raw block and rendered article (one stop each, like the prototype raw view, prototype
+    05-artifact.html:53) but make table boxes conditional; (c) keep everything unconditional and amend NFR-003 and the focus-order text to say so, accepting the stop count. Either way, fix the contradiction
+    at contracts/sk-artifact-screen.md:47 vs :66, name the actual scrolling element, and add a test that scrolls the tabpanel by keyboard (PageDown) and moves the scrollTop.
+
+    '
+  lens_group: a11y
+  refute_reason: sk-artifact-screen.md line 47 makes tabpanels and table boxes unconditionally tabindex=0 while line 66 says the pane is a stop only when scrollable, a direct contradiction; FORK stands.
+- id: PLAN-A11Y-004
+  lens: renderer allowlist vs semantics (cross-contract contradiction)
+  severity: 3
+  title: Table scroll box is named from the first header cell text, but the renderer contract forbids any document-derived aria-* value
+  evidence:
+  - artifact: contracts/sk-artifact-screen.md:47 (table scroll box 'named "Table" with the header text of its first cell where present')
+  - artifact: 'contracts/markdown-renderer.md (attributes section: ''A value from the document reaches only title ... No class, style, id, name, href ... or document-derived data-* or aria-* value exists'')'
+  - artifact: contracts/markdown-renderer.md (no id allowed, so aria-labelledby cannot reference the header cell)
+  - artifact: plan.md:62 and research.md D-06 (only keyword, digits and truncated title values may come from the document)
+  claim: 'The semantics section requires an accessible name that contains document text; the security contract, which is the gate (corpus step 2 and 3 walks every attribute), forbids exactly that and also
+    forbids ids, so aria-labelledby is unavailable. An implementer will either break the allowlist or drop the name. Separately, a name built from the first header cell repeats nothing useful when several
+    tables share the same first header ("Table Name" five times).
+
+    '
+  remediation: 'FORK: (a) static, data-held name with a position count from the model, for example "Table 2 of 5" (no document text; words from defaults/ or labels); (b) amend the allowlist to permit aria-label
+    whose value is a Lit text-bound, length-truncated string from the first header cell, add it to the corpus (an entry with a hostile header cell) and to the attribute list in the contract. Recommend (a).
+    Update both contracts and add the case to the corpus.
+
+    '
+  lens_group: a11y
+  refute_reason: The screen contract names the table box from first header cell text, but markdown-renderer.md line 53 forbids any document-derived aria-* value and any id, so the two contracts conflict;
+    FORK stands.
+- id: PLAN-A11Y-005
+  lens: headings and landmarks
+  severity: 3
+  title: The page has no h1 for raw-only files, refused files, the empty file and any markdown without a leading heading, and refusal and inspector heading levels are unspecified
+  evidence:
+  - artifact: 'contracts/sk-artifact-screen.md:47 (file name is NOT a heading; the document''s own first # is its h1)'
+  - artifact: spec.md:269 FR-006 ('levels kept'), spec.md:381 DA-14, spec.md:391 DA-24 (refusal title 'Artifact unavailable')
+  - artifact: prototype 05-artifact.html:62 (refusal title is an h1) and :67 (inspector section heading is an h3)
+  - code: packages/mission-ui/src/elements/sk-mission-shell/shell-parts.ts:245 (shell main holds no heading; no h1 in the shell parts)
+  claim: 'With the toolbar name demoted to a strong and heading levels kept as authored, a JSON or YAML file (Q5 raw-only), an empty file, a document that starts at ## or has no heading, and every state
+    block other than the refusal have no h1 and no heading at all in the main landmark; a spec.md with two # headings has two h1. The prototype gives the refusal an h1 and the inspector an h3 ("Linked Work
+    Packages"); the plan names neither level for the refusal title, the not-found, nothing-selected and empty states, nor for the inspector groups (File, Mission, Linked Work Packages), so implementers
+    will pick levels at random and the h3 would follow an h1 or nothing. Screen-reader users navigating by heading get an unstructured page in exactly the cases where the raw tab is the only content.
+
+    '
+  remediation: 'FORK: (a) make the toolbar file name the page''s single h1 (visually the same strong, one element change) and demote authored headings by one level in the renderer (h1 to h2 ... capped at
+    h6), which keeps structure valid in every state but departs from "levels kept" (FR-006) and needs an amendment; (b) keep authored levels and give raw-only, empty and state panes a visually-hidden h1
+    carrying the file name, accepting duplicate or missing h1 inside documents; (c) keep as written and record the gap in the PR. Whichever is chosen: specify the heading level of the refusal and state
+    titles (prototype uses h1), give inspector group headings a fixed level below the document''s, and add a semantics test that lists the heading outline for six fixtures (markdown, json, empty, refused,
+    not-found, hostile).
+
+    '
+  lens_group: a11y
+  refute_reason: The toolbar name is a strong not a heading and FR-006 keeps authored levels, so raw-only, empty and state panes have no h1 while the prototype uses an h1 for the refusal title; FORK stands.
+- id: PLAN-A11Y-009
+  lens: focus order vs visual order
+  severity: 3
+  title: 'In the one-column layout the inspector is moved first visually (order: -1) while DOM and documented focus order keep it last'
+  evidence:
+  - artifact: 'plan.md:96 (one column, inspector first via order: -1)'
+  - artifact: 'contracts/sk-artifact-screen.md:66 (documented focus order: tree, tab 1, tab 2, document, links and table boxes, then the inspector controls)'
+  - artifact: 'prototype.css:929 (.reading-layout > .inspector { order: -1 }); prototype 05-artifact.html:64 (aside after the document pane in DOM)'
+  - artifact: spec.md:232 AV-32 (focus order tested at 1280 only)
+  claim: 'Below the switch the inspector (with its Work Package controls and Open Work Package button) is drawn above the toolbar and document, but Tab and reading order still visit the document first and
+    the inspector last. This is the prototype''s behaviour (so it is not a fidelity defect) but it is a WCAG 1.3.2 / 2.4.3 mismatch the plan promises to document and does not test: AV-32 is a single 1280
+    px story, and the tablist at 800 px and 620 px is reached after content that appears below it visually. In the narrow tiers the focus ring would jump from the tree to the middle of the page, then back
+    up to the inspector at the end.
+
+    '
+  remediation: 'FORK: (a) keep the prototype''s visual order and record the mismatch as a confirmed DA-33 sub-item with a test that documents the real tab order at 800 and 620 px; (b) place the inspector
+    before the document in DOM order and use grid-column placement to keep it on the right in two columns (visual order of the wide layout unchanged, reading and focus order always match the one-column
+    visual order); (c) in the one-column layout drop order: -1 and keep the inspector after the document (prototype drift, needs CP-1 confirmation). Recommend (b) or record (a) explicitly.
+
+    '
+  lens_group: a11y
+  refute_reason: plan.md line 96 and prototype.css (.reading-layout > .inspector order -1) put the inspector first visually while the aside follows the document in the DOM, and AV-32 is a single 1280 story;
+    FORK stands.
+- id: PLAN-TEST-001
+  lens: gate-plans / feasibility
+  severity: 4
+  title: Tests that need Node (bundle budget, row-to-story, source scans, "node twin") have no runner; packages/mission-ui vitest is browser-only
+  evidence:
+  - artifact: 'plan.md IC-03 exit checks: ''pnpm test node-environment files for each module''; ''a source-level test that markdown-it is imported by parse.ts alone and that no file calls .render('''
+  - artifact: 'plan.md IC-04: ''test/bundle-budget.test.ts (number from S-A0)''; ''node-level twin on the model''; contracts/gates.md: unit-tests ''gains markdown-corpus.test.ts (browser) and its node twin,
+      bundle-budget.test.ts'''
+  - artifact: 'plan.md IC-11: row-to-story node test reading 35 spec rows and 42 stories, ''run against a temp copy with a row deleted'''
+  - artifact: 'research.md line 146: esbuild or bundler API importable from packages/mission-ui is listed as UNVERIFIED; fallback only named as ''a scripts/ node test run by test:scripts'''
+  - code: packages/mission-ui/vitest.config.ts:1-15 (single config, browser.enabled true, one chromium instance, include test/**/*.test.ts, no node project)
+  - code: 'package.json (root): devDependencies list vite 7.3.6 but no esbuild; packages/mission-ui/package.json declares neither; root ''test'' script is ''pnpm --filter @spec-kitty/mission-ui test'' =
+      ''vitest run'''
+  - code: package.json 'test:scripts' lists explicit files (node --test scripts/hygiene scripts/gate-proof ...); CI gate 'hygiene' runs 'pnpm hygiene && pnpm test:scripts' (ci.yml:299-300)
+  claim: Every file under packages/mission-ui/test runs in Chromium. A test there cannot import node:fs, vite, esbuild or spawn a bundler, so `test/bundle-budget.test.ts` (NFR-013 "a gate fails above it"),
+    the row-to-story test with a temp-copy mutation, the "markdown-it imported by parse.ts alone / no .render(" scan and the "no spec.md literal" grep test cannot be written where the plan puts them. There
+    is no node-environment project, so "node twin" and "node-environment files" are browser tests, and the S-A0 node timings are calibrated on a different engine than the corpus ceiling that uses them.
+    The only fallback (scripts/ node test) is mentioned in research as a contingency, and the file that would wire it (root package.json test:scripts) is owned by IC-11 alone (plan Shared files table),
+    so IC-04 could not land it. NFR-013 and the FR-041 row-to-story proof are therefore untestable as planned.
+  remediation: 'FORK: (a) convert packages/mission-ui/vitest.config.ts to two `projects` (browser as today; node environment for `test/**/*.node.test.ts`), assigned to IC-01 as a named edit, with bundle
+    budget via vite''s programmatic `build` (resolvable from the root) or a dependency-free `esbuild`-less size of the built parse.ts chunk; the change alters what `pnpm test` (the unit-tests gate and its
+    plant ciCommand) runs, so re-run `gate-proof --only unit-tests` in IC-01. (b) Put bundle-budget, row-to-story and the source scans as `node:test` files under scripts/ (the repo''s own pattern), add
+    them to `test:scripts` in IC-01 (named exception to the IC-11 package.json ownership rule), and state that the gate is `hygiene`, not `unit-tests`. (c) Keep scans in browser mode via `import.meta.glob(...,
+    { query: ''?raw'' })` (precedent: defaults.test.ts imports contract YAML with `?raw`) and drop the bundle test in favour of (b). Whichever is chosen, move the S-A0 verification of "bundler importable"
+    into IC-01 exit checks and delete the "node-environment" wording where it is not true.'
+  lens_group: test
+  refute_reason: FORK stands; packages/mission-ui/vitest.config.ts is browser-only with one chromium instance and no node project, so the planned bundle-budget, node twin and "vitest node environment" tests
+    cannot run as written, and the research.md scripts/ fallback is only a contingency.
+- id: PLAN-TEST-003
+  lens: vacuity
+  severity: 3
+  title: '"No request" assertion by PerformanceObserver cannot prove absence and conflicts with the no-wait rule'
+  evidence:
+  - artifact: 'contracts/markdown-renderer.md assertion (4): ''a PerformanceObserver records no resource load during render and a settle'''
+  - artifact: 'research.md D-19: ''no setTimeout waits (updateComplete)''; R-08: every ''no X'' paired with a control rendering'
+  - artifact: 'spec.md NFR-005: ''the document causes 0 network requests (asserted in the corpus test by observing resource loads)'''
+  - code: 'packages/mission-ui/test (grep): no existing use of PerformanceObserver; only performance.now() in sk-missions-screen.test.ts:823-840'
+  claim: 'Resource Timing entries are queued when a fetch COMPLETES (or fails), asynchronously; data: and blob: URLs produce no entry at all; a request to an unroutable remote host stays pending for seconds
+    in CI, so a test that settles on `updateComplete` and then asserts "no entry" passes whether or not an `<img src>` was created. The plan has no positive control for this observer (R-08 is only applied
+    to visible text), and the settle is unspecified. As written it is vacuous exactly for the regression it targets (an image renderer weakened to emit `<img>`), and the structural allowlist walk is the
+    only real protection.'
+  remediation: 'FORK: (a) replace the observer by a synchronous detector: a `<meta http-equiv="Content-Security-Policy" content="img-src ''none''; frame-src ''none''; object-src ''none''">` inserted in
+    the test document before rendering plus a `securitypolicyviolation` listener (fires without network), with a positive control that a hand-built `<img src="http://example.invalid/x.png">` triggers it.
+    (b) Keep the observer only as a secondary signal, using `buffered: true`, a documented settle (await a load/error on a planted control image rendered in the same harness), and a positive control with
+    a same-origin URL that is known to exist; record that it is not the primary proof. Either way state in the corpus contract that assertion (1) and (3) (no img/src/href elements) are the proof of NFR-005
+    and (4) is corroboration.'
+  lens_group: test
+  refute_reason: 'Assertion (4) is a bare PerformanceObserver with no positive control or settle, and Resource Timing cannot prove absence for pending or data: URLs (FORK stands).'
+- id: PLAN-TEST-008
+  lens: timing / determinism
+  severity: 3
+  title: NFR-006 can pass vacuously on the fallback and its numbers are not testable as written in shared CI
+  evidence:
+  - artifact: 'spec.md NFR-006: ''256 KiB markdown document renders to the fallback or the document ... 1000-entry tree builds and renders, each in 500 ms or less ...; a re-render ... 200 ms or less'''
+  - artifact: 'plan.md IC-10: ''NFR-006 timing tests (256 KiB, 1000 entries, re-render)''; IC-02: ''buildArtifactTree ... 1000 entries under the NFR-006 bound''; contracts/markdown-renderer.md maxSourceChars
+      270000, maxTokens 60000, maxNodes 40000'
+  - artifact: 'contracts/contract-pin.md: contentLarge = ''256 KiB valid markdown document'' (shape unspecified), contentFallback = exceeds the token budget'
+  - artifact: 'contracts/sk-artifact-screen.md Behaviour rule 7: parse cache proved by ''node identity of an unchanged rendered block and a coarse timing test'''
+  claim: '(1) The pass condition accepts the fallback, which is always fast, so if `contentLarge` is accidentally over budget (a 256 KiB list-heavy document can exceed 60000 tokens or 40000 nodes) the timing
+    test and the AV-30f baseline pass while showing the fallback. (2) A wall-clock 500 ms ceiling around parse plus Lit render of up to 40000 nodes in shared-runner Chromium is within noise of the real
+    figure; no repetition, warm-up, or median is stated, and the S-A0 figure is node-measured (PLAN-TEST-002). (3) "builds and renders" a 1000-entry tree: the tree render is the shell''s `sk-shell-tree`,
+    but IC-02''s check times only the pure helper; the render half is only in IC-10, after the shell frame exists. (4) The 200 ms re-render claim has no revert test: nothing forces a failure if the cache
+    is removed for a small document (a re-parse of a small document is well under 200 ms), so only the identity assertion carries it.'
+  remediation: 'Pin the expected branch per fixture: contentLarge must resolve to `{ kind: ''ok'' }` (assert in IC-03 and in the timing test), contentFallback to `fallback` with the stated reason, and assert
+    block count > 0 and pane non-empty before reading the clock. FORK on flakiness: (a) keep 500/200 ms as hard ceilings but measure the best of 3 after a warm-up and run the timing file with a generous
+    documented multiplier recorded beside the spec numbers; (b) assert algorithmic proxies in the gate (token, node and call counts, parse invoked once per content identity via a counted `parseTokens` wrapper)
+    and keep the wall-clock check as an advisory test with the spec numbers x a CI factor. For the cache, add a revert-able assertion: spy on `parseTokens` call count after N property changes with an unchanged
+    `content`.'
+  lens_group: test
+  refute_reason: contentLarge is only '256 KiB valid markdown' with no pinned ok branch, NFR-006 accepts the fallback, and the timings have no repetition or warm-up.

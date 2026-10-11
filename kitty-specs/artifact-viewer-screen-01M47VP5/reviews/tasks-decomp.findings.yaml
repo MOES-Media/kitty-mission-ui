@@ -1,0 +1,54 @@
+schema: review-findings/v1
+complete: true
+phase: tasks
+lens_group: decomp
+mission: artifact-viewer-screen-01M47VP5
+profile: paula-patterns
+conduct_note: 'Run in-session by the orchestrator (the operator constraint for this phase is no sub-agents),
+  as one lens group after the other, from commit 74d3147. Profile resolved from the installed catalog
+  with `spec-kitty agent profile show` (squad-delegate mode); no profile data was edited. Mechanical checks
+  (dependency edges, requirement ids, story ids, verbatim embeds, owned-file overlap) were scripted, not
+  judged. Lenses: single-concern and reviewable WPs, no padding, descriptions concrete enough, invented
+  content.'
+findings:
+- id: TASKS-DECOMP-001
+  lens: Invented content
+  severity: 2
+  title: WP02 invents a list of corpus shapes for spike S-A0 step one
+  evidence:
+  - artifact: 'tasks/WP02-dependency-supply-chain-and-spike-s-a0-step-one.md, subtask ''Spike S-A0 step
+      one'', step 2: ''(single long line, deep nesting, many inline tokens, a large table, plain prose)'''
+  - artifact: 'plan.md IC-01b and research.md S-A0 row: ''a node timing table per corpus shape at 256
+      KiB'' with no list of shapes'
+  claim: The parenthetical shape list appears in neither the plan nor research.md; a WP agent would read
+    it as binding and the table the orchestrator copies into D-05 would be built on the author's guess
+    of the shapes, not on the plan's corpus.
+  remediation: Drop the parenthetical; say the shapes are the corpus shapes of FR-009 and `contracts/markdown-renderer.md`
+    (the shapes IC-04 will use), without enumerating a list the plan does not hold.
+- id: TASKS-DECOMP-002
+  lens: Concrete, no confusion
+  severity: 2
+  title: WP06 S-A6 subtask states the viewport sampling list twice with two different contents
+  evidence:
+  - artifact: 'tasks/WP06-foundation-spikes-and-cp-1-evidence.md, subtask ''S-A6'': ''For each viewport
+      1280, 1100, 1099, 1000, 832, 831, 801, 800, 799, 732, 720, 719, 689 and 620 px (the sampling list
+      also includes 689, 719, ...)'''
+  - artifact: research.md S-A6 row lists 1280, 1100, 1099, 1000, 832, 831, 801, 800, 799, 732, 720, 719,
+      689 and 620; plan.md 'Screen layout' lists 689 to 1100 plus 1280, 1000 and 620
+  claim: The parenthetical 'also includes' repeats a subset of the first list, so a reader cannot tell
+    whether the list is 14 widths or a longer one.
+  remediation: State the one 14-width list of research.md S-A6 and say the plan's sampling list is the
+    same set.
+- id: TASKS-DECOMP-003
+  lens: Over-claim before CP-1
+  severity: 2
+  title: WP11 fixes the inspector as a div role=group before spike S-A4 and CP-1 decide it
+  evidence:
+  - artifact: 'tasks/WP11-inspector-work-package-links-and-tree-stories.md, subtask ''Inspector groups'':
+      ''a `div role="group"`'''
+  - artifact: 'research.md S-A4 row: the inspector ''as a div role=group (not an aside ...)'' is what
+      the spike tests; plan.md IC-09 does not name the element'
+  claim: The prompt turns a spike hypothesis into an instruction; if CP-1 rules otherwise the WP agent
+    holds a stale instruction.
+  remediation: Say 'the container role the S-A4 spike measured and CP-1 ruled (the spike tested a `div
+    role=group`, not an `aside`)'.

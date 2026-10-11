@@ -1,0 +1,27 @@
+schema: review-findings/v1
+complete: true
+phase: tasks
+lens_group: fresh
+mission: artifact-viewer-screen-01M47VP5
+tree: 856e724
+conduct_note: Fresh sweep, no findings file in context beyond the diff 74d3147..856e724; read in-session
+  by the orchestrator (no sub-agents).
+findings:
+- id: TASKS-FRESH-001
+  lens: Verbatim carriage side effects
+  severity: 3
+  title: 'Verbatim #4 D-34 rule 5 names ''IC-09'' and ''this mission'' and now sits in every prompt, where
+    IC-09 is #7''s inspector work package'
+  evidence:
+  - artifact: 'every tasks/WP*.md, section ''Test strategy and test quality rules (verbatim)'': rule 5
+      ''owned by IC-09; run by pnpm test:scripts ... this mission''s reader-facing guide quickstart.md'''
+  - artifact: 'plan.md of this mission: IC-09 is the inspector, Work Package links and tree stories (WP11);
+      the terminology check here is the existing `pnpm test:terminology`, run as an exit check by every
+      WP that writes under packages/*/src'
+  claim: 'Copying #4''s rule 5 verbatim imports its own mission''s names. A WP agent or reviewer can read
+    it as ''WP11 owns the terminology test'' or ''scan quickstart.md'', both false for #7, which would
+    misroute a terminology failure.'
+  remediation: 'Keep the quote verbatim and add one line directly under it: in rule 5, ''IC-09'' and ''this
+    mission'' are #4''s plan and mission; in this mission the terminology check is the existing `pnpm
+    test:terminology` (`scripts/terminology.mjs` and its test), owned by no work package here and run
+    as an exit check by every WP that writes under `packages/*/src`.'

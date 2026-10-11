@@ -1,0 +1,52 @@
+schema: review-verify/v1
+phase: tasks
+round: 3
+tree: '6226594'
+note: re-derived on the current tree; round 1 and 2 verify files are not replayed
+results:
+- id: TASKS-DECOMP-001
+  status: resolved
+  reason: 'WP02 prompt: shape list removed, shapes tied to FR-009 corpus'
+- id: TASKS-DECOMP-002
+  status: resolved
+  reason: 'WP06 prompt: the one 14-width list'
+- id: TASKS-DECOMP-003
+  status: resolved
+  reason: 'WP11 prompt: container role per S-A4 and CP-1'
+- id: TASKS-SEQ-001
+  status: resolved
+  reason: WP01 hands the baseline to the orchestrator; tasks-notes Baseline; every prompt classes reds
+    against it (also closes TASKS-VERIFY-003)
+- id: TASKS-SEQ-002
+  status: resolved
+  reason: tasks-notes Chokepoints section
+- id: TASKS-SEQ-003
+  status: resolved
+  reason: tasks-notes dispatch rule for WP12
+- id: TASKS-COVER-001
+  status: resolved
+  reason: 'scripted: amendments, spec rows, Build base, layout, CP-1 asks and DA-41 present verbatim in
+    the mapped WPs; no unverified line in any prompt'
+- id: TASKS-COVER-002
+  status: resolved
+  reason: D-34 rules 1 to 5 and D-19 verbatim in all 13, paraphrase gone
+- id: TASKS-COVER-003
+  status: resolved
+  reason: AV-26 in WP11's own text
+- id: TASKS-COVER-004
+  status: resolved
+  reason: tasks-notes Plan concern refs paragraph
+- id: TASKS-VERIFY-001
+  status: resolved
+  reason: WP08 assertion in the owned surface-freeze test with a revert proof
+- id: TASKS-VERIFY-002
+  status: resolved
+  reason: WP06 acceptance gives the git commands
+- id: TASKS-FRESH-001
+  status: resolved
+  reason: 13 of 13 prompts carry the reading note under rule 5
+- id: TASKS-FRESH-002
+  status: resolved
+  reason: 'no subtask in any of the 94 opens with a Purpose line (regex over ''### Subtask'' followed
+    by Purpose: none)'
+complete: true

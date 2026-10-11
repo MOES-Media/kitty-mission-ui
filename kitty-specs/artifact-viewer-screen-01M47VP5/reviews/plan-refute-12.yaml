@@ -1,0 +1,20 @@
+schema: review-refute/v1
+complete: true
+phase: plan
+batch: 12
+verdicts:
+  - id: PLAN-TEST-010
+    verdict: confirmed
+    reason: IC-09 only says the screen emits neither event and SC-002's undeclared-event check has no owning test, so the absence assertions can pass on silence without a host composition or count guard.
+  - id: PLAN-TEST-011
+    verdict: confirmed
+    reason: lib.mjs:235-236 fails the leg if any plant token appears in clean output, loadPlants accepts arrays, and the unit-tests proof leg is 10 min while IC-11 only re-derives timeouts late.
+  - id: PLAN-TEST-012
+    verdict: refuted
+    reason: gates.md already says a case aimed at a word the gate already catches does not count and the word-count/EXPECTED_WORDS toEqual change lands in the same commit, so the claimed gaps on already-caught kinds and the kind-count guard are handled.
+  - id: PLAN-TEST-013
+    verdict: confirmed
+    reason: ci.yml:515 does repeat-each=5 so IC-11 does not cite the CI result, and IC-10's NFR-003/NFR-004 detectors name no positive controls (nit-level).
+  - id: PLAN-TEST-014
+    verdict: confirmed
+    reason: IC-11 names no runner for the row-to-story test, hard-codes 35/42 although A-1 rewrites rows (35 AV rows do exist today), and amendment A-3's type-level union has no typecheck-failing revert proof in the plan.

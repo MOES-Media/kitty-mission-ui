@@ -1,35 +1,23 @@
 import { DETAIL_REFUSAL_GENERIC, DETAIL_REFUSAL_WORDS } from '../defaults/index.js';
 import { lookup } from './lookup.js';
+import type { WorkPackageRetryMember } from '../retry-types.js';
 
-/** The retry of the whole Work Package read. */
-export interface WorkPackageRetryDetail {
-  missionId: string;
-  wpId: string;
-  target: 'work-package';
-}
-
-/** The retry of the detail regions only. */
-export interface DetailRetryDetail {
-  missionId: string;
-  wpId: string;
-  target: 'detail';
-}
+// The payload types live in the neutral `src/retry-types.ts`; these re-exports keep the earlier names.
+export type {
+  DetailRetryDetail,
+  FoldersRetryDetail,
+  ProjectRetryDetail,
+  ProjectsRetryDetail,
+  RetryLoadDetail,
+  WorkPackageRetryDetail,
+  WorkPackageRetryMember,
+} from '../retry-types.js';
 
 /** The retry of the Drift report: a whole-project scan has no Work Package, so `missionId` is null when unscoped. */
 export interface DriftRetryDetail {
   missionId: string | null;
   target: 'drift-report';
 }
-
-/**
- * The payload of `sk-retry-load`: a union discriminated by `target`. `HTMLElementEventMap['sk-retry-load']` can be declared
- * once, so a later screen adds its own member here (with its own `target` word) instead of declaring the event again.
- * The screen's `SkRetryLoadDetail` is this type.
- */
-export type RetryLoadDetail = WorkPackageRetryDetail | DetailRetryDetail | DriftRetryDetail;
-
-/** The members the Work Package screen builds with `retryDetail` (the Drift member has its own builder). */
-export type WorkPackageScreenRetryDetail = WorkPackageRetryDetail | DetailRetryDetail;
 
 /** What the builder reads from the host's properties. */
 export interface RetryProps {
@@ -43,7 +31,7 @@ export interface RetryProps {
  * The one payload builder. The id comes from the host property `wpId`, then `workPackage.wpId`, then `detail.wpId`.
  * Null when there is no Mission or no id anywhere: the control is inert and no event is built.
  */
-export function retryDetail(target: WorkPackageScreenRetryDetail['target'], props: RetryProps): WorkPackageScreenRetryDetail | null {
+export function retryDetail(target: WorkPackageRetryMember['target'], props: RetryProps): WorkPackageRetryMember | null {
   if (props.mission === null) return null;
   const wpId = [props.wpId, props.workPackage?.wpId, props.detail?.wpId].find((id): id is string => typeof id === 'string' && id !== '');
   if (wpId === undefined) return null;

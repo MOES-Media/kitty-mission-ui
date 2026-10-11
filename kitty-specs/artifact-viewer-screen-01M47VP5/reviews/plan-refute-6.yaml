@@ -1,0 +1,29 @@
+schema: review-refute/v1
+complete: true
+phase: plan
+batch: 6
+verdicts:
+  - id: PLAN-DESIGN-005
+    verdict: confirmed
+    reason: "Verified: sk-shell-tree selects only routes, and the shell clears aria-current on any non-empty current, so an unavailable selected leaf leaves no aria-current; FORK stands."
+  - id: PLAN-DESIGN-006
+    verdict: confirmed
+    reason: "Verified: keyed(items) recreates all rows, quickstart writes toggles back and rebuilds, and D-16 forces ancestors open; FORK stands."
+  - id: PLAN-DESIGN-007
+    verdict: confirmed
+    reason: "Verified: quickstart calls pathOfNode, which is defined nowhere in the mission artifacts."
+  - id: PLAN-DESIGN-008
+    verdict: confirmed
+    reason: "Verified: the plan names no shared path helper, and the tree, link resolver and WP matcher each split paths per D-16, markdown-renderer and data-model."
+  - id: PLAN-DESIGN-009
+    verdict: confirmed
+    reason: "Verified: data-model describes the Modified rule as resolveActivity minus the null branch while resolveActivity exists in logic/time.ts and is not in the reuse list."
+  - id: PLAN-DESIGN-010
+    verdict: confirmed
+    reason: "Verified: normaliseViewState has four states and collapses to empty, while the contract names it as the pattern but collapses six-state status to loading."
+  - id: PLAN-DESIGN-011
+    verdict: confirmed
+    reason: "Verified: defaults.md says LabelHooks gains four hooks, data-model uses ArtifactLabelHooks, and plan IC-02 names only kind and refusal."
+  - id: PLAN-DESIGN-012
+    verdict: confirmed
+    reason: "Verified: D-11 says not_found is shared while D-12 says no table is shared, and SIZE_CAP_TEXT repeats the KiB unit word; a nit."

@@ -1,0 +1,133 @@
+schema: review-findings/v1
+complete: true
+phase: plan
+lens_group: fresh3
+mission: artifact-viewer-screen-01M47VP5
+findings:
+  - id: "PLAN-FRESH3-001"
+    lens: "falsifier"
+    severity: 3
+    title: "IC-06b builds a second overflow detector that ignores the package's existing OverflowRegion and, as specified, cannot detect content-only overflow"
+    evidence:
+      - artifact: "plan.md, IC-06b: 'the overflow observer (one ResizeObserver over the screen's scroll elements, no timers, feeding the overflowing set ...)' and its test 'the overflow observer flips the overflowing set when a wide child is added'"
+      - artifact: "contracts/sk-artifact-screen.md, Semantics, Scroll regions: 'one ResizeObserver over those elements (no timers), recomputes scrollWidth/scrollHeight against the client size'"
+      - artifact: "research.md D-02 (reuse by import, never by copy) and Evidence 'Repository facts': neither mentions overflow-region.ts"
+      - artifact: "packages/mission-ui/src/overflow-region.ts:12-20 (doc comment: 'The one overflow measurement of the package: a scroller is a labelled, focusable region only while its content really overflows'), :46-61 (re-measures on every host update and once more after fonts are ready and a frame is drawn, 'a size observer alone is not relied on')"
+      - artifact: "packages/mission-ui/src/elements/sk-work-package-board/sk-work-package-board.ts:99 and :134 (role=region only while region.overflowing), sk-pipeline-screen.ts (second user); commit d336fde 'one overflow-region controller for the board and the phase band, fonts wait included'"
+    claim: "The package already owns the exact mechanism the plan needs (a controller that makes a scroller a labelled, focusable region only while it overflows) and #4 landed it as the single shared implementation. The plan never mentions it and specifies a bespoke one. The bespoke design is also weaker: a ResizeObserver fires on a change of the observed element's box, not on a change of its scrollable content, so a new document, a wider table, a newly added wide child or a late font load in an unchanged-size pane or table box does not fire it. The plan's own positive control (add a wide child, the stop flips on) cannot pass with that design unless it also re-measures after every update, which is what OverflowRegion does and the plan omits. The result is a tab-stop rule (NFR-003, PLAN-A11Y-003) that is wrong for exactly the cases the tests are meant to prove, plus a second divergent overflow implementation to maintain."
+    remediation: "FORK: (a) reuse OverflowRegion: name it in D-02, the shared-files table and IC-06b, and extend it (or add a multi-target sibling in the same file, owned by IC-06b as one named additive edit) to measure several targets and both axes, keeping measure-on-update and the fonts-ready pass; or (b) keep a bespoke controller but state in IC-06b and the contract that it re-measures in updated() and after document.fonts.ready, observes the children that can grow (or the table elements, not only the box), and justify in research.md why OverflowRegion cannot serve. Either way add a test where the pane box size is unchanged and only the content changes."
+  - id: "PLAN-FRESH3-002"
+    lens: "diff"
+    severity: 3
+    title: "A 'documented multiplier' on the NFR-006 ceilings loosens a spec number with no amendment and no CP-1 decision"
+    evidence:
+      - artifact: "spec.md NFR-006: 'a 256 KiB markdown document ... and a 1000-entry tree ... each in 500 ms or less ...; a re-render on a property change 200 ms or less'"
+      - artifact: "plan.md, Technical Context, Performance Goals: 'hard ceilings ... a documented multiplier only if S-A0 step two shows less than about 2x headroom, PENDING S-A0 step two'; IC-04 exit checks; IC-10 'the ceiling multiplier is PENDING S-A0 step two'"
+      - artifact: "research.md D-19 'Timing': 'A documented multiplier on the ceilings is set only if S-A0 step two ... shows less than about 2x headroom'"
+      - artifact: "plan.md, 'CP-1 asks' items 1 to 6 and 'Spec amendments' A-1 to A-9: neither lists NFR-006 or a multiplier"
+      - artifact: ".kittify/charter/charter.md, Risk boundaries: 'Quality and security standards are not relaxed without explicit operator approval'"
+    claim: "The operator ruled hard ceilings at the spec numbers. The plan nevertheless lets IC-04 (an implementation work package) set a multiplier on those ceilings after its own measurement. That is a relaxation of NFR-006, a spec acceptance number, decided by an agent, outside the amendment list and outside the CP-1 asks, so the operator never sees it. The values PENDING S-A0 step two are not covered by the PENDING CP-1 exemption because CP-1 does not ask about them. IC-04 (which measures) runs before CP-1, so the decision can be routed correctly at no schedule cost."
+    remediation: "Treat any multiplier as a proposed amendment (A-10, NFR-006) that IC-04 reports with its S-A0 step two figures; add it to the CP-1 asks (item 2) and state that until the operator rules, the spec numbers are the ceilings and a test over them that fails is a finding, not a trigger to scale. Remove 'documented multiplier' from D-19, Performance Goals and IC-10, or reword it as 'proposed at CP-1'."
+  - id: "PLAN-FRESH3-003"
+    lens: "matrix-maker"
+    severity: 2
+    title: "Base A leftovers: several artifacts still describe #5 as optional or as landing second"
+    evidence:
+      - artifact: "contracts/gates.md:3: \"#5's E-17 to E-21 stand when #5 is present (read from its lane branches, tip cf1f179)\"; :23: 'so a merge with #5 needs no arithmetic'; :114: 'After the second of #5 and this mission lands, every gate self-test ... is re-run'"
+      - artifact: "contracts/defaults.md:3: 'REVIEW_CYCLE_ARTIFACT_KIND of #5 (when present)'"
+      - artifact: "contracts/contract-pin.md:18: \"tests of #4's three screens (and #5's, if present)\"; :59: 'a provenance check C8 comes from #5 if present'; research.md D-09: \"If #5's tooling is present, its --from-repo ...\""
+      - artifact: "plan.md, 'Build base' ('Base A only ... IC-01a is blocked until then'; 'there is no \"whichever lands second\" case') and contracts/defaults.md:11 and research.md D-12 ('Base A, so always present')"
+    claim: "The revision made Base A binding (#5 merged before IC-01a), and the plan and defaults.md already say #5 is always present, but five other places still carry the conditional, stacked or lands-second model, including a stale sha (cf1f179 versus the verified 8336455). A WP agent reading gates.md or contract-pin.md alone is told to handle the 'if present' branch, to expect a merge with #5, and to re-run self-tests after 'the second of' the two missions; none of those cases exists under Base A. They also contradict each other (defaults.md line 3 versus line 11)."
+    remediation: "Reword each to the Base A fact (#5 is merged and present; its tooling, exceptions E-17 to E-21 and C8 are read from the merged tree at dispatch), drop the 'second to land' sentence, and cite the verified tip 8336455 or 'the merged tree' instead of cf1f179."
+  - id: "PLAN-FRESH3-004"
+    lens: "matrix-maker"
+    severity: 2
+    title: "The vocabulary argument is claimed for functions whose tables are not in ArtifactVocabulary, and the 'eighth code' composition test has no channel"
+    evidence:
+      - artifact: "contracts/defaults.md:18: ArtifactVocabulary 'is composed of' the kind table, WORK_PACKAGE_LINK_KINDS, WP_CONTAINER_SEGMENT with TOKEN_SEPARATOR, MARKDOWN_MEDIA_TYPE, MARKDOWN_BUDGET and the copy of artifact-copy.ts (same list: data-model.md:34, research.md D-20)"
+      - artifact: "contracts/defaults.md:51: 'every function above that reads a data table (buildArtifactTree, resolveArtifactView, markdownFor, matchWorkPackage, formatArtifactSize, resolveArtifactRefusal, resolveArtifactFacts, countBidiControls ...) takes the resolved ArtifactVocabulary ... as an explicit argument'; the signature table gives vocabulary to buildArtifactTree only"
+      - artifact: "contracts/defaults.md:24: ARTIFACT_REFUSALS (eyebrow, sentence, retryable) lives in artifact-refusals.ts, not in artifact-copy.ts; MEDIA_TYPE_WORDS, EXTERNAL_LINK_SCHEMES, BIDI_CONTROL_CODE_POINTS, the size unit table are also outside the list; ArtifactLabelHooks.refusal(code) returns one string (defaults.md:36)"
+      - artifact: "research.md D-20 and contracts/gates.md:25: the IC-10 composition test has 'a thirteenth kind with its own icon, an eighth code, a different container segment, folder names ...'; plan.md IC-10 lists only 'a thirteenth kind, its own icon and a different container segment'"
+    claim: "As written, resolveArtifactRefusal, formatArtifactSize and countBidiControls are told to take a vocabulary that has no member they read, and an eighth refusal code cannot be supplied by any prop: the vocabulary has no refusal table, and the labels hook returns a single string with no way to say which of eyebrow or sentence it replaces or whether the code is retryable. The test text that proves SC-004 differs between research/gates and plan (eighth code present or not). IC-02 is told to unit-test 'each function with and without an explicit vocabulary', which cannot be done for functions with no vocabulary member."
+    remediation: "FORK: (a) add the refusal table, media-type words, link schemes, bidi code points and size units to ArtifactVocabulary (and let the composition test carry an eighth code with its retryable flag); or (b) keep the narrow composition and restrict the 'vocabulary argument' paragraph and the IC-02 test obligation to the functions that read a member, state that a foreign refusal code goes through labels.refusal (and say which part it replaces), and delete 'an eighth code' from D-20 and gates.md:25. Make plan IC-10, D-20 and gates.md say the same thing."
+  - id: "PLAN-FRESH3-005"
+    lens: "falsifier"
+    severity: 2
+    title: "The reviewed R4 binding list for element files is written by IC-06a before any element code exists, and no later work package may extend it"
+    evidence:
+      - artifact: "plan.md, IC-06a: 'the reviewed named list of R4 for elements/sk-artifact-screen/** (structural attribute names and the named property or boolean bindings, each with a one-line reason)'; IC-06a 'Affected surfaces' and 'No file under packages/*/src'"
+      - artifact: "plan.md, 'Shared files: who may write them', row eslint.config.mjs / eslint-rules/** : writers IC-04 and IC-06a, 'Everyone else: none'"
+      - artifact: "contracts/gates.md R4: 'the rule fails on any other name, so adding one is a reviewed edit'; plan.md IC-06b to IC-10 draw library elements (sk-button, sk-notice, sk-pill-tag) and tab buttons from the part files"
+      - artifact: "plan.md, Constraints: R4 applies to non-story element files with the named list; 'a named property or boolean binding not on the list' fails lint"
+    claim: "IC-06a runs before the stubs exist (it is the 'before any element code' work package) yet must fix, for all later work, every attribute name and every property or boolean binding the parts will need on library elements (for example ?disabled, .tone, or whatever S-A4 and S-A5 decide). IC-06b to IC-10 then hit a red `pnpm lint` the first time a part needs a name not on the list, and the table says nobody else may edit eslint-rules or eslint.config.mjs. 'A reviewed edit' has no owner, no WP and no stated path (change request, then which WP edits it), so the first such case stalls a chain, or an agent edits the file out of scope."
+    remediation: "FORK: (a) let IC-06b own appends to the R4 element list (one line and one reason per name, reviewed in IC-06b) and let each region WP request additions through the orchestrator, recorded in the shared-files table; or (b) derive the list in IC-06b from the stubs it writes, with IC-06a only landing the rule's options schema and the empty list with the leak cases. State the chosen path in the shared-files table and in R4."
+  - id: "PLAN-FRESH3-006"
+    lens: "a11y-design"
+    severity: 2
+    title: "The quiet notes (truncation, redaction line, and the new bidirectional-control notice) have no named primitive or exception"
+    evidence:
+      - artifact: "contracts/defaults.md:27 (TRUNCATED_NOTE, REDACTION_LINE, BIDI_NOTICE) and contracts/sk-artifact-screen.md:37, :116 ('the quiet bidirectional-control notice above the block'); plan.md IC-07 and the DA-41 paragraph ('there is no prototype counterpart; the operator decides its look at CP-1')"
+      - artifact: "contracts/gates.md E-26 row: 'sk-artifact-screen.ts, toolbar-parts.ts, document-parts.ts, source-parts.ts: none' (no class allowance); E-24 (source-parts.ts) lists the raw block's properties only; E-22 is prose-styles.ts only; document-parts.ts has no Stylelint entry"
+      - artifact: "spec.md FR-029 names the read-only note 'one quiet sk-notice'; DA-10 and DA-32 say 'quiet note' and 'quiet line' with no element named; .kittify/charter/charter.md 'Elements over CSS'"
+    claim: "Three notes of the document pane are 'quiet' but no part signature, exception or defaults entry says what draws them. If they are sk-notice elements, the plan should say so and name the tone; if they are plain text, a muted look needs a non-layout property (color is a STRICT property) that only E-22 (prose-styles.ts) and E-24 (source-parts.ts, for the block) grant, and document-parts.ts has none. The bidi notice, added by this revision, also needs a look the operator will rule at CP-1 with no exception row to grant it. This leaves the charter's elements-over-CSS rule undecided for three states with baselines."
+    remediation: "FORK: (a) draw all three with the library sk-notice (state the tone in contracts/sk-artifact-screen.md Part signatures and the walker's allowed-leaf list); or (b) add the needed properties to E-24 (the bidi notice, which sits in source-parts.ts) and a named entry for document-parts.ts (truncation note, redaction line) so the CP-1 ruling on DA-10, DA-32 and DA-41 has an exception to grant."
+  - id: "PLAN-FRESH3-007"
+    lens: "diff"
+    severity: 2
+    title: "A-8 is bundled and its rejection path is only half specified"
+    evidence:
+      - artifact: "plan.md, A-8: 'Until CP-1 the plan, the link table and the corpus are written to the narrowed behaviour, and a rejection reverts the three narrowings'; the same paragraph also states layer 1 (markdown-it validateLink) turns javascript:, vbscript:, file: and non-image data: destinations into literal text where N-Q12 says 'inert text with the destination in title'"
+      - artifact: "contracts/markdown-renderer.md, 'Link rule': 'a test asserts that [x](javascript:1) yields no link_open'; research.md D-08 ('differs from the inert-with-title look of N-Q12 (amendment A-8)'); plan.md IC-03 (link table and that test) and IC-04 (corpus) run before CP-1 (flow: IC05 -> CP-1 -> IC-06a)"
+      - artifact: "contracts/gates.md R2 and contracts/markdown-renderer.md Files: parse.ts 'exports parseTokens only'"
+    claim: "A-8 is one amendment with two different decisions: the layer-1 deviation from N-Q12 (a property of markdown-it's default validateLink) and the three narrowings. The plan says a rejection reverts the narrowings but is silent on the layer-1 deviation: honouring N-Q12 literally would need parse.ts to replace md.validateLink or the model to re-create inert nodes, which contradicts the unit test that pins the default behaviour and the 'exactly one export, defence in depth' story. IC-03 and IC-04, with their tests, corpus entries and plants, are built and approved before the operator decides, so a rejection becomes rework with no recipe."
+    remediation: "Split A-8 into A-8a (layer-1 literal text) and A-8b (the three narrowings), and for each write the revert recipe and the files and tests it touches (for A-8a, whether parse.ts overrides validateLink and which corpus rows flip). Isolate the three narrowings in defaults/markdown.ts data and per-row tests so a rejection is a data edit, and say in IC-03 that the link table rows 1, 5 and 6 are tagged 'A-8b' in the unit file."
+  - id: "PLAN-FRESH3-008"
+    lens: "stenographer"
+    severity: 2
+    title: "Rebuilding the tree on every selection change drops all user-opened folders and focus, and neither is stated or tested"
+    evidence:
+      - artifact: "quickstart.md: 'build ONCE per change of entries or selectedPath (memoise on those identities); a new items array resets the shell tree's folder state' and 'the host does NOT write toggles back or rebuild on them'"
+      - artifact: "research.md D-16: 'forced-open ancestors therefore apply only when the selection changes'; contracts/defaults.md buildArtifactTree: 'expandedIds is the initial state only'"
+      - artifact: "packages/mission-ui/src/elements/sk-shell-tree/sk-shell-tree.ts:39 ('Replacing the array resets folder state'), :155 (open state re-seeded from node.expanded) and :235 (keyed(this.items, ...) re-creates every row)"
+      - artifact: "plan.md IC-09: tests cover 'toggle a folder and the focused summary survives' and the unavailable selected leaf; no test for opening a folder, then selecting a file elsewhere"
+    claim: "Selecting a file (tree click or an internal markdown link) changes selectedPath, so the memoised tree is rebuilt, a new items array goes to sk-shell-tree, keyed() re-creates every row and every folder the user opened by hand is re-seeded from the new expanded flags: they collapse again, and the focused row is destroyed. The plan documents only the ancestor behaviour. With a 1000-entry, deeply nested listing this is a visible regression of Q9 ('folders collapsed except the path to the selected file') and of AV-19, and it is a consequence of the PLAN-DESIGN-006 ruling that the ruling text does not address."
+    remediation: "FORK: (a) accept and document it (quickstart, AV-19 note) with a test that pins the behaviour; or (b) let the host keep a Set of ids from sk-tree-toggle (read, never written back to the tree) and pass it as expandedIds on the next rebuild, state this pattern in quickstart.md and test that an opened sibling folder stays open after a selection change. Do not leave the behaviour implicit."
+  - id: "PLAN-FRESH3-009"
+    lens: "correspondence"
+    severity: 2
+    title: "'Spec rows read as amended' omits four rows that contradict the ruled behaviour, so a reviewer holding the spec text will reject it"
+    evidence:
+      - artifact: "plan.md line 'Spec rows read as amended by the rulings' lists only AV-32 and NFR-003 (plus A-1, A-7 rows)"
+      - artifact: "spec.md FR-012 (:289) 'the block is focusable and named, so it scrolls by keyboard'; DA-23 (:404) 'Both the rendered article and the raw block focusable and named'; FR-035 (:312) 'the document pane focusable; documented focus order tree, tabs, document, inspector'; NFR-005 (:333) 'asserted in the corpus test by observing resource loads'"
+      - artifact: "plan.md PLAN-A11Y-003 (a) (tab stop only while overflowing), PLAN-A11Y-009 (b) (inspector first, order tree, inspector, tabs, document) and PLAN-TEST-003 (a) (structural walk is the proof, CSP is corroboration); DA-23 is a register item the operator confirms at CP-1"
+    claim: "The binding rulings change FR-012, DA-23, FR-035 and NFR-005, but the spec keeps the old wording and the plan's list of amended rows does not name them. DA-23 is a drift-register item that goes to the operator at CP-1 in its old words, and NFR-008 makes any unlisted difference a REJECT. A reviewer or the CP-1 reader has two conflicting authorities for the same behaviour (always a tab stop versus only while overflowing; observing resource loads versus a structural walk)."
+    remediation: "Add FR-012, DA-23, FR-035 and NFR-005 to the 'Spec rows read as amended' paragraph with the amended wording, put DA-23 and DA-33 in CP-1 ask 1 as 'amended', and have the orchestrator write the rows back at CP-1 together with the AV-32 and NFR-003 rows."
+  - id: "PLAN-FRESH3-010"
+    lens: "correspondence"
+    severity: 2
+    title: "Open [NEW FORK] markers sit inside the work packages' binding text, and IC-09's AV-17 acceptance cannot pass in its own lane"
+    evidence:
+      - artifact: "plan.md IC-02: '[NEW FORK: how a partly filled vocabulary is completed]'; IC-09: '[NEW FORK: lane Y has only the IC-06b stub of the note, so the AV-17 test cannot pass in lane Y before the chains merge; how IC-09 is verified is not ruled]'"
+      - artifact: "contracts/defaults.md:18, data-model.md:34 and research.md D-20 repeat the vocabulary marker"
+      - artifact: "plan.md IC-09: 'AV-17 ... IC-09 owns the story and the test ... and writes NO part of the note's render body (the single owner of the note is IC-07)'; Lane mechanics: IC-09 and IC-07/IC-08 are parallel lanes merged only at IC-10; IC-09 Depends on IC-06b"
+    claim: "Five artifacts carry two unruled forks as live text in the IC descriptions that the tasks phase will turn into work packages. For the vocabulary fork, IC-02 cannot write the completion rule or its tests. For AV-17, IC-09's reviewer is asked to approve a story and test that cannot pass until a merge that happens two packages later in a different lane (IC-10), so the per-WP review gate is either unmet or waived."
+    remediation: "FORK: for AV-17, (a) make IC-09 depend on IC-07 (serialise the one note-dependent test) or (b) move the AV-17 test to IC-10 and leave only the story title with IC-09; the render body stays IC-07's as ruled. For the vocabulary completion rule, either present the fork for ruling before tasks or write the conservative default (per-group completion against defaults/) in IC-02 and the contract so the marker can be removed."
+  - id: "PLAN-FRESH3-011"
+    lens: "matrix-maker"
+    severity: 1
+    title: "S-A6 is told to measure each viewport 'in each tier', but a viewport belongs to exactly one tier"
+    evidence:
+      - artifact: "research.md S-A6: 'measure the content cell at 1280, 1100, 1099, 1000, 832, 831, 801, 800, 799, 732, 720, 719, 689 and 620 px in EACH of the shell's three tiers'"
+      - artifact: "plan.md Layout: 'values measured by S-A6 over the sampling list 689, 719, 720, 732, ... in both tiers'; contracts/sk-artifact-screen.md Layout ('measures the cell width per tier')"
+      - artifact: "packages/mission-ui/src/elements/sk-mission-shell/sk-mission-shell.ts:33-34 and readTier(): the tier is chosen by the viewport (min-width 1100 px, then 720 px)"
+    claim: "The shell chooses the tier from the viewport width alone, so the instruction cannot be followed as written and 'both tiers' (plan) and 'each of three tiers' (research) disagree. The intended action (record the tier and the content-cell width at each sampled viewport, and check no mobile-tier width reaches the threshold) is clear from context but is the one measurement the layout threshold rests on."
+    remediation: "Reword S-A6, the plan's Layout paragraph and the contract to 'for each sampled viewport, record the tier the shell selects and the resulting content-cell width', and keep the check that no mobile-tier cell reaches the two-column threshold."
+  - id: "PLAN-FRESH3-012"
+    lens: "correspondence"
+    severity: 1
+    title: "Small dangling references: A-9 is absent from the operator-owned record, and LISTING_MAX_ENTRIES has no home"
+    evidence:
+      - artifact: "plan.md A-9 and Charter Check ('A-1 to A-4, A-6, A-7 and A-9 are accepted'); spec.md Clarifications (:46) and tracer-design-decisions.md ('amendments A-1 to A-8'); A-9 is new in commit 32ec2d6 (not present at 5724be3)"
+      - artifact: "contracts/defaults.md:27: 'TRUNCATED_NOTE built from LISTING_MAX_ENTRIES (1000, data)'; the constant is named nowhere else and has no module in the five default modules"
+    claim: "A-9 is recorded as 'ACCEPTED' only in the plan; the operator's recorded ruling and the orchestrator-owned log name A-1 to A-8 and describe the vocabulary property through fork PLAN-DESIGN-022, so a reader of the record cannot find the acceptance of an amendment id the plan treats as accepted. LISTING_MAX_ENTRIES, which FR-021 requires as data in defaults/, has no named home, so two WPs could define it twice."
+    remediation: "Add A-9 (vocabulary property, from PLAN-DESIGN-022 (a)) to the spec Clarifications bullet and the orchestrator log, or cite the fork id in the plan instead of a new amendment number; name the module that exports LISTING_MAX_ENTRIES (artifact-copy.ts or artifact-kinds.ts) in contracts/defaults.md."

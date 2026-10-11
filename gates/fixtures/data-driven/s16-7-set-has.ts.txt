@@ -1,0 +1,2 @@
+// expect: S16.7
+export const f = (s: Set<string>): boolean => s.has('other');

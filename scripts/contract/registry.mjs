@@ -12,6 +12,8 @@ export const FIXTURES = {
   // ---- Projects screen (mission-ui#9): two host overlays the contract examples do not give ----
   projectUnknownHealth: f('Project', 'relaxed', 'ProjectView', 'health-open'),
   projectLong: f('Project', 'valid', 'Project'),
+  projectSchemaDrift: f('Project', 'valid', 'Project'),
+  projectAllNull: f('Project', 'valid', 'Project'),
   pageMixed: f('MissionOverviewPage', 'host', 'MissionOverviewPageView'),
   pageFull: f('MissionOverviewPage', 'host', 'MissionOverviewPageView'),
   pageLast: f('MissionOverviewPage', 'host', 'MissionOverviewPageView'),
@@ -83,6 +85,38 @@ export const FIXTURES = {
   detailUnknownLanes: f('WorkPackageDetail', 'relaxed', 'WorkPackageDetailView', 'detail-lane-open'),
   detailOmittedProvisional: f('WorkPackageDetail', 'relaxed', 'WorkPackageDetailView', 'detail-omittable'),
 
+  // ---- Artifact Viewer screen (mission-ui#7): 13 contract examples and 17 overlays, 30 documents (27 valid, 3 relaxed) ----
+  listingPopulated: f('ArtifactListing', 'valid', 'ArtifactListing'),
+  listingTruncated: f('ArtifactListing', 'valid', 'ArtifactListing'),
+  contentMarkdown: f('ArtifactContent', 'valid', 'ArtifactContent'),
+  contentRedacted: f('ArtifactContent', 'valid', 'ArtifactContent'),
+  contentJson: f('ArtifactContent', 'valid', 'ArtifactContent'),
+  contentEmpty: f('ArtifactContent', 'valid', 'ArtifactContent'),
+  refusalInvalidPath: f('ArtifactRefusal', 'valid', 'ArtifactRefusal'),
+  refusalNotFound: f('ArtifactRefusal', 'valid', 'ArtifactRefusal'),
+  refusalTooLarge: f('ArtifactRefusal', 'valid', 'ArtifactRefusal'),
+  refusalNotText: f('ArtifactRefusal', 'valid', 'ArtifactRefusal'),
+  refusalSecret: f('ArtifactRefusal', 'valid', 'ArtifactRefusal'),
+  refusalUnreadable: f('ArtifactRefusal', 'valid', 'ArtifactRefusal'),
+  refusalListingUnreadable: f('ArtifactRefusal', 'valid', 'ArtifactRefusal'),
+  listingWithOpenFiles: f('ArtifactListing', 'valid', 'ArtifactListing'),
+  listingEmpty: f('ArtifactListing', 'valid', 'ArtifactListing'),
+  listingUnreadableRows: f('ArtifactListing', 'valid', 'ArtifactListing'),
+  listingUnknownKind: f('ArtifactListing', 'relaxed', 'ArtifactListingView', 'artifact-kind-open'),
+  contentUnknownKind: f('ArtifactContent', 'relaxed', 'ArtifactContentView', 'artifact-kind-open'),
+  refusalUnknownCode: f('ArtifactRefusal', 'relaxed', 'ArtifactRefusalView', 'refusal-code-open'),
+  listingLongNames: f('ArtifactListing', 'valid', 'ArtifactListing'),
+  listingDeep: f('ArtifactListing', 'valid', 'ArtifactListing'),
+  contentFeatures: f('ArtifactContent', 'valid', 'ArtifactContent'),
+  contentHostile: f('ArtifactContent', 'valid', 'ArtifactContent'),
+  contentYaml: f('ArtifactContent', 'valid', 'ArtifactContent'),
+  contentJsonl: f('ArtifactContent', 'valid', 'ArtifactContent'),
+  contentCsv: f('ArtifactContent', 'valid', 'ArtifactContent'),
+  contentPlain: f('ArtifactContent', 'valid', 'ArtifactContent'),
+  contentBom: f('ArtifactContent', 'valid', 'ArtifactContent'),
+  contentPrompt: f('ArtifactContent', 'valid', 'ArtifactContent'),
+  contentReviewCycle: f('ArtifactContent', 'valid', 'ArtifactContent'),
+
   // ---- Drift screen (mission-ui#10): the six contract examples and eleven overlays. The 1000-finding report is NOT here:
   // bulk.ts generates it and gate `contract` validates it (check.mjs, checkBulk), as for the 500-Mission page. ----
   reportPopulated: f('DriftReport', 'valid', 'DriftReport'),
@@ -108,7 +142,7 @@ export const FIXTURES = {
 export const SATISFIES_TARGETS = [...new Set(Object.values(FIXTURES).map((x) => x.satisfies))].sort();
 
 /**
- * Named relaxations. `patch` is applied to a `structuredClone` of the dereferenced schema (never to the pristine
+ * Named relaxations. `schema` is the name of the schema the patch applies to, or a list of names. `patch` is applied to a `structuredClone` of the dereferenced schema (never to the pristine
  * copy). `allowedPath` is the pattern every error of the STRICT validator must match for a fixture of this
  * relaxation: a second, unrelated defect cannot hide behind the relaxation.
  *
@@ -185,6 +219,27 @@ export const RELAXATIONS = {
       schema.properties.health = { type: 'string' };
     },
   },
+  // ---- mission-ui#7: the artifact vocabulary is provisional upstream, so a kind and a refusal code the screen has never seen must survive ----
+  'artifact-kind-open': {
+    // one relaxation, two schemas: the kind of a listing entry (ArtifactEntry) and the kind of a content (ArtifactContent)
+    schema: ['ArtifactListing', 'ArtifactContent'],
+    description: 'ArtifactEntry.kind and ArtifactContent.kind become non-empty open strings; nothing else changes',
+    allowedPath: /^\/entries\/\d+\/kind$|^\/kind$/,
+    patch(schema) {
+      const open = { type: 'string', minLength: 1 };
+      if (schema.properties.entries) schema.properties.entries.items.properties.kind = open;
+      else schema.properties.kind = open;
+    },
+  },
+  'refusal-code-open': {
+    schema: 'ArtifactRefusal',
+    description: 'the code of ArtifactRefusal becomes a non-empty open string; the status rules of the seven codes stay',
+    allowedPath: /^\/code$/,
+    patch(schema) {
+      // the LAST allOf entry is the one that carries the closed seven-value code enum
+      schema.allOf[schema.allOf.length - 1].properties.code = { type: 'string', minLength: 1 };
+    },
+  },
   // ---- mission-ui#10: the vocabularies of a Drift finding are provisional and a client must tolerate a word it does not know ----
   'drift-vocabulary-open': {
     schema: 'DriftReport',
@@ -200,6 +255,9 @@ export const RELAXATIONS = {
     },
   },
 };
+
+/** The schema names a relaxation patches: `schema` is one name or a list of names. */
+export const relaxationSchemas = (relaxation) => [relaxation.schema].flat();
 
 /**
  * Whether one error of the STRICT validator lies inside a relaxation: its path matches `allowedPath` and, for an

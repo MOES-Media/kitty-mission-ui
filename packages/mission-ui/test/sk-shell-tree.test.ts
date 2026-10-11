@@ -272,3 +272,46 @@ describe('folders', () => {
     expect(seen).toHaveLength(0);
   });
 });
+
+describe('the indent stops growing after six folder levels (AV-30c)', () => {
+  const nest = (levels: number): TreeNode[] => {
+    let node: TreeNode = { id: 'leaf', label: 'deep-note.md', kind: 'leaf', href: '#leaf' };
+    for (let i = levels; i >= 1; i -= 1) node = { id: `f${i}`, label: `level-${i}`, kind: 'folder', expanded: true, children: [node] };
+    return [node];
+  };
+  const leafLeft = async (levels: number): Promise<{ left: number; width: number }> => {
+    const el = await mount({ items: nest(levels) });
+    el.style.width = '240px';
+    const title = rowOf(el, 'deep-note.md').querySelector<HTMLElement>('[slot="title"]') as HTMLElement;
+    const box = title.getBoundingClientRect();
+    const host = el.getBoundingClientRect();
+    return { left: box.left - host.left, width: box.width };
+  };
+
+  it('a ten-level leaf keeps a readable label inside a 240 px column, at the same offset as a seven-level one', async () => {
+    const ten = await leafLeft(10);
+    document.body.replaceChildren();
+    const seven = await leafLeft(7);
+    document.body.replaceChildren();
+    const six = await leafLeft(6);
+    expect(ten.width, 'the label has width').toBeGreaterThan(60);
+    expect(ten.left).toBe(seven.left);
+    expect(six.left, 'control: indent still grows up to the cap').toBeLessThan(seven.left + 1);
+    document.body.replaceChildren();
+    const three = await leafLeft(3);
+    expect(three.left, 'control: a shallow leaf is indented less').toBeLessThan(six.left);
+  });
+});
+
+describe('the manifest entry of sk-shell-tree keeps its documentation', () => {
+  it('has its tag name, its description and the typed details of both events (a const between the JSDoc and the class detaches them)', async () => {
+    const manifest = (await import('../custom-elements.json')).default as { modules: { declarations?: Record<string, unknown>[] }[] };
+    const entry = manifest.modules.flatMap((m) => m.declarations ?? []).find((d) => d.name === 'SkShellTree') as
+      | { tagName?: string; description?: string; events?: { name: string; type?: { text: string } }[] }
+      | undefined;
+    expect(entry?.tagName).toBe('sk-shell-tree');
+    expect(entry?.description ?? '').toContain('A sidebar section');
+    const types = Object.fromEntries((entry?.events ?? []).map((e) => [e.name, e.type?.text]));
+    expect(types).toEqual({ 'sk-navigate': 'CustomEvent<ShellNavigateDetail>', 'sk-tree-toggle': 'CustomEvent<TreeToggleDetail>' });
+  });
+});

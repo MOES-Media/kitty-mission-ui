@@ -1,0 +1,28 @@
+schema: review-verify/v1
+complete: true
+phase: plan
+results:
+  - id: "PLAN-DESIGN-017"
+    status: resolved
+    reason: "A grep of every non-review file finds no Base-B, 'if present', 'when present', 'lands second', 'second of' or cf1f179/8336455 hedge left; gates.md, contract-pin.md, defaults.md, research.md D-09/R-11 and plan.md all say #5 is merged first (Base A) and cite the same lane-j tip d15cb5d."
+  - id: "PLAN-CORRECT-009"
+    status: resolved
+    reason: "Read against stylelint.config.mjs exceptionOverrides(): padding-inline-start is now in properties and strict (and is genuinely absent from STRICT_PROPERTIES and LAYOUT_PROPERTIES), solid is granted per property via keywords and values, max-width/line-height are unstrict and pinned, and pxProperties plus the proposed chProperties partition the units, so the entry is executable as written."
+  - id: "PLAN-FRESH3-002"
+    status: resolved
+    reason: "plan.md Performance Goals, IC-04, IC-10, A-10, CP-1 ask 2 and research D-19 all state the spec numbers are the hard ceilings and any multiplier exists only as the numbered conditional amendment A-10 decided at CP-1, with no contradicting 'documented multiplier' text left."
+  - id: "PLAN-FRESH3-003"
+    status: resolved
+    reason: "Same evidence as PLAN-DESIGN-017: every 'if present' and 'second of' conditional and the stale sha are gone from gates.md, defaults.md, contract-pin.md and research.md, and defaults.md line 3 no longer contradicts line 11."
+  - id: "PLAN-FRESH3-007"
+    status: resolved
+    reason: "A-8 is split into A-8a (layer-1 literal text, revert recipe is the one line md.validateLink = () => true in parse.ts plus one test and the corpus expectations) and A-8b (three separately revertable narrowings), carried into CP-1 ask 2, the flow diagram, the write-back list and markdown-renderer.md; nit: the plan.md traceability row cites 'link rows 5 to 7' while A-8b names rows 1, 5 and 6."
+  - id: "PLAN-FRESH3-009"
+    status: resolved
+    reason: "The 'Spec rows read as amended' paragraph in plan.md now lists FR-012, DA-23, FR-035 and NFR-005 with their amended wording alongside AV-32 and NFR-003, and states the orchestrator writes the rows back at CP-1."
+  - id: "PLAN-FRESH3-011"
+    status: resolved
+    reason: "S-A6 in research.md, the plan Layout paragraph and the screen contract now say to record, for each sampled viewport, the one tier the shell selects and the resulting content-cell width, and the 'each of three tiers' and 'both tiers' wording is gone."
+  - id: "PLAN-FRESH3-012"
+    status: resolved
+    reason: "plan.md's CP-1 write-back list now adds A-9 to the operator-owned record (which truthfully names A-1 to A-8 only) and LISTING_MAX_ENTRIES is homed in defaults/artifact-copy.ts in both defaults.md and plan.md IC-02 with no second definition."

@@ -1,0 +1,2 @@
+// expect: S16.3
+export const f = (s: string): boolean => s === `spec`;

@@ -298,7 +298,7 @@ describe('Workspace (T043 step 2; the omitted-versus-all-null pair)', () => {
 describe('Artifact links (T043 step 3)', () => {
   const spec = { path: 'spec.md', kind: 'spec' };
   const prompt = { path: 'tasks/WP04-example.md', kind: 'work_package_prompt' };
-  const links = (over: Partial<ArtifactLinksView> = {}): ArtifactLinksView => ({ spec, prompt, inert: false, ...over });
+  const links = (over: Partial<ArtifactLinksView> = {}): ArtifactLinksView => ({ specLink: spec, promptLink: prompt, inert: false, ...over });
   const controls = (box: ParentNode): HTMLElement[] => [...box.querySelectorAll<HTMLElement>('sk-button')];
 
   it('draws each action only when its reference is non-null, secondary, with the reference passed to the handler', () => {
@@ -313,17 +313,17 @@ describe('Artifact links (T043 step 3)', () => {
       [prompt.path, prompt.kind],
     ]);
 
-    const specOnly = draw(renderArtifactLinks(links({ prompt: null }), () => undefined));
+    const specOnly = draw(renderArtifactLinks(links({ promptLink: null }), () => undefined));
     expect(controls(specOnly).map((c) => text(c))).toEqual([OPEN_SPEC_LABEL]);
-    const promptOnly = draw(renderArtifactLinks(links({ spec: null }), () => undefined));
+    const promptOnly = draw(renderArtifactLinks(links({ specLink: null }), () => undefined));
     expect(controls(promptOnly).map((c) => text(c))).toEqual([OPEN_PROMPT_LABEL]);
-    const neither = draw(renderArtifactLinks(links({ spec: null, prompt: null }), () => undefined));
+    const neither = draw(renderArtifactLinks(links({ specLink: null, promptLink: null }), () => undefined));
     expect(controls(neither)).toHaveLength(0);
   });
 
   it('passes a kind the screen never saw through unchanged', () => {
     const calls: [string, string][] = [];
-    const box = draw(renderArtifactLinks(links({ spec: { path: 'x/y.md', kind: 'a-kind-the-screen-never-saw' } }), (path, kind) => calls.push([path, kind])));
+    const box = draw(renderArtifactLinks(links({ specLink: { path: 'x/y.md', kind: 'a-kind-the-screen-never-saw' } }), (path, kind) => calls.push([path, kind])));
     controls(box)[0]?.click();
     expect(calls).toEqual([['x/y.md', 'a-kind-the-screen-never-saw']]);
   });

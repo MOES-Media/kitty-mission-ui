@@ -1,0 +1,29 @@
+schema: review-refute/v1
+complete: true
+phase: plan
+batch: 8
+verdicts:
+  - id: PLAN-DESIGN-021
+    verdict: confirmed
+    reason: "Contract gates.md matches bare kind words only in comparisons and case labels, so array-element includes, set.has and bare object keys slip through, and the gate header lists no such limits."
+  - id: PLAN-DESIGN-022
+    verdict: confirmed
+    reason: "defaults.md confirms icon, WP link kinds, container segment, budget and copy are module constants while only string hooks (kind, refusal, mediaType, size) are runtime inputs, contradicting the spec's data-in claim; FORK stands."
+  - id: PLAN-DESIGN-023
+    verdict: confirmed
+    reason: "markdown-renderer.md line 14 has index.ts re-exporting lit-importing renderMarkdown with the pure model, while no logic file imports lit today, and buildMarkdownModel(content) is ambiguous against data-model.md."
+  - id: PLAN-A11Y-001
+    verdict: confirmed
+    reason: "The shell grid gives the mobile tier (below 720px) a full-viewport content cell, so a 689px container threshold yields two columns at viewports 689 to 719 and S-A6 samples only 1280/1100/800/620; FORK stands."
+  - id: PLAN-A11Y-002
+    verdict: confirmed
+    reason: "The shell skip link preventDefaults and focuses its own [data-focus-target] wrapper (comment cites G-10), so the contract's pane as skip target with an id is unreachable and untrue."
+  - id: PLAN-A11Y-003
+    verdict: confirmed
+    reason: "sk-artifact-screen.md line 47 makes tabpanels and table boxes unconditionally tabindex=0 while line 66 says the pane is a stop only when scrollable, a direct contradiction; FORK stands."
+  - id: PLAN-A11Y-004
+    verdict: confirmed
+    reason: "The screen contract names the table box from first header cell text, but markdown-renderer.md line 53 forbids any document-derived aria-* value and any id, so the two contracts conflict; FORK stands."
+  - id: PLAN-A11Y-005
+    verdict: confirmed
+    reason: "The toolbar name is a strong not a heading and FR-006 keeps authored levels, so raw-only, empty and state panes have no h1 while the prototype uses an h1 for the refusal title; FORK stands."

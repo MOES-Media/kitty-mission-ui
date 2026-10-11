@@ -1,0 +1,29 @@
+schema: review-refute/v1
+complete: true
+phase: plan
+batch: 10
+verdicts:
+  - id: PLAN-A11Y-014
+    verdict: confirmed
+    reason: contracts/sk-artifact-screen.md lists announcement rows and one test per row but states no live-region lifecycle (always rendered, text replaced, no initial-mount announcement, busy dedupe).
+  - id: PLAN-A11Y-015
+    verdict: confirmed
+    reason: E-27 pins 270px and the container threshold is 689px (plan.md:95) while text scales, and NFR-004 per plan IC-10 only asserts no horizontal overflow.
+  - id: PLAN-A11Y-016
+    verdict: confirmed
+    reason: The contract names both the toolbar region and the pane role=region by the file name, nests table regions in the pane, and makes the inspector an aside inside the shell main.
+  - id: PLAN-A11Y-017
+    verdict: confirmed
+    reason: plan.md IC-10 still labels AV-32 to AV-35 "collapsed" while A-1 moves 1100px to the expanded tier (shell EXPANDED_QUERY is min-width 1100px), and IC-06 layout tests exist without tier stories until IC-10.
+  - id: PLAN-A11Y-018
+    verdict: confirmed
+    reason: The contract makes linked Work Packages "controls" and FR-027 makes pills emit an event, yet no planning artifact names the element or an exception for a raw button (E-22 to E-27 have none) and S-A4 does not ask it.
+  - id: PLAN-A11Y-019
+    verdict: confirmed
+    reason: research.md S-A5 specifies only variants, axe, a tree dump and key checks, with no cross-shadow idref, WebKit/Firefox, forced-colors or image-in-link coverage.
+  - id: PLAN-A11Y-020
+    verdict: confirmed
+    reason: A grep of the mission artifacts finds no target-size statement, so the tab and pill control sizes are unspecified (a true nit).
+  - id: PLAN-TEST-001
+    verdict: confirmed
+    reason: FORK stands; packages/mission-ui/vitest.config.ts is browser-only with one chromium instance and no node project, so the planned bundle-budget, node twin and "vitest node environment" tests cannot run as written, and the research.md scripts/ fallback is only a contingency.

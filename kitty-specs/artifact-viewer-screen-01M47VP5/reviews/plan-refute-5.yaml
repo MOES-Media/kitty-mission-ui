@@ -1,0 +1,29 @@
+schema: review-refute/v1
+complete: true
+phase: plan
+batch: 5
+verdicts:
+  - id: PLAN-SECURE-009
+    verdict: confirmed
+    reason: research.md R-09 cites "the raw tab shows the same characters" while D-15 makes raw a plain pre text binding, which applies the same bidi reordering, so it is no mitigation and no option was recorded.
+  - id: PLAN-SECURE-010
+    verdict: confirmed
+    reason: markdown-renderer.md row 1 rejects whitespace and row 8 re-applies row 1 after decoding, so my%20file.md can never match a listing entry with a space (ArtifactPath forbids only line breaks), and row 8 says nothing about empty segments, trailing slash or a lone dot.
+  - id: PLAN-SECURE-011
+    verdict: confirmed
+    reason: Live gh api lists GHSA-r7fv-28h4-cvq7 (2026-09-12) and GHSA-6vfc-qv3f-vr6c, neither named in plan.md or research.md, GHSA-38c4-r59v-3vqw is absent from the list, and D-05 only says "provenance of the integrity hash from the lockfile".
+  - id: PLAN-SECURE-012
+    verdict: confirmed
+    reason: markdown-it 15.0.2 package.json exports include "./browser" (a separate bundle) and a require entry, while D-06 rule 1 and gates.md item 1 say only "importable only by parse.ts" with no subpath pattern, require rule or per-file override mechanism.
+  - id: PLAN-DESIGN-001
+    verdict: confirmed
+    reason: eslint.config.mjs per-file blocks (lines 83-127) each set no-restricted-syntax to withoutClassBan plus classOnly, replacing the array, and plan.md/gates.md say only that the D-06 rules are "added to eslint.config.mjs" without stating they are appended to elementSyntaxRestrictions or testing an overridden file.
+  - id: PLAN-DESIGN-002
+    verdict: confirmed
+    reason: research.md D-04 has IC-06 edit #5's one sk-retry-load declaration when #5 is present, yet the plan.md shared-files table never lists sk-work-package-screen.ts and the union has no neutral home, so the write scope and landing-order dependence are real; FORK stands.
+  - id: PLAN-DESIGN-003
+    verdict: confirmed
+    reason: D-07 and sk-artifact-screen.md item 7 key the parse cache on content object identity, resolveArtifactView takes the already-parsed markdown while gates.md says the screen compares no mediaType, and the per-listing entryPaths Set is mentioned only as "built once per listing" with no placement.
+  - id: PLAN-DESIGN-004
+    verdict: confirmed
+    reason: markdown-renderer.md lists render.ts as importing lit only yet gives renderMarkdown entryPaths and openPath (so it must classify via links.ts), and classifyLink takes a Set of paths while sk-select-artifact needs the matched entry's kind.

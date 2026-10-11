@@ -30,7 +30,7 @@ test('tallyLanes of nothing is nine zeros', () => {
 
 test('the overlays build exactly the registered fixtures, in registry order', () => {
   assert.deepEqual(Object.keys(fixtures), Object.keys(FIXTURES));
-  assert.equal(Object.keys(fixtures).length, 89);
+  assert.equal(Object.keys(fixtures).length, 121);
 });
 
 // The declared values of contract-pin.md, "Declared derived values": [wpTotal, blockedCount, doneCount, donePercentage, W].
@@ -125,6 +125,14 @@ test('projectUnknownHealth: a project whose health is outside the enum, every ot
   assert.equal(p.health, 'unheard_of_health');
   assert.deepEqual({ ...p, health: base.health }, base);
   assert.equal(Object.keys(p).length, 7);
+});
+
+test('projectSchemaDrift and projectAllNull: the vendored examples, byte for byte', () => {
+  const ex = loadExamples(ROOT);
+  assert.deepEqual(fixtures.projectSchemaDrift, ex['Project.schema-drift']);
+  assert.deepEqual(fixtures.projectAllNull, ex['Project.all-null']);
+  assert.equal(fixtures.projectAllNull.currentBranch, null);
+  assert.equal(fixtures.projectSchemaDrift.currentBranch, 'topic/example');
 });
 
 test('projectLong: a 255-character branch, a 64-character version and a long name, all matching the contract patterns', () => {
@@ -246,4 +254,198 @@ test('detail fixtures: the one-member variations of detailPopulated', () => {
   assert.equal(Object.hasOwn(fixtures.detailOmittedProvisional, 'reviewCycles'), false);
   assert.equal(Object.hasOwn(fixtures.detailOmittedProvisional, 'workspace'), false);
   assert.ok(fixtures.detailUnknownLanes.subtasks.some((x) => x.statusLane === 'on_hold') && fixtures.detailUnknownLanes.dependencies.some((x) => x.statusLane === 'on_hold'));
+});
+
+// ---- the Artifact Viewer documents: 13 contract examples and 17 overlays (30 registered documents) ----
+const byteOrder = (a, b) => Buffer.compare(Buffer.from(a), Buffer.from(b));
+const ARTIFACT_NAMES = Object.keys(FIXTURES).filter((n) => FIXTURES[n].schema.startsWith('Artifact'));
+const CONTENT_NAMES = ARTIFACT_NAMES.filter((n) => FIXTURES[n].schema === 'ArtifactContent');
+const REFUSAL_NAMES = ARTIFACT_NAMES.filter((n) => FIXTURES[n].schema === 'ArtifactRefusal');
+const pathsOf = (listing) => listing.entries.map((e) => e.path);
+
+test('the thirty Artifact Viewer documents are registered under the names of contracts/contract-pin.md, in that order', () => {
+  assert.deepEqual(ARTIFACT_NAMES, [
+    'listingPopulated', 'listingTruncated', 'contentMarkdown', 'contentRedacted', 'contentJson', 'contentEmpty',
+    'refusalInvalidPath', 'refusalNotFound', 'refusalTooLarge', 'refusalNotText', 'refusalSecret', 'refusalUnreadable', 'refusalListingUnreadable',
+    'listingWithOpenFiles', 'listingEmpty', 'listingUnreadableRows', 'listingUnknownKind', 'contentUnknownKind', 'refusalUnknownCode',
+    'listingLongNames', 'listingDeep', 'contentFeatures', 'contentHostile', 'contentYaml', 'contentJsonl', 'contentCsv', 'contentPlain',
+    'contentBom', 'contentPrompt', 'contentReviewCycle',
+  ]);
+  assert.equal(ARTIFACT_NAMES.length, 30);
+  assert.equal(CONTENT_NAMES.length, 14);
+  assert.equal(REFUSAL_NAMES.length, 8);
+});
+
+test('the thirteen examples are the vendored examples, untouched', () => {
+  const ex = loadExamples(ROOT);
+  const pairs = [
+    ['listingPopulated', 'ArtifactListing.populated'], ['listingTruncated', 'ArtifactListing.truncated'],
+    ['contentMarkdown', 'ArtifactContent.markdown'], ['contentRedacted', 'ArtifactContent.redacted'],
+    ['contentJson', 'ArtifactContent.json'], ['contentEmpty', 'ArtifactContent.empty'],
+    ['refusalInvalidPath', 'ArtifactRefusal.invalid-artifact-path'], ['refusalNotFound', 'ArtifactRefusal.not-found'],
+    ['refusalTooLarge', 'ArtifactRefusal.artifact-too-large'], ['refusalNotText', 'ArtifactRefusal.artifact-not-text'],
+    ['refusalSecret', 'ArtifactRefusal.artifact-secret'], ['refusalUnreadable', 'ArtifactRefusal.artifact-unreadable'],
+    ['refusalListingUnreadable', 'ArtifactRefusal.artifact-listing-unreadable'],
+  ];
+  assert.equal(pairs.length, 13);
+  for (const [name, example] of pairs) assert.deepEqual(fixtures[name], ex[example], name);
+  assert.equal(fixtures.listingPopulated.truncated, false);
+  assert.equal(fixtures.listingTruncated.truncated, true);
+  assert.deepEqual(REFUSAL_NAMES.slice(0, 7).map((n) => fixtures[n].code), [
+    'invalid_artifact_path', 'not_found', 'artifact_too_large', 'artifact_not_text', 'artifact_secret', 'artifact_unreadable', 'artifact_listing_unreadable',
+  ]);
+});
+
+test('listingWithOpenFiles: the populated entries untouched plus one entry per open path, in byte order, none truncated', () => {
+  const base = fixtures.listingPopulated;
+  const l = fixtures.listingWithOpenFiles;
+  assert.equal(l.missionId, base.missionId);
+  assert.equal(l.truncated, false);
+  const paths = pathsOf(l);
+  assert.deepEqual(paths, [...paths].sort(byteOrder), 'byte order');
+  assert.equal(new Set(paths).size, paths.length, 'no duplicate path');
+  for (const e of base.entries) assert.deepEqual(l.entries.find((x) => x.path === e.path), e, e.path);
+  const added = paths.filter((p) => !pathsOf(base).includes(p));
+  assert.deepEqual(added.sort(byteOrder), ['contracts/schema.json', 'notes/empty.txt', 'notes/handoff.md', fixtures.contentCsv.path, fixtures.contentJsonl.path, fixtures.contentPlain.path].sort(byteOrder));
+  assert.equal(added.length, 6);
+  // every open path of the content documents is in the listing, with the content's own kind
+  let n = 0;
+  for (const name of CONTENT_NAMES.filter((x) => x !== 'contentUnknownKind')) {
+    const c = fixtures[name];
+    const entry = l.entries.find((e) => e.path === c.path);
+    assert.ok(entry, `${name}: ${c.path} is in the listing`);
+    assert.equal(entry.kind, c.kind, name);
+    assert.equal(entry.readable, true, name);
+    n += 1;
+  }
+  assert.equal(n, 13);
+  for (const e of l.entries.filter((x) => added.includes(x.path))) assert.equal(e.sizeBytes, Buffer.byteLength(fixtures[CONTENT_NAMES.find((nm) => fixtures[nm].path === e.path)].content), e.path);
+});
+
+test('listingEmpty, listingUnreadableRows, listingLongNames and listingDeep have the shapes the stories need', () => {
+  assert.deepEqual(fixtures.listingEmpty.entries, []);
+  assert.equal(fixtures.listingEmpty.truncated, false);
+  const u = fixtures.listingUnreadableRows;
+  assert.equal(u.entries.length, 3);
+  assert.deepEqual(u.entries.map((e) => e.readable), [false, false, false]);
+  assert.deepEqual(pathsOf(u), [...pathsOf(u)].sort(byteOrder));
+  const long = fixtures.listingLongNames;
+  const names = long.entries.map((e) => e.path.split('/').at(-1));
+  assert.equal(names.filter((x) => x.length === 200).length, 1, 'one 200-character file name');
+  const longest = Math.max(...long.entries.map((e) => e.path.length));
+  assert.ok(longest >= 480 && longest <= 512, `a path near 512 characters (${longest})`);
+  assert.deepEqual(pathsOf(long), [...pathsOf(long)].sort(byteOrder));
+  const deep = fixtures.listingDeep;
+  const folders = Math.max(...deep.entries.map((e) => e.path.split('/').length - 1));
+  assert.equal(folders, 10, 'ten nested folders');
+  assert.deepEqual(pathsOf(deep), [...pathsOf(deep)].sort(byteOrder));
+});
+
+test('the unknown-kind pair: one listing entry and its content share a path and a kind outside the twelve', () => {
+  const known = new Set(fixtures.listingPopulated.entries.map((e) => e.kind));
+  const l = fixtures.listingUnknownKind;
+  const c = fixtures.contentUnknownKind;
+  assert.equal(l.entries.length, 1);
+  assert.equal(l.entries[0].path, c.path);
+  assert.equal(l.entries[0].kind, c.kind);
+  assert.ok(l.entries[0].kind.length > 0);
+  assert.equal(known.has(c.kind), false);
+  const twelve = ['review_cycle', 'work_package_prompt', 'spec', 'plan', 'tasks', 'data_model', 'quickstart', 'analysis_report', 'research', 'contract', 'checklist', 'other'];
+  assert.equal(twelve.includes(c.kind), false);
+  assert.notEqual(fixtures.listingUnknownKind, fixtures.listingEmpty);
+});
+
+test('refusalUnknownCode: a code outside the seven with status 500', () => {
+  const r = fixtures.refusalUnknownCode;
+  const seven = REFUSAL_NAMES.slice(0, 7).map((n) => fixtures[n].code);
+  assert.equal(seven.length, 7);
+  assert.equal(seven.includes(r.code), false);
+  assert.ok(r.code.length > 0);
+  assert.equal(r.status, 500);
+});
+
+test('contentFeatures: every markdown element of the renderer, at path plan.md, and never the whole word the terminology check forbids', () => {
+  const c = fixtures.contentFeatures;
+  assert.equal(c.path, 'plan.md');
+  assert.equal(c.kind, 'plan');
+  assert.equal(c.mediaType, 'text/markdown');
+  assert.equal(c.sizeBytes, Buffer.byteLength(c.content));
+  assert.equal(/\bfeature/i.test(c.content), false, 'the whole word, any case');
+  const text = c.content;
+  const each = {
+    'heading levels 1 to 6': [/^# /m, /^## /m, /^### /m, /^#### /m, /^##### /m, /^###### /m],
+    'ordered list': [/^1\. /m],
+    'unordered list': [/^- /m],
+    'nested list': [/^ {2,4}- /m],
+    'table with a header row': [/^\|.*\|\n\|[ :|-]+\|/m],
+    'fenced code': [/^```/m],
+    'indented code': [/\n\n {4}\S/],
+    'inline code': [/`[^`\n]+`/],
+    'block quote': [/^> /m],
+    'thematic break': [/^\*\*\*$/m],
+    emphasis: [/(?<![*\w])\*[^*\n]+\*(?![*\w])/],
+    strong: [/\*\*[^*\n]+\*\*/],
+    strikethrough: [/~~[^~\n]+~~/],
+    'internal link': [/\]\((?:data-model\.md|tasks\/WP01-example\.md|spec\.md)[^)]*\)/],
+    'external link': [/\]\(https:\/\/[^)]+\)/],
+    image: [/!\[[^\]]*\]\([^)]+\)/],
+  };
+  let n = 0;
+  for (const [what, res] of Object.entries(each)) {
+    for (const re of res) assert.ok(re.test(text), `${what}: ${re}`);
+    n += 1;
+  }
+  assert.equal(n, 16);
+  const wide = text.split('\n').find((line) => /^\|/.test(line));
+  assert.ok(wide.split('|').length - 2 >= 8, 'a wide table');
+  assert.ok(Math.max(...text.split('\n').map((l) => l.length)) < 20000);
+});
+
+test('contentHostile: hostile text at research.md, with no credential-shaped string', () => {
+  const c = fixtures.contentHostile;
+  assert.equal(c.path, 'research.md');
+  assert.equal(c.kind, 'research');
+  assert.equal(c.mediaType, 'text/markdown');
+  assert.equal(c.sizeBytes, Buffer.byteLength(c.content));
+  for (const re of [/<script/i, /javascript:/i, /!\[[^\]]*\]\(https?:\/\//, /<iframe/i, /onerror=/i]) assert.ok(re.test(c.content), String(re));
+  assert.ok(/^```/m.test(c.content), 'an unclosed fence is among the constructs');
+  assert.equal((c.content.match(/^```/gm) ?? []).length % 2, 1, 'the fence is never closed');
+  const credential = [/gh[pousr]_[A-Za-z0-9]{36}/, /github_pat_\w{22,}/, /\b(?:AKIA|ASIA)[A-Z0-9]{16}\b/, new RegExp('-----BEGIN [A-Z ]*PRIVATE ' + 'KEY-----')];
+  for (const re of credential) assert.equal(re.test(c.content), false, String(re));
+  assert.equal(/\bfeature/i.test(c.content), false);
+});
+
+test('the media-type overlays: path and media type changed, the content kept short', () => {
+  const want = [
+    ['contentYaml', 'contracts/api.yaml', 'application/yaml', 'contract'],
+    ['contentJsonl', null, 'application/x-ndjson', 'other'],
+    ['contentCsv', null, 'text/csv', 'other'],
+    ['contentPlain', null, 'text/plain', 'other'],
+  ];
+  assert.equal(want.length, 4);
+  for (const [name, path, mediaType, kind] of want) {
+    const c = fixtures[name];
+    if (path) assert.equal(c.path, path, name);
+    else assert.ok(c.path.startsWith('notes/'), name);
+    assert.equal(c.mediaType, mediaType, name);
+    assert.equal(c.kind, kind, name);
+    assert.ok(c.content.length > 0 && c.content.length < 600, `${name} is short`);
+    assert.equal(c.sizeBytes, Buffer.byteLength(c.content), name);
+  }
+  assert.ok(fixtures.contentJsonl.path.endsWith('.jsonl'));
+  assert.ok(fixtures.contentCsv.path.endsWith('.csv'));
+  assert.ok(fixtures.contentPlain.path.endsWith('.txt'));
+});
+
+test('contentBom starts with U+FEFF and counts its three bytes; the prompt and the review cycle carry their kinds and paths', () => {
+  const b = fixtures.contentBom;
+  assert.equal(b.path, 'notes/with space.md');
+  assert.equal(b.content.charCodeAt(0), 0xfeff);
+  assert.equal(b.content.charCodeAt(1) === 0xfeff, false);
+  assert.equal(b.sizeBytes, Buffer.byteLength(b.content));
+  assert.equal(fixtures.contentPrompt.kind, 'work_package_prompt');
+  assert.equal(fixtures.contentPrompt.path, 'tasks/WP01-example.md');
+  assert.equal(fixtures.contentReviewCycle.kind, 'review_cycle');
+  assert.equal(fixtures.contentReviewCycle.path, 'tasks/WP01-example/review-cycle-1.md');
+  for (const n of ['contentPrompt', 'contentReviewCycle']) assert.equal(fixtures[n].mediaType, 'text/markdown');
 });

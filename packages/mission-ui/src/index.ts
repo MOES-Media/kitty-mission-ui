@@ -1,12 +1,15 @@
 // The single place custom elements are registered. Element modules do not self-register, so importing one (from a
 // test, a story or another package) never throws on a duplicate definition; the guard makes this entry idempotent.
+import { SkArtifactScreen } from './elements/sk-artifact-screen/sk-artifact-screen.js';
 import { SkDriftScreen } from './elements/sk-drift-screen/sk-drift-screen.js';
 import { SkFilterToggleGroup } from './elements/sk-filter-toggle-group/sk-filter-toggle-group.js';
 import { SkMissionSample } from './elements/sk-mission-sample/sk-mission-sample.js';
 import { SkMissionShell } from './elements/sk-mission-shell/sk-mission-shell.js';
+import { SkOpenProjectDialog } from './elements/sk-open-project-dialog/sk-open-project-dialog.js';
 import { SkMissionsScreen } from './elements/sk-missions-screen/sk-missions-screen.js';
 import { SkPhaseBar } from './elements/sk-phase-bar/sk-phase-bar.js';
 import { SkPipelineScreen } from './elements/sk-pipeline-screen/sk-pipeline-screen.js';
+import { SkProjectsScreen } from './elements/sk-projects-screen/sk-projects-screen.js';
 import { SkShellNavItem } from './elements/sk-shell-nav-item/sk-shell-nav-item.js';
 import { SkShellTree } from './elements/sk-shell-tree/sk-shell-tree.js';
 import { SkWorkPackageBoard } from './elements/sk-work-package-board/sk-work-package-board.js';
@@ -42,24 +45,49 @@ if (!customElements.get('sk-work-package-board')) {
 if (!customElements.get('sk-work-package-screen')) {
   customElements.define('sk-work-package-screen', SkWorkPackageScreen);
 }
+if (!customElements.get('sk-projects-screen')) {
+  customElements.define('sk-projects-screen', SkProjectsScreen);
+}
+if (!customElements.get('sk-open-project-dialog')) {
+  customElements.define('sk-open-project-dialog', SkOpenProjectDialog);
+}
+if (!customElements.get('sk-artifact-screen')) {
+  customElements.define('sk-artifact-screen', SkArtifactScreen);
+}
 if (!customElements.get('sk-drift-screen')) {
   customElements.define('sk-drift-screen', SkDriftScreen);
 }
 
 export {
+  SkArtifactScreen,
   SkDriftScreen,
   SkFilterToggleGroup,
   SkMissionSample,
   SkMissionShell,
   SkMissionsScreen,
+  SkOpenProjectDialog,
   SkPhaseBar,
   SkPipelineScreen,
+  SkProjectsScreen,
   SkShellNavItem,
   SkShellTree,
   SkWorkPackageBoard,
   SkWorkPackageScreen,
 };
 export { SHELL_MOBILE_STATE, ShellTierController } from './shell-tier.js';
+export { buildArtifactTree, pathOfArtifactNode } from './logic/artifact-tree.js';
+export type { ArtifactTreeOptions, ArtifactTreeResult } from './logic/artifact-tree.js';
+export type {
+  ArtifactContentStatus,
+  ArtifactLabelHooks,
+  ArtifactScreenMission,
+  ArtifactScreenWorkPackage,
+  ArtifactStatus,
+  ArtifactTab,
+  ArtifactVocabulary,
+} from './logic/artifact-types.js';
+export type { SkArtifactRetryLoadDetail, SkOpenLinkDetail, SkSelectArtifactDetail } from './elements/sk-artifact-screen/sk-artifact-screen.js';
+export type { RetryLoadDetail, RetryLoadEventDetail, SkArtifactRetryDetail } from './retry-types.js';
 export type {
   DriftCopyResult,
   DriftScreenStatus,
@@ -70,6 +98,10 @@ export type {
 } from './elements/sk-drift-screen/sk-drift-screen.js';
 export type { SkFilterChangeDetail } from './elements/sk-filter-toggle-group/sk-filter-toggle-group.js';
 export type { SkLoadMoreDetail, SkOpenMissionDetail, SkSearchDetail } from './elements/sk-missions-screen/sk-missions-screen.js';
+export type { SkBrowseFolderDetail, SkConfirmOpenProjectDetail } from './elements/sk-open-project-dialog/sk-open-project-dialog.js';
+export type { SkOpenProjectDetail } from './elements/sk-projects-screen/sk-projects-screen.js';
+export type { FolderEntry, FolderKind, ProjectEntry, ProjectEntryState, ProjectLabelHooks } from './project-types.js';
+export type { ProjectView } from './contract/types.js';
 export type { SkOpenMissionsDetail, SkViewArtifactsDetail } from './elements/sk-pipeline-screen/sk-pipeline-screen.js';
 export type { SkSelectWorkPackageDetail } from './elements/sk-work-package-board/sk-work-package-board.js';
 export type {
@@ -86,8 +118,11 @@ export type {
   LaneGroup,
   StateBadge,
 } from './logic/types.js';
-export type { DriftRetryDetail, RetryLoadDetail } from './logic/wp-retry.js';
+export type { DriftRetryDetail } from './logic/wp-retry.js';
 export type {
+  ArtifactContentView,
+  ArtifactEntryView,
+  ArtifactListingView,
   DriftFinding,
   DriftFindingKey,
   DriftFindingView,

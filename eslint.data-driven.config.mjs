@@ -12,12 +12,26 @@
 //  - phases.at(-1) and phases.slice(i) with a negative or non-literal argument are legitimate and not flagged.
 //  - A padded literal (' blocked', 'blocked ') is not the whole word and is not flagged: the selectors are anchored.
 //  - Class-name fragments such as `is-blocked` that are neither whole words nor underscored are not flagged.
-//  - The verdict, change-state and staleness words (read from the vendored 1.1 schemas) are gated the same way, with one
-//    difference: the bare words that are common identifiers (changed, unknown, fresh, stale) are matched only in a
+//  - The verdict, change-state, staleness and project health words (read from the vendored schemas) are gated the same way, with one
+//    difference: the bare words that are common identifiers (changed, unknown, fresh, stale, healthy) are matched only in a
 //    comparison (=== !== == !=) and a case label, so a property, key, variable or type member of that name stays clean;
 //    a bare word held in a plain string (const x = 'fresh') is therefore not seen. An expression-free template literal
 //    (s === `fresh`, case `fresh`:) is the same comparison and is matched (S14.3, S14.4). The underscored and whole-word
 //    members (changes_requested, not_applicable, unchanged, the two reason codes) are matched as literals, as the lanes are.
+//  - The artifact kinds and the seven artifact refusal codes (read from ArtifactKind.yaml and the ENUM of
+//    ArtifactRefusalCode.yaml) are gated like this: the underscored ones (review_cycle, work_package_prompt, data_model,
+//    analysis_report and every code) are matched as literals, templates, inside longer strings and as object keys (S15);
+//    the bare ordinary words (spec, quickstart, research, contract, checklist, other) only in a comparison, a case label,
+//    an includes argument or array receiver, a Map or Set has/get argument, and as an object-literal key (S16). plan and
+//    tasks are phase words and were already gated everywhere. The gate does NOT read the detail refusal codes of the Work
+//    Package screen (source_unreadable); the reviewer self-check list and the foreign-value tests cover them.
+//  - Holes that stay open for the artifact words: kind.startsWith('spec'), a bare word held in a plain const and compared
+//    through the variable, a value assembled at run time, a shorthand property ({ other }), a bare word as a destructured
+//    name and a bare word as the argument of any other call. A comparison with a string literal that happens to be a bare
+//    word is reported wherever it is (a URL parameter named other is a rename, never a silence). The foreign-vocabulary
+//    composition test of the Artifact Viewer (a thirteenth kind, a refusal code outside the seven) is the backstop.
+//    Closed at wrap-up (WP03 review): a computed key ({ ['spec']: 1 }, S16.9, S16.11), indexOf and lastIndexOf as well as
+//    includes (S16.5, S16.6) and a computed read (o['contract'], S16.10, S16.11).
 //  - The gate does NOT read ArtifactKind (the review-cycle kind) or the detail refusal codes (not_found,
 //    source_unreadable); the reviewer self-check list and the foreign-value tests cover them.
 //  - The Drift vocabulary (mission-ui#10) is gated the same way: the members of the enums DriftKind, DriftAuthority, DriftSide,
@@ -49,11 +63,21 @@ export const CHANGE_STATE_WORDS = schema('ChangeState.yaml').enum;
 export const STALENESS_STATUS_WORDS = schema('Staleness.yaml').properties.status.enum;
 // The reason enum lists null as its last member; only the codes are words.
 export const STALENESS_REASON_WORDS = schema('Staleness.yaml').properties.reason.enum.filter((w) => typeof w === 'string');
-const NEW_ALL = [...new Set([...VERDICT_WORDS, ...CHANGE_STATE_WORDS, ...STALENESS_STATUS_WORDS, ...STALENESS_REASON_WORDS])].filter((w) => !WORDS.includes(w));
+// The project health enum (mission-ui#9, NFR-009): `schema_drift` is an underscored literal, `healthy` a comparison-only bare word.
+export const HEALTH_WORDS = schema('ProjectHealth.yaml').enum;
+const NEW_ALL = [...new Set([...VERDICT_WORDS, ...CHANGE_STATE_WORDS, ...STALENESS_STATUS_WORDS, ...STALENESS_REASON_WORDS, ...HEALTH_WORDS])].filter((w) => !WORDS.includes(w));
 // Matched anywhere as a literal: underscored members and whole words that are not everyday identifiers.
-export const NEW_BARE_WORDS = ['changed', 'unknown', 'fresh', 'stale'].filter((w) => NEW_ALL.includes(w));
+export const NEW_BARE_WORDS = ['changed', 'unknown', 'fresh', 'stale', 'healthy'].filter((w) => NEW_ALL.includes(w));
 export const NEW_WORDS = NEW_ALL.filter((w) => !NEW_BARE_WORDS.includes(w));
 export const NEW_UNDERSCORED = NEW_WORDS.filter((w) => w.includes('_'));
+// The Artifact Viewer's vocabulary: the ArtifactKind enum and the enum of ArtifactRefusalCode.yaml (never the example
+// files). Words an earlier selector already gates (plan and tasks are phase words) are not repeated.
+export const ARTIFACT_KINDS = schema('ArtifactKind.yaml').enum;
+export const ARTIFACT_CODES = schema('ArtifactRefusalCode.yaml').enum;
+const ARTIFACT_ALL = [...new Set([...ARTIFACT_KINDS, ...ARTIFACT_CODES])].filter((w) => !WORDS.includes(w) && !NEW_ALL.includes(w));
+// Underscored words are matched anywhere as a literal; the rest are ordinary words, matched only in the shapes of S16.
+export const ARTIFACT_UNDERSCORED = ARTIFACT_ALL.filter((w) => w.includes('_'));
+export const ARTIFACT_BARE_WORDS = ARTIFACT_ALL.filter((w) => !w.includes('_'));
 // The Drift vocabulary (mission-ui#10). Five enums come from the schemas; the four audit codes behind a snapshot disagreement
 // exist only in the description of DriftFinding.sourceCode, so they are written out here and the self-test checks the agreement.
 export const DRIFT_KIND_WORDS = schema('DriftKind.yaml').enum;
@@ -93,11 +117,13 @@ const M = alt(S8B_METHODS);
 const NW = alt(NEW_WORDS);
 const NU = alt(NEW_UNDERSCORED);
 const NB = alt(NEW_BARE_WORDS);
+const AU = alt(ARTIFACT_UNDERSCORED);
+const AB = alt(ARTIFACT_BARE_WORDS);
 const DW = alt(DRIFT_WORDS);
 
 const entry = (id, selector, text) => ({ selector, message: `data-driven: ${id} ${text}` });
 
-/** One entry per selector alternative (45), so a message names the alternative that fired. */
+/** One entry per selector alternative, so a message names the alternative that fired. */
 export const SELECTOR_ENTRIES = [
   entry('S1', `Literal[value=/^(${W})$/i]`, 'phase name or lane value as a literal; read it from src/defaults/'),
   entry('S1b.1', `Literal[value=/^(${SW})$/i]`, 'status word as a literal; read it from src/defaults/'),
@@ -139,6 +165,22 @@ export const SELECTOR_ENTRIES = [
   entry('S14.2', `SwitchCase > Literal.test[value=/^(${NB})$/i]`, 'change-state or staleness word as a case label; read it from src/defaults/'),
   entry('S14.3', `BinaryExpression[operator=/^[!=]==?$/] > TemplateLiteral[expressions.length=0] > TemplateElement[value.cooked=/^(${NB})$/i]`, 'change-state or staleness word compared as an expression-free template; read it from src/defaults/'),
   entry('S14.4', `SwitchCase > TemplateLiteral.test[expressions.length=0] > TemplateElement[value.cooked=/^(${NB})$/i]`, 'change-state or staleness word as a template case label; read it from src/defaults/'),
+  entry('S15.1', `Literal[value=/^(${AU})$/i]`, 'artifact kind or refusal code as a literal; read it from src/defaults/'),
+  entry('S15.2', `TemplateElement[value.cooked=/^(${AU})$/i]`, 'artifact kind or refusal code as an exact template'),
+  entry('S15.3', `Literal[value=/(${AU})/i]`, 'artifact kind or refusal code inside a longer string'),
+  entry('S15.4', `TemplateElement[value.cooked=/(${AU})/i]`, 'artifact kind or refusal code inside a template'),
+  entry('S15.5', `Property[computed=false] > Identifier.key[name=/^(${AU})$/]`, 'object key named like an artifact kind or refusal code'),
+  entry('S16.1', `BinaryExpression[operator=/^[!=]==?$/] > Literal[value=/^(${AB})$/i]`, 'artifact kind compared as a literal; read it from src/defaults/'),
+  entry('S16.2', `SwitchCase > Literal.test[value=/^(${AB})$/i]`, 'artifact kind as a case label; read it from src/defaults/'),
+  entry('S16.3', `BinaryExpression[operator=/^[!=]==?$/] > TemplateLiteral[expressions.length=0] > TemplateElement[value.cooked=/^(${AB})$/i]`, 'artifact kind compared as an expression-free template; read it from src/defaults/'),
+  entry('S16.4', `SwitchCase > TemplateLiteral.test[expressions.length=0] > TemplateElement[value.cooked=/^(${AB})$/i]`, 'artifact kind as a template case label; read it from src/defaults/'),
+  entry('S16.5', `CallExpression[callee.property.name=/^(includes|indexOf|lastIndexOf)$/][arguments.0.value=/^(${AB})$/i]`, 'artifact kind as an includes, indexOf or lastIndexOf argument; read it from src/defaults/'),
+  entry('S16.6', `CallExpression[callee.property.name=/^(includes|indexOf|lastIndexOf)$/] > MemberExpression.callee > ArrayExpression.object > Literal[value=/^(${AB})$/i]`, 'artifact kind in an array that is the receiver of includes, indexOf or lastIndexOf; read it from src/defaults/'),
+  entry('S16.7', `CallExpression[callee.property.name=/^(has|get)$/][arguments.0.value=/^(${AB})$/i]`, 'artifact kind as a Map or Set key; read it from src/defaults/'),
+  entry('S16.8', `ObjectExpression > Property[computed=false][shorthand=false] > Identifier.key[name=/^(${AB})$/]`, 'object key named like an artifact kind; read it from src/defaults/'),
+  entry('S16.9', `ObjectExpression > Property > Literal.key[value=/^(${AB})$/i]`, 'object key spelled like an artifact kind, computed or not; read it from src/defaults/'),
+  entry('S16.10', `MemberExpression[computed=true] > Literal.property[value=/^(${AB})$/i]`, 'artifact kind read through a computed member; read it from src/defaults/'),
+  entry('S16.11', `:matches(MemberExpression[computed=true], Property[computed=true]) > TemplateLiteral[expressions.length=0] > TemplateElement[value.cooked=/^(${AB})$/i]`, 'artifact kind as an expression-free template in a computed member or key; read it from src/defaults/'),
   entry('S17.1', `Literal[value=/^(${DW})$/i]`, 'drift kind, authority, side, remedy, refusal or source-code word as a literal; read it from src/defaults/'),
   entry('S17.2', `TemplateElement[value.cooked=/^(${DW})$/i]`, 'drift word as an exact template; read it from src/defaults/'),
   entry('S17.3', `Literal[value=/(${DW})/i]`, 'drift word inside a longer string'),

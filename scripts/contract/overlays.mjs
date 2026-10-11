@@ -488,6 +488,202 @@ function detailFixtures(ex, bulk) {
   };
 }
 
+// ---- Artifact Viewer screen (mission-ui#7): 13 contract examples and 17 overlays ----
+const utf8 = (text) => Buffer.byteLength(text, 'utf8');
+const byteOrder = (a, b) => Buffer.compare(Buffer.from(a), Buffer.from(b));
+const BYTE_ORDER_MARK = String.fromCharCode(0xfeff);
+
+/** One ArtifactContent. The size is the byte length of the text (an overlay is a small, whole file). */
+const contentOf = (path, kind, mediaType, text, redacted = false) => ({
+  path,
+  kind,
+  mediaType,
+  encoding: 'utf-8',
+  sizeBytes: utf8(text),
+  redacted,
+  content: text,
+});
+
+const entryOf = (path, kind, sizeBytes, modifiedAt, readable = true) => ({ path, kind, sizeBytes, modifiedAt, readable });
+const sortedEntries = (entries) => [...entries].sort((a, b) => byteOrder(a.path, b.path));
+
+// A markdown document that uses every element the renderer draws. The words of its prose are neutral: the whole word the
+// terminology check forbids appears nowhere in it (C-009), and only the identifier `contentFeatures` carries a similar string.
+const FULL_SYNTAX = `# Mission plan
+
+A short introduction with *emphasis*, **strong text**, ~~struck text~~ and \`inline code\`. Read the [data model](data-model.md) and the [first work package](tasks/WP01-example.md), then the [review cycle](tasks/WP01-example/review-cycle-1.md). The outside reference is [the project site](https://example.org/docs/plan).
+
+## Requirements table
+
+| Id | Name | Owner | Status | Size | Risk | Updated | Reviewer | Notes |
+|---|:---:|---:|---|---|---|---|---|---|
+| R-01 | Load the listing | team-a | done | small | low | 2026-09-22 | reviewer | A deliberately wide table so that it has to scroll sideways inside its own box |
+| R-02 | Open a document | team-b | in progress | medium | medium | 2026-09-23 | reviewer | The second row of the same table, with a long note to keep the width up |
+
+### Lists
+
+1. First step
+2. Second step
+   - nested bullet
+     1. deeper ordered item
+   - another nested bullet
+3. Third step
+
+- plain bullet
+- another plain bullet
+
+#### Quotes
+
+> A quoted paragraph that explains why the plan looks the way it does.
+>
+> > A quote inside the quote.
+
+##### Code
+
+\`\`\`text
+fenced code
+  keeps its indentation
+\`\`\`
+
+Indented code follows this line.
+
+    indented code line
+    second indented line
+
+###### Rules and images
+
+***
+
+![A diagram of the plan](https://example.org/images/plan.png)
+`;
+
+// Hostile TEXT only: the screen must show all of it as inert text. Nothing here is a credential.
+const HOSTILE = `# Hostile notes
+
+<script>alert('x')</script>
+
+<iframe src="https://example.invalid/frame"></iframe>
+
+<img src="https://example.invalid/pixel.png" onerror="alert(1)">
+
+[click me](javascript:alert(1))
+
+[a data link](data:text/html;base64,PGgxPmhpPC9oMT4=)
+
+![a remote image](https://example.invalid/tracker.png)
+
+![a remote image with a title](https://example.invalid/other.png "a title")
+
+<div class="never-closed" style="position:fixed"
+
+[an unclosed link](https://example.invalid/never-closed
+
+**strong that is never closed
+
+\`\`\`
+a code fence that is never closed
+`;
+
+function artifactFixtures(ex) {
+  const populated = ex['ArtifactListing.populated'];
+  const markdown = ex['ArtifactContent.markdown'];
+  const MD = 'text/markdown';
+  const mission = populated.missionId;
+
+  const contentFeatures = contentOf('plan.md', 'plan', MD, FULL_SYNTAX);
+  const contentHostile = contentOf('research.md', 'research', MD, HOSTILE);
+  const contentYaml = contentOf('contracts/api.yaml', 'contract', 'application/yaml', 'openapi: 3.1.0\ninfo:\n  title: Example service\n  version: 1.0.0\npaths: {}\n');
+  const contentJsonl = contentOf('notes/events.jsonl', 'other', 'application/x-ndjson', '{"event":"opened","at":"2026-09-23T08:00:00Z"}\n{"event":"closed","at":"2026-09-23T08:05:00Z"}\n');
+  const contentCsv = contentOf('notes/table.csv', 'other', 'text/csv', 'id,name,state\n1,first,done\n2,second,open\n');
+  const contentPlain = contentOf('notes/readme.txt', 'other', 'text/plain', 'A plain text note.\nIt has two short lines.\n');
+  const contentBom = contentOf('notes/with space.md', 'other', MD, `${BYTE_ORDER_MARK}# A note whose name has a space\n\nThe file starts with a byte order mark.\n`);
+  const contentPrompt = contentOf('tasks/WP01-example.md', 'work_package_prompt', MD, '# Work package prompt\n\nBuild the first slice of the example Mission.\n\n## Subtasks\n\n- [x] T001 Set up the project\n- [ ] T002 Write the loader\n');
+  const contentReviewCycle = contentOf('tasks/WP01-example/review-cycle-1.md', 'review_cycle', MD, '# Review cycle 1\n\nVerdict: changes requested.\n\n1. Fix the loader.\n2. Add the missing test.\n');
+
+  // the listing that holds every path the content documents open: the populated entries untouched, one entry for each
+  // open path the populated listing lacks, size from the content, in byte order
+  const known = new Set(populated.entries.map((e) => e.path));
+  const open = [
+    [ex['ArtifactContent.redacted'], '2026-09-23T08:20:00Z'],
+    [ex['ArtifactContent.json'], '2026-09-23T08:21:00Z'],
+    [ex['ArtifactContent.empty'], '2026-09-23T08:22:00Z'],
+    [contentJsonl, '2026-09-23T08:23:00Z'],
+    [contentCsv, '2026-09-23T08:24:00Z'],
+    [contentPlain, '2026-09-23T08:25:00Z'],
+  ];
+  const added = open.filter(([c]) => !known.has(c.path)).map(([c, at]) => entryOf(c.path, c.kind, utf8(c.content), at));
+
+  const longName = `${'a-very-long-file-name-'.repeat(10).slice(0, 197)}.md`;
+  let deepFolders = '';
+  for (let i = 1; deepFolders.length + 'segment-00/'.length + 'final-note.md'.length <= 505; i += 1) deepFolders += `segment-${String(i).padStart(2, '0')}/`;
+  const nested = Array.from({ length: 10 }, (_, i) => `level-${String(i + 1).padStart(2, '0')}`);
+
+  return {
+    listingPopulated: structuredClone(populated),
+    listingTruncated: structuredClone(ex['ArtifactListing.truncated']),
+    contentMarkdown: structuredClone(markdown),
+    contentRedacted: structuredClone(ex['ArtifactContent.redacted']),
+    contentJson: structuredClone(ex['ArtifactContent.json']),
+    contentEmpty: structuredClone(ex['ArtifactContent.empty']),
+    refusalInvalidPath: structuredClone(ex['ArtifactRefusal.invalid-artifact-path']),
+    refusalNotFound: structuredClone(ex['ArtifactRefusal.not-found']),
+    refusalTooLarge: structuredClone(ex['ArtifactRefusal.artifact-too-large']),
+    refusalNotText: structuredClone(ex['ArtifactRefusal.artifact-not-text']),
+    refusalSecret: structuredClone(ex['ArtifactRefusal.artifact-secret']),
+    refusalUnreadable: structuredClone(ex['ArtifactRefusal.artifact-unreadable']),
+    refusalListingUnreadable: structuredClone(ex['ArtifactRefusal.artifact-listing-unreadable']),
+    listingWithOpenFiles: { missionId: mission, entries: sortedEntries([...structuredClone(populated.entries), ...added]), truncated: false },
+    listingEmpty: { missionId: mission, entries: [], truncated: false },
+    listingUnreadableRows: {
+      missionId: mission,
+      entries: sortedEntries([
+        entryOf('notes/big-export.json', 'other', 300000, '2026-09-23T08:00:00Z', false),
+        entryOf('notes/binary-dump.dat', 'other', 2048, '2026-09-23T08:01:00Z', false),
+        entryOf('notes/secret-notes.txt', 'other', 512, '2026-09-23T08:02:00Z', false),
+      ]),
+      truncated: false,
+    },
+    // a kind outside the twelve, in a listing and in the content of that entry: two documents, one relaxation
+    listingUnknownKind: { missionId: mission, entries: [entryOf('diagrams/overview.md', 'diagram', 640, '2026-09-23T09:00:00Z')], truncated: false },
+    contentUnknownKind: contentOf('diagrams/overview.md', 'diagram', MD, '# Overview\n\nA document whose kind this screen has never seen.\n'),
+    refusalUnknownCode: {
+      type: 'about:blank',
+      title: 'The artifact read was refused',
+      status: 500,
+      code: 'artifact_quarantined',
+      detail: 'The file is held back for a reason this screen has never seen.',
+    },
+    listingLongNames: {
+      missionId: mission,
+      entries: sortedEntries([
+        entryOf('spec.md', 'spec', 5120, '2026-09-22T10:35:00Z'),
+        entryOf(`notes/${longName}`, 'other', 1200, '2026-09-23T08:30:00Z'),
+        entryOf(`${deepFolders}final-note.md`, 'other', 880, '2026-09-23T08:31:00Z'),
+      ]),
+      truncated: false,
+    },
+    listingDeep: {
+      missionId: mission,
+      entries: sortedEntries([
+        entryOf('spec.md', 'spec', 5120, '2026-09-22T10:35:00Z'),
+        entryOf(`${nested[0]}/top-note.md`, 'other', 300, '2026-09-23T08:40:00Z'),
+        entryOf(`${nested.slice(0, 3).join('/')}/mid-note.md`, 'other', 410, '2026-09-23T08:41:00Z'),
+        entryOf(`${nested.join('/')}/deep-note.md`, 'other', 520, '2026-09-23T08:42:00Z'),
+      ]),
+      truncated: false,
+    },
+    contentFeatures,
+    contentHostile,
+    contentYaml,
+    contentJsonl,
+    contentCsv,
+    contentPlain,
+    contentBom,
+    contentPrompt,
+    contentReviewCycle,
+  };
+}
+
 /** A project whose branch (255), version (64) and name are at their limits; every character matches the contract patterns. */
 function projectLong(base) {
   const branch = `topic/${'long-branch-segment-'.repeat(20)}`.slice(0, 255);
@@ -554,7 +750,6 @@ function driftFixtures(ex) {
     ]),
   };
 }
-
 /**
  * Every fixture document, in registry order. `examples` is the parsed vendored examples (loadExamples); `bulk` is the
  * bulk module. Pure: the same inputs give the same documents.
@@ -577,6 +772,8 @@ export function buildFixtures({ examples: ex, bulk }) {
     projectEmpty: { ...structuredClone(ex['Project.example']), missionCount: 0 },
     projectUnknownHealth: { ...structuredClone(ex['Project.example']), health: 'unheard_of_health' },
     projectLong: projectLong(ex['Project.example']),
+    projectSchemaDrift: structuredClone(ex['Project.schema-drift']),
+    projectAllNull: structuredClone(ex['Project.all-null']),
     pageMixed: { items: mixed, pageInfo: pageInfo(mixed, true) },
     pageFull: { items: full, pageInfo: pageInfo(full, true) },
     pageLast: { items: full.map((m) => structuredClone(m)), pageInfo: pageInfo(full, false) },
@@ -652,5 +849,5 @@ export function buildFixtures({ examples: ex, bulk }) {
   out.detailCustomGroups.mid8 = id(16).slice(0, 8);
   out.detailCustomGroups.slug = `example-mission-${id(16).slice(0, 8)}`;
   out.detailCustomGroups.friendlyName = 'Example Mission Custom Groups';
-  return { ...out, ...workPackageFixtures(ex, bulk), ...detailFixtures(ex, bulk), ...driftFixtures(ex) };
+  return { ...out, ...workPackageFixtures(ex, bulk), ...detailFixtures(ex, bulk), ...artifactFixtures(ex), ...driftFixtures(ex) };
 }

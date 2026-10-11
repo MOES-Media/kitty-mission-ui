@@ -43,7 +43,7 @@ import {
   retryDetail,
   stalenessView,
 } from '../../logic/index.js';
-import type { LabelHooks, RetryLoadDetail, WorkPackageScreenRetryDetail } from '../../logic/index.js';
+import type { LabelHooks, RetryLoadDetail } from '../../logic/index.js';
 import type { MissionHead, WorkPackageDetailView, WorkPackageRecordView } from '../../contract/types.js';
 import { eventTimelineSheet, breadcrumbsSheet, emptyStateSheet, factsSheet } from '../../library-sheets.js';
 import { progressSheet } from '../../progress-sheet.js';
@@ -87,6 +87,8 @@ export interface SkOpenArtifactDetail {
 }
 /** Payload of `sk-retry-load`: the one shape of `logic/wp-retry.ts`, aliased and never declared again. */
 export type SkRetryLoadDetail = RetryLoadDetail;
+/** The two targets this screen builds; the union carries later screens' members too. */
+type WorkPackageRetryTarget = Extract<SkRetryLoadDetail, { target: 'work-package' | 'detail' }>['target'];
 
 const EXTRA_STATUSES: readonly WpScreenStatus[] = ['not-found', 'nothing-selected'];
 const DETAIL_STATUSES: readonly DetailStatus[] = ['loading', 'ready', 'error', 'not-found'];
@@ -303,14 +305,14 @@ export class SkWorkPackageScreen extends LitElement {
     this.openArtifact(artifactPath, REVIEW_CYCLE_ARTIFACT_KIND);
   }
 
-  protected retryLoad(target: WorkPackageScreenRetryDetail['target']): void {
+  protected retryLoad(target: WorkPackageRetryTarget): void {
     const detail = this.retryPayload(target);
     if (detail === null) return;
     this.dispatchEvent(new CustomEvent<SkRetryLoadDetail>('sk-retry-load', { detail, bubbles: true, composed: true }));
   }
 
   /** The retry payload, or null (no Mission or no id anywhere): the control is inert. A detail for another Work Package counts as omitted. */
-  private retryPayload(target: WorkPackageScreenRetryDetail['target']): SkRetryLoadDetail | null {
+  private retryPayload(target: WorkPackageRetryTarget): SkRetryLoadDetail | null {
     return retryDetail(target, { mission: this.mission, wpId: this.wpId, workPackage: this.workPackage, detail: this.matchingDetail() });
   }
 
@@ -551,8 +553,8 @@ export class SkWorkPackageScreen extends LitElement {
       refs === undefined || (refs.spec === null && refs.prompt === null)
         ? null
         : {
-            spec: refs.spec === null ? null : { path: refs.spec.path, kind: refs.spec.kind },
-            prompt: refs.prompt === null ? null : { path: refs.prompt.path, kind: refs.prompt.kind },
+            specLink: refs.spec === null ? null : { path: refs.spec.path, kind: refs.spec.kind },
+            promptLink: refs.prompt === null ? null : { path: refs.prompt.path, kind: refs.prompt.kind },
             inert,
           };
 
@@ -604,7 +606,6 @@ export class SkWorkPackageScreen extends LitElement {
 declare global {
   interface HTMLElementEventMap {
     'sk-open-artifact': CustomEvent<SkOpenArtifactDetail>;
-    'sk-retry-load': CustomEvent<SkRetryLoadDetail>;
   }
   interface HTMLElementTagNameMap {
     'sk-work-package-screen': SkWorkPackageScreen;

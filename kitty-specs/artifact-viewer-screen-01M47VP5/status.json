@@ -1,0 +1,483 @@
+{
+  "event_count": 122,
+  "last_event_id": "01M4DS76YH3A27NGCX4CQV4ZFS",
+  "materialized_at": "2026-10-08T12:53:40.945615+00:00",
+  "mission_number": "",
+  "mission_slug": "artifact-viewer-screen-01M47VP5",
+  "mission_type": "software-dev",
+  "schema_version": 2,
+  "summary": {
+    "approved": 13,
+    "blocked": 0,
+    "canceled": 0,
+    "claimed": 0,
+    "done": 0,
+    "for_review": 0,
+    "in_progress": 0,
+    "in_review": 0,
+    "planned": 0
+  },
+  "work_packages": {
+    "WP01": {
+      "actor": "user",
+      "agent": "claude",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
+      "force_count": 0,
+      "implementer_of_record": "claude",
+      "lane": "approved",
+      "last_event_id": "01M4ANS013T6M711TZM6JYF9SJ",
+      "last_transition_at": "2026-10-07T07:55:46.084023+00:00",
+      "model": "__resolved_model_absent__",
+      "notes": [
+        "IC-01a: pin kept at b61d1fa (no re-vendor); 30 artifact fixtures registered (27 valid, 3 relaxed), artifact-kind-open and refusal-code-open relaxations with reverted-must-fail proofs, bulk generators + checkBulk, view types. All gates green; gate-proof pass (12 gates).",
+        "Review approved: pin unchanged, 30 fixtures registered, relaxations scoped and pinned, bulk generators per D-07"
+      ],
+      "provider": "__resolved_provider_absent__",
+      "review_result": {
+        "reference": "review-cycle://artifact-viewer-screen-01M47VP5/WP01-contract-re-vendor-and-fixtures/review-cycle-1.md",
+        "reviewer": "user",
+        "verdict": "approved"
+      },
+      "role": "reviewer",
+      "shell_pid": 3812992,
+      "shell_pid_created_at": "1791356636.75",
+      "subtasks": {
+        "T001": "done",
+        "T002": "done",
+        "T003": "done",
+        "T004": "done",
+        "T005": "done",
+        "T006": "done",
+        "T007": "done"
+      }
+    },
+    "WP02": {
+      "actor": "user",
+      "agent": "claude",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
+      "force_count": 0,
+      "implementer_of_record": "claude",
+      "lane": "approved",
+      "last_event_id": "01M4AQ5A3VR823471XGMFYBMCP",
+      "last_transition_at": "2026-10-07T08:19:58.203044+00:00",
+      "model": "__resolved_model_absent__",
+      "notes": [
+        "markdown-it 15.0.2 exact pin (b3e6d35); lockfile +6 pkgs; supply-chain evidence and S-A0 step one in report; all gates and gate-proof green",
+        "Review approved: exact pin, closure verified, supply-chain evidence reproduced, S-A0 step one measured"
+      ],
+      "provider": "__resolved_provider_absent__",
+      "review_result": {
+        "reference": "review-cycle://artifact-viewer-screen-01M47VP5/WP02-dependency-supply-chain-and-spike-s-a0-step-one/review-cycle-1.md",
+        "reviewer": "user",
+        "verdict": "approved"
+      },
+      "role": "reviewer",
+      "shell_pid": 4080021,
+      "shell_pid_created_at": "1791359756.09",
+      "subtasks": {
+        "T008": "done",
+        "T009": "done",
+        "T010": "done",
+        "T011": "done",
+        "T012": "done"
+      }
+    },
+    "WP03": {
+      "actor": "user",
+      "agent": "claude",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
+      "force_count": 0,
+      "implementer_of_record": "claude",
+      "lane": "approved",
+      "last_event_id": "01M4AYSMQXQZBQ5537VC9R6KC7",
+      "last_transition_at": "2026-10-07T10:33:24.477731+00:00",
+      "model": "__resolved_model_absent__",
+      "notes": [
+        "IC-02: five default modules, nine artifact logic files, magnifier and table icons, data-driven gate extended (S15, S16); all gates and gate-proof green",
+        "Review approved: gate extension scoped, rename internal, extra names justified, A1 seam structural"
+      ],
+      "provider": "__resolved_provider_absent__",
+      "review_result": {
+        "reference": "review-cycle://artifact-viewer-screen-01M47VP5/WP03-defaults-logic-and-data-driven-extension/review-cycle-1.md",
+        "reviewer": "user",
+        "verdict": "approved"
+      },
+      "role": "reviewer",
+      "shell_pid": 4183703,
+      "shell_pid_created_at": "1791361203.32",
+      "subtasks": {
+        "T013": "done",
+        "T014": "done",
+        "T015": "done",
+        "T016": "done",
+        "T017": "done",
+        "T018": "done",
+        "T019": "done",
+        "T020": "done"
+      }
+    },
+    "WP04": {
+      "actor": "user",
+      "agent": "claude",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
+      "force_count": 0,
+      "implementer_of_record": "claude",
+      "lane": "approved",
+      "last_event_id": "01M4B0GXCMNAP6NQRM1CTHQKN8",
+      "last_transition_at": "2026-10-07T11:03:35.572752+00:00",
+      "model": "__resolved_model_absent__",
+      "notes": [
+        "Markdown model: parse.ts (one export, counted seam), flattened budget, model.ts with markdownFor, links.ts N-Q12 + A-8a/A-8b; 62 new tests; all gates green",
+        "Review approved: D-06 safety, flattened iterative budget, links table, A1 seam; CP-1 token evidence confirmed"
+      ],
+      "provider": "__resolved_provider_absent__",
+      "review_result": {
+        "reference": "review-cycle://artifact-viewer-screen-01M47VP5/WP04-markdown-model-parse-budget-links/review-cycle-1.md",
+        "reviewer": "user",
+        "verdict": "approved"
+      },
+      "role": "reviewer",
+      "shell_pid": 207862,
+      "shell_pid_created_at": "1791369198.94",
+      "subtasks": {
+        "T021": "done",
+        "T022": "done",
+        "T023": "done",
+        "T024": "done",
+        "T025": "done",
+        "T026": "done"
+      }
+    },
+    "WP05": {
+      "actor": "user",
+      "agent": "claude",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
+      "force_count": 1,
+      "implementer_of_record": "claude",
+      "lane": "approved",
+      "last_event_id": "01M4B5P1R5NZ8WGQJ4H0JTFMS1",
+      "last_transition_at": "2026-10-07T12:33:46.757971+00:00",
+      "model": "__resolved_model_absent__",
+      "notes": [
+        "Renderer, corpus (145 entries) and model twin, lint rules R1-R5 with self-test, bundle budget, five plants, all gates and full gate-proof green; slowest Chromium entry 253 ms of 500, no A-10; ci.yml timeout unchanged (rule gives 6, existing 10 kept)",
+        "Fix cycle 1: R3 literal forms, R4/R5 all extensions, R-07 corpus fetched and cited (326 entries), ci timeout 6, R2 limits recorded, LinkHandlers recorded",
+        "Cycle 2 approved: R3 literal forms and R4/R5 scope closed, 326-entry cited corpus, timeout per rule"
+      ],
+      "provider": "__resolved_provider_absent__",
+      "review": null,
+      "review_result": {
+        "reference": "review-cycle://artifact-viewer-screen-01M47VP5/WP05-markdown-renderer-corpus-and-plants/review-cycle-2.md",
+        "reviewer": "user",
+        "verdict": "approved"
+      },
+      "role": "reviewer",
+      "shell_pid": null,
+      "shell_pid_created_at": null,
+      "subtasks": {
+        "T027": "done",
+        "T028": "done",
+        "T029": "done",
+        "T030": "done",
+        "T031": "done",
+        "T032": "done"
+      }
+    },
+    "WP06": {
+      "actor": "user",
+      "agent": "claude",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
+      "force_count": 0,
+      "implementer_of_record": "claude",
+      "lane": "approved",
+      "last_event_id": "01M4C1A80260R9Z16FJR8JG94J",
+      "last_transition_at": "2026-10-07T20:36:40.066434+00:00",
+      "model": "__resolved_model_absent__",
+      "notes": [
+        "IC-05 spikes S-A1..S-A6 done; CP-1 evidence in orchestrator scratchpad; spike code removed in b410cef, tip tree equals 83e74d6",
+        "Review approved: S-A1..S-A6 evidence, tree restored, recommendations supported (soft spots noted for CP-1)"
+      ],
+      "provider": "__resolved_provider_absent__",
+      "review_result": {
+        "reference": "review-cycle://artifact-viewer-screen-01M47VP5/WP06-foundation-spikes-and-cp-1-evidence/review-cycle-1.md",
+        "reviewer": "user",
+        "verdict": "approved"
+      },
+      "role": "reviewer",
+      "shell_pid": 663221,
+      "shell_pid_created_at": "1791376420.88",
+      "subtasks": {
+        "T033": "done",
+        "T034": "done",
+        "T035": "done",
+        "T036": "done",
+        "T037": "done",
+        "T038": "done",
+        "T039": "done",
+        "T040": "done",
+        "T041": "done"
+      }
+    },
+    "WP07": {
+      "actor": "user",
+      "agent": "claude",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
+      "force_count": 0,
+      "implementer_of_record": "claude",
+      "lane": "approved",
+      "last_event_id": "01M4C4SBBTVAA89T1A3Y7E4ERG",
+      "last_transition_at": "2026-10-07T21:37:20.762864+00:00",
+      "model": "__resolved_model_absent__",
+      "notes": [
+        "IC-06a: chProperties grant; E-23/E-25/E-26 paint/E-28 Stylelint entries; E-26/E-27/E-29 ESLint overrides; R4 options schema with EMPTY element list; calculateConfigForFile cases. All gates green, gate-proof pass.",
+        "Review approved: E-23..E-29 match CP-1, ch grant scoped, R4 schema holds, no #4/#5 loosening"
+      ],
+      "provider": "__resolved_provider_absent__",
+      "review_result": {
+        "reference": "review-cycle://artifact-viewer-screen-01M47VP5/WP07-exceptions-stylelint-grant-and-lint-configuration/review-cycle-1.md",
+        "reviewer": "user",
+        "verdict": "approved"
+      },
+      "role": "reviewer",
+      "shell_pid": 1064600,
+      "shell_pid_created_at": "1791406770.12",
+      "subtasks": {
+        "T042": "done",
+        "T043": "done",
+        "T044": "done",
+        "T045": "done",
+        "T046": "done"
+      }
+    },
+    "WP08": {
+      "actor": "user",
+      "agent": "claude",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
+      "force_count": 0,
+      "implementer_of_record": "claude",
+      "lane": "approved",
+      "last_event_id": "01M4C8PGW0JWY9TA1PQ4K06533",
+      "last_transition_at": "2026-10-07T22:45:42.400438+00:00",
+      "model": "__resolved_model_absent__",
+      "notes": [
+        "Skeleton, layout, surface freeze and E-30 paint done; gates green; gate-proof visual leg flaked once on wp-44 (5 s screenshot timeout), passes alone",
+        "Review approved: surface frozen, CP-1 and E-30 compliant, budget fixtures re-aimed, selection agreement proven"
+      ],
+      "provider": "__resolved_provider_absent__",
+      "review_result": {
+        "reference": "review-cycle://artifact-viewer-screen-01M47VP5/WP08-skeleton-layout-and-surface-freeze/review-cycle-1.md",
+        "reviewer": "user",
+        "verdict": "approved"
+      },
+      "role": "reviewer",
+      "shell_pid": 1196164,
+      "shell_pid_created_at": "1791409047.55",
+      "subtasks": {
+        "T047": "done",
+        "T048": "done",
+        "T049": "done",
+        "T050": "done",
+        "T051": "done",
+        "T052": "done",
+        "T053": "done",
+        "T054": "done"
+      }
+    },
+    "WP09": {
+      "actor": "user",
+      "agent": "claude",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
+      "force_count": 2,
+      "implementer_of_record": "claude",
+      "lane": "approved",
+      "last_event_id": "01M4CEHY51QSPNJHP1GPG0ABBJ",
+      "last_transition_at": "2026-10-08T00:28:03.617878+00:00",
+      "model": "__resolved_model_absent__",
+      "notes": [
+        "WP09 document pane: tabs, toolbar, rendered article with eyebrow, notices, source block, prose styles, Document stories AV-01..08 and AV-31, 57 new tests plus the corpus screen pass; all gates green except the visual leg (9 new stories have no baseline until WP13)",
+        "WP09 rework: five pinned grants with leak plants; CSS matches prototype at 1280 and 800; gates green except visual for the 9 new stories (no baseline until WP13) and one repeat flake of wp-08",
+        "WP09 cycle 2: toolbar band border-box, exactly 79 px with tabs and 68 px raw-only; gates green; visual red only for the 9 new stories",
+        "Cycle 3 approved: five grants pinned, band 79px via border-box, pane matches prototype at 1280/800"
+      ],
+      "provider": "__resolved_provider_absent__",
+      "review": null,
+      "review_result": {
+        "reference": "review-cycle://artifact-viewer-screen-01M47VP5/WP09-document-pane/review-cycle-3.md",
+        "reviewer": "user",
+        "verdict": "approved"
+      },
+      "role": "reviewer",
+      "shell_pid": null,
+      "shell_pid_created_at": null,
+      "subtasks": {
+        "T055": "done",
+        "T056": "done",
+        "T057": "done",
+        "T058": "done",
+        "T059": "done",
+        "T060": "done",
+        "T061": "done",
+        "T062": "done"
+      }
+    },
+    "WP10": {
+      "actor": "user",
+      "agent": null,
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
+      "force_count": 3,
+      "implementer_of_record": "claude",
+      "lane": "approved",
+      "last_event_id": "01M4D63V7HCD8E18WRTZAXYVMG",
+      "last_transition_at": "2026-10-08T07:19:47.697238+00:00",
+      "model": "__resolved_model_absent__",
+      "notes": [
+        "Refusal block, state bodies (busy indicator), stories AV-09..14/20..23, five test files with revert checks. CR-1 focus defect and CR-2 paint grant for refusal/state parts filed in report.",
+        "E-45 card look with pins and leak plants, CR-1 focus carry-over, box-sizing checked; gates green, gate-proof reds only the 19 new stories",
+        "E-45 extension pinned with leak plants; AV-09 re-shot at 1280/800; gates green; gate-proof reds only the new stories",
+        "Cycle 3 approved: card matches prototype within 1px, E-45 pinned, focus carry-over proven"
+      ],
+      "provider": "__resolved_provider_absent__",
+      "review": null,
+      "review_result": {
+        "reference": "review-cycle://artifact-viewer-screen-01M47VP5/WP10-refusals-and-states/review-cycle-4.md",
+        "reviewer": "user",
+        "verdict": "approved"
+      },
+      "role": "reviewer",
+      "shell_pid": null,
+      "shell_pid_created_at": null,
+      "subtasks": {
+        "T063": "done",
+        "T064": "done",
+        "T065": "done",
+        "T066": "done",
+        "T067": "done",
+        "T068": "done",
+        "T069": "done"
+      }
+    },
+    "WP11": {
+      "actor": "user",
+      "agent": "claude",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
+      "force_count": 1,
+      "implementer_of_record": "claude",
+      "lane": "approved",
+      "last_event_id": "01M4CDCJJ61P596J62P8XKP1CA",
+      "last_transition_at": "2026-10-08T00:07:39.334678+00:00",
+      "model": "__resolved_model_absent__",
+      "notes": [
+        "Inspector filled (library facts, pill sheet, E-29 ellipsis pinned), 13 Inspector and tree stories, tree/treehost/inspector tests with controls. Open: border/cursor/h3 rulings, screen FR-027 filter",
+        "Review cycle 1 fixes: pill reset (26px), E-31 heading grant, FR-027 unmatched case, gates and gate-proof (visual: only the 13 new stories red)",
+        "Review approved: E-29 and E-44 pinned and leak-tested, 26px pill, FR-027, tree host; visual matches at 1280/800"
+      ],
+      "provider": "__resolved_provider_absent__",
+      "review": null,
+      "review_result": {
+        "reference": "review-cycle://artifact-viewer-screen-01M47VP5/WP11-inspector-work-package-links-and-tree-stories/review-cycle-2.md",
+        "reviewer": "user",
+        "verdict": "approved"
+      },
+      "role": "reviewer",
+      "shell_pid": null,
+      "shell_pid_created_at": null,
+      "subtasks": {
+        "T070": "done",
+        "T071": "done",
+        "T072": "done",
+        "T073": "done",
+        "T074": "done",
+        "T075": "done",
+        "T076": "done"
+      }
+    },
+    "WP12": {
+      "actor": "user",
+      "agent": "user",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
+      "force_count": 0,
+      "implementer_of_record": "claude",
+      "lane": "approved",
+      "last_event_id": "01M4D954AZNHJC9HQ5DBQ30G3J",
+      "last_transition_at": "2026-10-08T08:12:55.519148+00:00",
+      "model": "__resolved_model_absent__",
+      "notes": [
+        "WP12: tiers, a11y, NFR-006 ceilings, media, composition, dynamic, AV-17/AV-29 tests and 13 stories; chains X and Y merged"
+      ],
+      "provider": "__resolved_provider_absent__",
+      "review_result": {
+        "feedback_path": "<workspace>/ui7/kitty-specs/artifact-viewer-screen-01M47VP5/tasks/WP12-tiers-accessibility-and-edge-cases/review-cycle-1.md",
+        "reference": "review-cycle://artifact-viewer-screen-01M47VP5/WP12-tiers-accessibility-and-edge-cases/review-cycle-1.md",
+        "reviewer": "user",
+        "verdict": "approved"
+      },
+      "role": "reviewer",
+      "shell_pid": 1627468,
+      "shell_pid_created_at": "1791447152.7",
+      "subtasks": {
+        "T077": "done",
+        "T078": "done",
+        "T079": "done",
+        "T080": "done",
+        "T081": "done",
+        "T082": "done",
+        "T083": "done",
+        "T084": "done",
+        "T085": "done",
+        "T086": "done"
+      }
+    },
+    "WP13": {
+      "actor": "user",
+      "agent": "user",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
+      "force_count": 3,
+      "implementer_of_record": "claude",
+      "lane": "approved",
+      "last_event_id": "01M4DS76YH3A27NGCX4CQV4ZFS",
+      "last_transition_at": "2026-10-08T12:53:40.945615+00:00",
+      "model": "__resolved_model_absent__",
+      "notes": [
+        "WP13 integration: 45 baselines plus 12 regenerated, five consecutive visual runs 220/220, gate-proof pass, gates green",
+        "Review cycle 1 fix: SkShellTree JSDoc reattached, manifest entry guarded",
+        "Cycle 1 verified by orchestrator: SkShellTree manifest entry identical to c606689, guard test with revert, manifest:check ok",
+        "Review cycle 3: article cap removed, E-23 pin updated, five clean visual runs, gate-proof pass",
+        "Cycle 4: table sizes to content (30ch cell cap), 5 baselines regenerated, 5 clean visual runs, gate-proof pass",
+        "Operator review item verified by orchestrator at 1920/1640/1440/1280: 9-column plan table fits at 1640, rows 71 px, scrolls only when wider; 5 baselines regenerated, streak and gate-proof green"
+      ],
+      "provider": "__resolved_provider_absent__",
+      "review": null,
+      "review_result": {
+        "feedback_path": "<workspace>/ui7/kitty-specs/artifact-viewer-screen-01M47VP5/tasks/WP13-integration-baselines-and-wrap-up-inputs/review-cycle-2.md",
+        "reference": "review-cycle://artifact-viewer-screen-01M47VP5/WP13-integration-baselines-and-wrap-up-inputs/review-cycle-2.md",
+        "reviewer": "user",
+        "verdict": "approved"
+      },
+      "role": "reviewer",
+      "shell_pid": 1976340,
+      "shell_pid_created_at": "1791464011.24",
+      "subtasks": {
+        "T087": "done",
+        "T088": "done",
+        "T089": "done",
+        "T090": "done",
+        "T091": "done",
+        "T092": "done",
+        "T093": "done",
+        "T094": "done"
+      }
+    }
+  }
+}
