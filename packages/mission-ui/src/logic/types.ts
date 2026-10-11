@@ -27,6 +27,12 @@ export interface LabelHooks {
   /** Called only for a lane that has a value: a work package with no lane is always "not started" and never asks. */
   state?(lane: string): StateBadge | undefined;
   time?(iso: string, now: string | null): string | undefined;
+  /** The Drift screen's hooks (additive, optional): a hook that returns undefined falls through to the defaults, then to the raw value. */
+  kind?(kind: string): string | undefined;
+  severity?(severity: string): StateBadge | undefined;
+  authority?(authority: string): string | undefined;
+  derivedSide?(side: string): string | undefined;
+  refusal?(code: string): string | undefined;
 }
 
 /** A status filter of the Missions screen; lives in `defaults/lifecycle.ts` only. */

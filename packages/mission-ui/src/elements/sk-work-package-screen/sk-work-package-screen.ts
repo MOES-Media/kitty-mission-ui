@@ -43,7 +43,7 @@ import {
   retryDetail,
   stalenessView,
 } from '../../logic/index.js';
-import type { LabelHooks, RetryLoadDetail } from '../../logic/index.js';
+import type { LabelHooks, RetryLoadDetail, WorkPackageScreenRetryDetail } from '../../logic/index.js';
 import type { MissionHead, WorkPackageDetailView, WorkPackageRecordView } from '../../contract/types.js';
 import { eventTimelineSheet, breadcrumbsSheet, emptyStateSheet, factsSheet } from '../../library-sheets.js';
 import { progressSheet } from '../../progress-sheet.js';
@@ -303,14 +303,14 @@ export class SkWorkPackageScreen extends LitElement {
     this.openArtifact(artifactPath, REVIEW_CYCLE_ARTIFACT_KIND);
   }
 
-  protected retryLoad(target: SkRetryLoadDetail['target']): void {
+  protected retryLoad(target: WorkPackageScreenRetryDetail['target']): void {
     const detail = this.retryPayload(target);
     if (detail === null) return;
     this.dispatchEvent(new CustomEvent<SkRetryLoadDetail>('sk-retry-load', { detail, bubbles: true, composed: true }));
   }
 
   /** The retry payload, or null (no Mission or no id anywhere): the control is inert. A detail for another Work Package counts as omitted. */
-  private retryPayload(target: SkRetryLoadDetail['target']): SkRetryLoadDetail | null {
+  private retryPayload(target: WorkPackageScreenRetryDetail['target']): SkRetryLoadDetail | null {
     return retryDetail(target, { mission: this.mission, wpId: this.wpId, workPackage: this.workPackage, detail: this.matchingDetail() });
   }
 

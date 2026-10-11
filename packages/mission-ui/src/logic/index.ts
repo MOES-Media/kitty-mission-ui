@@ -15,3 +15,8 @@ export * from './wp-files.js';
 export * from './wp-staleness.js';
 export * from './wp-history.js';
 export * from './wp-retry.js';
+export * from './drift-finding.js';
+export * from './drift-report.js';
+export * from './drift-keys.js';
+export * from './drift-announce.js';
+export * from './drift-retry.js';
