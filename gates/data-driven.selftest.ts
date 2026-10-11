@@ -414,13 +414,23 @@ describe('data-driven gate self-test: the project health words (NFR-009)', () =>
 });
 
 describe('data-driven gate self-test: every word of the Drift vocabulary', () => {
+  // A Drift word that holds an Artifact Viewer gate word (#7) is also reported by S15.3 / S15.4 (inside a longer string or
+  // template). Exactly one does: mission_not_found holds the artifact refusal code not_found.
+  const holdsArtifactWord = (cfg: ConfigModule, w: string): boolean => cfg.ARTIFACT_UNDERSCORED.some((a) => w.toLowerCase().includes(a.toLowerCase()));
+
+  it('knows which Drift words also hold an Artifact Viewer gate word', async () => {
+    const cfg = await loadConfig();
+    expect(cfg.DRIFT_WORDS.filter((w) => holdsArtifactWord(cfg, w))).toEqual(['mission_not_found']);
+  });
+
   it('reports each gate word as a literal, in any case, as itself (S17.1) and inside a longer string (S17.3)', async () => {
     const cfg = await loadConfig();
     let ran = 0;
     for (const w of cfg.DRIFT_WORDS) {
+      const also = holdsArtifactWord(cfg, w) ? ['S15.3'] : [];
       for (const v of [w, w.toUpperCase(), w.toLowerCase()]) {
-        expect(selectorIds(await lint(`export const x = '${v}';\n`)).sort(), v).toEqual(['S17.1', 'S17.3']);
-        expect(selectorIds(await lint(`export const x = 'tone-${v}';\n`)), v).toEqual(['S17.3']);
+        expect(selectorIds(await lint(`export const x = '${v}';\n`)).sort(), v).toEqual([...also, 'S17.1', 'S17.3']);
+        expect(selectorIds(await lint(`export const x = 'tone-${v}';\n`)).sort(), v).toEqual([...also, 'S17.3']);
         ran += 1;
       }
     }
@@ -431,8 +441,9 @@ describe('data-driven gate self-test: every word of the Drift vocabulary', () =>
     const cfg = await loadConfig();
     let ran = 0;
     for (const w of cfg.DRIFT_WORDS) {
-      expect(selectorIds(await lint(`export const x = \`${w}\`;\n`)).sort(), w).toEqual(['S17.2', 'S17.4']);
-      expect(selectorIds(await lint(`export const x = \`x-${w}-\${y}\`;\n`)), w).toEqual(['S17.4']);
+      const also = holdsArtifactWord(cfg, w) ? ['S15.4'] : [];
+      expect(selectorIds(await lint(`export const x = \`${w}\`;\n`)).sort(), w).toEqual([...also, 'S17.2', 'S17.4']);
+      expect(selectorIds(await lint(`export const x = \`x-${w}-\${y}\`;\n`)).sort(), w).toEqual([...also, 'S17.4']);
       ran += 1;
     }
     expect(ran).toBe(13);
