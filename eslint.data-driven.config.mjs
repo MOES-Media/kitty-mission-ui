@@ -73,6 +73,7 @@ export const STALENESS_STATUS_WORDS = schema('Staleness.yaml').properties.status
 export const STALENESS_REASON_WORDS = schema('Staleness.yaml').properties.reason.enum.filter((w) => typeof w === 'string');
 // The project health enum (mission-ui#9, NFR-009): `schema_drift` is an underscored literal, `healthy` a comparison-only bare word.
 export const HEALTH_WORDS = schema('ProjectHealth.yaml').enum;
+const NEW_ALL = [...new Set([...VERDICT_WORDS, ...CHANGE_STATE_WORDS, ...STALENESS_STATUS_WORDS, ...STALENESS_REASON_WORDS, ...HEALTH_WORDS])].filter((w) => !WORDS.includes(w));
 // The Ops enums (mission-ui#11, plan D-12) and the page-cursor refusal constant.
 export const OPS_OUTCOME_WORDS = schema('OpsOutcome.yaml').enum;
 export const OPS_CLOSED_BY_WORDS = schema('OpsClosedBy.yaml').enum;
