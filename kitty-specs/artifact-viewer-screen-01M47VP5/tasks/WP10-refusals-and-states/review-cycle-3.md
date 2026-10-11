@@ -10,7 +10,7 @@ wp_id: WP10
 
 # WP10 cycle 3: changes requested
 
-Full review: scratchpad `ui7-wp10-review.md`. The measured drift is larger than your hand-off listed: the card is 197 px tall against the prototype's 186.8 px.
+Full review: the orchestrator's private review notes. The measured drift is larger than your hand-off listed: the card is 197 px tall against the prototype's 186.8 px.
 
 1. **E-45 extension** (tracer, "Rulings at WP10", last bullet). Pin each of these in `refusal-parts.ts` and `state-parts.ts` only, with a near-neighbour case and a sibling leak plant:
    - h1 `font-weight: var(--sk-weight-bold)`

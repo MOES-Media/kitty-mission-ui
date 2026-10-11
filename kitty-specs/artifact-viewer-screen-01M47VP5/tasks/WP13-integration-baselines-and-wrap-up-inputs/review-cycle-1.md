@@ -10,7 +10,7 @@ wp_id: WP13
 
 # WP13 review feedback, cycle 1: changes requested
 
-The full review is in scratchpad `ui7-wp13-review.md`; it outranks this summary.
+The full review is in the orchestrator's private review notes; it outranks this summary.
 
 1. **Must fix: the shell-tree indent cap detached the class JSDoc and damaged the manifest of #4's shared element.**
    - In `packages/mission-ui/src/elements/sk-shell-tree/sk-shell-tree.ts`, at about lines 27-32, `const MAX_INDENT_LEVELS = 6` and its comment sit between the class JSDoc and `export class SkShellTree`.
