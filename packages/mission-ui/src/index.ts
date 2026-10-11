@@ -4,6 +4,7 @@ import { SkFilterToggleGroup } from './elements/sk-filter-toggle-group/sk-filter
 import { SkMissionSample } from './elements/sk-mission-sample/sk-mission-sample.js';
 import { SkMissionShell } from './elements/sk-mission-shell/sk-mission-shell.js';
 import { SkMissionsScreen } from './elements/sk-missions-screen/sk-missions-screen.js';
+import { SkOpsScreen } from './elements/sk-ops-screen/sk-ops-screen.js';
 import { SkPhaseBar } from './elements/sk-phase-bar/sk-phase-bar.js';
 import { SkPipelineScreen } from './elements/sk-pipeline-screen/sk-pipeline-screen.js';
 import { SkShellNavItem } from './elements/sk-shell-nav-item/sk-shell-nav-item.js';
@@ -26,6 +27,9 @@ if (!customElements.get('sk-shell-tree')) {
 if (!customElements.get('sk-missions-screen')) {
   customElements.define('sk-missions-screen', SkMissionsScreen);
 }
+if (!customElements.get('sk-ops-screen')) {
+  customElements.define('sk-ops-screen', SkOpsScreen);
+}
 if (!customElements.get('sk-pipeline-screen')) {
   customElements.define('sk-pipeline-screen', SkPipelineScreen);
 }
@@ -47,6 +51,7 @@ export {
   SkMissionSample,
   SkMissionShell,
   SkMissionsScreen,
+  SkOpsScreen,
   SkPhaseBar,
   SkPipelineScreen,
   SkShellNavItem,
@@ -57,6 +62,7 @@ export {
 export { SHELL_MOBILE_STATE, ShellTierController } from './shell-tier.js';
 export type { SkFilterChangeDetail } from './elements/sk-filter-toggle-group/sk-filter-toggle-group.js';
 export type { SkLoadMoreDetail, SkOpenMissionDetail, SkSearchDetail } from './elements/sk-missions-screen/sk-missions-screen.js';
+export type { OpsLoadMoreError, OpsScreenStatus } from './elements/sk-ops-screen/sk-ops-screen.js';
 export type { SkOpenMissionsDetail, SkViewArtifactsDetail } from './elements/sk-pipeline-screen/sk-pipeline-screen.js';
 export type { SkSelectWorkPackageDetail } from './elements/sk-work-package-board/sk-work-package-board.js';
 export type {
@@ -76,6 +82,8 @@ export type {
 export type {
   MissionDetailView,
   MissionOverviewView,
+  OpsEvidenceView,
+  OpsInvocationView,
   PageInfo,
   PhaseView,
   Project,
@@ -84,6 +92,7 @@ export type {
   WorkPackageView,
 } from './contract/types.js';
 export type { SkMissionRetryDetail } from './elements/sk-mission-sample/sk-mission-sample.js';
+export type { OpsEvidenceDisplay, OpsFact, OpsFactKind, OpsLabelHooks, OpsPageRetryDetail, OpsRowView } from './logic/index.js';
 export type { MissionSummary, ViewState } from './view-state.js';
 export type {
   CurrentMark,

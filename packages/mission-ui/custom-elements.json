@@ -747,6 +747,250 @@
     },
     {
       "kind": "javascript-module",
+      "path": "src/elements/sk-ops-screen/ops-page-parts.ts",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/elements/sk-ops-screen/ops-row-parts.ts",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/elements/sk-ops-screen/ops-state-parts.ts",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/elements/sk-ops-screen/sk-ops-screen.ts",
+      "declarations": [
+        {
+          "kind": "class",
+          "description": "The Ops screen: a read-only list of invocation records, newest first, one page at a time. No I/O, nothing stored; the host\nowns loading, paging and the filter by profile. The screen sorts nothing and counts nothing (`items.length` aside).\nRenders inside the `sk-mission-shell` content slot. Not self-registering: `src/index.ts` defines the tag once.",
+          "name": "SkOpsScreen",
+          "members": [
+            {
+              "kind": "field",
+              "name": "status",
+              "type": {
+                "text": "OpsScreenStatus"
+              },
+              "default": "'loading'",
+              "description": "The view state; unknown values collapse to `empty`.",
+              "attribute": "status",
+              "reflects": true
+            },
+            {
+              "kind": "field",
+              "name": "project",
+              "type": {
+                "text": "Project | null"
+              },
+              "default": "null",
+              "description": "The project (its name is the header's supporting line); null draws no line."
+            },
+            {
+              "kind": "field",
+              "name": "items",
+              "type": {
+                "text": "OpsInvocationView[]"
+              },
+              "default": "[]",
+              "description": "The accumulated records in service order; never re-sorted."
+            },
+            {
+              "kind": "field",
+              "name": "pageInfo",
+              "type": {
+                "text": "PageInfo | null"
+              },
+              "default": "null",
+              "description": "Pagination state of the last loaded page."
+            },
+            {
+              "kind": "field",
+              "name": "totalCount",
+              "type": {
+                "text": "number"
+              },
+              "default": "0",
+              "description": "The total the service reports, shown as given.",
+              "attribute": "total-count"
+            },
+            {
+              "kind": "field",
+              "name": "skippedCount",
+              "type": {
+                "text": "number"
+              },
+              "default": "0",
+              "description": "The records the service could not read, shown as given.",
+              "attribute": "skipped-count"
+            },
+            {
+              "kind": "field",
+              "name": "profile",
+              "type": {
+                "text": "string | null"
+              },
+              "default": "null",
+              "description": "The profile filter the host applied; null when none.",
+              "attribute": "profile"
+            },
+            {
+              "kind": "field",
+              "name": "loadingMore",
+              "type": {
+                "text": "boolean"
+              },
+              "default": "false",
+              "description": "The Load more control is busy and inert while true; host-owned.",
+              "attribute": "loading-more"
+            },
+            {
+              "kind": "field",
+              "name": "loadMoreError",
+              "type": {
+                "text": "OpsLoadMoreError | null"
+              },
+              "default": "null",
+              "description": "The failure of the last load-more request; read only in the ready look."
+            },
+            {
+              "kind": "field",
+              "name": "refusalCode",
+              "type": {
+                "text": "string | null"
+              },
+              "default": "null",
+              "description": "The refusal code of the first-page failure; read only in the error look.",
+              "attribute": "refusal-code"
+            },
+            {
+              "kind": "field",
+              "name": "labels",
+              "type": {
+                "text": "OpsLabelHooks | null"
+              },
+              "default": "null",
+              "description": "Word, time and copy hooks."
+            },
+            {
+              "kind": "field",
+              "name": "errorMessage",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "description": "Overrides the error sentence.",
+              "attribute": "error-message"
+            }
+          ],
+          "events": [
+            {
+              "name": "sk-load-more",
+              "type": {
+                "text": "CustomEvent<SkLoadMoreDetail>"
+              },
+              "description": "Load more was activated while a next page exists and `loadingMore` is false; once per cursor until `loadingMore`, `items` or `pageInfo` changes"
+            },
+            {
+              "name": "sk-retry-load",
+              "type": {
+                "text": "CustomEvent<SkRetryLoadDetail>"
+              },
+              "description": "Retry was activated: `{ target: 'ops-page' }` for the first page or a refresh from the newest, with `cursor` to retry the page after it"
+            }
+          ],
+          "attributes": [
+            {
+              "name": "status",
+              "type": {
+                "text": "OpsScreenStatus"
+              },
+              "default": "'loading'",
+              "description": "The view state; unknown values collapse to `empty`.",
+              "fieldName": "status"
+            },
+            {
+              "name": "total-count",
+              "type": {
+                "text": "number"
+              },
+              "default": "0",
+              "description": "The total the service reports, shown as given.",
+              "fieldName": "totalCount"
+            },
+            {
+              "name": "skipped-count",
+              "type": {
+                "text": "number"
+              },
+              "default": "0",
+              "description": "The records the service could not read, shown as given.",
+              "fieldName": "skippedCount"
+            },
+            {
+              "name": "profile",
+              "type": {
+                "text": "string | null"
+              },
+              "default": "null",
+              "description": "The profile filter the host applied; null when none.",
+              "fieldName": "profile"
+            },
+            {
+              "name": "loading-more",
+              "type": {
+                "text": "boolean"
+              },
+              "default": "false",
+              "description": "The Load more control is busy and inert while true; host-owned.",
+              "fieldName": "loadingMore"
+            },
+            {
+              "name": "refusal-code",
+              "type": {
+                "text": "string | null"
+              },
+              "default": "null",
+              "description": "The refusal code of the first-page failure; read only in the error look.",
+              "fieldName": "refusalCode"
+            },
+            {
+              "name": "error-message",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "description": "Overrides the error sentence.",
+              "fieldName": "errorMessage"
+            }
+          ],
+          "superclass": {
+            "name": "LitElement",
+            "package": "lit"
+          },
+          "tagName": "sk-ops-screen",
+          "customElement": true
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "SkOpsScreen",
+          "declaration": {
+            "name": "SkOpsScreen",
+            "module": "src/elements/sk-ops-screen/sk-ops-screen.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
       "path": "src/elements/sk-phase-bar/sk-phase-bar.ts",
       "declarations": [
         {
