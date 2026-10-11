@@ -361,6 +361,9 @@ describe('surface freeze: the Projects screen (five properties, three events) an
       .map(([tag]) => tag)
       .sort();
     expect(retryDeclarers).toEqual(['sk-artifact-screen', 'sk-open-project-dialog', 'sk-projects-screen', 'sk-work-package-screen']);
+    // `some` per tag would pass a component that declares the event twice: count every declaration of the name.
+    const retryDeclarations = [...declarations.values()].reduce((total, declaration) => total + (declaration.events ?? []).filter((e) => e.name === 'sk-retry-load').length, 0);
+    expect(retryDeclarations).toBe(4);
   });
 
   it('marks the Projects screen, and not the dialog, as a screen with the `@screen` line the manifest gate looks for', async () => {
