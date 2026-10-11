@@ -255,7 +255,7 @@ CI timeouts for the visual gate are derived from measured runs. The run on `main
 973 s for the `visual` job and 2102 s for `proof (visual)`. Scaled to the 330 stories of the merged set (x 330/293) that is
 about 1096 s for the job (973 x 330/293) and about 2367 s for the proof leg (2102 x 330/293). The 28-minute job timeout
 leaves the job estimate at about 65% of the limit (1096 s of 1680 s), and the 60-minute proof leg timeout leaves its
-estimate at about 66% (2367 s of 3600 s). `unit-tests` (150 s, 396 s in the same run) keeps 8 and 10.
+estimate at about 66% (2367 s of 3600 s). `unit-tests` (150 s, 396 s in the same run) keeps its job timeout of 8 minutes. Its proof leg rises from 10 to 11 minutes for the merged suite: the pull request run 38151797285 took 435 s, which is 72.5% of the old 600 s limit and 66% of the new 660 s (435 / 660).
 
 ### Installs are frozen
 
