@@ -6,12 +6,38 @@ All user-visible changes to this repository. Per-package notes live in `packages
 
 ### Added
 
+- **A Projects screen and a picker layout for the shell** (`#9`). `sk-projects-screen` lists a host's projects with their
+  health, Mission count, branch and last activity, and reports which one to open; `sk-open-project-dialog` is an optional
+  modal folder picker. The host passes contract-shaped `Project` data and performs the folder picking itself; the elements
+  perform no I/O and emit `sk-open-project`, `sk-request-open-project`, `sk-browse-folder`, `sk-confirm-open-project` and
+  `sk-retry-load`. `sk-mission-shell` gains the `picker` layout (top bar and content only). 36 new Storybook stories
+  with one visual baseline each (210 in total); the visual job timeouts rise to 28 minutes (job) and 47 (proof leg),
+  derived from run 37584109220.
+- **The contract copy moves to Mission Status contract commit `805e122`, on spec-kitty `main`: `Project` carries seven members** (`#9`). `name`, `missionCount`, `specKittyVersion`, `schemaVersion`, `health` (new `ProjectHealth`), `currentBranch` and `lastActivityAt`, with two host fixtures (`projectUnknownHealth`, `projectLong`); the vendored copy also gains the drift and Op invocation paths. No screen changes and no visual baseline changes.
+- **An Artifact screen: the documents of one Mission, drawn from the pinned Mission Status contract** (`#7`).
+  `sk-artifact-screen` shows the Mission's artifact tree, one document as rendered markdown or raw source, and an inspector
+  with the file facts, the Mission facts and the linked Work Packages. A host passes only contract-shaped data, the
+  Mission, the view states, `now` and labels; the screen performs no I/O and emits five events (`sk-select-artifact`,
+  `sk-open-link`, `sk-select-work-package`, `sk-open-mission`, `sk-retry-load`). Markdown goes through a closed allow-list
+  renderer over `markdown-it` 15.0.2 (a new dependency) with lint rules and a hostile-input corpus that keep raw HTML,
+  remote images and script URLs out. 45 new Storybook stories with one visual baseline each (255 in total).
+
+- **A Drift screen: the findings of a drift scan and the detail of the chosen one, drawn from the pinned Mission Status
+  contract** (`#10`). `sk-drift-screen` shows a header with the last scan and Rescan, a finding list, and a detail with the
+  explanation, authority panel, lane comparison table, suggested resolution with Copy and facts, plus the loading, clean,
+  truncated, rescanning, unreadable, not-found and nothing-chosen states. A host passes only contract-shaped data; the
+  screen performs no I/O and emits six events (`sk-select-finding`, `sk-rescan-drift`, `sk-copy-command`, `sk-open-mission`,
+  `sk-open-missions`, `sk-retry-load`). 38 new Storybook stories under `Screens/Drift/` with one visual baseline each (293 in
+  total), a story-catalogue test, and CI timeouts re-derived for the larger set (the proof leg rises to 55 minutes). Layout exceptions E-35 to E-39 and an extension of
+  E-18 are recorded in `stylelint.config.mjs`.
+- **Drift contract wiring: view types, 17 fixtures, the `drift-vocabulary-open` relaxation and a 1000-finding generator** (`#10`).
+  `pnpm contract:check` also validates the generated report of exactly 1000 findings; a plant removes the relaxation.
 - **An Ops screen: the project's invocation records, newest first, read only** (`#11`). `sk-ops-screen` shows the page header,
   the source notice, the count badge, one row per record (outcome, profile, action, actor, times in UTC, evidence, Mission,
   Work Package, mode) and Load more, with loading, empty and error looks. A host passes contract-shaped data only; the screen
   performs no I/O, never links a value of a record, and emits two events (`sk-load-more`, `sk-retry-load`). Exceptions E-40,
   E-42 and E-43, and the grants Ops G-1 to Ops G-7. 37 new Storybook stories under `Screens/Ops/` with one visual baseline each
-  (211 in total).
+  (330 in total).
 - **`Gate: eslint` refuses an aliased lit `css` import** (`#11`). `import { css as x }` hid the template from postcss-lit and
   so from every Stylelint rule.
 - **A Work Package screen: one Work Package of a Mission, drawn from the pinned Mission Status contract** (`#5`).
@@ -69,6 +95,15 @@ All user-visible changes to this repository. Per-package notes live in `packages
   element, and the gates' known limitations.
 
 ### Changed
+
+- **Hygiene has no allow-list and blocks private-workspace markers.** CLI-written paths in the charter and in the
+  mission status files are scanned like any other file; agent scratchpad paths, tooling-ledger ids (`SK-` and three or
+  more digits) and the running account's username (plus `HYGIENE_FORBIDDEN_NAMES`) are reported in every tracked file.
+
+- **The repository is now `kitty-mission-ui`, licensed AGPL-3.0-or-later.** The packages are renamed
+  `@spec-kitty/mission-ui` to `@moes-media/mission-ui` and `@spec-kitty/storybook-app` to `@moes-media/storybook-app`;
+  every `package.json` declares `"license": "AGPL-3.0-or-later"`. The design library (`@spec-kitty/elements`,
+  `@spec-kitty/styles`, `@spec-kitty/tokens`) keeps its scope and registry.
 
 - **💥 The mission sample's open event is now `sk-open-mission`** (`#4`). Hosts that listened for `sk-mission-open`
   on `sk-mission-sample` must listen for `sk-open-mission`; it carries the same detail type as the Missions screen, so

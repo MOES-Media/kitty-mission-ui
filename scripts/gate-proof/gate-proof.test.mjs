@@ -1,12 +1,12 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { parse } from 'yaml';
-import { ALL_NEEDS_ENV, ALL_RUN, NON_GATE_JOBS, assemble, coverageProblems, invariantOk, sanitise } from './lib.mjs';
+import { ALL_NEEDS_ENV, ALL_RUN, NON_GATE_JOBS, assemble, coverageProblems, invariantOk, restorePlant, sanitise } from './lib.mjs';
 
 // Every path-, token- and credential-shaped string is assembled at run time from fragments.
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -423,6 +423,61 @@ test('a failing clean run reports a sanitised output excerpt in the problems', a
     assert.ok(msg, problems.join('|'));
     assert.ok(msg.includes('clean-boom at <home>/f.ts'), msg);
     assert.ok(!msg.includes(HOME_DIR), msg);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+/** A throwaway repository with one commit; git runs with the ambient GIT_* variables removed so it cannot touch another repository. */
+function scratchRepo(files) {
+  const dir = mkdtempSync(join(tmpdir(), 'gp-test-'));
+  const env = Object.fromEntries(Object.entries(process.env).filter(([name]) => !name.startsWith('GIT_')));
+  const git = (...args) => {
+    const r = spawnSync('git', ['-c', 'user.name=test', '-c', 'user.email=test@example.invalid', '-c', 'commit.gpgsign=false', ...args], { cwd: dir, env, encoding: 'utf8' });
+    assert.equal(r.status, 0, `git ${args.join(' ')}: ${r.stderr}`);
+  };
+  git('init', '-q');
+  for (const [name, text] of Object.entries(files)) writeFileSync(join(dir, name), text);
+  git('add', '--', ...Object.keys(files));
+  git('commit', '-q', '-m', 'base');
+  return dir;
+}
+
+test('restorePlant puts a tracked file back from HEAD and removes an untracked one', () => {
+  const dir = scratchRepo({ 'tracked.ts': 'original\n' });
+  try {
+    writeFileSync(join(dir, 'tracked.ts'), 'planted\n');
+    writeFileSync(join(dir, 'created.ts'), 'planted\n');
+    restorePlant(dir, ['tracked.ts', 'created.ts']);
+    assert.equal(readFileSync(join(dir, 'tracked.ts'), 'utf8'), 'original\n');
+    assert.equal(existsSync(join(dir, 'created.ts')), false);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('restorePlant treats the target literally: an untracked [a].ts is removed, the tracked a.ts it would glob-match is kept', () => {
+  const dir = scratchRepo({ 'a.ts': 'original\n', '[b].ts': 'original\n' });
+  try {
+    writeFileSync(join(dir, '[a].ts'), 'planted\n');
+    writeFileSync(join(dir, '[b].ts'), 'planted\n');
+    restorePlant(dir, ['[a].ts', '[b].ts']);
+    assert.equal(existsSync(join(dir, '[a].ts')), false, 'an untracked file whose name is a glob is removed');
+    assert.equal(readFileSync(join(dir, 'a.ts'), 'utf8'), 'original\n');
+    assert.equal(readFileSync(join(dir, '[b].ts'), 'utf8'), 'original\n', 'a tracked file with brackets in its name is restored');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('restorePlant throws and keeps the file when git cannot say whether it is tracked', () => {
+  // Not a repository: `git ls-files` fails (exit 128), as it does in a container whose checkout belongs to another
+  // user ("dubious ownership"). The old restore read that failure as "untracked" and deleted the tracked file.
+  const dir = mkdtempSync(join(tmpdir(), 'gp-test-'));
+  try {
+    writeFileSync(join(dir, 'tracked.ts'), 'planted\n');
+    assert.throws(() => restorePlant(dir, ['tracked.ts']), /cannot restore tracked\.ts/);
+    assert.ok(existsSync(join(dir, 'tracked.ts')), 'the file must survive a git failure');
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

@@ -15,6 +15,9 @@ import '@spec-kitty/elements';
 import { renderIcon } from '../../shell-icons.js';
 import type { ShellNavigateDetail, TreeNode, TreeToggleDetail } from '../../shell-types.js';
 
+/** Folder levels that add indent; deeper levels share the last indent. */
+const MAX_INDENT_LEVELS = 6;
+
 /**
  * A sidebar section of leaves and folders, slotted into the shell as `slot="sidebar-section"`. Pattern element
  * (no screen contract).
@@ -66,6 +69,10 @@ export class SkShellTree extends LitElement {
     [data-children] {
       display: block;
       padding-inline: var(--sk-space-4) 0;
+    }
+    /* The indent stops growing after MAX_INDENT_LEVELS folder levels, so a deep label stays inside a narrow column. */
+    [data-children][data-capped] {
+      padding-inline: 0;
     }
     [data-prefix] {
       font-family: var(--sk-font-mono);
@@ -200,7 +207,7 @@ export class SkShellTree extends LitElement {
     </sk-action-row>`;
   }
 
-  private renderFolder(node: TreeNode): TemplateResult {
+  private renderFolder(node: TreeNode, depth: number): TemplateResult {
     const children = node.children ?? [];
     const count = node.meta ?? String(children.length);
     return html`<details ?open=${node.expanded === true} @toggle=${(event: Event) => this.onToggle(event, node)}>
@@ -211,12 +218,12 @@ export class SkShellTree extends LitElement {
           <span slot="metadata">${count}</span>
         </sk-action-row>
       </summary>
-      <div data-children>${children.map((child) => this.renderNode(child))}</div>
+      <div data-children ?data-capped=${depth >= MAX_INDENT_LEVELS}>${children.map((child) => this.renderNode(child, depth + 1))}</div>
     </details>`;
   }
 
-  private renderNode(node: TreeNode): TemplateResult {
-    return node.kind === 'folder' ? this.renderFolder(node) : this.renderLeaf(node);
+  private renderNode(node: TreeNode, depth = 0): TemplateResult {
+    return node.kind === 'folder' ? this.renderFolder(node, depth) : this.renderLeaf(node);
   }
 
   private emitNavigate(id: string, href: string): void {

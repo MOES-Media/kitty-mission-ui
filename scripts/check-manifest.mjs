@@ -30,7 +30,7 @@ function regenerate() {
   try {
     execFileSync(
       'pnpm',
-      ['--filter', '@spec-kitty/mission-ui', 'exec', 'cem', 'analyze', '--config', 'custom-elements-manifest.config.mjs', '--outdir', relative(join(root, pkg), dir)],
+      ['--filter', '@moes-media/mission-ui', 'exec', 'cem', 'analyze', '--config', 'custom-elements-manifest.config.mjs', '--outdir', relative(join(root, pkg), dir)],
       { cwd: root, stdio: ['ignore', 'pipe', 'pipe'] },
     );
     return readFileSync(join(dir, 'custom-elements.json'), 'utf8');

@@ -141,6 +141,13 @@ const restrictedSyntax = [
   },
 ];
 
+// NFR-005 (no timers): a screen waits for nothing. Any setTimeout/setInterval call, whatever its arguments, is banned under
+// `src/elements/`; queueMicrotask and requestAnimationFrame are not timers and stay allowed.
+const timerSyntax = {
+  selector: "CallExpression[callee.name=/^(setTimeout|setInterval)$/], CallExpression[callee.property.name=/^(setTimeout|setInterval)$/]",
+  message: 'no-io: setTimeout/setInterval is forbidden in a screen (NFR-005, no timers)',
+};
+
 export default [
   {
     files: ['**/*.{ts,mts,cts,tsx,js,mjs,cjs,jsx}'],
@@ -161,5 +168,10 @@ export default [
         },
       ],
     },
+  },
+  {
+    // A later block replaces the rule's options, so it repeats the list above and adds the timer ban.
+    files: ['packages/*/src/elements/**/*.{ts,mts,cts,tsx,js,mjs,cjs,jsx}'],
+    rules: { 'no-restricted-syntax': ['error', ...restrictedSyntax, timerSyntax] },
   },
 ];

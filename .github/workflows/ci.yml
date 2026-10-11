@@ -297,7 +297,7 @@ jobs:
           npm-token: ${{ secrets.NPM_TOKEN }}
       - name: hygiene
         id: gate
-        run: pnpm hygiene && pnpm test:scripts
+        run: pnpm hygiene && pnpm test:scripts && pnpm test:terminology
       - name: Remove registry credential (always)
         if: always()
         run: rm -f "$HOME/.npmrc"
@@ -471,7 +471,7 @@ jobs:
     name: "Gate: visual"
     needs: [preflight, storybook-build]
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    timeout-minutes: 28
     permissions:
       contents: read
     container:
@@ -563,7 +563,7 @@ jobs:
             timeout: 10
             image: 'mcr.microsoft.com/playwright:v1.62.1-noble@sha256:dcc5531e97840b9b5e794f2814476b21571c5124a3fca2267d73041f56e7580e'
           - gate: visual
-            timeout: 35
+            timeout: 55
             image: 'mcr.microsoft.com/playwright:v1.62.1-noble@sha256:dcc5531e97840b9b5e794f2814476b21571c5124a3fca2267d73041f56e7580e'
     container: ${{ matrix.image }}
     env:
@@ -596,6 +596,10 @@ jobs:
         uses: ./.github/actions/install
         with:
           npm-token: ${{ secrets.NPM_TOKEN }}
+      - name: Trust the checkout for git
+        # In the Playwright container the checkout belongs to another user, so git refuses it ("dubious ownership") and
+        # the proof's restore step cannot ask which planted files are tracked.
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
       - name: Run the gate proof leg
         run: node scripts/gate-proof.mjs leg --gate ${{ matrix.gate }} --out proof-output/fragments
       - name: Upload proof fragment

@@ -1,0 +1,42 @@
+schema: review-verify/v1
+complete: true
+phase: plan
+results:
+- id: PLAN-DESIGN-001
+  status: resolved
+  reason: gates.md and IC-04/IC-06 now append R2 and R3 to elementSyntaxRestrictions (so withoutClassBan carries them), make R1 and R4 own rule ids set once for packages/*/src/** (not replaceable by the no-restricted-syntax or no-restricted-imports overrides, which I confirmed exist in eslint.config.mjs), and add an IC-06 calculateConfigForFile test over every overridden screen file plus the R4 structural-names self-test case.
+- id: PLAN-DESIGN-018
+  status: unresolved
+  remaining_severity: 2
+  reason: 'The false disjointness claim is gone and IC-09 is barred from document-parts.ts with an IC-10 merge-step stop, but the truncation note still has no named owner (plan.md says ''named by the held ruling'', the signature table says renderDocument in IC-07, IC-09 owns only the AV-17 story) and carries a [HELD: PLAN-CORRECT-013] tag, so chain Y''s AV-17 test depends on an unwritten chain X body until the operator rules.'
+- id: PLAN-DESIGN-021
+  status: resolved
+  reason: gates.md D-11 now adds array-receiver includes, Map/Set has/get and bare-word object-key selectors, writes startsWith, const-through-variable and run-time-assembled holes into the Known limitations header with the IC-10 foreign-vocabulary test as backstop, extends the false-positive cases (import path, data attribute), and the plan-time grep claim holds (the only match outside defaults/ and contract/ is a doc comment in sk-mission-sample.ts).
+- id: PLAN-FRESH-004
+  status: resolved
+  reason: research.md and plan.md now record the six-advisory union with GHSA-38c4-r59v-3vqw restored (>= 13.0.0 < 14.1.1, fixed 14.1.1) and GHSA-j5p7-jf4q-742q marked not applicable, name both query sources, and I re-ran the repository list, advisories?affects=markdown-it and the GraphQL securityVulnerabilities and every ID, range and fix version matches (15.0.2 above all fix lines).
+- id: PLAN-FRESH-005
+  status: unresolved
+  remaining_severity: 2
+  reason: research.md and plan.md now say 'drafted before CP-1, filed on the operator's word at CP-1' and gap rows G-20 and G-21 cover E-26 and E-28, but the E-22 row of the gates.md exception table still ends 'the design-library issues are filed before CP-1', contradicting the rule stated in the same file's intro, so the two-timings defect survives in one cell.
+- id: PLAN-FRESH-006
+  status: resolved
+  reason: gates.md self-check list, the WP-brief rule in plan.md (naming that contentFeatures is safe but prose is not) and the IC-01 and IC-04 pnpm test:terminology exit checks now exist, AV-03's story is renamed 'Markdown full syntax', and I confirmed the real Artifact* schemas and examples contain no whole-word 'feature' so the re-vendor will not trip the scan.
+- id: PLAN-FRESH-007
+  status: resolved
+  reason: 'D-12 now points to the data-model ArtifactView instead of inventing ''raw-only''/''empty'' names, and data-model.md splits row 9 into 9a (empty markdown: two tabs, selectedTab from view, body raw, no notice) and 9b (other media: no tabs), with IC-02 told to test each row and IC-07 covering both tabs for an empty markdown file.'
+- id: PLAN-FRESH-008
+  status: resolved
+  reason: D-15, the part-signature table (renderDocument calls renderEmptyForm of state-parts.ts), plan.md IC-06/IC-07 text and E-26 (source-parts.ts keeps no class allowance) now agree that document-parts.ts draws the empty-file body and source-parts.ts only the raw and fallback blocks.
+- id: PLAN-FRESH-009
+  status: resolved
+  reason: sk-artifact-screen.md, defaults.md and data-model.md now all say VIEW_STATES is spread into ARTIFACT_STATUSES (typed readonly ArtifactStatus[]) in logic/artifact-status.ts and that view-state.ts is not edited, with no remaining 'extended at type level' wording.
+- id: PLAN-FRESH-010
+  status: resolved
+  reason: plan.md traceability now has an NFR-014/NFR-015 row (IC-10 assertions, IC-07 to IC-09 screenshots, conditional) and one row per amendment A-1 to A-8, and A-7 states that the forced-colors, reduced-motion and bounding-box assertions and the per-region screenshot fall away if it is not approved.
+- id: PLAN-FRESH-011
+  status: resolved
+  reason: contract-pin.md and the plan.md shared-file table now name IC-06 as sole owner of the pairing table (IC-02 does not touch fixtures.ts), IC-06's row lists the R4 structural-names edit, and gates.md adds the self-test case asserting each recorded name is present with its reason and that href, src, srcset, srcdoc, style and on* are absent.
+- id: PLAN-FRESH-012
+  status: resolved
+  reason: The source-tree lines now read 'E-22, E-24 to E-27', the layout is a complementary container-query pair (width >= T, width < T) with one rem threshold, and data-model.md row 4 writes resolveArtifactRefusal(null, ctx, hooks), with no stale T1/T2 or E-23 range left.

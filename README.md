@@ -1,7 +1,7 @@
-# spec-kitty-mission-ui
+# kitty-mission-ui
 
 Shared Spec Kitty mission screens (Lit web components) for the dashboard and Kitty Desktop.
-Storybook is the workbench and the visual source of truth. The package is `@spec-kitty/mission-ui`.
+Storybook is the workbench and the visual source of truth. The package is `@moes-media/mission-ui`.
 
 ## Setup
 
@@ -9,12 +9,16 @@ Prerequisites (one-time):
 
 - Node 22.22.2, as pinned in `.nvmrc` (for example `nvm install` or `fnm use`).
 - pnpm 11.18.0, installed directly (for example `npm install -g pnpm@11.18.0`). corepack is not used.
-- A GitHub token with `read:packages` and access to the `spec-kitty` organisation (SSO authorised), see the next section.
+- A GitHub token that can read the `spec-kitty` organisation's GitHub Packages (`read:packages`, SSO authorised), see the
+  next section.
 - For the visual gate only: podman or docker.
 
 ### Credential
 
-`@spec-kitty/tokens`, `@spec-kitty/styles` and `@spec-kitty/elements` come from GitHub Packages, which needs a token.
+This repository is public, but the Spec Kitty design library it builds on is not: `@spec-kitty/tokens`,
+`@spec-kitty/styles` and `@spec-kitty/elements` are installed from the spec-kitty organisation's GitHub Packages
+registry (`.npmrc` maps the `@spec-kitty` scope to `https://npm.pkg.github.com`), and every install needs a read token.
+The token must belong to an account that can read those packages; a token scoped to another organisation is not enough.
 Add this line to your own user-level `~/.npmrc`, replacing `<token>` with your token:
 
 ```
@@ -29,8 +33,12 @@ Add this line to your own user-level `~/.npmrc`, replacing `<token>` with your t
 - `pnpm preflight` runs the same offline check, then asks the registry. Exit codes: 9 credential missing,
   10 token rejected or expired (401), 11 token cannot read `@spec-kitty/elements` (403/404: needs `read:packages`
   and org access, SSO authorised), 12 registry unreachable. The token is never printed.
-- CI reads the repository secret `NPM_TOKEN` (a token with `read:packages` and org access). Pull requests from forks
-  and from Dependabot receive no secrets, so they fail `Gate: preflight` with the `NPM_TOKEN` message by design.
+- CI reads the repository secret `NPM_TOKEN`. The workflow does not use the built-in `GITHUB_TOKEN`: that token is
+  scoped to the repository's own organisation and cannot read the spec-kitty packages. `NPM_TOKEN` must be a
+  personal access token (classic, `read:packages`, SSO authorised for the spec-kitty organisation) of an account
+  with read access to the design-library packages; create it as a repository secret before the first CI run. Pull
+  requests from forks and from Dependabot receive no secrets, so they fail `Gate: preflight` with the `NPM_TOKEN`
+  message by design.
 
 ## Run the workbench
 
@@ -88,6 +96,113 @@ Retry ownership: the shell owns a whole-page failure (`sk-shell-retry`); a scree
 (`sk-retry-load`). The `sk-retry-load` payload is a union keyed on `target`; this screen's members are `'work-package'` and
 `'detail'`, and a later screen adds its own member to the union instead of declaring the event again.
 
+## Running the tests
+
+`pnpm test` runs two Vitest projects in the same Chromium setup, one after the other and never together: `unit` (every test file except `*.perf.test.ts`) and then `perf` (only `*.perf.test.ts`, with `fileParallelism: false`, so one file at a time). Run one project with `pnpm --filter @moes-media/mission-ui exec vitest run --project unit` (or `--project perf`).
+
+A test that measures wall-clock time against a ceiling (`within 200 ms`, an NFR budget) belongs in a sibling `<name>.perf.test.ts`, so that it is not timed while other test files share the browser. The ceilings are not loosened by this. `scripts/perf-split.test.mjs` (part of `pnpm test:scripts`) fails when a file that calls `performance.now()` and asserts a ceiling is not a `*.perf.test.ts`, and when a `*.perf.test.ts` has none. Helpers that a unit file and its perf sibling both need live in `packages/mission-ui/test/support/`.
+
+## The Projects screen
+
+`sk-projects-screen` lists the projects a host knows about and reports which one to open. The optional widget
+`sk-open-project-dialog` is a host-placed modal folder picker. The host does the real folder picking, listing and
+routing; both elements only draw and report, and neither performs I/O. Every health and time word comes from
+`src/defaults/`, and the host's order is the display order.
+
+`sk-projects-screen`:
+
+| Property | Attribute | Type | Default | Notes |
+|---|---|---|---|---|
+| `status` | `status` | `ViewState` | `loading` | an unknown value collapses to `empty` |
+| `entries` | none | `ProjectEntry[]` | `[]` | `{ key, location, project }`, never sorted or filtered |
+| `now` | `now` | `string \| null` | `null` | ISO instant for relative times |
+| `labels` | none | `ProjectLabelHooks \| null` | `null` | optional `time` and `health` hooks |
+| `errorMessage` | `error-message` | `string` | `''` | overrides the default list-error body |
+
+| Event | Detail | When |
+|---|---|---|
+| `sk-open-project` | `{ key }` | an openable row is activated (click, Enter, Space) |
+| `sk-request-open-project` | none | the header "Open project" button, which is also the empty state's action (one button, shown once) |
+| `sk-retry-load` | `{ target: 'project', key }` or `{ target: 'projects' }` | retry of a failed row or a failed list |
+
+`sk-open-project-dialog`:
+
+| Property | Attribute | Type | Default | Notes |
+|---|---|---|---|---|
+| `open` | `open` | `boolean` | `false` | the element sets it false on Cancel, Escape and a backdrop click |
+| `location` | `location` | `string` | `''` | shown in the read-only folder field |
+| `folders` | none | `FolderEntry[]` | `[]` | host order |
+| `selected` | none | `string \| null` | `null` | the `location` of the selected folder, controlled by the host |
+| `status` | `status` | `ViewState` | `ready` | the folder listing |
+
+| Event | Detail | When |
+|---|---|---|
+| `sk-browse-folder` | `{ location }` | a folder option is selected |
+| `sk-confirm-open-project` | `{ location }` | Open, only when the selected folder is valid |
+| `sk-retry-load` | `{ target: 'folders' }` | retry of a failed listing |
+
+All events have `bubbles` and `composed` true. The `sk-retry-load` payload stays one union keyed on `target`; this
+mission adds the members `'project'`, `'projects'` and `'folders'`.
+
+The shell gains a third layout, `picker`: `sk-mission-shell layout="picker"` draws the skip link, the top bar and the
+content slot only, with no sidebar, rail, hamburger or drawer at any tier, and ignores the navigation properties. Any
+other unknown layout still falls back to `project`.
+
+```html
+<sk-mission-shell layout="picker" status="ready">
+  <sk-projects-screen status="ready"></sk-projects-screen>
+</sk-mission-shell>
+<sk-open-project-dialog></sk-open-project-dialog>
+```
+
+```js
+screen.entries = [{ key: 'a1', location: '<folder>', project: { name: 'example-app' /* the GET /project body */ } }];
+screen.addEventListener('sk-open-project', (e) => route(e.detail.key));
+screen.addEventListener('sk-request-open-project', () => (dialog.open = true));
+```
+
+Its stories are under `Screens/Projects/Screen`, `Screens/Projects/Tiers` and `Screens/Projects/Open project dialog`.
+## The Artifact screen
+
+`sk-artifact-screen` shows the artifacts of one Mission: the file tree (carried by the shell's own tree), one document in a
+Rendered or Raw tab, and an inspector with the file facts, the Mission facts and the linked Work Packages. A host passes
+contract-shaped data only. Thirteen properties: `status` (`loading`, `error`, `empty`, `ready`, `not-found`,
+`nothing-selected`), `contentStatus` (`loading`, `ready`, `refused`, `error`), `listing`, `content`, `refusalCode`,
+`selectedPath`, `mission`, `workPackages`, `view`, `now`, `labels`, `errorMessage` and `vocabulary`. Five events, each with
+`bubbles` and `composed` true: `sk-select-artifact`, `sk-open-link`, `sk-select-work-package`, `sk-open-mission` and
+`sk-retry-load` (target `'listing'` or `'content'`, a member added to the union in `src/retry-types.ts`). The screen performs no
+I/O. Markdown is rendered by a closed-allow-list renderer over `markdown-it` (15.0.2, pinned, no raw HTML, no remote
+image, no script URL; the lint rules R1 to R5 and the hostile corpus guard it); a document over the size or block budget
+falls back to its escaped source with a notice. Its 45 stories are under `Document`, `Refusals and states`,
+`Inspector and tree` and `Tiers and edge cases`, with one visual baseline each. The walkthrough and every ruling are in
+`kitty-specs/artifact-viewer-screen-01M47VP5/`.
+
+## The Drift screen
+
+`sk-drift-screen` lists the findings of a Mission Status drift scan and shows the chosen finding in a detail pane: kicker,
+title, explanation, authority panel, lane comparison table, suggested resolution with a Copy button, and facts. The screen
+is read-only: it asks the host to scan again, to retry, to open a Mission or to copy a command, and does nothing else. A
+host passes contract-shaped data only. Eleven properties: `status` (`loading`, `ready`, `empty`, `error`, `not-found`),
+`report` (the contract's `DriftReport`), `selectedFinding` (host-owned; an incoming change is never re-emitted),
+`missionId` (the scope of a scoped scan), `missions` (the host's Mission names, by id), `rescanning`, `copyResult`
+(`copied` or `manual`, the host's answer to a copy), `refusalCode`, `now`, `labels` (optional label hooks: `kind`, `severity`, `authority`, `derivedSide`, `refusal`, `lane` and `time`) and
+`errorMessage`. Six events, each with `bubbles` and `composed` true and `cancelable` false: `sk-select-finding`
+(`{ missionId, kind, artifactPath }`), `sk-rescan-drift` (`{ missionId }`, `null` for the whole project), `sk-copy-command`
+(`{ text, missionId, remedy }`; the host owns the clipboard), `sk-open-mission`, `sk-open-missions` and `sk-retry-load`.
+The `sk-retry-load` payload is the shared union keyed on `target`; this screen's member is `'drift-report'`.
+
+The screen performs no I/O and draws every kind, severity, authority and remedy word from `src/defaults/`. An unknown
+kind, severity, authority, derived side or source code is drawn neutrally with its raw word; an unknown remedy shows no
+command. Its 38 stories are under `Screens/Drift/` (four titles), one
+visual baseline each: the 33 rows of the specification's state matrix, with DR-07a and DR-07b counted separately and DR-09
+dropped, make 32, and six rows carry a second story. All of them sit in the project shell with `nav-drift` current and
+`flush` set. The walkthrough is `kitty-specs/drift-screen-01M4C93T/quickstart.md`.
+
+Exceptions to the layout-only rule, each recorded in `stylelint.config.mjs` with token values only: E-35 (the 420 px list
+track and the one-column tier; sunset spec-kitty/spec-kitty-design#530), E-36 (the raw `role="option"` finding button, as in the prototype; sunset spec-kitty/spec-kitty-design#527), E-37 (the prototype's
+type, colour and pill grants G-1 to G-10 (G-9: the busy Rescan start padding; G-10: the authority pill wraps, `white-space: normal` on that one pill's part) and the 44 px height of Rescan and Copy; sunsets spec-kitty/spec-kitty-design#531, spec-kitty/spec-kitty-design#509, spec-kitty/spec-kitty-design#526, spec-kitty/spec-kitty-design#529, spec-kitty/spec-kitty-design#516, spec-kitty/spec-kitty-design#532, spec-kitty/spec-kitty-design#523, spec-kitty/spec-kitty-design#535 and spec-kitty/spec-kitty-design#533 for the data-table family), E-38 (the command field wraps, a library
+gap; sunset spec-kitty/spec-kitty-design#534) and E-39 (`overflow-wrap: anywhere` on slugs and facts; sunset spec-kitty/spec-kitty-design#535), plus the E-18 scope extension to `panel-parts.ts` (sunset spec-kitty/spec-kitty-design#516).
+
 ## The Ops screen
 
 `sk-ops-screen` shows the invocation records (Ops) of a project, newest first, read only. A host passes contract-shaped data
@@ -116,12 +231,12 @@ packages, never only the changed files.
 | `Gate: stylelint` | `pnpm lint:styles` | layout-only CSS, `--sk-*` tokens, no colour, font or size literals; the operator-approved exceptions E-04 and E-08 to E-16 are scoped to named element files in `stylelint.config.mjs`, token values only (each sunsets on a spec-kitty-design issue) |
 | `Gate: no-io` | `pnpm lint:no-io` and `pnpm test:no-io` | no network, desktop-bridge or browser-storage I/O in `packages/*/src`; the self-test asserts one fixture per rule |
 | `Gate: manifest` | `pnpm manifest:check` | `custom-elements.json` equals a fresh regeneration and declares every property and event |
-| `Gate: hygiene` | `pnpm hygiene` and `pnpm test:scripts` | no token, no absolute user path, no e-mail address in the contract and fixture paths, pinned dependencies and actions, safe workflow triggers, baseline PNG checks; then the `node:test` suites of the gate scripts (hygiene, gate-proof, preflight, manifest-screen, settle, the stylelint exception scope proofs and the terminology scan: the word "feature" never appears in `packages/*/src` or the mission quickstart, the canonical term is "mission") |
+| `Gate: hygiene` | `pnpm hygiene` and `pnpm test:scripts` | no token, no absolute user path (CLI state files included), no agent scratchpad path, no tooling-ledger id, no username of the running account, no e-mail address in the contract and fixture paths, pinned dependencies and actions, safe workflow triggers, baseline PNG checks; then the `node:test` suites of the gate scripts (hygiene, gate-proof, preflight, manifest-screen, settle, the stylelint exception scope proofs, the story-catalogue and visual-tag tests and the terminology scan: the word "feature" never appears in `packages/*/src` or the mission quickstart, the canonical term is "mission") |
 | `Gate: contract` | `pnpm contract:check` and `pnpm test:contract` | the vendored Mission Status contract equals its pin, the generated types and fixtures are fresh, every fixture is a valid and coherent contract document (closed shapes), no event-stream identifier in `packages/*/src` |
-| `Gate: data-driven` | `pnpm lint:data-driven` and `pnpm test:data-driven` | no phase name, status lane or other contract status word (`pending`, `complete`, `draft`, `discarded`) hard-coded in `packages/*/src` outside `src/defaults/`, `src/contract/`, stories, fixtures and `src/story-support/`; the selector list is `SELECTOR_ENTRIES` in `eslint.data-driven.config.mjs` (it reads the phase, lane, review, change-state, staleness and Ops vocabularies from the vendored schemas), with a self-test over positive fixtures in `gates/fixtures/data-driven/` and inline `eslint-disable` comments ignored |
-| `Gate: storybook-build` | `pnpm build-storybook` | the static Storybook builds (211 stories), then the output is scanned for tokens |
-| `Gate: unit-tests` | `pnpm test` | Vitest browser-mode tests: one per emitted event and payload, plus the host composition test (both screens rendered from contract-shaped data with no I/O) |
-| `Gate: visual` | `pnpm visual` | screenshots of every story (211) against the committed baselines (211, one per story), inside the pinned Playwright container |
+| `Gate: data-driven` | `pnpm lint:data-driven` and `pnpm test:data-driven` | no phase name, status lane or other contract status word (`pending`, `complete`, `draft`, `discarded`) hard-coded in `packages/*/src` outside `src/defaults/`, `src/contract/`, stories, fixtures and `src/story-support/`; the selector list is `SELECTOR_ENTRIES` in `eslint.data-driven.config.mjs` (it reads the phase, lane, review, change-state, staleness, project health, artifact, Drift and Ops vocabularies from the vendored schemas), with a self-test over positive fixtures in `gates/fixtures/data-driven/` and inline `eslint-disable` comments ignored |
+| `Gate: storybook-build` | `pnpm build-storybook` | the static Storybook builds (330 stories), then the output is scanned for tokens |
+| `Gate: unit-tests` | `pnpm test` | Vitest browser-mode tests in two projects run one after the other, `unit` and then `perf` (the wall-clock ceiling tests, one file at a time; see below): one test per emitted event and payload, plus the host composition test (both screens rendered from contract-shaped data with no I/O) |
+| `Gate: visual` | `pnpm visual` | screenshots of every story (330) against the committed baselines (330, one per story), inside the pinned Playwright container |
 | `Gate: proof (<gate>)` | `pnpm gate-proof` | one leg per gate: passes clean, fails with the plant (see below) |
 | `Gate: proof` | (CI only) | checks coverage, assembles and schema-validates the proof record |
 | `Gate: all` | (CI only) | fails unless every job above succeeded; skipped or cancelled counts as failed |
@@ -135,6 +250,12 @@ Baselines live in `apps/storybook/tests/visual/__snapshots__/` and are produced 
 digest-pinned Playwright image. `pnpm visual` builds Storybook then runs `scripts/visual.sh`, which FAILS (never
 skips) if podman or docker cannot start the container. After an intentional visual change run `pnpm visual:update`
 and review the PNG diff in the PR. CI repeats each screenshot 5 times to catch flakiness.
+
+CI timeouts for the visual gate are derived from measured runs. A run at 255 stories took 606 s for the `visual` job and
+1848 s for `proof (visual)`. Scaled to the 293 stories of the merged set (x 293/255) that is about 696 s for the job
+(606 x 293/255) and about 2123 s for the proof leg (1848 x 293/255). The 28-minute job timeout leaves the job estimate at
+about 41% of the limit (696 s of 1680 s), and the 55-minute proof leg timeout leaves its estimate at about 64% (2123 s of
+3300 s). `unit-tests` (150 s, 219 s) keeps 8 and 10.
 
 ### Installs are frozen
 
@@ -243,9 +364,23 @@ No lint gate is complete. These are documented, not gated; reviewers must catch 
   scanned for it. C1 compares `PIN.json` with the files, so editing both together passes C1; the comparison with
   upstream is `pnpm contract:verify-remote`, which needs the network and is not a CI gate. The producer's lane weights
   are the one value copied from spec-kitty (`PRODUCER_LANE_WEIGHTS`); `contract:verify-remote` re-verifies them.
-- **CLI-record-path allow-list: two entries, three CLI record-path classes.** The spec-kitty CLI writes absolute paths into
-  its own records, and operator policy keeps them un-scrubbed. Hygiene therefore exempts exactly three kinds of
-  CLI-written path: the charter's `source_path:` line in `.kittify/charter/charter.yaml`, and, in
-  `kitty-specs/*/status.json` and `status.events.jsonl`, the review `feedback_path` value and the retrospective
-  `record_path` value. Nothing else is exempt; `pnpm hygiene --list-allowed` prints the two entries (the status entry
-  covers both status-record keys).
+- **No allow-list; CLI state files are scanned like everything else.** The spec-kitty CLI writes absolute paths into
+  its own records (the charter's `source_path:` line, and the review `feedback_path` and retrospective `record_path`
+  values in `kitty-specs/*/status.json` and `status.events.jsonl`). Hygiene exempts none of them: scrub such a value
+  (for example to `~/...`) before committing. `pnpm hygiene --list-allowed` prints nothing.
+- **`hygiene` private-workspace rules**: an agent scratchpad path (`/tmp/claude-<uid>/...`), a three-or-more-digit
+  `SK-` tooling-ledger id (two-digit `SK-NN` finding codes pass), and the username of the account running the gate
+  (whole word, case-insensitive, 4 characters or more; shared accounts such as `runner` and `root` are skipped) are
+  reported in every tracked and untracked file. In CI the runner's own account name is not the one that leaks, so set
+  `HYGIENE_FORBIDDEN_NAMES` (comma separated) to cover other names; without it CI checks only paths, scratchpads and
+  ledger ids. A username glued to other letters (`<name>dev`) is not matched.
+
+## Licence
+
+`kitty-mission-ui`, including `@moes-media/mission-ui` and `@moes-media/storybook-app`, is free
+software: you can redistribute it and modify it under the terms of the GNU Affero General Public License as published
+by the Free Software Foundation, either version 3 of the License, or (at your option) any later version
+(SPDX: `AGPL-3.0-or-later`). The full text is in [`LICENSE`](LICENSE).
+
+The Spec Kitty design library (`@spec-kitty/elements`, `@spec-kitty/styles`, `@spec-kitty/tokens`) is a separate,
+MIT-licensed dependency installed from spec-kitty's GitHub Packages registry; it is not part of this repository.

@@ -1,0 +1,29 @@
+schema: review-refute/v1
+complete: true
+phase: plan
+batch: 11
+verdicts:
+  - id: PLAN-TEST-002
+    verdict: confirmed
+    reason: "S-A0 in IC-01 builds parse.ts which IC-03 creates, IC-01 exit checks omit the figures, and node timings set the browser ceilings."
+  - id: PLAN-TEST-003
+    verdict: confirmed
+    reason: "Assertion (4) is a bare PerformanceObserver with no positive control or settle, and Resource Timing cannot prove absence for pending or data: URLs (FORK stands)."
+  - id: PLAN-TEST-004
+    verdict: confirmed
+    reason: "The corpus walk has no specified shadow-root descent, count guard or walker self-test, so it can pass on an empty render."
+  - id: PLAN-TEST-005
+    verdict: confirmed
+    reason: "The corpus runs only against renderMarkdown in IC-04 and IC-07 adds just a hostile fixture and a few link tests, leaving the screen composition outside the corpus."
+  - id: PLAN-TEST-006
+    verdict: confirmed
+    reason: "NFR-012 names raw HTML, href and img mutations but gates.md and IC-04 define only an href plant and a DOMParser lint plant."
+  - id: PLAN-TEST-007
+    verdict: confirmed
+    reason: "IC-04 leaves the ESLint self-test harness as either gates/-style or scripts/ with no wiring owner, and the lint plant pattern is only 'the rule's message' with no literal."
+  - id: PLAN-TEST-008
+    verdict: confirmed
+    reason: "contentLarge is only '256 KiB valid markdown' with no pinned ok branch, NFR-006 accepts the fallback, and the timings have no repetition or warm-up."
+  - id: PLAN-TEST-009
+    verdict: confirmed
+    reason: "The Test obligations table is a terse list that names no tests for AV-06, AV-16/17, AV-24 to AV-29 or SC-005's retry-per-code rule."

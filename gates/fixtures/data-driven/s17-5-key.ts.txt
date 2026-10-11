@@ -1,0 +1,2 @@
+// expect: S17.5
+export const m = { event_log: 1 };

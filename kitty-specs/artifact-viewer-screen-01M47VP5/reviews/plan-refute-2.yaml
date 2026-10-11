@@ -1,0 +1,29 @@
+schema: review-refute/v1
+complete: true
+phase: plan
+batch: 2
+verdicts:
+  - id: PLAN-CORRECT-009
+    verdict: confirmed
+    reason: FORK stands; stylelint.config.mjs unit-allowed-list grants only %, fr, px, em (no ch) and LAYOUT_PROPERTIES has no text-align, while E-22 pins max-width 68ch and E-23/E-24 omit text-align for data-align cells and white-space for prose code.
+  - id: PLAN-CORRECT-010
+    verdict: confirmed
+    reason: library-sheets.ts already adopts segmentedChoiceSheet and #4 pairs it with classOnly, yet E-25 hand-writes border, radius, background and padding for a segmented look and research never considers the adopted sheet (G-16 wording is narrower than claimed, "with tablist semantics", but the duplication stands).
+  - id: PLAN-CORRECT-011
+    verdict: confirmed
+    reason: feat/work-package-screen-5 status.json shows WP01-WP09 approved and WP10 in progress, lane-j holds RetryLoadDetail/SkRetryLoadDetail, REVIEW_CYCLE_ARTIFACT_KIND and factsSheet, and nothing named SkWorkPackageRetryDetail exists there, so the plan's "no implementation code" framing and symbol name are stale.
+  - id: PLAN-CORRECT-012
+    verdict: confirmed
+    reason: lane-j already has S13.x data-driven entries and exports factsSheet, while the plan's merge-order list omits the data-driven config and IC-06 plans to add the facts sheet that #5 already exports.
+  - id: PLAN-CORRECT-013
+    verdict: confirmed
+    reason: FORK stands; contract Part signatures put the truncation note in renderDocument (document-parts.ts, IC-07 chain X) but plan IC-09 (chain Y, inspector-parts.ts only) is assigned the truncation note in the document pane header band.
+  - id: PLAN-CORRECT-014
+    verdict: confirmed
+    reason: spec AV-01 (inspector facts filled) and AV-08 (line in the inspector) are mapped to IC-07 while inspector-parts.ts is written only by the parallel IC-09, so IC-07 cannot satisfy those clauses.
+  - id: PLAN-CORRECT-015
+    verdict: confirmed
+    reason: the contract examples ArtifactContent.redacted, .json and .empty use paths notes/handoff.md, contracts/schema.json and notes/empty.txt, none of which is an entry in ArtifactListing.populated, violating the plan's own pairing rule, and listingUnknownKind bundles a listing and a content into one registry fixture.
+  - id: PLAN-CORRECT-016
+    verdict: confirmed
+    reason: generate.mjs writes every registry entry as a JSON literal into fixtures.generated.ts, and bulk pages are validated only in checkBulk, so listing contentLarge/listingThousand as named fixtures contradicts "never stored" and names no checkBulk change.

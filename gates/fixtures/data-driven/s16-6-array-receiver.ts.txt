@@ -1,2 +1,2 @@
-// expect: S16.6 S16.6
-export const f = (s: string): number => ['open', 'closed'].indexOf(s);
+// expect: S16.6
+export const f = (k: string): boolean => ['contract'].includes(k);

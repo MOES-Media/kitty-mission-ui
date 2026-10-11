@@ -1,0 +1,5 @@
+import { html } from 'lit';
+
+// E-36 allows a raw `<button type="button" role="option">` in list-parts.ts only: in a sibling file of the Drift directory it must
+// still fail, and so must a class= outside the adopted families' files.
+export const plantEslintDriftOption = html`<button type="button" role="option" class="sk-facts">plant</button>`;

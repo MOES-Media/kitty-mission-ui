@@ -13,6 +13,49 @@
   {
     "gate": "eslint",
     "ciCommand": "pnpm lint",
+    "expectFailPattern": "markdown-renderer: R3",
+    "overlays": [
+      {
+        "target": "packages/mission-ui/src/logic/markdown/render.ts",
+        "edits": [
+          {
+            "find": "const DIGITS = /^[0-9]{1,9}$/;",
+            "replace": "const DIGITS = /^[0-9]{1,9}$/;\nexport const plantParser = new DOMParser();"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "gate": "eslint",
+    "ciCommand": "pnpm lint",
+    "expectFailPattern": "markdown-renderer: R4",
+    "overlays": [
+      {
+        "target": "packages/mission-ui/src/logic/markdown/render.ts",
+        "edits": [
+          {
+            "find": "return html`<hr>`;",
+            "replace": "return html`<hr .innerHTML=${String(block.kind)}>`;"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "gate": "eslint",
+    "ciCommand": "pnpm lint",
+    "expectFailPattern": "plant-eslint-drift-option",
+    "overlays": [
+      {
+        "target": "packages/mission-ui/src/elements/sk-drift-screen/plant-eslint-drift-option.ts",
+        "source": "plant-eslint-drift-option.ts.plant"
+      }
+    ]
+  },
+  {
+    "gate": "eslint",
+    "ciCommand": "pnpm lint",
     "expectFailPattern": "plant-ops-r1-parts",
     "overlays": [
       {

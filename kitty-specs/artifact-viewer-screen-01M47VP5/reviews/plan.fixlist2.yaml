@@ -1,0 +1,244 @@
+schema: review-findings/v1
+phase: plan
+findings:
+- id: PLAN-DESIGN-001
+  lens: module design / gate design
+  severity: 3
+  title: Per-file ESLint overrides (E-25, E-26) replace no-restricted-syntax and would silently drop the new renderer rules
+  evidence:
+  - artifact: plan.md IC-04 (D-06 rules added to eslint.config.mjs) and IC-06 (E-26 classOnly overrides, E-25 raw-button allowance); contracts/gates.md 'Lint rules for the renderer' rule 4 (no href/src
+      in any template of elements/sk-artifact-screen/)
+  - code: 'eslint.config.mjs:62 and :74 (base blocks: no-restricted-syntax set to elementSyntaxRestrictions) and eslint.config.mjs:83-127 (every per-file override re-declares no-restricted-syntax as ...withoutClassBan
+      plus classOnly, i.e. it REPLACES the array)'
+  claim: 'In flat config a later block that sets a rule replaces the option array of the earlier block; it does not merge. Every existing per-file exception rebuilds the whole array from elementSyntaxRestrictions.
+    The plan adds the D-06 rules (rule 4 is scoped to elements/sk-artifact-screen/, rule 3 to all of packages/*/src) in IC-04 but gives no statement about where they live. If they are a separate block,
+    the E-26 overrides on inspector-parts.ts, state-parts.ts, refusal-parts.ts and the E-25 override on tab-parts.ts (all in the scoped directory) turn rule 4 (no href) and any other new restriction OFF
+    in exactly those files, and no listed test would notice: each rule has its own violating and clean case, but no case runs through an overridden file. The ''leak case'' wording covers the exception''s
+    own leak, not the loss of unrelated rules.'
+  remediation: State in plan.md IC-04 and gates.md that the D-06 rules are appended to elementSyntaxRestrictions in eslint-rules/index.mjs (path-scoped inside the selector, not by files:), so withoutClassBan
+    carries them into every override; or give IC-06 an explicit test that calls ESLint.calculateConfigForFile for each overridden screen file and asserts every D-06 message is still present. Add that test
+    to IC-06 exit checks.
+  lens_group: design
+  refute_reason: eslint.config.mjs per-file blocks (lines 83-127) each set no-restricted-syntax to withoutClassBan plus classOnly, replacing the array, and plan.md/gates.md say only that the D-06 rules
+    are "added to eslint.config.mjs" without stating they are appended to elementSyntaxRestrictions or testing an overridden file.
+  verify_reason: 'R2 and R3 are now appended to elementSyntaxRestrictions and a calculateConfigForFile test is added, but gates.md and D-06 wrongly claim R1 cannot be replaced: the existing eslint.config.mjs
+    block for packages/*/src/elements/**/*.ts already sets no-restricted-imports (story-support ban) and would collide with R1, and R1 require/import() selectors are no-restricted-syntax entries not appended
+    to elementSyntaxRestrictions.'
+- id: PLAN-DESIGN-018
+  lens: IC write scope and sequencing
+  severity: 3
+  title: The truncation note is assigned to both chains, so the two parallel chains do not have disjoint write scopes
+  evidence:
+  - artifact: 'contracts/sk-artifact-screen.md Part signatures: renderDocument (rendered body, the redaction line, the truncation note) in document-parts.ts, owned by IC-07 (plan.md IC-07); plan.md IC-09:
+      ''the truncation note (DA-10) in the document pane header band'''
+  claim: 'IC-09 (chain Y) is told to deliver a note that the signature table places inside document-parts.ts, a chain X file. The plan''s disjointness claim (''chain X: IC-07, IC-08; chain Y: IC-09; disjoint
+    writes'') is therefore false for this one item, and the fallback (serialise IC-09 after IC-08) is only triggered by a merge conflict that may arrive late.'
+  remediation: Give the truncation note to one owner. Either move it to IC-07 (document-parts.ts, where the signature already puts it; IC-09 keeps only its story of the truncated tree) or move the note
+    into a function in inspector-parts.ts or a new truncation-parts.ts owned by IC-09 and called from the screen file by IC-06's stub. Update both the IC text and the signature table, and add an owned-files
+    disjointness check to the IC-10 merge step.
+  lens_group: design
+  refute_reason: contracts/sk-artifact-screen.md puts the truncation note in renderDocument in document-parts.ts (IC-07, chain X) while plan.md IC-09 (chain Y) assigns 'the truncation note (DA-10) in the
+    document pane header band', so the disjoint-writes claim is false for this item.
+  verify_reason: The false disjointness claim is removed and an IC-10 owned-files disjointness check is added, but the truncation note still has two conflicting owners (renderDocument in IC-07 document-parts.ts
+    versus IC-09) and is left HELD under PLAN-CORRECT-013, so the write-scope conflict itself remains.
+- id: PLAN-DESIGN-021
+  lens: data-driven gate
+  severity: 2
+  title: The bare-word comparison selectors have known holes that the plan does not list, and the self-test false-positive set is thin
+  evidence:
+  - artifact: 'contracts/gates.md: bare words (spec, quickstart, research, contract, checklist, other) matched ''only in comparisons (===, !==, includes argument) and case labels'''
+  - code: eslint.data-driven.config.mjs:1-17 (header 'Known limitations' lists what the gate misses; the new selectors need their own entries); the S1 and S5 entries of SELECTOR_ENTRIES (exact-value and
+      identifier anchors)
+  claim: 'A comparison-only selector misses [''spec'', ''plan''].includes(kind) (the literal is an array element, not the call argument), set.has(''spec''), kind.startsWith(''spec''), a lookup via a local
+    const initialised from a literal in the same file, and an object literal whose KEY is the bare word outside defaults/ ({ spec: x }), which S5 skips for these words unlike lane words. SC-004 and NFR-009
+    rely on the gate for a thirteenth kind, so the gap matters. The false-positive plan names a property ''other'' and prose ''research''; it omits the realistic cases for this code base: the import path
+    segment ''contract'', a CSS selector or data attribute containing ''contract'', and a fixture named by kind in a story file (allow-listed).'
+  remediation: Add selectors for ArrayExpression elements inside a .includes receiver, Map/Set has/get with a bare literal, and bare-word object keys in packages/*/src outside the allow-list (checking first
+    that no existing key such as contract, research or other collides; grep found no existing comparison of these words in packages/mission-ui/src), and add each hole that stays open to the file's Known
+    limitations header. Extend the false-positive self-test cases with the import-path and data-attribute cases above, and make the foreign-vocabulary test of IC-10 the stated backstop.
+  lens_group: design
+  refute_reason: Contract gates.md matches bare kind words only in comparisons and case labels, so array-element includes, set.has and bare object keys slip through, and the gate header lists no such limits.
+  verify_reason: The new Map/Set, array-receiver and object-key selectors, Known limitations and extra false-positive cases are added, but IC-02 exit checks (and R-04 context) still require "a key spec
+    in a non-comparison position" and "a property named other" to stay green, contradicting the new rule that flags bare words as object keys outside the allow-list.
+- id: PLAN-FRESH-001
+  lens: debugger-debbie (divergence matrix)
+  severity: 4
+  title: Lint rule R4 forbids every property and boolean binding in elements/sk-artifact-screen/, a directory the plan fills with stories, fixtures and host compositions that need them
+  evidence:
+  - artifact: 'contracts/gates.md, ''Lint rules for the renderer'', R4: scope is every html template under logic/markdown/ AND elements/sk-artifact-screen/; clause (a) reports any binding whose name starts
+      with ''.'' or ''?''. research.md D-06 repeats the scope. plan.md ''Constraints'': in this mission''s directories ''every property binding'' is banned.'
+  - artifact: 'plan.md ''Source code'': elements/sk-artifact-screen/ holds *.stories.ts (4 files) and fixtures.ts; IC-06 ''every control inert when no Mission id'' needs a conditional disabled state; quickstart.md
+      host example sets .listing, .content, .mission as properties.'
+  - artifact: '<repo>/packages/mission-ui/src/elements/sk-pipeline-screen/sk-pipeline-screen.stories.ts:44-52: every existing screen story binds data with ''.mission=${args.mission}'', ''.laneGroups=${...}'',
+      ''.labels=${...}''; <repo>/packages/mission-ui/src/story-support/shell-frame.ts uses ''?flush='' and ''.navItems=''. The plan''s rule scope is ''packages/*/src/**'' with noInlineConfig true, so no
+      inline disable can excuse them.'
+  claim: As written, R4 clause (a) applies to the stories and the element fixtures of the very directory it guards. Every story that passes listing, content or mission to sk-artifact-screen (the 45 baselines)
+    must use a property binding, and the host-composition stories need '.items' on sk-shell-tree. The lint gate would therefore be red from the first story in IC-06, and the only exits are to weaken R4
+    ad hoc or to disable it (which noInlineConfig forbids). The plan's own self-test (violating, clean, leak cases) never exercises a story file, so the contradiction survives until implementation. The
+    'no property binding' guarantee is meant for the renderer that turns document text into DOM, not for the host-side wiring.
+  remediation: 'FORK: (a) scope clause (a) of R4 to logic/markdown/** only, and in elements/sk-artifact-screen/** apply only the attribute allowlist (clause b) to non-story, non-fixture files, with an explicit
+    ignore for **/*.stories.ts and fixtures.ts, plus a self-test case showing a story file with ''.listing=${x}'' is clean while the same text in render.ts is reported; or (b) keep clause (a) for the whole
+    directory but move stories and fixtures to a sibling directory outside the rule''s scope, and say which boolean bindings (for example ?disabled on an inert sk-button) the parts may use and list them
+    in the rule options. Either way record the decision in gates.md and research D-06, and have IC-04 own the options and IC-06 the structural names.'
+- id: PLAN-FRESH-002
+  lens: acceptance-criteria
+  severity: 3
+  title: NFR-002 and SC-007 (five consecutive clean visual runs) are replaced by a CI repeat-each=5 and a CI job that no work package can observe, without an amendment
+  evidence:
+  - artifact: 'spec.md NFR-002 (line 316): 0 visual failures across 5 consecutive runs on an unchanged commit; SC-007 (line 442): 0 visual failures across 5 consecutive runs.'
+  - artifact: 'plan.md IC-11 (revised): ''NFR-002 is evidenced by the green CI visual job (it already repeats every story five times, --repeat-each=5) on the final tip, with the local pnpm visual runs as
+      a pre-check''. The previous text read ''five consecutive clean pnpm visual runs in the pinned container''. No amendment A-1..A-8 covers it.'
+  - artifact: '<repo>/.github/workflows/ci.yml:515 runs ''bash scripts/visual.sh -- --repeat-each=5'': one process, one page-load sequence, each test repeated; plan.md ''PR shape'' says work packages never
+      push and never open pull requests, and the PR is opened only after wrap-up.'
+  claim: repeat-each=5 inside one Playwright run is not five consecutive runs (it shares one Storybook build, one container start and warm caches), so it can pass where a cold second run flakes. Worse,
+    the CI job only exists after the draft PR, which is after IC-11 is reviewed and after wrap-up, so IC-11's reviewer cannot verify the evidence the exit check names. The acceptance criterion is weakened
+    and its evidence is moved outside the work package that owns it, while the spec text and the amendment list are unchanged.
+  remediation: 'FORK: (a) restore the exit check in IC-11 as five consecutive local ''pnpm visual'' runs in the pinned container on an unchanged tip (what #4 and #5 did), keeping the CI job as additional
+    evidence; or (b) add an amendment A-9 that rewords NFR-002 and SC-007 to ''one CI visual run with --repeat-each=5 plus one local run'', put it in the CP-1 asks, and move the evidence check to the wrap-up
+    step after the PR exists, stating that IC-11 itself only proves one local run.'
+- id: PLAN-FRESH-003
+  lens: spec-ruling-fidelity
+  severity: 3
+  title: A-8 is labelled 'a clarification that changes no ruling' but narrows N-Q12, and its EV-2 sentence is already written into the spec before the operator decides
+  evidence:
+  - artifact: 'plan.md A-8: mailto with a query or fragment, userinfo in an authority and a destination over 2048 characters are inert; blocked schemes become literal text with no title; ''that sentence
+      is already written into spec.md by this fix round, because it adds no behaviour to a ruling''.'
+  - artifact: 'tracer-design-decisions.md and spec.md N-Q12 (operator ruling 2026-10-06): ''an absolute http, https or mailto link emits sk-open-link { href }; everything else ... is inert text with the
+      destination in title''.'
+  - artifact: 'spec.md line 247 (EV-2) changed in commit af5d282: adds ''the href is untrusted document content: the host must re-validate the scheme before acting, must not navigate its own window to it
+      and should show the destination to the user first''. It is the only spec.md edit of the revision.'
+  - artifact: plan.md 'Spec amendments proposed (operator decides at CP-1; the plan is written to the amended text)'.
+  claim: Under the ruling a 'mailto:a@b?subject=x' link is an absolute mailto link and emits the event; under A-8 it is inert. Likewise 'javascript:' links, which the ruling says render as inert text with
+    the destination in title, render as the raw bracket source with no title. Those are behaviour changes to a ruled row, so calling A-8 a clarification understates it, and the charter requires operator
+    approval for amendments. The EV-2 host-obligation sentence is a new normative requirement on hosts, and editing the spec row ahead of CP-1 means a rejected A-8 leaves an unapproved edit in an operator-ruled
+    table. The plan, contracts and tests (link table rows 5 to 7, corpus entries) are already written to the narrowed behaviour.
+  remediation: 'FORK: (a) keep the spec edit and the narrowing but re-label A-8 as an amendment to N-Q12 (listing the three narrowings and the literal-text outcome), mark the EV-2 text in spec.md as ''proposed
+    at A-8, pending CP-1'', and add it to the CP-1 asks as a decision; or (b) revert the spec.md EV-2 edit now, keep the host obligation in contracts/sk-artifact-screen.md and the @fires text only, and
+    move the narrowings to A-8 as proposals; or (c) drop the mailto-query and userinfo narrowing and let the host re-validate, which keeps N-Q12 literal.'
+- id: PLAN-FRESH-004
+  lens: supply-chain
+  severity: 3
+  title: The DIRECTIVE_051 dependency record states a markdown-it advisory 'does not appear' and drops it, but the GitHub advisory database lists it
+  evidence:
+  - artifact: 'research.md ''Dependency'', Advisories: ''GHSA-38c4-r59v-3vqw, cited in the first draft, does not appear in that list and is dropped''; D-05 and plan.md Technical Context claim ''the full
+      advisory list'' and a pin ''not below the patched versions of GHSA-253c-mchw-3w2r, GHSA-6v5v-wf23-fmfq and GHSA-6vfc-qv3f-vr6c''.'
+  - artifact: 'Read-only check, gh api ''advisories?affects=markdown-it&ecosystem=npm'': five advisories, namely GHSA-253c-mchw-3w2r, GHSA-6v5v-wf23-fmfq, GHSA-38c4-r59v-3vqw, GHSA-j5p7-jf4q-742q and GHSA-6vfc-qv3f-vr6c.
+      GHSA-38c4-r59v-3vqw (published 2026-02-12, ''Regular Expression Denial of Service'') covers markdown-it >= 13.0.0, < 14.1.1 and is patched in 14.1.1; GHSA-j5p7-jf4q-742q covers < 3.0.0. The four advisories
+      the research lists come from the repository''s own security-advisory list, which is a subset.'
+  claim: 'The pin (15.0.2) is above every fix line, so the decision stands, but the record that goes into the PR description (FR-043) is factually wrong: it says a real, published ReDoS advisory does not
+    exist and the ''advisory query re-run at wrap-up'' would, if run against the repository list again, reproduce the omission. For a dependency the operator approved on supply-chain grounds, an incomplete
+    record is a quality defect.'
+  remediation: Restore GHSA-38c4-r59v-3vqw (affected >= 13.0.0 < 14.1.1, fixed 14.1.1, 15.0.2 is above) and note GHSA-j5p7-jf4q-742q (< 3.0.0, not applicable); name the query source explicitly (the GitHub
+    global advisory database through 'advisories?affects=markdown-it&ecosystem=npm', plus npm audit) in D-05 and in the IC-11 re-run step so the list has five entries; change 'the full advisory list' wording
+    accordingly in plan.md Technical Context.
+- id: PLAN-FRESH-005
+  lens: charter-exceptions
+  severity: 2
+  title: Design-library issues are filed 'at PR time' in research.md but 'before CP-1' in plan.md and gates.md, and E-26 and E-28 have no numbered sunset
+  evidence:
+  - artifact: 'research.md ''Library gaps'' heading: ''each a design-library issue the orchestrator files at PR time''.'
+  - artifact: 'plan.md CP-1 ask 3 and contracts/gates.md intro: ''The design-library issues for G-14, G-15, G-16 and G-19 are filed before CP-1, so each exception cites a number''; ''Each exception cites
+      a filed design-library issue as its sunset''.'
+  - artifact: 'contracts/gates.md exception table: E-26 sunset is ''the library elements for the facts, empty-state and progress families (as #4 and #5)'', E-28 sunset is ''a library interactive pill'';
+      neither maps to a G-nn row, and G-17 and G-18 (which sunset DA-3 and D-14 workarounds) are not in the before-CP-1 list.'
+  claim: Two documents give opposite timing for the same action, so a WP brief or the orchestrator could follow either. The charter requires every exception to be documented with scope, rationale and sunset
+    criteria and approved by the operator; two proposed exceptions (E-26, E-28) lack a gap row and an issue number, which breaks the stated rule that each exception cites a filed issue. Filing issues in
+    another repository before the operator has seen the spikes is also outward work the operator has not asked for in this conversation.
+  remediation: 'State one rule in research.md, plan.md and gates.md (the plan''s before-CP-1 wording is the stricter one, but make it ''drafted before CP-1, filed on the operator''s word''); add gap rows
+    for the E-26 families (styles-only families without elements) and for E-28, or cite the existing #4 and #5 issue numbers for E-26 as its sunset; add G-17 and G-18 to the list or say why they need no
+    number.'
+- id: PLAN-FRESH-006
+  lens: terminology
+  severity: 2
+  title: Fixtures, stories and the corpus are named around a 'feature set', but the real-tree terminology scan in test:scripts fails on the whole word 'feature' in packages/*/src
+  evidence:
+  - artifact: '<repo>/scripts/terminology.mjs:1-3 and scripts/terminology.test.mjs:43-47: C-009, the word ''feature'' (whole word, case-insensitive) must not appear in packages/*/src; package.json ''test:scripts''
+      includes scripts/terminology.test.mjs, which asserts scan(ROOT) is empty, and ci.yml runs test:scripts in the hygiene gate.'
+  - artifact: 'contracts/contract-pin.md: overlay ''contentFeatures ... a markdown document exercising every FR-006 feature''; plan.md IC-01 ''feature-set markdown''; spec.md AV-03 ''Markdown feature set''.
+      The overlay text is written into src/contract/fixtures.generated.ts and the story names and doc comments live in elements/sk-artifact-screen/*.stories.ts.'
+  - artifact: 'plan.md Traceability: ''C-009 | every IC | the terminology check of the base (pnpm test:terminology)''; no WP-brief rule or self-check names the word.'
+  claim: Nothing tells an implementer that the AV-03 story comment, a story title, a heading inside the generated contentFeatures document, or a corpus entry may not contain the word 'feature'. The first
+    story or fixture that follows the spec's own row title ('Markdown feature set') turns the hygiene gate red. The identifier 'contentFeatures' itself is safe (no word boundary); the prose around it is
+    not.
+  remediation: 'Add to the ''Self-check list for reviewers'' in gates.md and to the WP brief rules: the word ''feature'' (whole word, any case) is forbidden in packages/*/src including story titles, doc
+    comments, fixture content and corpus text; name AV-03''s story and the overlay content ''Markdown full syntax'' or similar; make IC-01 (fixtures) and IC-04 (corpus) run pnpm test:terminology as an exit
+    check.'
+- id: PLAN-FRESH-007
+  lens: cross-file-consistency
+  severity: 2
+  title: The view-model vocabulary differs between research D-12 and data-model.md, and the tabs of an empty markdown file are unspecified while the contract assumes they exist
+  evidence:
+  - artifact: 'research.md D-12 last sentence: resolveArtifactView returns a view model ''''rendered'' | ''raw-only'' | ''fallback'' | ''empty'' | ...''. data-model.md ArtifactView: pane ''listing-state''
+      | ''nothing-selected'' | ''loading'' | ''refusal'' | ''error'' | ''empty-file'' | ''document''; tabs ''two'' | ''none''; body ''rendered'' | ''fallback'' | ''raw''.'
+  - artifact: 'data-model.md total table row 9 (empty-file): says only ''the header and the inspector stay''; contracts/sk-artifact-screen.md Semantics: ''an empty file in the rendered tab keeps the panel
+      and its name'' (implies two tabs for an empty markdown file) while the only empty fixture, contentEmpty, is text/plain (tabs none).'
+  claim: D-12 uses names ('raw-only', 'empty') that exist nowhere else, so a reader implementing IC-02's resolveArtifactView from the research would diverge from the data-model table that IC-02 is told
+    to test row by row. Row 9 does not say whether an empty markdown file has a tablist, which tab is selected or what body it has, and no fixture or story covers an empty markdown file, so two WPs (IC-02
+    and IC-07) can pick different answers.
+  remediation: 'Replace the D-12 sentence by a pointer to data-model.md ArtifactView; add tabs, body and selectedTab columns to row 9 for markdown and non-markdown empty files (for example: markdown gives
+    two tabs, body ''raw'' for the empty text, no notice), and add a markdown-empty case to the IC-02 row tests and, if wanted, to contentEmpty''s overlays.'
+- id: PLAN-FRESH-008
+  lens: cross-file-consistency
+  severity: 2
+  title: The empty-file state is assigned to source-parts.ts, which has no class allowance, while the empty-state look lives in state-parts.ts
+  evidence:
+  - artifact: 'research.md D-15: ''Raw, fallback source and the empty-file state share source-parts.ts''. contracts/gates.md E-26: source-parts.ts has ''none'' (no class= allowance); state-parts.ts has
+      sk-empty-state*. contracts/sk-artifact-screen.md Part signatures: renderSource(text, label) has no empty form; renderEmptyForm(text, heading?) in state-parts.ts is ''the one place sk-empty-state*
+      appears besides the refusal block''.'
+  - artifact: 'spec.md AV-07: ''Empty file ... the empty-state look, file header kept''; plan.md IC-07 owns AV-07 with toolbar, tab, document, source and prose parts, not state-parts.ts (IC-06 stub, IC-08
+      bodies).'
+  claim: The empty-state look needs the sk-empty-state class, which only state-parts.ts and refusal-parts.ts may carry, yet D-15 places the state in source-parts.ts. IC-07 must either call renderEmptyForm
+    from document-parts.ts (not stated) or add a class to source-parts.ts (an unlisted exception, refused by lint). The plan does not say which, so IC-07 will hit a lint failure or invent an exception.
+  remediation: 'Edit D-15: the empty-file body is drawn by document-parts.ts calling renderEmptyForm from state-parts.ts (IC-06''s complete part), source-parts.ts keeps only the raw and fallback blocks;
+    add the call to IC-07''s description and to the part-signature table.'
+- id: PLAN-FRESH-009
+  lens: cross-file-consistency
+  severity: 2
+  title: sk-artifact-screen.md says VIEW_STATES of view-state.ts 'is extended', but defaults.md and data-model.md derive a new list and the existing array cannot hold the extra values
+  evidence:
+  - artifact: 'contracts/sk-artifact-screen.md Properties: ''The shell''s normaliseViewState is NOT used ...; only the list VIEW_STATES of view-state.ts is extended.'' contracts/defaults.md artifact-status.ts:
+      ''ARTIFACT_STATUSES is VIEW_STATES of view-state.ts plus not-found and nothing-selected (one list, extended at type level)''.'
+  - artifact: '<repo>/packages/mission-ui/src/view-state.ts:3-5: ''export type ViewState = ...four values'' and ''export const VIEW_STATES: readonly ViewState[]''; the array''s element type is the four-value
+      union.'
+  claim: '''Extended'' reads as an edit to a shared #4 file that #5 may also touch, which the plan elsewhere forbids (LabelHooks is deliberately not edited to avoid cross-mission merge points), and a literal
+    ''extension at type level'' is impossible because VIEW_STATES is typed readonly ViewState[]. An implementer can follow either sentence.'
+  remediation: Reword the contract sentence to 'VIEW_STATES is spread into ARTIFACT_STATUSES in logic/artifact-status.ts (typed readonly ArtifactStatus[]); view-state.ts is not edited', and make the same
+    statement in data-model.md.
+- id: PLAN-FRESH-010
+  lens: traceability
+  severity: 2
+  title: Requirements added by amendment A-7 (NFR-014, NFR-015) and the amendments themselves are missing from the traceability table, yet IC-10 already carries their assertions
+  evidence:
+  - artifact: 'plan.md A-7: ''new NFR-014, NFR-015'' (forced colors and reduced motion; target size 36 px tab and 24 px control) and NFR-011 widened; IC-10 text lists ''forced-colors and reduced-motion
+      assertions and the bounding-box assertions''; contracts/sk-artifact-screen.md test obligations require ''one uncommitted forced-colors screenshot per region WP''.'
+  - artifact: 'plan.md Traceability table: NFR rows stop at NFR-013; no row for NFR-014 or NFR-015 or for A-1..A-8; spec.md ends at ''Sum of non-functional requirements: 13 (NFR-001 to NFR-013)''.'
+  claim: The plan commits work (assertions in IC-10, evidence in every region WP) to two requirements that exist in no spec and are only proposed. If the operator rejects A-7 at CP-1 nothing says those
+    assertions and the per-WP screenshot obligation fall away, and a reviewer has no row to check them against.
+  remediation: Add traceability rows NFR-014 and NFR-015 (IC-10, conditional on A-7) and one row per amendment naming the plan elements that depend on it; state in A-7 that the IC-10 forced-colors, reduced-motion
+    and bounding-box assertions and the region-WP screenshot obligation are dropped if A-7 is not approved.
+- id: PLAN-FRESH-011
+  lens: ownership
+  severity: 2
+  title: 'Two write-ownership gaps: the story pairing table is assigned to ''IC-02 or IC-06'', and IC-06 must record R4 structural names that the shared-file table does not give it'
+  evidence:
+  - artifact: 'contracts/contract-pin.md ''Pairing'': ''IC-02 or IC-06 creates a pairing table ... in fixtures.ts''. plan.md ''Shared files: who may write them'': the element''s fixtures.ts is written by
+      IC-06 only (creates a builder for every fixture name); IC-02''s affected surfaces are src/defaults, src/logic, tests and the data-driven trio.'
+  - artifact: 'contracts/gates.md R4: for elements/sk-artifact-screen/** the allowlist adds ''the structural names IC-06 records in the rule options''; plan.md shared-file row for eslint.config.mjs and
+      eslint-rules/** lists for IC-06 only the E-26 overrides, E-25 raw-button allowance and the calculateConfigForFile test.'
+  claim: The pairing table is in an element file that IC-02 does not own and cannot compile before the element exists, so the sentence is wrong for one of its two owners; IC-11's row-to-story test depends
+    on it. The R4 option edit by IC-06 is a write to a file the table gives to IC-04 for rule work, with no stated rule for how IC-06's edit is checked (the self-test has no case for the structural names).
+  remediation: Name IC-06 as sole owner of the pairing table in contract-pin.md; add the R4 structural-names option edit to IC-06's row in the shared-file table and add a self-test case in gates/markdown-lint.selftest.ts
+    that each recorded name appears in the options with its one-line reason.
+- id: PLAN-FRESH-012
+  lens: nits
+  severity: 1
+  title: 'Small inconsistencies: E-23 in a range, split container-query bounds, and the refusal resolver''s signature'
+  evidence:
+  - artifact: 'plan.md ''Source code'' line for eslint.config.mjs: ''E-22 to E-27 (IC-06)'', while every other mention says E-23 is merged into E-22 and not reused.'
+  - artifact: 'contracts/sk-artifact-screen.md Layout: ''@container (min-width: <T2>)'' with T2 689 px and ''@container (max-width: <T1>)'' with T1 688 px, which leaves widths between 688 and 689 px (fractional
+      container widths at zoom) matched by neither query.'
+  - artifact: contracts/defaults.md resolveArtifactRefusal(code, ctx, hooks) takes three arguments; data-model.md row 4 writes 'resolveArtifactRefusal(null)'.
+  claim: 'None changes behaviour by itself, but each invites a wrong implementation: a reader may create an E-23 entry, the two-column and one-column rules can both be absent at a fractional width, and
+    the call shape in the data model does not type-check.'
+  remediation: Write 'E-22, E-24 to E-27' in the source-tree line; express the thresholds as a complementary pair (for example '(width >= T)' and '(width < T)' with one T in rem); write 'resolveArtifactRefusal(null,
+    ctx, hooks)' in the data-model row.

@@ -1,6 +1,7 @@
 {
-  "name": "spec-kitty-mission-ui",
+  "name": "kitty-mission-ui",
   "private": true,
+  "license": "AGPL-3.0-or-later",
   "packageManager": "pnpm@11.18.0+sha512.33d83c77da82f49fba836925c6f1b841181ec3132b670639bd012f7075f5c7cf634c5f870147c19aae7478fac01df09d8892e880454896edd23ee9b33757563c",
   "engines": {
     "node": "22.22.2",
@@ -12,17 +13,17 @@
     "lint": "eslint . --max-warnings 0",
     "lint:styles": "stylelint \"packages/*/src/**/*.{css,ts,mts,cts,tsx,js,mjs,cjs,jsx}\"",
     "lint:no-io": "eslint -c eslint.no-io.config.mjs packages/*/src",
-    "test:no-io": "vitest run --config gates/vitest.config.ts gates/no-io.selftest.ts",
+    "test:no-io": "vitest run --config gates/vitest.config.ts gates/no-io.selftest.ts gates/markdown-lint.selftest.ts",
     "lint:data-driven": "eslint -c eslint.data-driven.config.mjs packages/*/src",
     "test:data-driven": "vitest run --config gates/vitest.config.ts gates/data-driven.selftest.ts",
-    "manifest:generate": "pnpm --filter @spec-kitty/mission-ui manifest:generate",
+    "manifest:generate": "pnpm --filter @moes-media/mission-ui manifest:generate",
     "manifest:check": "node scripts/check-manifest.mjs",
     "hygiene": "node scripts/check-hygiene.mjs",
-    "test": "pnpm --filter @spec-kitty/mission-ui test",
-    "storybook": "pnpm --filter @spec-kitty/storybook-app storybook",
-    "storybook:build-only": "pnpm --filter @spec-kitty/storybook-app build",
+    "test": "pnpm --filter @moes-media/mission-ui test",
+    "storybook": "pnpm --filter @moes-media/storybook-app storybook",
+    "storybook:build-only": "pnpm --filter @moes-media/storybook-app build",
     "build-storybook": "pnpm storybook:build-only && node scripts/check-hygiene.mjs --storybook-static",
-    "visual:run": "pnpm --filter @spec-kitty/storybook-app visual:run",
+    "visual:run": "pnpm --filter @moes-media/storybook-app visual:run",
     "visual": "pnpm build-storybook && bash scripts/visual.sh",
     "visual:update": "pnpm build-storybook && bash scripts/visual.sh --update",
     "gate-proof": "node scripts/gate-proof.mjs",
@@ -33,8 +34,8 @@
     "contract:update": "node scripts/contract/update.mjs",
     "contract:verify-remote": "node scripts/contract/verify-remote.mjs",
     "test:contract": "node --test scripts/contract/*.test.mjs",
-    "test:scripts": "node --test scripts/hygiene scripts/gate-proof scripts/preflight.test.mjs scripts/manifest-screen.test.mjs scripts/settle.test.mjs scripts/stylelint-exceptions.test.mjs scripts/terminology.test.mjs scripts/wp-story-catalogue.test.mjs scripts/ops-story-catalogue.test.mjs scripts/visual-tags.test.mjs",
-    "test:terminology": "node scripts/terminology.mjs && node --test scripts/terminology.test.mjs"
+    "test:scripts": "node --test scripts/hygiene scripts/gate-proof scripts/preflight.test.mjs scripts/manifest-screen.test.mjs scripts/settle.test.mjs scripts/stylelint-exceptions.test.mjs scripts/terminology.test.mjs scripts/bundle-budget.test.mjs scripts/artifact-story-catalogue.test.mjs scripts/perf-split.test.mjs scripts/wp-story-catalogue.test.mjs scripts/drift-story-catalogue.test.mjs scripts/ops-story-catalogue.test.mjs scripts/visual-tags.test.mjs",
+    "test:terminology": "node scripts/terminology.mjs && node --test scripts/terminology.test.mjs scripts/drift-story-catalogue.test.mjs"
   },
   "devDependencies": {
     "@apidevtools/json-schema-ref-parser": "16.0.3",

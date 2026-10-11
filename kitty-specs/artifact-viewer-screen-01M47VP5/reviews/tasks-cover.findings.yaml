@@ -1,0 +1,84 @@
+schema: review-findings/v1
+complete: true
+phase: tasks
+lens_group: cover
+mission: artifact-viewer-screen-01M47VP5
+profile: reviewer-renata
+conduct_note: 'Run in-session by the orchestrator (the operator constraint for this phase is no sub-agents),
+  as one lens group after the other, from commit 74d3147. Profile resolved from the installed catalog
+  with `spec-kitty agent profile show` (squad-delegate mode); no profile data was edited. Mechanical checks
+  (dependency edges, requirement ids, story ids, verbatim embeds, owned-file overlap) were scripted, not
+  judged. Lenses: every FR, NFR, C, SC and AV and EV id assigned to a WP; rulings carried into the WP
+  prompts verbatim; file references real; terminology.'
+findings:
+- id: TASKS-COVER-001
+  lens: Rulings carried verbatim
+  severity: 4
+  title: Plan amendments A-1 to A-10, DA-41, 'Spec rows read as amended', the Build-base table and the
+    CP-1 asks are not carried into the WP prompts
+  evidence:
+  - artifact: 'tasks/WP*.md: each prompt embeds the IC section, the shared-file rows, lane mechanics and
+      the spec Clarifications, and nothing from plan.md ''Spec amendments'', ''Build base'' or ''CP-1
+      asks'''
+  - artifact: 'tasks/WP04-markdown-model-parse-budget-links.md Context: ''the revert instructions are
+      in the plan text below''; the revert text is in plan.md A-8 and is not below'
+  - artifact: 'tasks/WP01-contract-re-vendor-and-fixtures.md subtask 1: ''re-read each row of the plan''s
+      "What this mission needs from #5" table''; the table is not in the prompt'
+  - artifact: 'plan.md ''Spec rows read as amended by the rulings'': AV-32, FR-035, NFR-003, FR-012, DA-23
+      and NFR-005 as amended; a reviewer holding spec.md rows would judge WP09 and WP12 against superseded
+      text'
+  claim: The rulings that change what a WP must build (A-1 layout rule and AV-33 to AV-35, A-3 union,
+    A-5 icons, A-6 DA-39 and DA-40, A-7 NFR-014 and NFR-015, A-8 link narrowings, A-9 thirteen properties,
+    A-10 no multiplier, DA-41 bidi notice) are only in plan.md. A WP agent or reviewer given the WP file
+    alone implements or judges against the old spec rows, which is a wrong implementation or a false reject;
+    and two prompts point at plan text that they do not contain.
+  remediation: Embed, verbatim and per WP, the amendment blocks the WP touches (WP02 A-2; WP03 A-4, A-5,
+    A-9; WP04 A-8; WP05 A-4, A-8, A-10; WP06 A-1, A-6; WP07 A-4, A-6; WP08 A-1, A-3, A-9; WP09 A-6, A-7,
+    A-8; WP10 A-3, A-7; WP11 A-5, A-6, A-7; WP12 A-1, A-7, A-9, A-10; WP13 all), the DA-41 paragraph where
+    it applies (WP09, WP13), the 'Spec rows read as amended' paragraph (WP09, WP10, WP11, WP12, WP13),
+    the Build-base section (WP01, WP08, WP13), the 'Screen layout' paragraph and table (WP06, WP08, WP12)
+    and the CP-1 asks (WP06, WP07, WP08).
+- id: TASKS-COVER-002
+  lens: Rulings carried verbatim (test rules)
+  severity: 3
+  title: 'The test-quality rules in the WP prompts are a paraphrase with an invented rule and changed
+    wording instead of the verbatim #4 D-34 rules the plan says are copied in'
+  evidence:
+  - artifact: 'plan.md ''PR shape and wrap-up'': ''the test-quality rules of #4 D-34 and the drift register
+      status are copied in'''
+  - artifact: kitty-specs/missions-and-pipeline-screens-01M40SKZ/research.md D-34 rules 1 to 6; the prompts'
+      'Test quality rules' paragraph rewrites rules 3 and 5, drops rule 6 and adds an invented rule (6)
+      about empty-set guards
+  claim: 'The binding text is a copy, not a paraphrase; the paraphrase also weakens rule 3 with an exception
+    (''except where a test says so'') that D-34 does not have, and research.md D-19 (this mission''s test
+    strategy: Chromium-only, scripts/ node tests, ?raw scans, request absence, hard ceilings) is not in
+    the prompts at all.'
+  remediation: 'Replace the paragraph with D-34 rules 1 to 5 verbatim from #4 research.md, add this mission''s
+    research.md D-19 verbatim, and keep the empty-set guard as a clearly labelled addition that does not
+    alter rule 3.'
+- id: TASKS-COVER-003
+  lens: Story coverage
+  severity: 2
+  title: AV-26 is named in no work package
+  evidence:
+  - artifact: 'scripted scan of the 13 prompts (own text, before ''Plan text for this work package''):
+      AV-26 found in none; WP11 names AV-24, AV-25, AV-27, AV-28, AV-29 and the range ''AV-24 to AV-29''
+      only in its story-title line'
+  - artifact: 'spec.md State Matrix: AV-26 ''Inspector: Linked Work Packages present (pills, actionable)
+      and absent'''
+  claim: AV-26 (linked Work Package pills present and absent, pills emit `sk-select-work-package`) is
+    covered only by a range; the subtask that builds the pills does not name it, so the story and its
+    present-and-absent pair could be missed.
+  remediation: Name AV-26 in WP11's Work Package subtask and require both the present and the absent state.
+- id: TASKS-COVER-004
+  lens: Traceability to the plan
+  severity: 2
+  title: 'tasks.md shows ''Plan Concerns: IC-01'' for WP01 and WP02 and ''IC-06'' for WP07 and WP08, and
+    the notes do not explain it'
+  evidence:
+  - artifact: tasks.md WP01, WP02, WP07, WP08 headers; wps.yaml plan_concern_refs; tracer-tooling-friction
+      entry on the IC-## regex
+  claim: The plan names IC-01a, IC-01b, IC-06a and IC-06b; the tool accepts only IC-##, so the generated
+    file reads as a mismatch with the plan.
+  remediation: Add the mapping (IC-01a and IC-01b recorded as IC-01; IC-06a and IC-06b recorded as IC-06,
+    a tool constraint) to tasks-notes.md.

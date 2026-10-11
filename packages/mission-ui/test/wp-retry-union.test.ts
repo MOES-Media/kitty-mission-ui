@@ -10,6 +10,12 @@ function describeTarget(detail: SkRetryLoadDetail): string {
       return `read ${detail.wpId}`;
     case 'detail':
       return `detail of ${detail.wpId}`;
+    case 'project':
+      return `project ${detail.key}`;
+    case 'projects':
+      return 'projects';
+    case 'folders':
+      return 'folders';
     case 'ops-page':
       return 'ops page';
     default: {
@@ -28,6 +34,11 @@ describe('DESIGN-006: the retry payload is a union keyed on target', () => {
     expect(detail).toEqual({ missionId: 'M1', wpId: 'WP01', target: 'detail' });
     expect(describeTarget(whole as SkRetryLoadDetail)).toBe('read WP01');
     expect(describeTarget(detail as SkRetryLoadDetail)).toBe('detail of WP01');
+  });
+
+  it('narrows the three Projects members', () => {
+    const members: SkRetryLoadDetail[] = [{ target: 'project', key: 'k1' }, { target: 'projects' }, { target: 'folders' }];
+    expect(members.map(describeTarget)).toEqual(['project k1', 'projects', 'folders']);
   });
 });
 

@@ -1,0 +1,25 @@
+schema: review-verify/v1
+complete: true
+phase: plan
+results:
+  - id: PLAN-FRESH-005
+    status: resolved
+    reason: "The E-22 sunset cell in gates.md now reads 'drafted before CP-1 and filed on the operator's word at CP-1', and a grep over every non-review markdown file finds no remaining 'filed before' copy in gates.md, research.md, plan.md or the task files."
+  - id: PLAN-FRESH2-001
+    status: resolved
+    reason: "The E-22 cell is fixed, gates.md line 75 adds the self-check that searches for 'filed' next to 'CP-1', and all four copies (preamble, research.md, plan.md item 3, E-22) now state the same draft-then-file rule."
+  - id: PLAN-FRESH2-002
+    status: resolved
+    reason: "plan.md now gives pnpm test:terminology as an exit check to IC-01 to IC-04 and IC-06 to IC-11 (I found it in IC-06, IC-07, IC-08, IC-09, IC-10 and IC-11), the PR-shape sentence and the quickstart command table and manual-checks list match that range."
+  - id: PLAN-FRESH2-004
+    status: resolved
+    reason: "Behaviour rule 2 in sk-artifact-screen.md is now limited to non-empty files with a separate assertion for the empty case, and the IC-07 equality test in plan.md carries the same carve-out, consistent with rows 9a and 9b."
+  - id: PLAN-FRESH2-005
+    status: resolved
+    reason: "selectedTab is gone from the ArtifactView type and from rows 9a and 9b, no artifact mentions it any more, and data-model.md says the held tab belongs to sk-artifact-screen.ts, seeded by view, which matches rule 1 and the State section (only a stray comma remains in the 'For document' sentence, a nit)."
+  - id: PLAN-FRESH2-006
+    status: resolved
+    reason: "IC-07 now names an element test with inline content built from contentEmpty with the markdown media type (both tabs show the empty-state text, no dangling aria-labelledby, positive control is the same content as text/plain with no tablist), and the contract-pin Pairing row and data-model row 9a both state it is a test and not a fixture or story."
+  - id: PLAN-FRESH2-007
+    status: resolved
+    reason: "The Charter Check row, IC-11 PR inputs and Operator checkpoint item 3 in plan.md all read G-21 only if E-28 applies, matching gates.md line 5 and research.md, and I found no remaining unconditional 'G-14 to G-21' range."

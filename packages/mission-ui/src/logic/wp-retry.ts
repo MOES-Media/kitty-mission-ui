@@ -1,35 +1,18 @@
 import { DETAIL_REFUSAL_GENERIC, DETAIL_REFUSAL_WORDS } from '../defaults/index.js';
 import { lookup } from './lookup.js';
+import type { OpsPageRetryDetail, WorkPackageRetryMember } from '../retry-types.js';
 
-/** The retry of the whole Work Package read. */
-export interface WorkPackageRetryDetail {
-  missionId: string;
-  wpId: string;
-  target: 'work-package';
-}
-
-/** The retry of the detail regions only. */
-export interface DetailRetryDetail {
-  missionId: string;
-  wpId: string;
-  target: 'detail';
-}
-
-/**
- * The retry of one Ops page (the Ops screen). It carries no Mission or Work Package id: the screen has neither. No cursor
- * retries the first page (and a refused cursor starts again from the newest); a cursor retries the page after it.
- */
-export interface OpsPageRetryDetail {
-  target: 'ops-page';
-  cursor?: string;
-}
-
-/**
- * The payload of `sk-retry-load`: a union discriminated by `target`. `HTMLElementEventMap['sk-retry-load']` can be declared
- * once, so a later screen adds its own member here (with its own `target` word) instead of declaring the event again.
- * The screen's `SkRetryLoadDetail` is this type.
- */
-export type RetryLoadDetail = WorkPackageRetryDetail | DetailRetryDetail | OpsPageRetryDetail;
+// The payload types live in the neutral `src/retry-types.ts`; these re-exports keep the earlier names.
+export type {
+  DetailRetryDetail,
+  FoldersRetryDetail,
+  OpsPageRetryDetail,
+  ProjectRetryDetail,
+  ProjectsRetryDetail,
+  RetryLoadDetail,
+  WorkPackageRetryDetail,
+  WorkPackageRetryMember,
+} from '../retry-types.js';
 
 /** What the builder reads from the host's properties. */
 export interface RetryProps {
@@ -40,13 +23,10 @@ export interface RetryProps {
 }
 
 /**
- * The Work Package payload builder. The id comes from the host property `wpId`, then `workPackage.wpId`, then `detail.wpId`.
- * Null when there is no Mission or no id anywhere: the control is inert and no event is built. It takes any target of the
- * union, so a screen that types its target as `RetryLoadDetail['target']` needs no change when a member is added; the Ops
- * member has no Work Package payload, so it gives null here (its builder is `opsRetryDetail`).
+ * The one payload builder. The id comes from the host property `wpId`, then `workPackage.wpId`, then `detail.wpId`.
+ * Null when there is no Mission or no id anywhere: the control is inert and no event is built.
  */
-export function retryDetail(target: RetryLoadDetail['target'], props: RetryProps): WorkPackageRetryDetail | DetailRetryDetail | null {
-  if (target === 'ops-page') return null;
+export function retryDetail(target: WorkPackageRetryMember['target'], props: RetryProps): WorkPackageRetryMember | null {
   if (props.mission === null) return null;
   const wpId = [props.wpId, props.workPackage?.wpId, props.detail?.wpId].find((id): id is string => typeof id === 'string' && id !== '');
   if (wpId === undefined) return null;

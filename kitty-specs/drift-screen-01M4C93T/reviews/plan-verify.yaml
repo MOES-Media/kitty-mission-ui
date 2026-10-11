@@ -1,0 +1,21 @@
+schema: review-verify/v1
+complete: true
+phase: plan
+# Verified by re-reading the edited files after fix round 1 (commit follows) and round 2 for the two fresh findings.
+results:
+  - {id: PLAN-GOV-001, status: resolved, reason: "spec.md FR-023 now says nav-drift exists and the work is a story; research.md A-1 marked applied."}
+  - {id: PLAN-GOV-003, status: resolved, reason: "operator-questions.md opens with the ruled note and the Q10 (a) amendment."}
+  - {id: PLAN-GOV-004, status: resolved, reason: "spec.md Open Questions now says all ten were ruled 2026-10-08."}
+  - {id: PLAN-ARCH-001, status: resolved, reason: "plan IC-02 and contracts/sk-drift-screen.md name driftRetryDetail(missionId) with the null-scope test."}
+  - {id: PLAN-ARCH-002, status: resolved, reason: "Charter Check cell is pass-with-condition S5; the no-io gate row and S5 require a no-io-clean, typecheck-clean implementation."}
+  - {id: PLAN-ARCH-003, status: resolved, reason: "plan.md carries the cross-mission rule (#9 first, append-only, re-derive literals at rebase)."}
+  - {id: PLAN-VERIFY-001, status: resolved, reason: "FR-021, the contract row and IC-05 exit checks carry the press-time rule and the stale-value test."}
+  - {id: PLAN-VERIFY-002, status: resolved, reason: "DR-21 pass condition is node identity, aria-busy, focus and one announcement."}
+  - {id: PLAN-VERIFY-003, status: resolved, reason: "plan.md says 32 stories (33 rows) in Summary-adjacent, Scale, Charter Check, tree and IC-07; grep for 31 finds only FR-031 and DR-31."}
+  - {id: PLAN-VERIFY-004, status: resolved, reason: "DR-01 and DR-24 moved to IC-06; IC-04 and IC-05 captures are cropped to their region."}
+  - {id: PLAN-VERIFY-005, status: resolved, reason: "FR-005 and DR-17 pin the prototype's key behaviour; a table test is required."}
+  - {id: PLAN-VERIFY-006, status: resolved, reason: "IC-04, IC-05 and IC-06 exit checks require reverted-red tests (IC-03b and IC-07 inherit the rule in the preamble of the exit-check column below)."}
+  - {id: PLAN-VERIFY-007, status: resolved, reason: "FR-008, the edge case and data-model effectiveState cover a non-array findings."}
+  - {id: PLAN-VERIFY-008, status: resolved, reason: "FR-022 states the controlled-component rule; IC-04 has the host-ignores-event test."}
+  - {id: PLAN-FRESH-001, status: resolved, reason: "defaults.md and IC-02 now hold the explicit constant with the description-agreement self-test."}
+  - {id: PLAN-FRESH-002, status: resolved, reason: "data-model.md reworded."}

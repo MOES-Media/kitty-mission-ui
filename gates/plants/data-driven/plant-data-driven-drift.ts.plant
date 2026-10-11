@@ -1,0 +1,4 @@
+// plant: a hard-coded drift kind literal in element-scope source
+export function plantDrift(kind: string): boolean {
+  return kind === 'lane_branch_missing';
+}

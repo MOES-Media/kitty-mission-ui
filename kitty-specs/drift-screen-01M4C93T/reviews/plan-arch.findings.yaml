@@ -1,0 +1,33 @@
+schema: review-findings/v1
+complete: true
+phase: plan
+lens_group: arch
+mission: drift-screen-01M4C93T
+# Profile architect-alphonso. Run in-session (see plan-gov.findings.yaml header).
+findings:
+  - id: PLAN-ARCH-001
+    lens: "Layering / contracts (event surface)"
+    severity: 3
+    title: "The shipped retryDetail() builder cannot build the drift member; the plan does not say a new builder is needed"
+    evidence:
+      - artifact: "contracts/sk-drift-screen.md § Events (sk-retry-load row); plan.md IC-02"
+      - code: "packages/mission-ui/src/logic/wp-retry.ts:38-45 (retryDetail returns null when props.mission === null and requires a wpId; target type is the two WP members)"
+    claim: "The drift retry payload is { missionId: string | null, target: 'drift-report' }; a whole-project scan has a null missionId and no wpId, so reusing retryDetail would make the control inert. IC-02 lists only \"the DriftRetryDetail union member\"."
+    remediation: "IC-02 adds a separate pure builder driftRetryDetail(missionId) next to the union member, with a test that the whole-project case yields missionId null and is not inert, and that the two existing members still type-check."
+  - id: PLAN-ARCH-002
+    lens: "Layering / platform risk"
+    severity: 2
+    title: "The Charter Check asserts \"no-io: the Selection API is not on the banned list\" without a check, and the typing of ShadowRoot.getSelection is not in lib.dom"
+    evidence:
+      - artifact: "plan.md § Gates (no-io row) and Charter Check (No I/O row); research.md D-08"
+      - code: "eslint.no-io.config.mjs:91-104 (type-cast, computed access and aliasing of document are banned)"
+    claim: "Selecting the command text inside a shadow root needs either document.getSelection() or a non-standard shadowRoot.getSelection(); the latter needs a cast the gate bans, the former is shadow-blind in some engines. The plan marks this \"pass\"."
+    remediation: "Make S5's exit check include a no-io-clean, typecheck-clean implementation of manual selection (not a story-only hack), and change the Charter Check cell to \"pass-with-condition: S5\"."
+  - id: PLAN-ARCH-003
+    lens: "Blast radius (parallel missions)"
+    severity: 2
+    title: "Three missions append to the same contract registry, LabelHooks, retry union and stylelint table; the plan names them but gives no rule for the order"
+    evidence:
+      - artifact: "plan.md § Shared files (cross-mission paragraph)"
+    claim: "The rule is only \"whoever lands second rebases\"; with #9 first by ruling, #10 and #11 are unordered, and the conflicting files include a hash-pinned registry whose literal floors are counted by tests."
+    remediation: "State that #9 re-vendors first (ruled), that #10 and #11 each append only their own entries and re-derive any count literal from the tree at rebase time, and that IC-01 and IC-02 re-read the files at dispatch."

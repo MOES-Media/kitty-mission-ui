@@ -1,0 +1,10 @@
+schema: review-verify/v1
+complete: true
+phase: plan
+results:
+- id: plan-fresh-001
+  status: resolved
+  reason: Fix present in the committed plan/spec text.
+- id: plan-fresh-002
+  status: resolved
+  reason: Fix present in the committed plan/spec text.

@@ -1,0 +1,220 @@
+schema: review-verify/v1
+complete: true
+phase: plan
+results:
+- id: PLAN-CORRECT-002
+  status: resolved
+  reason: gates.md and research D-06 now add a noInlineConfig block for packages/*/src/**, correct the wrong "stays on" wording and add an inline-disable leak case; verified the main config has none today and no eslint-disable exists in packages.
+- id: PLAN-CORRECT-003
+  status: resolved
+  reason: contract-pin step 5 and research now patch the code property of the last allOf entry with allowedPath /^\/code$/ and status 500, matching the real ArtifactRefusal and Problem schemas at 2261ad5.
+- id: PLAN-CORRECT-004
+  status: resolved
+  reason: All figures now read 151 files, 13 examples and nine schemas including ArtifactRefusalCode, stated as read from the pinned tree by blobs-only count; I reproduced 142+9 blobs and 13 examples at 2261ad5; the one remaining 161 is an explicit correction note.
+- id: PLAN-CORRECT-005
+  status: resolved
+  reason: Transitive set, licences and the two uc.micro majors are corrected and the IC-01 check is now lockfile equals pnpm why; I confirmed against the registry that markdown-it 15.0.2 pulls no @types packages and the licences match.
+- id: PLAN-CORRECT-006
+  status: resolved
+  reason: D-16, data-model, defaults.md and IC-02 now set unavailable plus meta UNAVAILABLE_TEXT on an unreadable leaf with a unit test, matching the shell tree drawing only node.meta.
+- id: PLAN-CORRECT-007
+  status: resolved
+  reason: data-model, defaults.md and the screen contract now define the screen own normalisers with explicit fallbacks, drop normaliseViewState from the imports and test an unknown value per property.
+- id: PLAN-CORRECT-008
+  status: resolved
+  reason: Plan, D-19 and gates.md now state the browser-only vitest, move the bundle budget and row-to-story tests to node:test files under scripts/ wired into test:scripts (hygiene gate) and use import.meta.glob ?raw for source scans, all consistent with the real configs.
+- id: PLAN-CORRECT-010
+  status: resolved
+  reason: D-13, E-25, G-16 and S-A5 now adopt the already-present segmentedChoiceSheet with classOnly and no Stylelint paint exception, sharing the E-01 sunset; verified in library-sheets.ts and eslint.config.mjs.
+- id: PLAN-CORRECT-011
+  status: resolved
+  reason: 'Build base now states the verified #5 state (planning branch artifacts only, WP01-09 approved, WP10 in progress, commit cd29bc5, implementation on lane branches) and uses the real symbol names RetryLoadDetail/SkRetryLoadDetail; I re-verified these on the lane-j branch.'
+- id: PLAN-CORRECT-012
+  status: resolved
+  reason: The build-base table and shared-files table now list factsSheet, the S13/S14 data-driven shape (38 entries), contract test literals and the index and types files, with IC-06 conditional on factsSheet and counts derived from arrays.
+- id: PLAN-CORRECT-014
+  status: resolved
+  reason: IC-07 now states which clauses of AV-01 and AV-08 are checked there and defers the inspector halves to IC-09 with the side-by-side repeated at IC-10 on the merged chains.
+- id: PLAN-CORRECT-015
+  status: resolved
+  reason: Inventory adds listingWithOpenFiles (valid, includes the open paths of the redacted, json and empty examples and the overlays) and splits the unknown-kind overlay into listing and content fixtures; the 13+17=30 recount and relaxed count are consistent with the registry.
+- id: PLAN-CORRECT-016
+  status: resolved
+  reason: Bulk documents are now generator functions in bulk.ts, explicitly never registered or stored, and IC-01 extends checkBulk to validate each against its schema.
+- id: PLAN-CORRECT-017
+  status: resolved
+  reason: data-model now has a total ten-row resolver table including ready-with-null-content mapping to loading, null refusal code and empty errorMessage, with one IC-02 test per row.
+- id: PLAN-CORRECT-018
+  status: resolved
+  reason: Traceability now maps FR-032, SC-002, the missing C- and SC- rows; I checked FR-001..044, NFR-001..013, C-001..014 and SC-001..010 are all present.
+- id: PLAN-CORRECT-020
+  status: resolved
+  reason: The layout table and screen contract now state the mobile-tier cell equals the viewport at 620 px, the non-monotonic 720 px edge and per-tier S-A6 measurement, consistent with the shell 720/1100 queries.
+- id: PLAN-CORRECT-021
+  status: resolved
+  reason: Part signatures and IC-06/IC-08 now split renderEmptyForm (IC-06, complete) from renderStatus bodies (IC-08) and put the selected-tab state, reset and onSelect in IC-06 with IC-07 as consumer.
+- id: PLAN-CORRECT-022
+  status: resolved
+  reason: defaults.md, data-model, D-02 and IC-02 now all describe one ArtifactLabelHooks extends LabelHooks with four optional hooks in logic/artifact-types.ts and no edit of the shared LabelHooks.
+- id: PLAN-CORRECT-023
+  status: resolved
+  reason: D-11, gates.md and IC-02 now read the kinds and codes from the schema enums with count guards 12 and 7 and not from the example files; both schemas exist at the pinned sha.
+- id: PLAN-CORRECT-024
+  status: resolved
+  reason: Counts now read five default modules plus index, nine logic files plus six under logic/markdown, eight part files, and the stale "two renderer files" and "six default modules" wording is gone.
+- id: PLAN-SECURE-001
+  status: resolved
+  reason: markdown-renderer.md budget now computes tokens, nodes and depth over the flattened stream including inline children before the model recursion, adds the matched-nesting, 60,001-inline-token and deep table-cell corpus entries and explains why a render throw is impossible; consistent with markdown-it flat children with relative levels.
+- id: PLAN-SECURE-002
+  status: resolved
+  reason: R4 is now a dedicated local allowlist rule over templates that rejects any "."/"?" binding and any non-allowlisted attribute name case-insensitively, with the self-test cases listed and D-06 closing sentence corrected.
+- id: PLAN-SECURE-003
+  status: resolved
+  reason: 'Contract and D-08 now state the two-layer rule with validateLink turning javascript:, vbscript:, file: and non-image data: into literal text, true expected texts and a validateLink-pinning test; I confirmed all of this, including the java&#9;script entity case, against markdown-it 15.0.2.'
+- id: PLAN-SECURE-004
+  status: resolved
+  reason: Rows 5 and 6 now match case-insensitively, reject userinfo, over-length destinations and mailto with query, add title on external links and add the listed unit rows; I confirmed the parser passes these through unchanged.
+- id: PLAN-SECURE-005
+  status: resolved
+  reason: The host re-validation obligation is now in sk-artifact-screen.md, the @fires text with a manifest assertion for the word untrusted, data-model, quickstart and spec EV-2.
+- id: PLAN-SECURE-006
+  status: resolved
+  reason: Assertion 4 is demoted to corroboration with a positive control and baseline, plants (c), (d) and (e) are added, and the corpus token is confined to failure messages with a clean-run exit check.
+- id: PLAN-SECURE-007
+  status: resolved
+  reason: The contract now defines alt flattening from image.children, an image inside a link as plain text, no nested controls, and the image-in-link and link-in-alt corpus entries asserting one event.
+- id: PLAN-SECURE-008
+  status: resolved
+  reason: A token-to-node table now specifies exact-match alignment, start validation, attributes read by name, title never read, and the footnote definition becomes an ordinary reference link; I confirmed each against markdown-it output.
+- id: PLAN-SECURE-010
+  status: resolved
+  reason: Row 8 now allows a decoded space, makes empty segments, trailing slash and dot results inert and lists the requested unit rows including double encoding.
+- id: PLAN-SECURE-011
+  status: resolved
+  reason: D-05 now names GHSA-r7fv-28h4-cvq7 and GHSA-6vfc-qv3f-vr6c, drops the unfindable GHSA, concedes the integrity comparison is not provenance, records signatures without attestation and re-runs advisories at wrap-up; I verified the advisory list and patched versions via the GitHub API.
+- id: PLAN-SECURE-012
+  status: resolved
+  reason: R1 now covers markdown-it, markdown-it/**, require and import() with a single-file exemption and a leak plant in model.ts.
+- id: PLAN-DESIGN-001
+  status: unresolved
+  remaining_severity: 2
+  reason: 'R2 and R3 are now appended to elementSyntaxRestrictions and a calculateConfigForFile test is added, but gates.md and D-06 wrongly claim R1 cannot be replaced: the existing eslint.config.mjs block for packages/*/src/elements/**/*.ts already sets no-restricted-imports (story-support ban) and would collide with R1, and R1 require/import() selectors are no-restricted-syntax entries not appended to elementSyntaxRestrictions.'
+- id: PLAN-DESIGN-003
+  status: resolved
+  reason: markdownFor in logic/ now decides parsing, the cache is keyed by value of (content.content, mediaType), the path-to-kind map cache is named, and each cache has a test.
+- id: PLAN-DESIGN-004
+  status: resolved
+  reason: Classification now happens in resolveLinks in the cached step with a ReadonlyMap kindOf and classifyLink returns entryKind, so render.ts imports lit only and the file table agrees.
+- id: PLAN-DESIGN-007
+  status: resolved
+  reason: pathOfArtifactNode is added next to buildArtifactTree, exported, used in the quickstart and covered by a round-trip test over odd paths.
+- id: PLAN-DESIGN-008
+  status: resolved
+  reason: logic/artifact-path.ts with one PATH_SEPARATOR is now the shared path helper for the tree, link classifier and Work Package matcher, with the cross-check test.
+- id: PLAN-DESIGN-009
+  status: resolved
+  reason: resolveArtifactFacts now calls resolveActivity (verified signature in logic/time.ts) and omits the row without an entry, and defaults.md states no time logic is added.
+- id: PLAN-DESIGN-010
+  status: resolved
+  reason: A separate normaliseArtifactStatus over ARTIFACT_STATUSES (VIEW_STATES plus two) collapses unknown status to empty as the shell does, consistently stated in data-model, defaults.md, D-03 and the screen contract, with unknown-value tests.
+- id: PLAN-DESIGN-011
+  status: resolved
+  reason: 'Duplicate of the LabelHooks description finding: all artifacts now agree on the separate ArtifactLabelHooks interface and the "LabelHooks gains" sentence is gone.'
+- id: PLAN-DESIGN-012
+  status: resolved
+  reason: D-11/D-12 now say two tables with one key spelling both in defaults/, and SIZE_CAP_TEXT is replaced by CONTENT_SIZE_LIMIT_BYTES formatted through formatArtifactSize.
+- id: PLAN-DESIGN-014
+  status: resolved
+  reason: E-22 and E-23 are merged into one prose-styles.ts entry listing only properties outside LAYOUT_PROPERTIES, overflow-wrap is made conditional, and the design-library sunset issues are required before CP-1; LAYOUT_PROPERTIES verified in stylelint.config.mjs.
+- id: PLAN-DESIGN-016
+  status: resolved
+  reason: The merge-order section is replaced by a full shared-file table including the data-driven trio, counts derived from arrays, conditional factsSheet and a post-merge self-test rerun check.
+- id: PLAN-DESIGN-018
+  status: unresolved
+  remaining_severity: 2
+  reason: The false disjointness claim is removed and an IC-10 owned-files disjointness check is added, but the truncation note still has two conflicting owners (renderDocument in IC-07 document-parts.ts versus IC-09) and is left HELD under PLAN-CORRECT-013, so the write-scope conflict itself remains.
+- id: PLAN-DESIGN-020
+  status: resolved
+  reason: gates.md and D-11 now read the codes from the schema enum, reword the claim to "the count guard fails until reviewed" and cover media-type words with vocabulary-homes.test.ts.
+- id: PLAN-DESIGN-021
+  status: unresolved
+  remaining_severity: 2
+  reason: The new Map/Set, array-receiver and object-key selectors, Known limitations and extra false-positive cases are added, but IC-02 exit checks (and R-04 context) still require "a key spec in a non-comparison position" and "a property named other" to stay green, contradicting the new rule that flags bare words as object keys outside the allow-list.
+- id: PLAN-DESIGN-023
+  status: resolved
+  reason: index.ts now re-exports only the pure surface, render.ts is imported directly, and buildMarkdownModel takes the source string.
+- id: PLAN-A11Y-002
+  status: resolved
+  reason: The skip-target wording is replaced by a statement that the shell wrapper takes the skip link and the screen takes no part, with rule 8 given its own id-less tabindex=-1 pane target and tests in IC-06 and IC-08.
+- id: PLAN-A11Y-006
+  status: resolved
+  reason: The contract adds that an image inside a link is plain text and links never nest controls, with corpus entries for [![a](x)](y) forms asserting one control, one event and no nested a.
+- id: PLAN-A11Y-007
+  status: resolved
+  reason: One link-name rule now applies to the three results (text plus hidden kind suffix, "equal to the link text" dropped), inert links get a suffix and a distinct E-22 look, and a name/description dump test is required.
+- id: PLAN-A11Y-008
+  status: resolved
+  reason: The semantics section now specifies tabpanel labelled by tab for two tabs and a pre with aria-label and no idrefs for the raw-only block, plus a three-case test asserting no dangling idref.
+- id: PLAN-A11Y-010
+  status: resolved
+  reason: A-7 adds NFR-014 forced colors and reduced motion plus selected-tab and current-row non-colour-only states, with IC-10 Playwright assertions, E-25 fallback marker and per-WP forced-colors screenshots.
+- id: PLAN-A11Y-011
+  status: resolved
+  reason: E-22 now grants the focus-ring properties for links, article, pane and table box, and AV-32 is split into a-d for link, table box and raw block rings, with the story count updated consistently to 45.
+- id: PLAN-A11Y-012
+  status: resolved
+  reason: A-5 promotes the single-glyph collapse to a spec amendment for FR-003, AV-15, AV-29 and DA-3, names renderIcon of shell-icons.ts as the toolbar icon with no new svg, and keeps the per-kind icon field in defaults.
+- id: PLAN-A11Y-013
+  status: resolved
+  reason: A-6 adds DA-39 (raw measure 900 px) and DA-40 (toolbar 68 px), carried by E-24 and E-27 and included in the S-A2 and S-A4 side-by-sides.
+- id: PLAN-A11Y-014
+  status: resolved
+  reason: The screen contract now states the live region is always rendered, text replaced not recreated, no first-ready announcement, aria-busy without a second announcement, coalescing, and MutationObserver-based tests.
+- id: PLAN-A11Y-015
+  status: resolved
+  reason: Container thresholds are now in rem, NFR-004 gains a resolved-track-count check at 200% and a 320 px at 400% reflow check, and E-27 allows a rem or clamp track.
+- id: PLAN-A11Y-016
+  status: resolved
+  reason: 'The toolbar is a plain div, the pane region has the distinct name "Document: <name>", the inspector is a div role=group not an aside, table regions only when stops, and axe runs in S-A4 and S-A5.'
+- id: PLAN-A11Y-017
+  status: resolved
+  reason: Rows are renamed (AV-33 expanded edge, AV-34 collapsed one column, AV-35 mobile), 1000 px is sampled in the tier test and IC-06 must hand over a per-tier side-by-side at six widths before the chains start.
+- id: PLAN-A11Y-018
+  status: resolved
+  reason: S-A4 now decides the clickable Work Package control among sk-pill-tag, sk-button or a conditional numbered exception E-28 with a leak plant and 24 px minimum, ruled at CP-1.
+- id: PLAN-A11Y-019
+  status: resolved
+  reason: S-A5 now covers idref resolution across shadow roots, WebKit and Firefox tree dumps, forced-colors screenshots, the image-in-link case and defers a real screen-reader pass to the operator at CP-1.
+- id: PLAN-A11Y-020
+  status: resolved
+  reason: E-25, E-28, A-7 (NFR-015) and IC-10 now require 36 px tab and 24 px Work Package control block sizes with a bounding-box assertion.
+- id: PLAN-TEST-002
+  status: resolved
+  reason: S-A0 is split into a scratch-script measurement in IC-01 (with an exit check on the D-05 figures) and a Chromium re-measure of the real parse.ts in IC-04 whose exit check requires constants to cite the measurement.
+- id: PLAN-TEST-004
+  status: resolved
+  reason: A single exported walkAllowed helper descends open shadow roots, returns the visited count (asserted above zero and equal to the node twin count), has its own red/green self-test per disallowed construct, and the fallback composition allowlist is stated.
+- id: PLAN-TEST-005
+  status: resolved
+  reason: A screen pass of the corpus (markdown-corpus.screen.test.ts) is added in IC-07, running the same walker over the pane, Raw tab and fallback block with all events recorded, an entry-count guard and re-run of the unit-tests plants.
+- id: PLAN-TEST-006
+  status: resolved
+  reason: Plants (c) img src and (d) property binding are added to unit-tests alongside (a), with (b) and (e) for eslint, so all three NFR-012 mutations have revert evidence, and the unit-tests proof-leg timeout is re-derived in IC-04.
+- id: PLAN-TEST-007
+  status: resolved
+  reason: A new gates/markdown-lint.selftest.ts is table-driven with violating, clean and leak cases and a five-rule guard, wired into the test:no-io script (verified it is an explicit-file script) as a named IC-04 edit, with literal message prefixes for plant patterns.
+- id: PLAN-TEST-009
+  status: resolved
+  reason: Test obligations now list per-owner functional tests for AV-06, AV-16, AV-17, AV-24 to AV-26, AV-29, the seven-code retry table with positive control and AV-33 to AV-35 outcomes.
+- id: PLAN-TEST-010
+  status: resolved
+  reason: IC-09 adds a host composition asserting exactly one shell-originated sk-navigate and sk-tree-toggle and none from the screen, and IC-10 adds a capture-phase subset check with a count guard so it cannot pass on silence.
+- id: PLAN-TEST-011
+  status: resolved
+  reason: The corpus escape token is confined to failing assertion messages with a clean-output exit check and the proof-leg timeout and ci.yml edit moved into IC-04 and the shared-files table.
+- id: PLAN-TEST-013
+  status: resolved
+  reason: IC-11 now cites the green CI visual job (repeat-each=5, verified in ci.yml) and records AV-30d/AV-30f snapshot size and settle time, and the NFR-003 and NFR-004 helpers each carry a control.
+- id: PLAN-TEST-014
+  status: resolved
+  reason: The row-to-story test is a named node:test file in test:scripts with counts taken from the CP-1-amended spec and pairing table, and a type-level assertion file under test/ (included by the package tsconfig) proves the sk-retry-load union.

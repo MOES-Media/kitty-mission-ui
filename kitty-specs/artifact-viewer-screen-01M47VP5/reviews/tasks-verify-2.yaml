@@ -1,0 +1,11 @@
+schema: review-verify/v1
+phase: tasks
+round: 2
+tree: 6488bf0
+results:
+- id: TASKS-FRESH-001
+  status: resolved
+  reason: 'all 13 prompts keep rule 5 verbatim and carry the reading note directly under the quotation
+    naming IC-09 and ''this mission'' as #4''s and stating the terminology check here is pnpm test:terminology,
+    owned by no WP (grep: 13 of 13).'
+complete: true

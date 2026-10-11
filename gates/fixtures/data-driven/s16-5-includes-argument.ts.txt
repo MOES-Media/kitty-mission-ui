@@ -1,2 +1,2 @@
 // expect: S16.5
-export const f = (s: string): boolean => s.includes('open');
+export const f = (s: string): boolean => s.includes('checklist');

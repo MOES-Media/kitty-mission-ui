@@ -1,0 +1,106 @@
+schema: review-verify/v1
+complete: true
+phase: plan
+results:
+  - id: "PLAN-CORRECT-001"
+    status: resolved
+    reason: "Option (b) is applied: R2 keeps only the render*/.renderer bans repo-wide (grep of packages/*/src finds none), parse.ts exports parseTokens only with an IC-03 export-shape test, and IC-04 requires pnpm lint green on the unchanged base."
+  - id: "PLAN-CORRECT-009"
+    status: unresolved
+    remaining_severity: 2
+    reason: "The E-22 literal EXCEPTIONS entry lists padding-inline-start in properties but not in strict or values, and stylelint.config.mjs STRICT_PROPERTIES does not contain it, so the entry does not enforce the token-only claim gates.md makes for the list indent; the table is not executable as written."
+  - id: "PLAN-CORRECT-013"
+    status: unresolved
+    remaining_severity: 3
+    reason: "Option (a) is applied (IC-07 owns the note body, IC-10 disjointness check added) but IC-09 still owns the AV-17 story and test while forbidden to touch document-parts.ts, and plan.md IC-09 leaves this as an open [NEW FORK] ('how IC-09 is verified is not ruled'), so IC-09 has an exit check it cannot pass in its own lane."
+  - id: "PLAN-SECURE-009"
+    status: resolved
+    reason: "R-09 is corrected to accepted-no-mitigation, the quiet 'contains N bidirectional control characters' notice is specified in raw and fallback views only with text unchanged (FR-012 kept), DA-41 is a new proposed entry for CP-1, and the code-point list, countBidiControls and tests are carried through plan, data-model, defaults and contract."
+  - id: "PLAN-DESIGN-002"
+    status: resolved
+    reason: "A neutral src/retry-types.ts holds both detail types, RetryLoadEventDetail and the one declare global, #5's names stay as re-exports, and the single named edit of #5's merged files is listed in the shared-files table, research D-04 and the contract."
+  - id: "PLAN-DESIGN-005"
+    status: resolved
+    reason: "Option (b) is applied: buildArtifactTree returns current '' when the selected leaf is unavailable, rows keep unavailable plus the meta word, the shell nav item keeps aria-current (verified against isSidebarTreeShown), IC-02 and IC-09 carry the tree and composition cases, and the optional shell fold is noted and not adopted."
+  - id: "PLAN-DESIGN-006"
+    status: resolved
+    reason: "Option (a) is applied: quickstart and plan state the host memoises on entries and selectedPath and never writes sk-tree-toggle back, expandedIds is the initial state only, and IC-09 tests that a toggled folder's focused summary survives."
+  - id: "PLAN-DESIGN-013"
+    status: resolved
+    reason: "The ch grant is specified as a third per-entry key (chProperties) in exceptionOverrides() with allowed, refused-in-sibling, refused-on-ungranted-property and reverted-must-fail cases in IC-06a, matching the verified ['%','fr'] plus px/em-only mechanism in stylelint.config.mjs."
+  - id: "PLAN-DESIGN-015"
+    status: resolved
+    reason: "Variant (c), a raw button with the segmented-choice family class plus role=tab and no Stylelint paint, is the preferred S-A5 candidate in plan, research D-13, gates E-25 and the contract, with the selected-look question and the value explicitly PENDING CP-1 (S-A5)."
+  - id: "PLAN-DESIGN-017"
+    status: unresolved
+    remaining_severity: 2
+    reason: "Base A is applied in plan.md, but leftover Base-B hedges remain: gates.md says #5's exceptions stand 'when #5 is present' with the stale tip cf1f179, gates.md self-check list says 'After the second of #5 and this mission lands', and contract-pin.md says '#5's, if present' and 'check C8 comes from #5 if present'."
+  - id: "PLAN-DESIGN-019"
+    status: resolved
+    reason: "IC-01 is split into IC-01a (re-vendor, fixtures) and IC-01b (markdown-it, supply chain, S-A0 step one) and IC-06 into IC-06a (exceptions, grant, lint) and IC-06b (skeleton, surface), IC-02 stays whole with per-concern exit-check subsections, and the 13-WP count, dependency chain, compaction slices and every IC reference in all files use the split numbering."
+  - id: "PLAN-DESIGN-022"
+    status: resolved
+    reason: "One optional vocabulary property defaulting to defaults/ is applied everywhere (13 properties in plan, data-model, contract, gates, quickstart; A-9 records the FR-001 amendment) and the logic functions take it as an argument, with only the partial-fill semantics left as an openly flagged [NEW FORK] detail."
+  - id: "PLAN-A11Y-001"
+    status: resolved
+    reason: "Rule (a) is applied as a monotonic two-column minimum at a content cell of 720 px unreachable in the mobile tier, with the 801 to 831 px drift window, the extended S-A6 sampling list, the toolbar-stack trade-off and the cross-flag on #5 recorded, and the numbers explicitly PENDING CP-1 (the 296/112/688/719 arithmetic matches the shell's tiers)."
+  - id: "PLAN-A11Y-003"
+    status: resolved
+    reason: "Option (a) is applied: a scroll region is a tab stop only while it overflows, on the element that actually scrolls, via one ResizeObserver with no timers, the contract's 'always' versus 'when scrollable' contradiction is replaced, and tests with positive controls plus a PageDown scrollTop test are specified."
+  - id: "PLAN-A11Y-004"
+    status: resolved
+    reason: "A static positional TABLE_LABEL(index, total) from defaults/ names a table scroll box only while it is a tab stop, with no document text in any aria-* value, consistently in markdown-renderer.md, defaults.md, the contract, IC-04 and the self-check list."
+  - id: "PLAN-A11Y-005"
+    status: resolved
+    reason: "Option (b) is applied: a visually hidden h1 via the shared visually-hidden.ts where needsHiddenHeading says the pane has none, refusal and state titles as h1 and inspector groups as h3 (both verified against prototype lines 62 and 67), and a heading-outline test over the six fixtures."
+  - id: "PLAN-A11Y-009"
+    status: resolved
+    reason: "Option (b) is applied: the inspector is first in the DOM with no order property, grid placement keeps it on the right in two columns, AV-32 and the focus-order section are rewritten to tree, inspector, tabs, document, and the order is tested at 1280, 800 and 620 px."
+  - id: "PLAN-TEST-001"
+    status: resolved
+    reason: "The (b) plus (c) route is applied: node:test files under scripts/ run by test:scripts, source scans through import.meta.glob ?raw in the Chromium project, 'node twin' is renamed 'model twin' with no leftover node-environment wording, and the vite programmatic build importability check is an IC-01b exit check."
+  - id: "PLAN-TEST-003"
+    status: resolved
+    reason: "The CSP meta (img-src, frame-src and object-src 'none') inserted in the corpus test file with a securitypolicyviolation listener, a positive control and a detached-listener failure replaces the PerformanceObserver (no leftover mention), and the structural walk is stated as the proof of NFR-005 with CSP as corroboration."
+  - id: "PLAN-TEST-008"
+    status: resolved
+    reason: "Hard ceilings measured as best of three after a warm-up, expected branches pinned (makeLargeMarkdown ok with blocks above 0, makeOverBudgetMarkdown fallback), a counted parseTokens spy, and the multiplier set only if S-A0 step two shows under about 2x headroom and marked PENDING S-A0 step two."
+  - id: "PLAN-FRESH-001"
+    status: resolved
+    reason: "R4 clause (a) is scoped to logic/markdown/** only, element non-story files use the attribute allowlist plus a reviewed named-binding list, stories and fixtures are excluded by glob, and the story-versus-render.ts self-test pair is specified in gates.md, IC-04, IC-06a and the contract."
+  - id: "PLAN-FRESH-002"
+    status: resolved
+    reason: "IC-11 requires five consecutive local pnpm visual runs in the pinned container on an unchanged tip as the NFR-002 and SC-007 evidence, with the CI --repeat-each=5 job (confirmed in ci.yml) stated as additional and not a substitute, consistently in plan, gates, quickstart and traceability."
+  - id: "PLAN-FRESH-003"
+    status: resolved
+    reason: "The spec EV-2 row carries no A-8 sentence (verified), the host obligation stays in the contract and the @fires text with a manifest 'untrusted' assertion, and A-8 with the three N-Q12 narrowings is a PROPOSED amendment decided at CP-1."
+  - id: "PLAN-DESIGN-018"
+    status: resolved
+    reason: "Disjointness is restored: the truncation note's render body is IC-07's alone in the IC text, shared-files table and part-signature table, and the IC-10 merge step includes an owned-files disjointness check (the residual IC-09 verification gap is recorded under PLAN-CORRECT-013)."
+  - id: "PLAN-FRESH2-003"
+    status: resolved
+    reason: "R4 now excludes *.stories.ts and fixtures.ts by glob with a self-test case that a story with .listing=${x} is clean while the same text in render.ts is reported, stated in gates.md R4, the Constraints line and IC-04."
+  - id: "A-1"
+    status: resolved
+    reason: "Accepted as ruled with the two-column rule at a cell of at least 720 px, rows AV-33 to AV-35 restated (1100, 800 and 620 px), the 801 to 831 px drift window recorded and the numbers marked PENDING CP-1 on S-A6."
+  - id: "A-2"
+    status: resolved
+    reason: "Accepted: markdown-it 15.0.2 ships its own types, @types/markdown-it is dropped, and no artifact retains the 'and its types' wording."
+  - id: "A-3"
+    status: resolved
+    reason: "Accepted: the sk-retry-load payload is a discriminated union on target declared once in the neutral src/retry-types.ts, consistently in plan, research D-04, data-model and the contract."
+  - id: "A-4"
+    status: resolved
+    reason: "Accepted: lint rules R1 to R5 and the data-driven kind and code extension are specified, with R2 reshaped by the CORRECT-001 (b) ruling and R4 by the FRESH-001 (a) ruling."
+  - id: "A-5"
+    status: resolved
+    reason: "Rejected as ruled and replaced: the magnifier and table glyphs (paths verified against prototype lines 23-24) are added as two additive ShellIcon members in IC-02, defaults.md, research G-17 and the shared-files table, with no leftover one-glyph collapse text and the no-fold plan/tasks glyph carried to CP-1 as a note."
+  - id: "A-6"
+    status: resolved
+    reason: "Accepted as 'keep' with DA-39 and DA-40 carried by a token or by E-24 and E-27 pinned, their values explicitly PENDING CP-1 on S-A2 and S-A4 (prototype raw-view width 900px and toolbar min-height 68px verified)."
+  - id: "A-7"
+    status: resolved
+    reason: "Accepted: NFR-004 reflow clause, the NFR-011 additions, NFR-014 forced colors and reduced motion and NFR-015 target size are in the plan with concrete assertions and positive controls in the contract and IC-10."
+  - id: "A-8"
+    status: resolved
+    reason: "Kept as a PROPOSED amendment to N-Q12 decided at CP-1 (not accepted), with the EV-2 spec edit reverted, the host obligation held in the contract, and a stated revert path if CP-1 rejects the narrowings."

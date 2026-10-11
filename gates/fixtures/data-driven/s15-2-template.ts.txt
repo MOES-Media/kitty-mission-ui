@@ -1,2 +1,2 @@
-// expect: S15.2
-export const t = `abandoned`;
+// expect: S15.2 S15.4
+export const t = `data_model`;

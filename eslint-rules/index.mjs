@@ -5,6 +5,8 @@
 // Local ESLint rules and selectors for the elements-over-CSS contract (R4, R6).
 // Consumed by eslint.config.mjs for packages/*/src only.
 
+import { markdownRendererRestrictions, markdownRendererRules } from './markdown-renderer.mjs';
+
 const RAW_ELEMENT = String.raw`/<(button|input|select|textarea)\b/i`;
 const CLASS_ATTR = String.raw`/\sclass\s*=/i`;
 const STYLE_ATTR = String.raw`/\sstyle\s*=/i`;
@@ -12,18 +14,26 @@ const STYLE_ATTR = String.raw`/\sstyle\s*=/i`;
 const TEMPLATE_TAG = String.raw`/^(html|svg)$/`;
 const HTML_TEMPLATE = `TaggedTemplateExpression:matches([tag.name=${TEMPLATE_TAG}], [tag.property.name=${TEMPLATE_TAG}]) > TemplateLiteral > TemplateElement`;
 
+// The selectors read `value.cooked`, the string lit parses: `\x3cbutton` is a button there but not in `value.raw`. A chunk whose
+// cooked value is null (an invalid escape in a tagged template) cannot be read at all, so the template is refused.
+const UNREADABLE_CHUNK = String.raw`:not([value.cooked=/^[\s\S]*$/])`;
+
 /** `no-restricted-syntax` entries: raw controls, class=, inline style, styleMap, unsafeCSS. */
 export const elementSyntaxRestrictions = [
   {
-    selector: `${HTML_TEMPLATE}[value.raw=${RAW_ELEMENT}]`,
+    selector: `${HTML_TEMPLATE}${UNREADABLE_CHUNK}`,
+    message: 'An html/svg template with an invalid escape cannot be read by the template rules: remove the escape.',
+  },
+  {
+    selector: `${HTML_TEMPLATE}[value.cooked=${RAW_ELEMENT}]`,
     message: 'Raw <button>/<input>/<select>/<textarea> are forbidden in element templates: use the sk-* elements.',
   },
   {
-    selector: `${HTML_TEMPLATE}[value.raw=${CLASS_ATTR}]`,
+    selector: `${HTML_TEMPLATE}[value.cooked=${CLASS_ATTR}]`,
     message: 'class= is forbidden in element templates: style through sk-* elements, part and element selectors.',
   },
   {
-    selector: `${HTML_TEMPLATE}[value.raw=${STYLE_ATTR}]`,
+    selector: `${HTML_TEMPLATE}[value.cooked=${STYLE_ATTR}]`,
     message: 'Inline style= is forbidden in element templates.',
   },
   {
@@ -63,6 +73,8 @@ export const elementSyntaxRestrictions = [
     selector: "Identifier[name='unsafeCSS']",
     message: 'unsafeCSS is forbidden: it bypasses the Stylelint token gate.',
   },
+  // R2 and R3 of the markdown renderer (contracts/gates.md): appended here so `withoutClassBan` carries them into every override.
+  ...markdownRendererRestrictions,
 ];
 
 const dispatchCustomEvent = {
@@ -97,5 +109,5 @@ const dispatchCustomEvent = {
 
 export default {
   meta: { name: 'sk-local' },
-  rules: { 'dispatch-custom-event': dispatchCustomEvent },
+  rules: { 'dispatch-custom-event': dispatchCustomEvent, ...markdownRendererRules },
 };

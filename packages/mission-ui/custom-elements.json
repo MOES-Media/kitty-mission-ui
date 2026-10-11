@@ -4,6 +4,587 @@
   "modules": [
     {
       "kind": "javascript-module",
+      "path": "src/elements/sk-artifact-screen/document-parts.ts",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/elements/sk-artifact-screen/inspector-parts.ts",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/elements/sk-artifact-screen/prose-styles.ts",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/elements/sk-artifact-screen/refusal-parts.ts",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/elements/sk-artifact-screen/sk-artifact-screen.ts",
+      "declarations": [
+        {
+          "kind": "class",
+          "description": "The Artifact Viewer. Read-only (C-003): it only asks the host to read again, to open another artifact or Work Package, or to open a link.",
+          "name": "SkArtifactScreen",
+          "members": [
+            {
+              "kind": "field",
+              "name": "status",
+              "type": {
+                "text": "ArtifactStatus"
+              },
+              "default": "'loading'",
+              "description": "The state of the listing and the screen; an unknown value collapses to `empty`.",
+              "attribute": "status",
+              "reflects": true
+            },
+            {
+              "kind": "field",
+              "name": "contentStatus",
+              "type": {
+                "text": "ArtifactContentStatus"
+              },
+              "default": "'ready'",
+              "description": "The state of the open document only; an unknown value collapses to `ready`.",
+              "attribute": "content-status"
+            },
+            {
+              "kind": "field",
+              "name": "listing",
+              "type": {
+                "text": "ArtifactListingView | null"
+              },
+              "default": "null",
+              "description": "The listing: tree data, sizes, kinds, link targets and `truncated`."
+            },
+            {
+              "kind": "field",
+              "name": "content",
+              "type": {
+                "text": "ArtifactContentView | null"
+              },
+              "default": "null",
+              "description": "The open document."
+            },
+            {
+              "kind": "field",
+              "name": "refusalCode",
+              "type": {
+                "text": "string | null"
+              },
+              "default": "null",
+              "description": "The `code` of a refused content read (any string; an unknown code shows raw)."
+            },
+            {
+              "kind": "field",
+              "name": "selectedPath",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "description": "The open path.",
+              "attribute": "selected-path"
+            },
+            {
+              "kind": "field",
+              "name": "mission",
+              "type": {
+                "text": "ArtifactScreenMission | null"
+              },
+              "default": "null",
+              "description": "The Mission: host data. Controls that need its id are drawn inert while this is null."
+            },
+            {
+              "kind": "field",
+              "name": "workPackages",
+              "type": {
+                "text": "ArtifactScreenWorkPackage[]"
+              },
+              "default": "[]",
+              "description": "The host's Work Package ids, for matching and for the linked Work Packages."
+            },
+            {
+              "kind": "field",
+              "name": "view",
+              "type": {
+                "text": "ArtifactTab"
+              },
+              "default": "'rendered'",
+              "description": "Seeds the selected tab; a tab change is internal and emits nothing. An unknown value collapses to `rendered`.",
+              "attribute": "view"
+            },
+            {
+              "kind": "field",
+              "name": "now",
+              "type": {
+                "text": "string | null"
+              },
+              "default": "null",
+              "description": "RFC 3339 instant for \"modified\"; null shows the ISO text as given.",
+              "attribute": "now"
+            },
+            {
+              "kind": "field",
+              "name": "labels",
+              "type": {
+                "text": "ArtifactLabelHooks | null"
+              },
+              "default": "null",
+              "description": "Label hooks: the shared `time` hook plus `kind`, `refusal`, `mediaType` and `size`."
+            },
+            {
+              "kind": "field",
+              "name": "errorMessage",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "description": "Overrides the default error text of `status: error` and `contentStatus: error`.",
+              "attribute": "error-message"
+            },
+            {
+              "kind": "field",
+              "name": "vocabulary",
+              "type": {
+                "text": "ArtifactVocabulary | null"
+              },
+              "default": "null",
+              "description": "The one optional structural input; null means the `defaults/` values."
+            }
+          ],
+          "events": [
+            {
+              "name": "sk-select-artifact",
+              "type": {
+                "text": "CustomEvent<SkSelectArtifactDetail>"
+              },
+              "description": "an internal link of the rendered document was activated; `path` and `kind` are the target entry's"
+            },
+            {
+              "name": "sk-open-link",
+              "type": {
+                "text": "CustomEvent<SkOpenLinkDetail>"
+              },
+              "description": "an external link of the rendered document was activated. The `href` is untrusted document content, already limited to http, https and mailto: the host MUST re-validate the scheme (case-insensitively) before acting, MUST NOT navigate the host window or webview to it, and SHOULD show the destination to the user before opening it"
+            },
+            {
+              "name": "sk-select-work-package",
+              "type": {
+                "text": "CustomEvent<SkSelectWorkPackageDetail>"
+              },
+              "description": "a linked Work Package control or \"Open Work Package\" was activated"
+            },
+            {
+              "name": "sk-open-mission",
+              "type": {
+                "text": "CustomEvent<SkOpenMissionDetail>"
+              },
+              "description": "\"Return to Pipeline\" was activated"
+            },
+            {
+              "name": "sk-retry-load",
+              "type": {
+                "text": "CustomEvent<SkArtifactRetryLoadDetail>"
+              },
+              "description": "Retry was activated on the listing error (`listing`) or on a failed or refused content (`content`)"
+            }
+          ],
+          "attributes": [
+            {
+              "name": "status",
+              "type": {
+                "text": "ArtifactStatus"
+              },
+              "default": "'loading'",
+              "description": "The state of the listing and the screen; an unknown value collapses to `empty`.",
+              "fieldName": "status"
+            },
+            {
+              "name": "content-status",
+              "type": {
+                "text": "ArtifactContentStatus"
+              },
+              "default": "'ready'",
+              "description": "The state of the open document only; an unknown value collapses to `ready`.",
+              "fieldName": "contentStatus"
+            },
+            {
+              "name": "selected-path",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "description": "The open path.",
+              "fieldName": "selectedPath"
+            },
+            {
+              "name": "view",
+              "type": {
+                "text": "ArtifactTab"
+              },
+              "default": "'rendered'",
+              "description": "Seeds the selected tab; a tab change is internal and emits nothing. An unknown value collapses to `rendered`.",
+              "fieldName": "view"
+            },
+            {
+              "name": "now",
+              "type": {
+                "text": "string | null"
+              },
+              "default": "null",
+              "description": "RFC 3339 instant for \"modified\"; null shows the ISO text as given.",
+              "fieldName": "now"
+            },
+            {
+              "name": "error-message",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "description": "Overrides the default error text of `status: error` and `contentStatus: error`.",
+              "fieldName": "errorMessage"
+            }
+          ],
+          "superclass": {
+            "name": "LitElement",
+            "package": "lit"
+          },
+          "tagName": "sk-artifact-screen",
+          "customElement": true
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "SkArtifactScreen",
+          "declaration": {
+            "name": "SkArtifactScreen",
+            "module": "src/elements/sk-artifact-screen/sk-artifact-screen.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/elements/sk-artifact-screen/source-parts.ts",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/elements/sk-artifact-screen/state-parts.ts",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/elements/sk-artifact-screen/tab-parts.ts",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/elements/sk-artifact-screen/toolbar-parts.ts",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/elements/sk-drift-screen/detail-parts.ts",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/elements/sk-drift-screen/header-parts.ts",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/elements/sk-drift-screen/list-parts.ts",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/elements/sk-drift-screen/panel-parts.ts",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/elements/sk-drift-screen/resolution-parts.ts",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/elements/sk-drift-screen/sk-drift-screen.ts",
+      "declarations": [
+        {
+          "kind": "class",
+          "description": "The Drift screen. Read-only (C-003): it only asks the host to scan again, to retry, to open a Mission, or to copy a command.",
+          "name": "SkDriftScreen",
+          "members": [
+            {
+              "kind": "field",
+              "name": "status",
+              "type": {
+                "text": "DriftScreenStatus"
+              },
+              "default": "'loading'",
+              "description": "The view state; unknown values collapse to `empty`, except `not-found`.",
+              "attribute": "status",
+              "reflects": true
+            },
+            {
+              "kind": "field",
+              "name": "report",
+              "type": {
+                "text": "DriftReportView | null"
+              },
+              "default": "null",
+              "description": "The drift report (contract `DriftReport`, widened by the vocabulary-open relaxation); null while none was loaded."
+            },
+            {
+              "kind": "field",
+              "name": "selectedFinding",
+              "type": {
+                "text": "DriftFindingKey | null"
+              },
+              "default": "null",
+              "description": "The selected finding's key. Host-owned: an incoming change is never re-emitted."
+            },
+            {
+              "kind": "field",
+              "name": "missionId",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "description": "The scope: non-empty means a scoped scan of that Mission.",
+              "attribute": "mission-id"
+            },
+            {
+              "kind": "field",
+              "name": "missions",
+              "type": {
+                "text": "Readonly<Record<string, DriftMissionName>> | null"
+              },
+              "default": "null",
+              "description": "Host data: the names of the Missions the findings belong to, by `missionId`."
+            },
+            {
+              "kind": "field",
+              "name": "rescanning",
+              "type": {
+                "text": "boolean"
+              },
+              "default": "false",
+              "description": "True while a rescan is in flight: the report stays visible and the button is busy.",
+              "attribute": "rescanning"
+            },
+            {
+              "kind": "field",
+              "name": "copyResult",
+              "type": {
+                "text": "DriftCopyResult | null"
+              },
+              "default": "null",
+              "description": "The host's answer to the last `sk-copy-command`; the host resets it to null on the event, then answers.",
+              "attribute": "copy-result"
+            },
+            {
+              "kind": "field",
+              "name": "refusalCode",
+              "type": {
+                "text": "string | null"
+              },
+              "default": "null",
+              "description": "The refusal code of a refused scan, read only when `status` is `error`; unknown or null gives the generic words.",
+              "attribute": "refusal-code"
+            },
+            {
+              "kind": "field",
+              "name": "now",
+              "type": {
+                "text": "string | null"
+              },
+              "default": "null",
+              "description": "RFC 3339 instant for relative times; null shows the ISO text as given.",
+              "attribute": "now"
+            },
+            {
+              "kind": "field",
+              "name": "labels",
+              "type": {
+                "text": "LabelHooks | null"
+              },
+              "default": "null",
+              "description": "Label hooks for the drift words (kind, severity, authority, derived side, refusal) and the shared lane and time hooks."
+            },
+            {
+              "kind": "field",
+              "name": "errorMessage",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "description": "Overrides the refusal words of the error state.",
+              "attribute": "error-message"
+            }
+          ],
+          "events": [
+            {
+              "name": "sk-select-finding",
+              "type": {
+                "text": "CustomEvent<SkSelectFindingDetail>"
+              },
+              "description": "a finding was chosen by click, Enter, Space or a navigation key; never for an incoming `selectedFinding`"
+            },
+            {
+              "name": "sk-rescan-drift",
+              "type": {
+                "text": "CustomEvent<SkRescanDriftDetail>"
+              },
+              "description": "Rescan was activated (nothing while `rescanning`)"
+            },
+            {
+              "name": "sk-copy-command",
+              "type": {
+                "text": "CustomEvent<SkCopyCommandDetail>"
+              },
+              "description": "Copy was activated on the suggested resolution; the host writes the clipboard"
+            },
+            {
+              "name": "sk-open-mission",
+              "type": {
+                "text": "CustomEvent<SkOpenMissionDetail>"
+              },
+              "description": "the Mission link in the detail was activated"
+            },
+            {
+              "name": "sk-open-missions",
+              "type": {
+                "text": "CustomEvent<SkOpenMissionsDetail>"
+              },
+              "description": "\"Return to Missions\" was activated"
+            },
+            {
+              "name": "sk-retry-load",
+              "type": {
+                "text": "CustomEvent<SkDriftRetryLoadDetail>"
+              },
+              "description": "Retry was activated (`drift-report`)"
+            }
+          ],
+          "attributes": [
+            {
+              "name": "status",
+              "type": {
+                "text": "DriftScreenStatus"
+              },
+              "default": "'loading'",
+              "description": "The view state; unknown values collapse to `empty`, except `not-found`.",
+              "fieldName": "status"
+            },
+            {
+              "name": "mission-id",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "description": "The scope: non-empty means a scoped scan of that Mission.",
+              "fieldName": "missionId"
+            },
+            {
+              "name": "rescanning",
+              "type": {
+                "text": "boolean"
+              },
+              "default": "false",
+              "description": "True while a rescan is in flight: the report stays visible and the button is busy.",
+              "fieldName": "rescanning"
+            },
+            {
+              "name": "copy-result",
+              "type": {
+                "text": "DriftCopyResult | null"
+              },
+              "default": "null",
+              "description": "The host's answer to the last `sk-copy-command`; the host resets it to null on the event, then answers.",
+              "fieldName": "copyResult"
+            },
+            {
+              "name": "refusal-code",
+              "type": {
+                "text": "string | null"
+              },
+              "default": "null",
+              "description": "The refusal code of a refused scan, read only when `status` is `error`; unknown or null gives the generic words.",
+              "fieldName": "refusalCode"
+            },
+            {
+              "name": "now",
+              "type": {
+                "text": "string | null"
+              },
+              "default": "null",
+              "description": "RFC 3339 instant for relative times; null shows the ISO text as given.",
+              "fieldName": "now"
+            },
+            {
+              "name": "error-message",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "description": "Overrides the refusal words of the error state.",
+              "fieldName": "errorMessage"
+            }
+          ],
+          "superclass": {
+            "name": "LitElement",
+            "package": "lit"
+          },
+          "tagName": "sk-drift-screen",
+          "customElement": true
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "SkDriftScreen",
+          "declaration": {
+            "name": "SkDriftScreen",
+            "module": "src/elements/sk-drift-screen/sk-drift-screen.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/elements/sk-drift-screen/state-parts.ts",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/elements/sk-drift-screen/table-parts.ts",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
       "path": "src/elements/sk-filter-toggle-group/sk-filter-toggle-group.ts",
       "declarations": [
         {
@@ -241,7 +822,7 @@
                 "text": "ShellLayout"
               },
               "default": "'project'",
-              "description": "Which regions render; unknown values fall back to `project`.",
+              "description": "Which regions render: `project`, `mission`, or `picker` (top bar and one content column, no navigation at any tier). Unknown values fall back to `project`.",
               "attribute": "layout",
               "reflects": true
             },
@@ -413,7 +994,7 @@
                 "text": "ShellLayout"
               },
               "default": "'project'",
-              "description": "Which regions render; unknown values fall back to `project`.",
+              "description": "Which regions render: `project`, `mission`, or `picker` (top bar and one content column, no navigation at any tier). Unknown values fall back to `project`.",
               "fieldName": "layout"
             },
             {
@@ -741,6 +1322,143 @@
           "declaration": {
             "name": "SkMissionsScreen",
             "module": "src/elements/sk-missions-screen/sk-missions-screen.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/elements/sk-open-project-dialog/folder-list-parts.ts",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/elements/sk-open-project-dialog/sk-open-project-dialog.ts",
+      "declarations": [
+        {
+          "kind": "class",
+          "description": "The open-project dialog. Semi-controlled: Cancel, Escape and a backdrop click set `open` false themselves and emit nothing.\nIt is a widget, not a screen: it has a `status` property (the folder listing) and carries no screen marker.",
+          "name": "SkOpenProjectDialog",
+          "members": [
+            {
+              "kind": "field",
+              "name": "open",
+              "type": {
+                "text": "boolean"
+              },
+              "default": "false",
+              "description": "Whether the dialog is open; semi-controlled: Cancel, Escape and a backdrop click set it false.",
+              "attribute": "open",
+              "reflects": true
+            },
+            {
+              "kind": "field",
+              "name": "location",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "description": "The location shown in the read-only folder field; opaque host text.",
+              "attribute": "location"
+            },
+            {
+              "kind": "field",
+              "name": "folders",
+              "type": {
+                "text": "FolderEntry[]"
+              },
+              "default": "[]",
+              "description": "The folders of the listing in host order."
+            },
+            {
+              "kind": "field",
+              "name": "selected",
+              "type": {
+                "text": "string | null"
+              },
+              "default": "null",
+              "description": "The `location` of the selected folder, or null; controlled by the host."
+            },
+            {
+              "kind": "field",
+              "name": "status",
+              "type": {
+                "text": "ViewState"
+              },
+              "default": "'ready'",
+              "description": "The view state of the folder listing; unknown values collapse to `empty`.",
+              "attribute": "status",
+              "reflects": true
+            }
+          ],
+          "events": [
+            {
+              "name": "sk-browse-folder",
+              "type": {
+                "text": "CustomEvent<SkBrowseFolderDetail>"
+              },
+              "description": "a folder option was selected"
+            },
+            {
+              "name": "sk-confirm-open-project",
+              "type": {
+                "text": "CustomEvent<SkConfirmOpenProjectDetail>"
+              },
+              "description": "Open was activated while the selected folder is a valid project"
+            },
+            {
+              "name": "sk-retry-load",
+              "type": {
+                "text": "CustomEvent<RetryLoadDetail>"
+              },
+              "description": "Retry was activated on a failed folder listing (`folders`)"
+            }
+          ],
+          "attributes": [
+            {
+              "name": "open",
+              "type": {
+                "text": "boolean"
+              },
+              "default": "false",
+              "description": "Whether the dialog is open; semi-controlled: Cancel, Escape and a backdrop click set it false.",
+              "fieldName": "open"
+            },
+            {
+              "name": "location",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "description": "The location shown in the read-only folder field; opaque host text.",
+              "fieldName": "location"
+            },
+            {
+              "name": "status",
+              "type": {
+                "text": "ViewState"
+              },
+              "default": "'ready'",
+              "description": "The view state of the folder listing; unknown values collapse to `empty`.",
+              "fieldName": "status"
+            }
+          ],
+          "superclass": {
+            "name": "LitElement",
+            "package": "lit"
+          },
+          "tagName": "sk-open-project-dialog",
+          "customElement": true
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "SkOpenProjectDialog",
+          "declaration": {
+            "name": "SkOpenProjectDialog",
+            "module": "src/elements/sk-open-project-dialog/sk-open-project-dialog.ts"
           }
         }
       ]
@@ -1201,6 +1919,154 @@
           }
         }
       ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/elements/sk-projects-screen/header-parts.ts",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/elements/sk-projects-screen/row-parts.ts",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/elements/sk-projects-screen/sk-projects-screen.ts",
+      "declarations": [
+        {
+          "kind": "class",
+          "description": "The Projects screen. Read-only: it only asks the host to open a project, to open the folder dialog or to read again.",
+          "name": "SkProjectsScreen",
+          "members": [
+            {
+              "kind": "field",
+              "name": "status",
+              "type": {
+                "text": "ViewState"
+              },
+              "default": "'loading'",
+              "description": "The view state of the whole list; unknown values collapse to `empty`. It wins over every entry state.",
+              "attribute": "status",
+              "reflects": true
+            },
+            {
+              "kind": "field",
+              "name": "entries",
+              "type": {
+                "text": "ProjectEntry[]"
+              },
+              "default": "[]",
+              "description": "The recent projects in host order: never sorted, filtered or grouped."
+            },
+            {
+              "kind": "field",
+              "name": "now",
+              "type": {
+                "text": "string | null"
+              },
+              "default": "null",
+              "description": "ISO instant for relative times; null shows the ISO timestamp as given.",
+              "attribute": "now"
+            },
+            {
+              "kind": "field",
+              "name": "labels",
+              "type": {
+                "text": "ProjectLabelHooks | null"
+              },
+              "default": "null",
+              "description": "Optional label hooks: `time` and `health`."
+            },
+            {
+              "kind": "field",
+              "name": "errorMessage",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "description": "Overrides the default body of the whole-list error.",
+              "attribute": "error-message"
+            }
+          ],
+          "events": [
+            {
+              "name": "sk-open-project",
+              "type": {
+                "text": "CustomEvent<SkOpenProjectDetail>"
+              },
+              "description": "an openable row was activated; the screen never navigates"
+            },
+            {
+              "name": "sk-request-open-project",
+              "type": {
+                "text": "CustomEvent<null>"
+              },
+              "description": "the \"Open project\" button was activated"
+            },
+            {
+              "name": "sk-retry-load",
+              "type": {
+                "text": "CustomEvent<RetryLoadDetail>"
+              },
+              "description": "Retry was activated on a failed row (`project`) or on the failed list (`projects`)"
+            }
+          ],
+          "attributes": [
+            {
+              "name": "status",
+              "type": {
+                "text": "ViewState"
+              },
+              "default": "'loading'",
+              "description": "The view state of the whole list; unknown values collapse to `empty`. It wins over every entry state.",
+              "fieldName": "status"
+            },
+            {
+              "name": "now",
+              "type": {
+                "text": "string | null"
+              },
+              "default": "null",
+              "description": "ISO instant for relative times; null shows the ISO timestamp as given.",
+              "fieldName": "now"
+            },
+            {
+              "name": "error-message",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "description": "Overrides the default body of the whole-list error.",
+              "fieldName": "errorMessage"
+            }
+          ],
+          "superclass": {
+            "name": "LitElement",
+            "package": "lit"
+          },
+          "tagName": "sk-projects-screen",
+          "customElement": true
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "SkProjectsScreen",
+          "declaration": {
+            "name": "SkProjectsScreen",
+            "module": "src/elements/sk-projects-screen/sk-projects-screen.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/elements/sk-projects-screen/state-parts.ts",
+      "declarations": [],
+      "exports": []
     },
     {
       "kind": "javascript-module",

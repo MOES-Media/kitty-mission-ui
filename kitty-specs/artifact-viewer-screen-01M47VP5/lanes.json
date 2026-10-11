@@ -1,0 +1,340 @@
+{
+  "version": 1,
+  "mission_slug": "artifact-viewer-screen-01M47VP5",
+  "mission_id": "01M47VP5KG9YF8NB6GVTAC5X23",
+  "mission_branch": "kitty/mission-artifact-viewer-screen-01M47VP5",
+  "target_branch": "feat/artifact-viewer-screen-7",
+  "lanes": [
+    {
+      "lane_id": "lane-a",
+      "wp_ids": [
+        "WP01"
+      ],
+      "write_scope": [
+        "contracts/spec-kitty/**",
+        "packages/mission-ui/src/contract/**",
+        "scripts/contract/**"
+      ],
+      "predicted_surfaces": [
+        "api",
+        "app-shell",
+        "artifact-rendering",
+        "legacy-cleanup"
+      ],
+      "depends_on_lanes": [],
+      "parallel_group": 0
+    },
+    {
+      "lane_id": "lane-b",
+      "wp_ids": [
+        "WP02"
+      ],
+      "write_scope": [
+        "packages/mission-ui/package.json",
+        "pnpm-lock.yaml"
+      ],
+      "predicted_surfaces": [
+        "api",
+        "app-shell",
+        "artifact-rendering",
+        "legacy-cleanup"
+      ],
+      "depends_on_lanes": [
+        "lane-a"
+      ],
+      "parallel_group": 1
+    },
+    {
+      "lane_id": "lane-c",
+      "wp_ids": [
+        "WP03"
+      ],
+      "write_scope": [
+        "eslint.data-driven.config.mjs",
+        "gates/data-driven.selftest.ts",
+        "gates/fixtures/data-driven/**",
+        "packages/mission-ui/src/defaults/**",
+        "packages/mission-ui/src/logic/artifact-*.ts",
+        "packages/mission-ui/src/shell-icons.ts",
+        "packages/mission-ui/src/shell-types.ts",
+        "packages/mission-ui/test/artifact-*.test.ts",
+        "packages/mission-ui/test/vocabulary-homes.test.ts"
+      ],
+      "predicted_surfaces": [
+        "api",
+        "app-shell",
+        "artifact-rendering",
+        "legacy-cleanup"
+      ],
+      "depends_on_lanes": [
+        "lane-b"
+      ],
+      "parallel_group": 2
+    },
+    {
+      "lane_id": "lane-d",
+      "wp_ids": [
+        "WP04"
+      ],
+      "write_scope": [
+        "packages/mission-ui/src/logic/markdown/budget.ts",
+        "packages/mission-ui/src/logic/markdown/links.ts",
+        "packages/mission-ui/src/logic/markdown/model.ts",
+        "packages/mission-ui/src/logic/markdown/parse.ts",
+        "packages/mission-ui/test/markdown-budget*.test.ts",
+        "packages/mission-ui/test/markdown-links*.test.ts",
+        "packages/mission-ui/test/markdown-model*.test.ts",
+        "packages/mission-ui/test/markdown-parse*.test.ts",
+        "packages/mission-ui/test/markdown-source*.test.ts"
+      ],
+      "predicted_surfaces": [
+        "api",
+        "app-shell",
+        "artifact-rendering",
+        "legacy-cleanup"
+      ],
+      "depends_on_lanes": [
+        "lane-c"
+      ],
+      "parallel_group": 3
+    },
+    {
+      "lane_id": "lane-e",
+      "wp_ids": [
+        "WP05"
+      ],
+      "write_scope": [
+        "eslint-rules/**",
+        "eslint.config.mjs",
+        "gates/markdown-lint.selftest.ts",
+        "gates/plants/**",
+        "packages/mission-ui/src/logic/markdown/index.ts",
+        "packages/mission-ui/src/logic/markdown/render.ts",
+        "packages/mission-ui/test/markdown-corpus-model.test.ts",
+        "packages/mission-ui/test/markdown-corpus.test.ts",
+        "packages/mission-ui/test/support/walk-allowed*.ts",
+        "packages/mission-ui/test/walk-allowed*.test.ts",
+        "scripts/bundle-budget.test.mjs"
+      ],
+      "predicted_surfaces": [
+        "api",
+        "app-shell",
+        "artifact-rendering",
+        "legacy-cleanup"
+      ],
+      "depends_on_lanes": [
+        "lane-d"
+      ],
+      "parallel_group": 4
+    },
+    {
+      "lane_id": "lane-f",
+      "wp_ids": [
+        "WP06"
+      ],
+      "write_scope": [
+        "apps/storybook/.storybook/main.ts",
+        "spikes/ic-05/**"
+      ],
+      "predicted_surfaces": [
+        "api",
+        "app-shell",
+        "artifact-rendering",
+        "legacy-cleanup"
+      ],
+      "depends_on_lanes": [
+        "lane-e"
+      ],
+      "parallel_group": 5
+    },
+    {
+      "lane_id": "lane-g",
+      "wp_ids": [
+        "WP07"
+      ],
+      "write_scope": [
+        "scripts/stylelint-exceptions.test.mjs",
+        "stylelint.config.mjs"
+      ],
+      "predicted_surfaces": [
+        "api",
+        "app-shell",
+        "artifact-rendering",
+        "legacy-cleanup"
+      ],
+      "depends_on_lanes": [
+        "lane-f"
+      ],
+      "parallel_group": 6
+    },
+    {
+      "lane_id": "lane-h",
+      "wp_ids": [
+        "WP08"
+      ],
+      "write_scope": [
+        "packages/mission-ui/custom-elements.json",
+        "packages/mission-ui/src/elements/sk-artifact-screen/fixtures.ts",
+        "packages/mission-ui/src/elements/sk-artifact-screen/sk-artifact-screen.ts",
+        "packages/mission-ui/src/elements/sk-work-package-screen/sk-work-package-screen.*",
+        "packages/mission-ui/src/index.ts",
+        "packages/mission-ui/src/logic/wp-retry.*",
+        "packages/mission-ui/src/overflow-region.ts",
+        "packages/mission-ui/src/retry-types.ts",
+        "packages/mission-ui/src/story-support/shell-frame.ts",
+        "packages/mission-ui/test/overflow-region.multi*.test.ts",
+        "packages/mission-ui/test/retry-types.*",
+        "packages/mission-ui/test/sk-artifact-screen.layout*.test.ts",
+        "packages/mission-ui/test/sk-artifact-screen.overflow*.test.ts",
+        "packages/mission-ui/test/sk-artifact-screen.skeleton*.test.ts",
+        "packages/mission-ui/test/surface-freeze.test.ts"
+      ],
+      "predicted_surfaces": [
+        "api",
+        "app-shell",
+        "artifact-rendering",
+        "legacy-cleanup"
+      ],
+      "depends_on_lanes": [
+        "lane-g"
+      ],
+      "parallel_group": 7
+    },
+    {
+      "lane_id": "lane-i",
+      "wp_ids": [
+        "WP09"
+      ],
+      "write_scope": [
+        "packages/mission-ui/src/elements/sk-artifact-screen/document-parts.ts",
+        "packages/mission-ui/src/elements/sk-artifact-screen/document.stories.ts",
+        "packages/mission-ui/src/elements/sk-artifact-screen/prose-styles.ts",
+        "packages/mission-ui/src/elements/sk-artifact-screen/source-parts.ts",
+        "packages/mission-ui/src/elements/sk-artifact-screen/tab-parts.ts",
+        "packages/mission-ui/src/elements/sk-artifact-screen/toolbar-parts.ts",
+        "packages/mission-ui/test/markdown-corpus.screen.test.ts",
+        "packages/mission-ui/test/sk-artifact-screen.document*.test.ts",
+        "packages/mission-ui/test/sk-artifact-screen.links*.test.ts",
+        "packages/mission-ui/test/sk-artifact-screen.notices*.test.ts",
+        "packages/mission-ui/test/sk-artifact-screen.source*.test.ts",
+        "packages/mission-ui/test/sk-artifact-screen.tabs*.test.ts"
+      ],
+      "predicted_surfaces": [
+        "api",
+        "app-shell",
+        "artifact-rendering",
+        "legacy-cleanup"
+      ],
+      "depends_on_lanes": [
+        "lane-h"
+      ],
+      "parallel_group": 8
+    },
+    {
+      "lane_id": "lane-k",
+      "wp_ids": [
+        "WP11"
+      ],
+      "write_scope": [
+        "packages/mission-ui/src/elements/sk-artifact-screen/inspector-parts.ts",
+        "packages/mission-ui/src/elements/sk-artifact-screen/inspector-tree.stories.ts",
+        "packages/mission-ui/test/sk-artifact-screen.inspector*.test.ts",
+        "packages/mission-ui/test/sk-artifact-screen.tree*.test.ts",
+        "packages/mission-ui/test/sk-artifact-screen.treehost*.test.ts"
+      ],
+      "predicted_surfaces": [
+        "api",
+        "app-shell",
+        "artifact-rendering",
+        "legacy-cleanup"
+      ],
+      "depends_on_lanes": [
+        "lane-h"
+      ],
+      "parallel_group": 8
+    },
+    {
+      "lane_id": "lane-j",
+      "wp_ids": [
+        "WP10"
+      ],
+      "write_scope": [
+        "packages/mission-ui/src/elements/sk-artifact-screen/refusal-parts.ts",
+        "packages/mission-ui/src/elements/sk-artifact-screen/refusals-states.stories.ts",
+        "packages/mission-ui/src/elements/sk-artifact-screen/state-parts.ts",
+        "packages/mission-ui/test/sk-artifact-screen.announce*.test.ts",
+        "packages/mission-ui/test/sk-artifact-screen.focus*.test.ts",
+        "packages/mission-ui/test/sk-artifact-screen.payload*.test.ts",
+        "packages/mission-ui/test/sk-artifact-screen.refusal*.test.ts",
+        "packages/mission-ui/test/sk-artifact-screen.state*.test.ts"
+      ],
+      "predicted_surfaces": [
+        "api",
+        "app-shell",
+        "artifact-rendering",
+        "legacy-cleanup"
+      ],
+      "depends_on_lanes": [
+        "lane-i"
+      ],
+      "parallel_group": 9
+    },
+    {
+      "lane_id": "lane-l",
+      "wp_ids": [
+        "WP12"
+      ],
+      "write_scope": [
+        "packages/mission-ui/src/elements/sk-artifact-screen/tiers-edge-cases.stories.ts",
+        "packages/mission-ui/test/sk-artifact-screen.a11y*.test.ts",
+        "packages/mission-ui/test/sk-artifact-screen.composition*.test.ts",
+        "packages/mission-ui/test/sk-artifact-screen.dynamic*.test.ts",
+        "packages/mission-ui/test/sk-artifact-screen.eyebrow*.test.ts",
+        "packages/mission-ui/test/sk-artifact-screen.media*.test.ts",
+        "packages/mission-ui/test/sk-artifact-screen.tier*.test.ts",
+        "packages/mission-ui/test/sk-artifact-screen.timing*.test.ts",
+        "packages/mission-ui/test/sk-artifact-screen.truncation*.test.ts"
+      ],
+      "predicted_surfaces": [
+        "api",
+        "app-shell",
+        "artifact-rendering",
+        "legacy-cleanup"
+      ],
+      "depends_on_lanes": [
+        "lane-j"
+      ],
+      "parallel_group": 10
+    },
+    {
+      "lane_id": "lane-m",
+      "wp_ids": [
+        "WP13"
+      ],
+      "write_scope": [
+        ".github/workflows/ci.yml",
+        "CHANGELOG.md",
+        "README.md",
+        "apps/storybook/tests/visual/__snapshots__/**",
+        "package.json",
+        "packages/mission-ui/CHANGELOG.md",
+        "packages/mission-ui/test/sk-artifact-screen.integration*.test.ts",
+        "scripts/artifact-story-catalogue.test.mjs"
+      ],
+      "predicted_surfaces": [
+        "api",
+        "app-shell",
+        "artifact-rendering",
+        "legacy-cleanup"
+      ],
+      "depends_on_lanes": [
+        "lane-l"
+      ],
+      "parallel_group": 11
+    }
+  ],
+  "computed_at": "2026-10-06T11:20:04.595041+00:00",
+  "computed_from": "dependency_graph+ownership",
+  "planning_artifact_wps": [],
+  "planning_commit_sha": "b274a14b69db01aaaa075675898a3f88a110e8e1"
+}

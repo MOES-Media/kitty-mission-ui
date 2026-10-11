@@ -1,0 +1,2 @@
+// expect: S17.1 S17.3
+export const c = (code: string): boolean => code === 'CORRUPT_JSON';
