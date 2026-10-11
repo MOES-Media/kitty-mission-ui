@@ -1,6 +1,6 @@
 // Large synthetic pages for the 500-Mission test (NFR-006) and the long-list story. Pure functions, no value imports
 // (only `import type`, erased), so plain Node loads this file too and gate `contract` validates its output.
-import type { ArtifactContent, ArtifactEntry, ArtifactListing, HistoryEntry, MissionOverview, MissionOverviewPage, OwnedFile, Subtask } from './types.js';
+import type { ArtifactContent, ArtifactEntry, ArtifactListing, DriftFinding, DriftReport, HistoryEntry, LaneComparison, MissionOverview, MissionOverviewPage, OwnedFile, Subtask } from './types.js';
 
 const ALPHABET = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
 const DIGEST = '3a7bd3e2360a3d29eea436fcfb7e44c735d117c42d1c1835420b6b9942dd4f1b';
@@ -313,4 +313,85 @@ export function makeOverBudgetMarkdown(path: string): ArtifactContent {
   const lines: string[] = ['# Over budget', ''];
   for (let i = 0; i < OVER_BUDGET_ITEMS; i += 1) lines.push('- a');
   return contentOf(path, `${lines.join('\n')}\n`);
+}
+
+// ---- Drift screen: the report at the contract's maxItems -----------------------------------------------------------
+const DRIFT_SCANNED_AT = '2026-10-06T09:00:00Z';
+const DRIFT_MISSION_PREFIX = '01JZD0';
+// The three kinds in byte order, so findings of one Mission are already sorted by kind.
+const DRIFT_KINDS = ['lane_branch_missing', 'snapshot_disagrees_with_event_log', 'snapshot_or_event_log_missing'] as const;
+const DRIFT_SUMMARY = {
+  lane_branch_missing: 'An expected lane or Mission branch has no local branch.',
+  SNAPSHOT_DRIFT: 'The status snapshot disagrees with the event log.',
+  SNAPSHOT_DRIFT_PROVENANCE: 'The status snapshot differs from the event log only in provenance fields.',
+  SNAPSHOT_DRIFT_TERMINAL: 'The status snapshot differs from the event log and every work package is done.',
+  CORRUPT_JSON: 'The status snapshot is not a valid JSON object.',
+  snapshot_or_event_log_missing: 'One of the status snapshot and the event log is missing.',
+} as const;
+const DISAGREEMENTS = ['SNAPSHOT_DRIFT', 'SNAPSHOT_DRIFT_PROVENANCE', 'SNAPSHOT_DRIFT_TERMINAL', 'CORRUPT_JSON'] as const;
+
+function driftLaneRows(mission: number): LaneComparison[] {
+  const rows = (mission % 3) + 1;
+  const out: LaneComparison[] = [];
+  for (let i = 0; i < rows; i += 1) {
+    out.push({
+      wpId: `WP${String(i + 1).padStart(2, '0')}`,
+      persistedStatusLane: i % 2 === 0 ? 'in_progress' : 'planned',
+      derivedStatusLane: i % 2 === 0 ? 'for_review' : null,
+    });
+  }
+  return out;
+}
+
+/**
+ * Finding number `index` of the bulk report. Three findings per synthetic Mission, one of each kind in byte order, so
+ * the list is sorted by (missionId, kind, artifactPath) and the key is unique. Every pair of kind, source code,
+ * summary, severity, authority, derived side and remedy is one the contract's own description allows.
+ */
+export function makeDriftFinding(index: number): DriftFinding {
+  const mission = Math.floor(index / 3);
+  const missionId = `${DRIFT_MISSION_PREFIX}${ulid(mission).slice(6)}`;
+  const kind = DRIFT_KINDS[index % 3] ?? 'lane_branch_missing';
+  if (kind === 'lane_branch_missing') {
+    return { kind, severity: 'warning', missionId, artifactPath: 'lanes.json', summary: DRIFT_SUMMARY.lane_branch_missing, authority: 'git', derivedSide: 'lanes_json', laneComparison: [], remedy: null, sourceCode: null };
+  }
+  if (kind === 'snapshot_or_event_log_missing') {
+    const statusMissing = mission % 2 === 0;
+    return {
+      kind,
+      severity: 'warning',
+      missionId,
+      artifactPath: statusMissing ? 'status.json' : 'status.events.jsonl',
+      summary: DRIFT_SUMMARY.snapshot_or_event_log_missing,
+      authority: 'event_log',
+      derivedSide: 'status_json',
+      laneComparison: [],
+      remedy: statusMissing ? 'materialize_status' : null,
+      sourceCode: null,
+    };
+  }
+  const sourceCode = DISAGREEMENTS[mission % DISAGREEMENTS.length] ?? 'SNAPSHOT_DRIFT';
+  const lane = sourceCode === 'SNAPSHOT_DRIFT' ? driftLaneRows(mission) : sourceCode === 'SNAPSHOT_DRIFT_TERMINAL' ? [{ wpId: 'WP02', persistedStatusLane: 'approved', derivedStatusLane: 'done' } satisfies LaneComparison] : [];
+  return {
+    kind,
+    severity: sourceCode === 'SNAPSHOT_DRIFT' || sourceCode === 'CORRUPT_JSON' ? 'error' : 'warning',
+    missionId,
+    artifactPath: 'status.json',
+    summary: DRIFT_SUMMARY[sourceCode],
+    authority: 'event_log',
+    derivedSide: 'status_json',
+    laneComparison: lane,
+    remedy: sourceCode === 'SNAPSHOT_DRIFT' || sourceCode === 'CORRUPT_JSON' ? 'materialize_status' : null,
+    sourceCode,
+  };
+}
+
+/**
+ * A Drift report of `count` findings (default: the contract's maxItems, 1000). Deterministic: the scan time is a fixed
+ * literal and every id is derived from the index. `truncated` defaults to true: the first 1000 of more.
+ */
+export function makeDriftReport(count: number = 1000, truncated: boolean = true): DriftReport {
+  const findings: DriftFinding[] = [];
+  for (let i = 0; i < count; i += 1) findings.push(makeDriftFinding(i));
+  return { scannedAt: DRIFT_SCANNED_AT, findings, truncated };
 }

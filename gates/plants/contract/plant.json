@@ -62,5 +62,21 @@
         ]
       }
     ]
+  },
+  {
+    "gate": "contract",
+    "ciCommand": "pnpm contract:check && pnpm test:contract",
+    "expectFailPattern": "unknown relaxation drift-vocabulary-open",
+    "overlays": [
+      {
+        "target": "scripts/contract/registry.mjs",
+        "edits": [
+          {
+            "find": "  'drift-vocabulary-open': {",
+            "replace": "  'drift-vocabulary-open-planted': {"
+          }
+        ]
+      }
+    ]
   }
 ]

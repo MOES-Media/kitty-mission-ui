@@ -4,7 +4,7 @@
  * and the named overlays of scripts/contract/overlays.mjs. Data only: type imports and `satisfies`, so plain Node
  * loads it by type stripping. Do not edit: the contract gate regenerates and byte-compares this file.
  */
-import type { ArtifactContent, ArtifactContentView, ArtifactListing, ArtifactListingView, ArtifactRefusal, ArtifactRefusalView, MissionDetail, MissionDetailView, MissionOverviewPage, MissionOverviewPageView, Project, ProjectView, WorkPackage, WorkPackageDetail, WorkPackageDetailRefusal, WorkPackageDetailView, WorkPackageRecordView } from './types.js';
+import type { ArtifactContent, ArtifactContentView, ArtifactListing, ArtifactListingView, ArtifactRefusal, ArtifactRefusalView, DriftRefusal, DriftReport, DriftReportView, MissionDetail, MissionDetailView, MissionOverviewPage, MissionOverviewPageView, Project, ProjectView, WorkPackage, WorkPackageDetail, WorkPackageDetailRefusal, WorkPackageDetailView, WorkPackageRecordView } from './types.js';
 
 // fixture: project
 export const project = {
@@ -11551,3 +11551,1032 @@ export const contentReviewCycle = {
   redacted: false,
   content: "# Review cycle 1\n\nVerdict: changes requested.\n\n1. Fix the loader.\n2. Add the missing test.\n"
 } satisfies ArtifactContent;
+
+// fixture: reportPopulated
+export const reportPopulated = {
+  scannedAt: "2026-10-06T09:00:00Z",
+  findings: [
+    {
+      kind: "lane_branch_missing",
+      severity: "warning",
+      missionId: "01JZCB3C4D5E6F7G8H9JKMNPQT",
+      artifactPath: "lanes.json",
+      summary: "An expected lane or Mission branch has no local branch.",
+      authority: "git",
+      derivedSide: "lanes_json",
+      laneComparison: [],
+      remedy: null,
+      sourceCode: null
+    },
+    {
+      kind: "snapshot_disagrees_with_event_log",
+      severity: "error",
+      missionId: "01JZCB3C4D5E6F7G8H9JKMNPQT",
+      artifactPath: "status.json",
+      summary: "The status snapshot disagrees with the event log.",
+      authority: "event_log",
+      derivedSide: "status_json",
+      laneComparison: [
+        {
+          wpId: "WP01",
+          persistedStatusLane: "in_progress",
+          derivedStatusLane: "for_review"
+        },
+        {
+          wpId: "WP03",
+          persistedStatusLane: "planned",
+          derivedStatusLane: null
+        }
+      ],
+      remedy: "materialize_status",
+      sourceCode: "SNAPSHOT_DRIFT"
+    },
+    {
+      kind: "snapshot_disagrees_with_event_log",
+      severity: "warning",
+      missionId: "01JZCB3D4E5F6G7H8J9KMNPQRS",
+      artifactPath: "status.json",
+      summary: "The status snapshot differs from the event log only in provenance fields.",
+      authority: "event_log",
+      derivedSide: "status_json",
+      laneComparison: [],
+      remedy: null,
+      sourceCode: "SNAPSHOT_DRIFT_PROVENANCE"
+    },
+    {
+      kind: "snapshot_disagrees_with_event_log",
+      severity: "warning",
+      missionId: "01JZCB3E5F6G7H8J9KMNPQRSTV",
+      artifactPath: "status.json",
+      summary: "The status snapshot differs from the event log and every work package is done.",
+      authority: "event_log",
+      derivedSide: "status_json",
+      laneComparison: [
+        {
+          wpId: "WP02",
+          persistedStatusLane: "approved",
+          derivedStatusLane: "done"
+        }
+      ],
+      remedy: null,
+      sourceCode: "SNAPSHOT_DRIFT_TERMINAL"
+    },
+    {
+      kind: "snapshot_or_event_log_missing",
+      severity: "warning",
+      missionId: "01JZCB3F6G7H8J9KMNPQRSTVWX",
+      artifactPath: "status.events.jsonl",
+      summary: "One of the status snapshot and the event log is missing.",
+      authority: "event_log",
+      derivedSide: "status_json",
+      laneComparison: [],
+      remedy: null,
+      sourceCode: null
+    }
+  ],
+  truncated: false
+} satisfies DriftReport;
+
+// fixture: reportClean
+export const reportClean = {
+  scannedAt: "2026-10-06T09:00:00Z",
+  findings: [],
+  truncated: false
+} satisfies DriftReport;
+
+// fixture: reportCorruptJson
+export const reportCorruptJson = {
+  scannedAt: "2026-10-06T09:00:00Z",
+  findings: [
+    {
+      kind: "snapshot_disagrees_with_event_log",
+      severity: "error",
+      missionId: "01JZCB3C4D5E6F7G8H9JKMNPQT",
+      artifactPath: "status.json",
+      summary: "The status snapshot is not a valid JSON object.",
+      authority: "event_log",
+      derivedSide: "status_json",
+      laneComparison: [],
+      remedy: "materialize_status",
+      sourceCode: "CORRUPT_JSON"
+    }
+  ],
+  truncated: false
+} satisfies DriftReport;
+
+// fixture: reportTruncated
+export const reportTruncated = {
+  scannedAt: "2026-10-06T09:00:00Z",
+  findings: [
+    {
+      kind: "snapshot_or_event_log_missing",
+      severity: "warning",
+      missionId: "01JZCB3C4D5E6F7G8H9JKMNPQT",
+      artifactPath: "status.json",
+      summary: "One of the status snapshot and the event log is missing.",
+      authority: "event_log",
+      derivedSide: "status_json",
+      laneComparison: [],
+      remedy: "materialize_status",
+      sourceCode: null
+    },
+    {
+      kind: "snapshot_or_event_log_missing",
+      severity: "warning",
+      missionId: "01JZCB3D4E5F6G7H8J9KMNPQRS",
+      artifactPath: "status.events.jsonl",
+      summary: "One of the status snapshot and the event log is missing.",
+      authority: "event_log",
+      derivedSide: "status_json",
+      laneComparison: [],
+      remedy: null,
+      sourceCode: null
+    }
+  ],
+  truncated: true
+} satisfies DriftReport;
+
+// fixture: refusalMissionNotFound
+export const refusalMissionNotFound = {
+  type: "about:blank",
+  title: "The Mission was not found",
+  status: 404,
+  code: "mission_not_found",
+  detail: "No Mission has this identity."
+} satisfies DriftRefusal;
+
+// fixture: refusalScanUnreadable
+export const refusalScanUnreadable = {
+  type: "about:blank",
+  title: "The drift scan could not read a Mission",
+  status: 500,
+  code: "drift_scan_unreadable",
+  detail: "A Mission the scan had to read could not be read, so no report is returned."
+} satisfies DriftRefusal;
+
+// fixture: reportUnknownKind
+export const reportUnknownKind = {
+  scannedAt: "2026-10-06T09:00:00Z",
+  findings: [
+    {
+      kind: "derived_view_stale",
+      severity: "warning",
+      missionId: "01JZCB3C4D5E6F7G8H9JKMNPQT",
+      artifactPath: "lanes.json",
+      summary: "An expected lane or Mission branch has no local branch.",
+      authority: "git",
+      derivedSide: "lanes_json",
+      laneComparison: [],
+      remedy: null,
+      sourceCode: null
+    },
+    {
+      kind: "snapshot_disagrees_with_event_log",
+      severity: "error",
+      missionId: "01JZCB3C4D5E6F7G8H9JKMNPQT",
+      artifactPath: "status.json",
+      summary: "The status snapshot disagrees with the event log.",
+      authority: "event_log",
+      derivedSide: "status_json",
+      laneComparison: [
+        {
+          wpId: "WP01",
+          persistedStatusLane: "in_progress",
+          derivedStatusLane: "for_review"
+        },
+        {
+          wpId: "WP03",
+          persistedStatusLane: "planned",
+          derivedStatusLane: null
+        }
+      ],
+      remedy: "materialize_status",
+      sourceCode: "SNAPSHOT_DRIFT"
+    },
+    {
+      kind: "snapshot_disagrees_with_event_log",
+      severity: "warning",
+      missionId: "01JZCB3D4E5F6G7H8J9KMNPQRS",
+      artifactPath: "status.json",
+      summary: "The status snapshot differs from the event log only in provenance fields.",
+      authority: "event_log",
+      derivedSide: "status_json",
+      laneComparison: [],
+      remedy: null,
+      sourceCode: "SNAPSHOT_DRIFT_PROVENANCE"
+    },
+    {
+      kind: "snapshot_disagrees_with_event_log",
+      severity: "warning",
+      missionId: "01JZCB3E5F6G7H8J9KMNPQRSTV",
+      artifactPath: "status.json",
+      summary: "The status snapshot differs from the event log and every work package is done.",
+      authority: "event_log",
+      derivedSide: "status_json",
+      laneComparison: [
+        {
+          wpId: "WP02",
+          persistedStatusLane: "approved",
+          derivedStatusLane: "done"
+        }
+      ],
+      remedy: null,
+      sourceCode: "SNAPSHOT_DRIFT_TERMINAL"
+    },
+    {
+      kind: "snapshot_or_event_log_missing",
+      severity: "warning",
+      missionId: "01JZCB3F6G7H8J9KMNPQRSTVWX",
+      artifactPath: "status.events.jsonl",
+      summary: "One of the status snapshot and the event log is missing.",
+      authority: "event_log",
+      derivedSide: "status_json",
+      laneComparison: [],
+      remedy: null,
+      sourceCode: null
+    }
+  ],
+  truncated: false
+} satisfies DriftReportView;
+
+// fixture: reportUnknownSeverity
+export const reportUnknownSeverity = {
+  scannedAt: "2026-10-06T09:00:00Z",
+  findings: [
+    {
+      kind: "lane_branch_missing",
+      severity: "warning",
+      missionId: "01JZCB3C4D5E6F7G8H9JKMNPQT",
+      artifactPath: "lanes.json",
+      summary: "An expected lane or Mission branch has no local branch.",
+      authority: "git",
+      derivedSide: "lanes_json",
+      laneComparison: [],
+      remedy: null,
+      sourceCode: null
+    },
+    {
+      kind: "snapshot_disagrees_with_event_log",
+      severity: "error",
+      missionId: "01JZCB3C4D5E6F7G8H9JKMNPQT",
+      artifactPath: "status.json",
+      summary: "The status snapshot disagrees with the event log.",
+      authority: "event_log",
+      derivedSide: "status_json",
+      laneComparison: [
+        {
+          wpId: "WP01",
+          persistedStatusLane: "in_progress",
+          derivedStatusLane: "for_review"
+        },
+        {
+          wpId: "WP03",
+          persistedStatusLane: "planned",
+          derivedStatusLane: null
+        }
+      ],
+      remedy: "materialize_status",
+      sourceCode: "SNAPSHOT_DRIFT"
+    },
+    {
+      kind: "snapshot_disagrees_with_event_log",
+      severity: "info",
+      missionId: "01JZCB3D4E5F6G7H8J9KMNPQRS",
+      artifactPath: "status.json",
+      summary: "The status snapshot differs from the event log only in provenance fields.",
+      authority: "event_log",
+      derivedSide: "status_json",
+      laneComparison: [],
+      remedy: null,
+      sourceCode: "SNAPSHOT_DRIFT_PROVENANCE"
+    },
+    {
+      kind: "snapshot_disagrees_with_event_log",
+      severity: "warning",
+      missionId: "01JZCB3E5F6G7H8J9KMNPQRSTV",
+      artifactPath: "status.json",
+      summary: "The status snapshot differs from the event log and every work package is done.",
+      authority: "event_log",
+      derivedSide: "status_json",
+      laneComparison: [
+        {
+          wpId: "WP02",
+          persistedStatusLane: "approved",
+          derivedStatusLane: "done"
+        }
+      ],
+      remedy: null,
+      sourceCode: "SNAPSHOT_DRIFT_TERMINAL"
+    },
+    {
+      kind: "snapshot_or_event_log_missing",
+      severity: "warning",
+      missionId: "01JZCB3F6G7H8J9KMNPQRSTVWX",
+      artifactPath: "status.events.jsonl",
+      summary: "One of the status snapshot and the event log is missing.",
+      authority: "event_log",
+      derivedSide: "status_json",
+      laneComparison: [],
+      remedy: null,
+      sourceCode: null
+    }
+  ],
+  truncated: false
+} satisfies DriftReportView;
+
+// fixture: reportUnknownAuthority
+export const reportUnknownAuthority = {
+  scannedAt: "2026-10-06T09:00:00Z",
+  findings: [
+    {
+      kind: "lane_branch_missing",
+      severity: "warning",
+      missionId: "01JZCB3C4D5E6F7G8H9JKMNPQT",
+      artifactPath: "lanes.json",
+      summary: "An expected lane or Mission branch has no local branch.",
+      authority: "git",
+      derivedSide: "lanes_json",
+      laneComparison: [],
+      remedy: null,
+      sourceCode: null
+    },
+    {
+      kind: "snapshot_disagrees_with_event_log",
+      severity: "error",
+      missionId: "01JZCB3C4D5E6F7G8H9JKMNPQT",
+      artifactPath: "status.json",
+      summary: "The status snapshot disagrees with the event log.",
+      authority: "event_log",
+      derivedSide: "status_json",
+      laneComparison: [
+        {
+          wpId: "WP01",
+          persistedStatusLane: "in_progress",
+          derivedStatusLane: "for_review"
+        },
+        {
+          wpId: "WP03",
+          persistedStatusLane: "planned",
+          derivedStatusLane: null
+        }
+      ],
+      remedy: "materialize_status",
+      sourceCode: "SNAPSHOT_DRIFT"
+    },
+    {
+      kind: "snapshot_disagrees_with_event_log",
+      severity: "warning",
+      missionId: "01JZCB3D4E5F6G7H8J9KMNPQRS",
+      artifactPath: "status.json",
+      summary: "The status snapshot differs from the event log only in provenance fields.",
+      authority: "event_log",
+      derivedSide: "status_json",
+      laneComparison: [],
+      remedy: null,
+      sourceCode: "SNAPSHOT_DRIFT_PROVENANCE"
+    },
+    {
+      kind: "snapshot_disagrees_with_event_log",
+      severity: "warning",
+      missionId: "01JZCB3E5F6G7H8J9KMNPQRSTV",
+      artifactPath: "status.json",
+      summary: "The status snapshot differs from the event log and every work package is done.",
+      authority: "operator",
+      derivedSide: "status_json",
+      laneComparison: [
+        {
+          wpId: "WP02",
+          persistedStatusLane: "approved",
+          derivedStatusLane: "done"
+        }
+      ],
+      remedy: null,
+      sourceCode: "SNAPSHOT_DRIFT_TERMINAL"
+    },
+    {
+      kind: "snapshot_or_event_log_missing",
+      severity: "warning",
+      missionId: "01JZCB3F6G7H8J9KMNPQRSTVWX",
+      artifactPath: "status.events.jsonl",
+      summary: "One of the status snapshot and the event log is missing.",
+      authority: "event_log",
+      derivedSide: "status_json",
+      laneComparison: [],
+      remedy: null,
+      sourceCode: null
+    }
+  ],
+  truncated: false
+} satisfies DriftReportView;
+
+// fixture: reportUnknownRemedy
+export const reportUnknownRemedy = {
+  scannedAt: "2026-10-06T09:00:00Z",
+  findings: [
+    {
+      kind: "lane_branch_missing",
+      severity: "warning",
+      missionId: "01JZCB3C4D5E6F7G8H9JKMNPQT",
+      artifactPath: "lanes.json",
+      summary: "An expected lane or Mission branch has no local branch.",
+      authority: "git",
+      derivedSide: "lanes_json",
+      laneComparison: [],
+      remedy: null,
+      sourceCode: null
+    },
+    {
+      kind: "snapshot_disagrees_with_event_log",
+      severity: "error",
+      missionId: "01JZCB3C4D5E6F7G8H9JKMNPQT",
+      artifactPath: "status.json",
+      summary: "The status snapshot disagrees with the event log.",
+      authority: "event_log",
+      derivedSide: "status_json",
+      laneComparison: [
+        {
+          wpId: "WP01",
+          persistedStatusLane: "in_progress",
+          derivedStatusLane: "for_review"
+        },
+        {
+          wpId: "WP03",
+          persistedStatusLane: "planned",
+          derivedStatusLane: null
+        }
+      ],
+      remedy: "rebuild_lanes",
+      sourceCode: "SNAPSHOT_DRIFT"
+    },
+    {
+      kind: "snapshot_disagrees_with_event_log",
+      severity: "warning",
+      missionId: "01JZCB3D4E5F6G7H8J9KMNPQRS",
+      artifactPath: "status.json",
+      summary: "The status snapshot differs from the event log only in provenance fields.",
+      authority: "event_log",
+      derivedSide: "status_json",
+      laneComparison: [],
+      remedy: null,
+      sourceCode: "SNAPSHOT_DRIFT_PROVENANCE"
+    },
+    {
+      kind: "snapshot_disagrees_with_event_log",
+      severity: "warning",
+      missionId: "01JZCB3E5F6G7H8J9KMNPQRSTV",
+      artifactPath: "status.json",
+      summary: "The status snapshot differs from the event log and every work package is done.",
+      authority: "event_log",
+      derivedSide: "status_json",
+      laneComparison: [
+        {
+          wpId: "WP02",
+          persistedStatusLane: "approved",
+          derivedStatusLane: "done"
+        }
+      ],
+      remedy: null,
+      sourceCode: "SNAPSHOT_DRIFT_TERMINAL"
+    },
+    {
+      kind: "snapshot_or_event_log_missing",
+      severity: "warning",
+      missionId: "01JZCB3F6G7H8J9KMNPQRSTVWX",
+      artifactPath: "status.events.jsonl",
+      summary: "One of the status snapshot and the event log is missing.",
+      authority: "event_log",
+      derivedSide: "status_json",
+      laneComparison: [],
+      remedy: null,
+      sourceCode: null
+    }
+  ],
+  truncated: false
+} satisfies DriftReportView;
+
+// fixture: reportUnknownSourceCode
+export const reportUnknownSourceCode = {
+  scannedAt: "2026-10-06T09:00:00Z",
+  findings: [
+    {
+      kind: "lane_branch_missing",
+      severity: "warning",
+      missionId: "01JZCB3C4D5E6F7G8H9JKMNPQT",
+      artifactPath: "lanes.json",
+      summary: "An expected lane or Mission branch has no local branch.",
+      authority: "git",
+      derivedSide: "lanes_json",
+      laneComparison: [],
+      remedy: null,
+      sourceCode: null
+    },
+    {
+      kind: "snapshot_disagrees_with_event_log",
+      severity: "error",
+      missionId: "01JZCB3C4D5E6F7G8H9JKMNPQT",
+      artifactPath: "status.json",
+      summary: "The status snapshot disagrees with the event log.",
+      authority: "event_log",
+      derivedSide: "status_json",
+      laneComparison: [
+        {
+          wpId: "WP01",
+          persistedStatusLane: "in_progress",
+          derivedStatusLane: "for_review"
+        },
+        {
+          wpId: "WP03",
+          persistedStatusLane: "planned",
+          derivedStatusLane: null
+        }
+      ],
+      remedy: "materialize_status",
+      sourceCode: "SNAPSHOT_DRIFT"
+    },
+    {
+      kind: "snapshot_disagrees_with_event_log",
+      severity: "warning",
+      missionId: "01JZCB3D4E5F6G7H8J9KMNPQRS",
+      artifactPath: "status.json",
+      summary: "The status snapshot differs from the event log only in provenance fields.",
+      authority: "event_log",
+      derivedSide: "status_json",
+      laneComparison: [],
+      remedy: null,
+      sourceCode: "SNAPSHOT_DRIFT_FUTURE"
+    },
+    {
+      kind: "snapshot_disagrees_with_event_log",
+      severity: "warning",
+      missionId: "01JZCB3E5F6G7H8J9KMNPQRSTV",
+      artifactPath: "status.json",
+      summary: "The status snapshot differs from the event log and every work package is done.",
+      authority: "event_log",
+      derivedSide: "status_json",
+      laneComparison: [
+        {
+          wpId: "WP02",
+          persistedStatusLane: "approved",
+          derivedStatusLane: "done"
+        }
+      ],
+      remedy: null,
+      sourceCode: "SNAPSHOT_DRIFT_TERMINAL"
+    },
+    {
+      kind: "snapshot_or_event_log_missing",
+      severity: "warning",
+      missionId: "01JZCB3F6G7H8J9KMNPQRSTVWX",
+      artifactPath: "status.events.jsonl",
+      summary: "One of the status snapshot and the event log is missing.",
+      authority: "event_log",
+      derivedSide: "status_json",
+      laneComparison: [],
+      remedy: null,
+      sourceCode: null
+    }
+  ],
+  truncated: false
+} satisfies DriftReport;
+
+// fixture: reportOneSidedLane
+export const reportOneSidedLane = {
+  scannedAt: "2026-10-06T09:00:00Z",
+  findings: [
+    {
+      kind: "snapshot_disagrees_with_event_log",
+      severity: "error",
+      missionId: "01JZCB3C4D5E6F7G8H9JKMNPQT",
+      artifactPath: "status.json",
+      summary: "The status snapshot disagrees with the event log.",
+      authority: "event_log",
+      derivedSide: "status_json",
+      laneComparison: [
+        {
+          wpId: "WP01",
+          persistedStatusLane: null,
+          derivedStatusLane: "planned"
+        },
+        {
+          wpId: "WP02",
+          persistedStatusLane: "done",
+          derivedStatusLane: null
+        }
+      ],
+      remedy: "materialize_status",
+      sourceCode: "SNAPSHOT_DRIFT"
+    }
+  ],
+  truncated: false
+} satisfies DriftReport;
+
+// fixture: reportManyLanes
+export const reportManyLanes = {
+  scannedAt: "2026-10-06T09:00:00Z",
+  findings: [
+    {
+      kind: "snapshot_disagrees_with_event_log",
+      severity: "error",
+      missionId: "01JZCB3C4D5E6F7G8H9JKMNPQT",
+      artifactPath: "status.json",
+      summary: "The status snapshot disagrees with the event log.",
+      authority: "event_log",
+      derivedSide: "status_json",
+      laneComparison: [
+        {
+          wpId: "WP01",
+          persistedStatusLane: "in_progress",
+          derivedStatusLane: "for_review"
+        },
+        {
+          wpId: "WP02",
+          persistedStatusLane: "planned",
+          derivedStatusLane: null
+        },
+        {
+          wpId: "WP03",
+          persistedStatusLane: null,
+          derivedStatusLane: "claimed"
+        },
+        {
+          wpId: "WP04",
+          persistedStatusLane: "approved",
+          derivedStatusLane: "done"
+        },
+        {
+          wpId: "WP05",
+          persistedStatusLane: "blocked",
+          derivedStatusLane: "in_progress"
+        },
+        {
+          wpId: "WP06",
+          persistedStatusLane: "in_progress",
+          derivedStatusLane: "for_review"
+        },
+        {
+          wpId: "WP07",
+          persistedStatusLane: "planned",
+          derivedStatusLane: null
+        },
+        {
+          wpId: "WP08",
+          persistedStatusLane: null,
+          derivedStatusLane: "claimed"
+        },
+        {
+          wpId: "WP09",
+          persistedStatusLane: "approved",
+          derivedStatusLane: "done"
+        },
+        {
+          wpId: "WP10",
+          persistedStatusLane: "blocked",
+          derivedStatusLane: "in_progress"
+        },
+        {
+          wpId: "WP11",
+          persistedStatusLane: "in_progress",
+          derivedStatusLane: "for_review"
+        },
+        {
+          wpId: "WP12",
+          persistedStatusLane: "planned",
+          derivedStatusLane: null
+        },
+        {
+          wpId: "WP13",
+          persistedStatusLane: null,
+          derivedStatusLane: "claimed"
+        },
+        {
+          wpId: "WP14",
+          persistedStatusLane: "approved",
+          derivedStatusLane: "done"
+        },
+        {
+          wpId: "WP15",
+          persistedStatusLane: "blocked",
+          derivedStatusLane: "in_progress"
+        },
+        {
+          wpId: "WP16",
+          persistedStatusLane: "in_progress",
+          derivedStatusLane: "for_review"
+        },
+        {
+          wpId: "WP17",
+          persistedStatusLane: "planned",
+          derivedStatusLane: null
+        },
+        {
+          wpId: "WP18",
+          persistedStatusLane: null,
+          derivedStatusLane: "claimed"
+        },
+        {
+          wpId: "WP19",
+          persistedStatusLane: "approved",
+          derivedStatusLane: "done"
+        },
+        {
+          wpId: "WP20",
+          persistedStatusLane: "blocked",
+          derivedStatusLane: "in_progress"
+        },
+        {
+          wpId: "WP21",
+          persistedStatusLane: "in_progress",
+          derivedStatusLane: "for_review"
+        },
+        {
+          wpId: "WP22",
+          persistedStatusLane: "planned",
+          derivedStatusLane: null
+        },
+        {
+          wpId: "WP23",
+          persistedStatusLane: null,
+          derivedStatusLane: "claimed"
+        },
+        {
+          wpId: "WP24",
+          persistedStatusLane: "approved",
+          derivedStatusLane: "done"
+        },
+        {
+          wpId: "WP25",
+          persistedStatusLane: "blocked",
+          derivedStatusLane: "in_progress"
+        },
+        {
+          wpId: "WP26",
+          persistedStatusLane: "in_progress",
+          derivedStatusLane: "for_review"
+        },
+        {
+          wpId: "WP27",
+          persistedStatusLane: "planned",
+          derivedStatusLane: null
+        },
+        {
+          wpId: "WP28",
+          persistedStatusLane: null,
+          derivedStatusLane: "claimed"
+        },
+        {
+          wpId: "WP29",
+          persistedStatusLane: "approved",
+          derivedStatusLane: "done"
+        },
+        {
+          wpId: "WP30",
+          persistedStatusLane: "blocked",
+          derivedStatusLane: "in_progress"
+        },
+        {
+          wpId: "WP31",
+          persistedStatusLane: "in_progress",
+          derivedStatusLane: "for_review"
+        },
+        {
+          wpId: "WP32",
+          persistedStatusLane: "planned",
+          derivedStatusLane: null
+        },
+        {
+          wpId: "WP33",
+          persistedStatusLane: null,
+          derivedStatusLane: "claimed"
+        },
+        {
+          wpId: "WP34",
+          persistedStatusLane: "approved",
+          derivedStatusLane: "done"
+        },
+        {
+          wpId: "WP35",
+          persistedStatusLane: "blocked",
+          derivedStatusLane: "in_progress"
+        },
+        {
+          wpId: "WP36",
+          persistedStatusLane: "in_progress",
+          derivedStatusLane: "for_review"
+        },
+        {
+          wpId: "WP37",
+          persistedStatusLane: "planned",
+          derivedStatusLane: null
+        },
+        {
+          wpId: "WP38",
+          persistedStatusLane: null,
+          derivedStatusLane: "claimed"
+        },
+        {
+          wpId: "WP39",
+          persistedStatusLane: "approved",
+          derivedStatusLane: "done"
+        },
+        {
+          wpId: "WP40",
+          persistedStatusLane: "blocked",
+          derivedStatusLane: "in_progress"
+        }
+      ],
+      remedy: "materialize_status",
+      sourceCode: "SNAPSHOT_DRIFT"
+    }
+  ],
+  truncated: false
+} satisfies DriftReport;
+
+// fixture: reportLongSlugMission
+export const reportLongSlugMission = {
+  scannedAt: "2026-10-06T09:00:00Z",
+  findings: [
+    {
+      kind: "snapshot_disagrees_with_event_log",
+      severity: "error",
+      missionId: "01JZCB3G7H8J9KMNPQRSTVWXYZ",
+      artifactPath: "status.json",
+      summary: "The status snapshot disagrees with the event log.",
+      authority: "event_log",
+      derivedSide: "status_json",
+      laneComparison: [
+        {
+          wpId: "WP01",
+          persistedStatusLane: "in_progress",
+          derivedStatusLane: "for_review"
+        },
+        {
+          wpId: "WP03",
+          persistedStatusLane: "planned",
+          derivedStatusLane: null
+        }
+      ],
+      remedy: "materialize_status",
+      sourceCode: "SNAPSHOT_DRIFT"
+    }
+  ],
+  truncated: false
+} satisfies DriftReport;
+
+// fixture: reportMissionUnlisted
+export const reportMissionUnlisted = {
+  scannedAt: "2026-10-06T09:00:00Z",
+  findings: [
+    {
+      kind: "snapshot_disagrees_with_event_log",
+      severity: "error",
+      missionId: "01JZCB3H8J9KMNPQRSTVWXYZ01",
+      artifactPath: "status.json",
+      summary: "The status snapshot disagrees with the event log.",
+      authority: "event_log",
+      derivedSide: "status_json",
+      laneComparison: [
+        {
+          wpId: "WP01",
+          persistedStatusLane: "in_progress",
+          derivedStatusLane: "for_review"
+        },
+        {
+          wpId: "WP03",
+          persistedStatusLane: "planned",
+          derivedStatusLane: null
+        }
+      ],
+      remedy: "materialize_status",
+      sourceCode: "SNAPSHOT_DRIFT"
+    }
+  ],
+  truncated: false
+} satisfies DriftReport;
+
+// fixture: reportScoped
+export const reportScoped = {
+  scannedAt: "2026-10-06T09:00:00Z",
+  findings: [
+    {
+      kind: "lane_branch_missing",
+      severity: "warning",
+      missionId: "01JZCB3C4D5E6F7G8H9JKMNPQT",
+      artifactPath: "lanes.json",
+      summary: "An expected lane or Mission branch has no local branch.",
+      authority: "git",
+      derivedSide: "lanes_json",
+      laneComparison: [],
+      remedy: null,
+      sourceCode: null
+    },
+    {
+      kind: "snapshot_disagrees_with_event_log",
+      severity: "error",
+      missionId: "01JZCB3C4D5E6F7G8H9JKMNPQT",
+      artifactPath: "status.json",
+      summary: "The status snapshot disagrees with the event log.",
+      authority: "event_log",
+      derivedSide: "status_json",
+      laneComparison: [
+        {
+          wpId: "WP01",
+          persistedStatusLane: "in_progress",
+          derivedStatusLane: "for_review"
+        },
+        {
+          wpId: "WP03",
+          persistedStatusLane: "planned",
+          derivedStatusLane: null
+        }
+      ],
+      remedy: "materialize_status",
+      sourceCode: "SNAPSHOT_DRIFT"
+    },
+    {
+      kind: "snapshot_or_event_log_missing",
+      severity: "warning",
+      missionId: "01JZCB3C4D5E6F7G8H9JKMNPQT",
+      artifactPath: "status.events.jsonl",
+      summary: "One of the status snapshot and the event log is missing.",
+      authority: "event_log",
+      derivedSide: "status_json",
+      laneComparison: [],
+      remedy: null,
+      sourceCode: null
+    }
+  ],
+  truncated: false
+} satisfies DriftReport;
+
+// fixture: reportScopedForeign
+export const reportScopedForeign = {
+  scannedAt: "2026-10-06T09:00:00Z",
+  findings: [
+    {
+      kind: "lane_branch_missing",
+      severity: "warning",
+      missionId: "01JZCB3C4D5E6F7G8H9JKMNPQT",
+      artifactPath: "lanes.json",
+      summary: "An expected lane or Mission branch has no local branch.",
+      authority: "git",
+      derivedSide: "lanes_json",
+      laneComparison: [],
+      remedy: null,
+      sourceCode: null
+    },
+    {
+      kind: "snapshot_disagrees_with_event_log",
+      severity: "error",
+      missionId: "01JZCB3C4D5E6F7G8H9JKMNPQT",
+      artifactPath: "status.json",
+      summary: "The status snapshot disagrees with the event log.",
+      authority: "event_log",
+      derivedSide: "status_json",
+      laneComparison: [
+        {
+          wpId: "WP01",
+          persistedStatusLane: "in_progress",
+          derivedStatusLane: "for_review"
+        },
+        {
+          wpId: "WP03",
+          persistedStatusLane: "planned",
+          derivedStatusLane: null
+        }
+      ],
+      remedy: "materialize_status",
+      sourceCode: "SNAPSHOT_DRIFT"
+    },
+    {
+      kind: "snapshot_or_event_log_missing",
+      severity: "warning",
+      missionId: "01JZCB3C4D5E6F7G8H9JKMNPQT",
+      artifactPath: "status.events.jsonl",
+      summary: "One of the status snapshot and the event log is missing.",
+      authority: "event_log",
+      derivedSide: "status_json",
+      laneComparison: [],
+      remedy: null,
+      sourceCode: null
+    },
+    {
+      kind: "snapshot_disagrees_with_event_log",
+      severity: "warning",
+      missionId: "01JZCB3J9KMNPQRSTVWXYZ0123",
+      artifactPath: "status.json",
+      summary: "The status snapshot differs from the event log and every work package is done.",
+      authority: "event_log",
+      derivedSide: "status_json",
+      laneComparison: [
+        {
+          wpId: "WP02",
+          persistedStatusLane: "approved",
+          derivedStatusLane: "done"
+        }
+      ],
+      remedy: null,
+      sourceCode: "SNAPSHOT_DRIFT_TERMINAL"
+    }
+  ],
+  truncated: false
+} satisfies DriftReport;

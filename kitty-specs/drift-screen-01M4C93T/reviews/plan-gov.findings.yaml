@@ -1,0 +1,44 @@
+schema: review-findings/v1
+complete: true
+phase: plan
+lens_group: gov
+mission: drift-screen-01M4C93T
+# Profile planner-priti (resolved via `spec-kitty profiles list`; no .claude/agents in this checkout). Run IN-SESSION by the
+# phase agent, sequentially, because the dispatch forbids sub-agents: independence between lens groups is weaker than the
+# protocol assumes. Each group was applied with its own lens list only, and its evidence re-read from the files.
+findings:
+  - id: PLAN-GOV-001
+    lens: "Scope / consistency of spec and plan"
+    severity: 3
+    title: "spec.md FR-023 still says the shell nav item is added; plan amendment A-1 says it already exists"
+    evidence:
+      - artifact: "spec.md § FR-023 ('the shell's nav item added (serialised with Ops ...)')"
+      - artifact: "plan.md / research.md D-12, A-1"
+      - code: "packages/mission-ui/src/elements/sk-mission-shell/fixtures.ts:16 ({ id: 'nav-drift', label: 'Drift', ... })"
+    claim: "A WP agent reading the spec would add a nav item and a serialisation step that does not exist; the plan treats the fix as an operator-gated amendment although it is a plain factual correction."
+    remediation: "Correct FR-023 in spec.md (nav item exists; the work is the story with current nav-drift and flush plus the exports) and drop A-1 from the CP-1 list, keeping a line in the Clarifications."
+  - id: PLAN-GOV-002
+    lens: "Directive (canonical CLI flow)"
+    severity: 2
+    title: "The plan was written by hand and spec-kitty agent mission setup-plan was not run"
+    evidence:
+      - artifact: "tracer-tooling-friction.md (2026-10-08 entry)"
+    claim: "The skill says phase work goes through the spec-kitty commands; skipping setup-plan could leave mission state unaware of the plan."
+    remediation: "Run setup-plan, or prove the state does not depend on it."
+  - id: PLAN-GOV-003
+    lens: "Ledger / operator record"
+    severity: 1
+    title: "operator-questions.md Q10 (a) still reads \"re-vendor lands on this planning branch\", superseded by the ruling"
+    evidence:
+      - artifact: "operator-questions.md § Q10 (a)"
+      - artifact: "spec.md § Clarifications, Operator rulings 2026-10-08"
+    claim: "Two documents disagree on where the re-vendor happens."
+    remediation: "Add a \"Ruled 2026-10-08\" header to operator-questions.md pointing at the Clarifications and marking Q10 (a) as amended (no stacked branches, #9 re-vendors, start from main)."
+  - id: PLAN-GOV-004
+    lens: "Scope / consistency of spec and plan"
+    severity: 2
+    title: "spec.md \"Open Questions\" section still describes the questions as pending and the Clarifications omit the plan-time facts"
+    evidence:
+      - artifact: "spec.md § Open Questions ('Ten genuine forks ... are in operator-questions.md')"
+    claim: "After the rulings the section should say they are ruled; the spec also says \"the state matrix has 32 rows\" in no place but the report, and the story count is wrong in plan (see PLAN-VERIFY-003)."
+    remediation: "Rewrite the section as \"all ruled 2026-10-08, as recommended\"."

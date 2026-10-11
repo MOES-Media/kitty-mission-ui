@@ -1,0 +1,51 @@
+schema: review-refute/v1
+complete: true
+phase: plan
+batch: 1
+note: Refuter pass run in-session by the phase agent, defaulting to refuted when uncertain; GOV-002 was checked by running check-prerequisites.
+verdicts:
+- id: PLAN-GOV-001
+  verdict: confirmed
+  reason: 'Verified: fixtures.ts:16 holds nav-drift, so spec FR-023 and plan A-1 disagree and a WP would add a duplicate.'
+- id: PLAN-GOV-002
+  verdict: refuted
+  reason: spec-kitty agent mission check-prerequisites returned valid:true with plan.md present and no setup-plan run; no mission state depends on it, and the tracer file already records that it was skipped.
+- id: PLAN-GOV-003
+  verdict: confirmed
+  reason: operator-questions.md Q10 (a) still says the re-vendor lands on this branch; the ruling supersedes it.
+- id: PLAN-GOV-004
+  verdict: confirmed
+  reason: spec.md Open Questions still reads as if questions were open after the rulings.
+- id: PLAN-ARCH-001
+  verdict: confirmed
+  reason: wp-retry.ts retryDetail returns null without a Mission and requires a wpId, and its target type is the two WP members; a null-missionId drift retry cannot use it.
+- id: PLAN-ARCH-002
+  verdict: confirmed
+  reason: The plan marks no-io as pass without checking; ShadowRoot.getSelection is not in lib.dom and the no-io config bans type-cast evasion of document, so the claim is unverified.
+- id: PLAN-ARCH-003
+  verdict: confirmed
+  reason: The cross-mission paragraph gives no ordering or count-literal rule beyond "whoever lands second rebases".
+- id: PLAN-VERIFY-001
+  verdict: confirmed
+  reason: FR-021 does not say a result present at press time is stale; a false "Copied" is a silent-success failure.
+- id: PLAN-VERIFY-002
+  verdict: confirmed
+  reason: '"no flicker" in DR-21 has no assertion that can fail.'
+- id: PLAN-VERIFY-003
+  verdict: confirmed
+  reason: 'Counted: DR-01..06 (6), 07a, 07b, 08, 09, DR-10..32 (23) = 33 rows, 32 stories; the plan says 31.'
+- id: PLAN-VERIFY-004
+  verdict: confirmed
+  reason: IC-04 and IC-05 run in parallel and each leaves the other chain parts as stubs, so DR-01 and DR-24 cannot be judged whole there.
+- id: PLAN-VERIFY-005
+  verdict: confirmed
+  reason: Prototype bindArrowKeys wraps and accepts Left/Right; spec and plan are silent.
+- id: PLAN-VERIFY-006
+  verdict: confirmed
+  reason: Only IC-01 and IC-02 name revert checks; IC-03b to IC-07 do not.
+- id: PLAN-VERIFY-007
+  verdict: confirmed
+  reason: Nothing in data-model.md says what a non-array findings does; render would throw.
+- id: PLAN-VERIFY-008
+  verdict: confirmed
+  reason: Controlled-component behaviour with a host that ignores the event is unspecified and testable.

@@ -10,12 +10,12 @@ import * as bulk from '../../packages/mission-ui/src/contract/bulk.ts';
 
 const detailBase = () => structuredClone(loadExamples(ROOT)['MissionDetail.populated']);
 
-test('the inventory has 104 fixtures: 89 valid, 4 host, 11 relaxed (30 of them are the Artifact Viewer documents)', () => {
+test('the inventory has 121 fixtures: 102 valid, 4 host, 15 relaxed (30 of them are the Artifact Viewer documents, 17 the Drift documents)', () => {
   const kinds = Object.values(FIXTURES).map((f) => f.kind);
-  assert.equal(kinds.length, 104);
-  assert.equal(kinds.filter((k) => k === 'valid').length, 89);
+  assert.equal(kinds.length, 121);
+  assert.equal(kinds.filter((k) => k === 'valid').length, 102);
   assert.equal(kinds.filter((k) => k === 'host').length, 4);
-  assert.equal(kinds.filter((k) => k === 'relaxed').length, 11);
+  assert.equal(kinds.filter((k) => k === 'relaxed').length, 15);
   const artifact = Object.values(FIXTURES).filter((f) => f.schema.startsWith('Artifact'));
   assert.equal(artifact.length, 30);
   assert.equal(artifact.filter((f) => f.kind === 'valid').length, 27);
@@ -28,6 +28,8 @@ test('the inventory has 104 fixtures: 89 valid, 4 host, 11 relaxed (30 of them a
   assert.equal(bySchema('WorkPackage'), 27);
   assert.equal(bySchema('WorkPackageDetail') + bySchema('WorkPackageDetailRefusal'), 21);
   assert.equal(bySchema('WorkPackageDetailRefusal'), 2);
+  assert.equal(bySchema('DriftReport'), 15);
+  assert.equal(bySchema('DriftRefusal'), 2);
   for (const f of Object.values(FIXTURES)) {
     assert.equal(f.kind === 'relaxed', typeof f.relaxation === 'string');
   }
@@ -36,7 +38,7 @@ test('the inventory has 104 fixtures: 89 valid, 4 host, 11 relaxed (30 of them a
 test('every relaxation named by a fixture exists, and every relaxation is used', () => {
   const used = new Set(Object.values(FIXTURES).filter((f) => f.relaxation).map((f) => f.relaxation));
   assert.deepEqual([...used].sort(), Object.keys(RELAXATIONS).sort());
-  assert.equal(used.size, 9);
+  assert.equal(used.size, 10);
   for (const [name, def] of Object.entries(FIXTURES).filter(([, f]) => f.relaxation)) {
     assert.ok(relaxationSchemas(RELAXATIONS[def.relaxation]).includes(def.schema), `${name}: the fixture and its relaxation name the same schema`);
   }
@@ -105,6 +107,7 @@ const NEW_RELAXATIONS = [
   ['provisional-omittable', 'wpStalenessOmitted', (d) => { delete d.readiness; }],
   ['detail-omittable', 'detailOmittedProvisional', (d) => { delete d.ownedFiles; }],
   ['health-open', 'projectUnknownHealth', (d) => { d.health = 7; }],
+  ['drift-vocabulary-open', 'reportUnknownKind', (d) => { d.findings[0].artifactPath = 7; }],
 ];
 
 test('each new relaxation: passes relaxed, fails strict, every strict error at an allowed place, reverted-must-fail', async () => {
@@ -123,7 +126,7 @@ test('each new relaxation: passes relaxed, fails strict, every strict error at a
     assert.equal((await relaxedValidate(rel.schema, name, defective)).valid, false, `${name}: a second defect still fails the relaxed schema`);
     n += 1;
   }
-  assert.equal(n, 5);
+  assert.equal(n, 6);
 });
 
 test('wp-lane-open and detail-lane-open: a number or an object is still refused, a null lane is accepted only where the contract allows it', async () => {
@@ -259,4 +262,87 @@ test('the allowed patterns of the Artifact relaxations cover them and nothing wi
   const code = RELAXATIONS['refusal-code-open'].allowedPath;
   assert.ok(code.test('/code'));
   for (const no of ['/codes', '/status', '/code/x', '', '/title']) assert.equal(code.test(no), false, no);
+});
+
+// ---- drift-vocabulary-open (mission-ui#10): the five vocabulary fields and the two lane words of a Drift finding ----
+const driftBase = () => structuredClone(loadExamples(ROOT)['DriftReport.populated']);
+const driftRelaxed = async (doc) => validateWith(compile(relaxedSchema(await loadSchema(ROOT, 'DriftReport'), RELAXATIONS['drift-vocabulary-open'])), doc);
+const driftStrict = async (doc) => validateWith(compile(await loadSchema(ROOT, 'DriftReport')), doc);
+
+test('drift-vocabulary-open: the pristine example passes both schemas (positive control for every case below)', async () => {
+  assert.equal((await driftStrict(driftBase())).valid, true);
+  assert.equal((await driftRelaxed(driftBase())).valid, true);
+});
+
+test('drift-vocabulary-open: each of the five vocabulary fields and both lane words fails strict (red) and passes relaxed (green), at an allowed path only', async () => {
+  // [path of the word in the populated example, a foreign word]
+  const cases = [
+    ['kind', (d) => { d.findings[0].kind = 'derived_view_stale'; }],
+    ['severity', (d) => { d.findings[0].severity = 'info'; }],
+    ['authority', (d) => { d.findings[0].authority = 'operator'; }],
+    ['derivedSide', (d) => { d.findings[0].derivedSide = 'meta_json'; }],
+    ['remedy', (d) => { d.findings[1].remedy = 'rebuild_lanes'; }],
+    ['persistedStatusLane', (d) => { d.findings[1].laneComparison[0].persistedStatusLane = 'on_hold'; }],
+    ['derivedStatusLane', (d) => { d.findings[1].laneComparison[0].derivedStatusLane = 'on_hold'; }],
+  ];
+  const rel = RELAXATIONS['drift-vocabulary-open'];
+  let n = 0;
+  for (const [field, change] of cases) {
+    const doc = driftBase();
+    change(doc);
+    const strict = await driftStrict(doc);
+    assert.equal(strict.valid, false, `${field}: red without the relaxation`);
+    assert.ok(strict.errors.length > 0 && strict.errors.every((e) => e.path.endsWith(field) && errorAllowed(rel, e)), `${field}: ${JSON.stringify(strict.errors.slice(0, 2))}`);
+    const relaxed = await driftRelaxed(doc);
+    assert.equal(relaxed.valid, true, `${field}: green with it: ${JSON.stringify(relaxed.errors.slice(0, 2))}`);
+    n += 1;
+  }
+  assert.equal(n, 7);
+});
+
+test('drift-vocabulary-open: only the vocabulary is open. A number, an empty word, a null where null is not allowed and a second defect still fail', async () => {
+  const bad = [
+    ['kind as a number', (d) => { d.findings[0].kind = 7; }],
+    ['an empty severity', (d) => { d.findings[0].severity = ''; }],
+    ['a null authority', (d) => { d.findings[0].authority = null; }],
+    ['a null kind', (d) => { d.findings[0].kind = null; }],
+    ['a null derivedSide', (d) => { d.findings[0].derivedSide = null; }],
+    ['a numeric remedy', (d) => { d.findings[1].remedy = 3; }],
+    ['a numeric lane word', (d) => { d.findings[1].laneComparison[0].persistedStatusLane = 5; }],
+    ['a lowercase sourceCode (a pattern, never relaxed)', (d) => { d.findings[1].sourceCode = 'snapshot_drift'; }],
+    ['a null missionId', (d) => { d.findings[0].missionId = null; }],
+    ['a bad artifactPath', (d) => { d.findings[0].artifactPath = '/abs'; }],
+    ['an extra property', (d) => { d.findings[0].extra = true; }],
+    ['a missing laneComparison', (d) => { delete d.findings[0].laneComparison; }],
+    ['truncated as a string', (d) => { d.truncated = 'no'; }],
+    ['a foreign kind AND a bad path', (d) => { d.findings[0].kind = 'derived_view_stale'; d.findings[0].artifactPath = ''; }],
+  ];
+  let n = 0;
+  for (const [what, change] of bad) {
+    const doc = driftBase();
+    change(doc);
+    assert.equal((await driftRelaxed(doc)).valid, false, what);
+    n += 1;
+  }
+  assert.equal(n, 14);
+  const nullRemedy = driftBase();
+  nullRemedy.findings[1].remedy = null;
+  assert.equal((await driftRelaxed(nullRemedy)).valid, true, 'a null remedy stays valid');
+});
+
+test('drift-vocabulary-open: the allowed-path pattern covers the seven fields and nothing wider', () => {
+  const p = RELAXATIONS['drift-vocabulary-open'].allowedPath;
+  for (const ok of ['/findings/0/kind', '/findings/12/severity', '/findings/3/authority', '/findings/0/derivedSide', '/findings/9/remedy', '/findings/0/laneComparison/4/persistedStatusLane', '/findings/0/laneComparison/0/derivedStatusLane']) assert.ok(p.test(ok), ok);
+  for (const no of ['/findings', '/findings/0', '/findings/0/missionId', '/findings/0/artifactPath', '/findings/0/sourceCode', '/findings/0/summary', '/findings/0/laneComparison', '/findings/0/laneComparison/0/wpId', '/findings/x/kind', '/truncated', '/scannedAt', '/findings/0/kind/extra']) assert.equal(p.test(no), false, no);
+});
+
+test('drift-vocabulary-open: the relaxed schema does not leak into the strict one, and the pristine schema is untouched', async () => {
+  const pristine = await loadSchema(ROOT, 'DriftReport');
+  const before = JSON.stringify(pristine);
+  relaxedSchema(pristine, RELAXATIONS['drift-vocabulary-open']);
+  assert.equal(JSON.stringify(pristine), before);
+  const doc = driftBase();
+  doc.findings[0].kind = 'derived_view_stale';
+  assert.equal((await driftRelaxed(doc)).valid, true);
+  assert.equal((await driftStrict(doc)).valid, false);
 });

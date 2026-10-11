@@ -34,6 +34,17 @@
     that are tab stops only while they overflow, long paths, deep nesting, 1000 entries and a 256 KiB document.
   - Integration and baselines: the 45 dark-theme baselines (255 in total), the row-to-story test in `test:scripts`, the host
     composition test and NFR-006 timings (best of three after a warm-up).
+- `sk-drift-screen` (screen): the findings of a drift scan and the detail of the chosen one. Eleven properties (`status`,
+  `report`, `selectedFinding`, `missionId`, `missions`, `rescanning`, `copyResult`, `refusalCode`, `now`, `labels`,
+  `errorMessage`) and six events (`sk-select-finding`, `sk-rescan-drift`, `sk-copy-command`, `sk-open-mission`,
+  `sk-open-missions`, `sk-retry-load`). Regions: header with last scan and Rescan, finding list, detail (kicker, title,
+  explanation, authority panel, lane comparison table, suggested resolution with Copy, facts); `loading`, `empty`, `error`,
+  `not-found` and nothing-chosen states, a truncation note, three responsive tiers. The host owns the clipboard and the
+  selection. Every kind, severity, authority and remedy word is read from `src/defaults/` (`#10`).
+- Drift logic (`src/logic`): the pure `drift-finding`, `drift-report`, `drift-keys`, `drift-announce` and `drift-retry` modules, and the
+  `drift-copy` vocabulary in `src/defaults`; optional `LabelHooks` members (`kind`, `severity`, `authority`, `derivedSide`, `refusal`);
+  `sk-retry-load` gains the member `{ target: 'drift-report' }` (`DriftRetryDetail`, joined to `RetryLoadEventDetail` in `src/retry-types.ts` only, as `SkArtifactRetryDetail` is); the `data-driven` gate is extended to the Drift
+  vocabulary (`#10`).
 - `sk-work-package-screen` (screen): one Work Package of a Mission. Ten properties (`status`, `detailStatus`,
   `detailRefusalCode`, `workPackage`, `detail`, `mission`, `wpId`, `now`, `labels`, `errorMessage`) and four events
   (`sk-select-work-package`, `sk-open-mission`, `sk-open-artifact`, `sk-retry-load`). Regions: header, facts, lane history,
@@ -100,6 +111,8 @@
 - 42 `Mission/Shell` stories (every tier at 1280, 1024, 800, 680, 390 and 320 wide, every status, focus, flyout and
   drawer states) with visual baselines. Each story tagged `vw-<n>` is asserted to render the tier its width belongs to
   before the screenshot is taken.
+- `DriftReportView`, `DriftFindingView`, `DriftFindingKey`, `DriftMissionName` (types) and `makeDriftReport` (bulk generator, 1000
+  findings by default) for the Drift screen (`#10`).
 
 ### Design library gaps
 

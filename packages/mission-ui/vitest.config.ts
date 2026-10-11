@@ -6,6 +6,8 @@ import { playwright } from '@vitest/browser-playwright';
 // together, so a wall-clock ceiling ("within 200 ms", an NFR budget) is never measured while other test files share the browser.
 // The ceilings themselves are unchanged. scripts/perf-split.test.mjs keeps the split exact in both directions.
 export default defineConfig({
+  // `typescript` is imported by the no-copy scan; pre-bundling it up front stops Vite reloading a running test.
+  optimizeDeps: { include: ['typescript'] },
   test: {
     attachmentsDir: 'test-results/attachments',
     browser: {

@@ -781,6 +781,219 @@ const EXCEPTIONS = [
     pinned: ['width'],
     pxProperties: ['width'],
   },
+  // ---- The Drift screen (mission-ui#10). CP-1 confirmed 2026-10-10 (tracer-design-decisions.md, research/cp1-evidence.md sections
+  // 4 to 7). Every entry is file-scoped to ONE part file of `sk-drift-screen/`, token-only except the pinned literals it names,
+  // and pinned to the exact values below: a value outside the list is refused in the file that carries the property, and the
+  // property is refused in every other file. Sunsets, each a design-library issue: E-35 a list-detail pane (spec-kitty/spec-kitty-design#530), E-36 a
+  // listbox/option element (spec-kitty/spec-kitty-design#527), E-37 the compact type and pill densities (G-1 and G-2 spec-kitty/spec-kitty-design#531, G-3 spec-kitty/spec-kitty-design#509, G-4
+  // spec-kitty/spec-kitty-design#526, G-5 spec-kitty/spec-kitty-design#529, G-6 spec-kitty/spec-kitty-design#516, G-7 and G-9 spec-kitty/spec-kitty-design#532, G-8 spec-kitty/spec-kitty-design#523, G-10 spec-kitty/spec-kitty-design#535, the data-table family spec-kitty/spec-kitty-design#533),
+  // E-38 a request-only copy field (spec-kitty/spec-kitty-design#534), E-39 text-wrap utilities (spec-kitty/spec-kitty-design#535), E-18 extension spec-kitty/spec-kitty-design#516. The table of files and values is pinned by scripts/stylelint-exceptions.test.mjs.
+  {
+    // E-35 (screen file only; sunset spec-kitty/spec-kitty-design#530): the 420 px list track and the list border; the one-column form (container width below 800 and
+    // `:host(:state(shell-mobile))`) needs only `minmax(0, 1fr)` and `0`, which this entry also pins.
+    id: 'E-35',
+    files: ['sk-drift-screen/sk-drift-screen.ts'],
+    properties: ['grid-template-columns', 'border-inline-end'],
+    strict: ['border-inline-end'],
+    keywords: { 'border-inline-end': ['solid'] },
+    values: { 'grid-template-columns': ['420px minmax(0, 1fr)', 'minmax(0, 1fr)'] },
+    pinned: ['grid-template-columns'],
+    pxProperties: ['grid-template-columns'],
+  },
+  {
+    // E-37 G-1 (screen type; sunset spec-kitty/spec-kitty-design#531): the page type size and the 1.5 line height, on the host.
+    id: 'E-37',
+    files: ['sk-drift-screen/sk-drift-screen.ts'],
+    properties: ['font-size', 'line-height'],
+    unstrict: ['line-height'],
+    values: { 'font-size': ['var(--sk-text-sm)'], 'line-height': ['1.5'] },
+    pinned: ['font-size', 'line-height'],
+  },
+  {
+    // E-36 (list file only): the finding option, a raw `button` with `role="option"`: its reset, its rule, the selected marker
+    // (`--sk-border-selected`, with a forced-colours `Highlight`) and the hover. Together with E-37 G-2 to G-4 for its text.
+    // Sunset spec-kitty/spec-kitty-design#527.
+    id: 'E-36',
+    files: ['sk-drift-screen/list-parts.ts'],
+    properties: ['border', 'background', 'color', 'font', 'text-align', 'border-block-end', 'border-inline-start', 'border-inline-start-color'],
+    strict: ['border-block-end', 'border-inline-start', 'border-inline-start-color'],
+    keywords: { border: ['solid'], 'border-block-end': ['solid'], 'border-inline-start': ['solid'], 'inline-size': ['100%'], 'border-inline-start-color': ['Highlight'] },
+    values: {
+      background: ['transparent', 'var(--sk-surface-pill)', 'var(--sk-surface-card)'],
+      color: ['inherit'],
+      font: ['inherit'],
+      'text-align': ['start'],
+      'inline-size': ['100%'],
+      border: ['0'],
+    },
+    pinned: ['background', 'color', 'font', 'text-align', 'inline-size', 'border'],
+  },
+  {
+    // E-37 (G-2 mono and muted, G-3 eyebrow, G-4 outlined mono pill, G-5 header band, G-6 detail title, G-7 buttons with the
+    // F-3 pinned 44 px height, G-8 Facts, G-9 the busy Rescan start padding, G-10 the authority pill wraps): one entry per file, the values the packet measured and nothing else.
+    // Sunsets: G-5 spec-kitty/spec-kitty-design#529, G-6 spec-kitty/spec-kitty-design#516, G-7 and G-9 spec-kitty/spec-kitty-design#532, G-8 spec-kitty/spec-kitty-design#523, G-10 spec-kitty/spec-kitty-design#535.
+    id: 'E-37',
+    files: ['sk-drift-screen/header-parts.ts'],
+    properties: ['font-family', 'color', 'font-size', 'font-weight', 'letter-spacing', 'line-height', 'border-block-end', 'min-block-size', 'padding-inline-start'],
+    strict: ['font-family', 'font-weight', 'letter-spacing', 'border-block-end', 'padding-inline-start'],
+    unstrict: ['line-height'],
+    keywords: { 'letter-spacing': ['-0.01em'], 'border-block-end': ['solid'] },
+    values: {
+      'padding-inline-start': ['var(--sk-space-7)'],
+      'font-family': ['var(--sk-font-mono)', 'var(--sk-font-display)'],
+      color: ['var(--sk-fg-muted)', 'var(--sk-fg-default)', 'var(--sk-fg-body)'],
+      'font-size': ['var(--sk-text-2xl)', 'var(--sk-text-sm)'],
+      'font-weight': ['var(--sk-weight-semibold)'],
+      'letter-spacing': ['-0.01em'],
+      'line-height': ['1.2'],
+      'min-block-size': ['44px'],
+    },
+    pinned: ['font-family', 'color', 'font-size', 'font-weight', 'letter-spacing', 'line-height', 'min-block-size', 'padding-inline-start'],
+    pxProperties: ['min-block-size'],
+    emProperties: ['letter-spacing'],
+  },
+  {
+    // E-37 list file: G-2 spec-kitty/spec-kitty-design#531, G-3 spec-kitty/spec-kitty-design#509, G-4 spec-kitty/spec-kitty-design#526.
+    id: 'E-37',
+    files: ['sk-drift-screen/list-parts.ts'],
+    properties: ['font-family', 'font-size', 'font-weight', 'letter-spacing', 'text-transform', 'line-height'],
+    strict: ['font-family', 'font-weight', 'letter-spacing'],
+    unstrict: ['line-height'],
+    keywords: { 'letter-spacing': ['0.08em'], border: ['solid'] },
+    values: {
+      'font-family': ['var(--sk-font-mono)'],
+      color: ['var(--sk-fg-muted)', 'var(--sk-fg-subtle)'],
+      'font-size': ['var(--sk-text-xs)'],
+      'font-weight': ['var(--sk-weight-semibold)', 'var(--sk-weight-normal)'],
+      'letter-spacing': ['0.08em'],
+      'text-transform': ['uppercase'],
+      'line-height': ['1.2'],
+      border: ['var(--sk-border-width-1) solid currentColor'],
+    },
+    pinned: ['font-family', 'color', 'font-size', 'font-weight', 'letter-spacing', 'text-transform', 'line-height', 'border'],
+    emProperties: ['letter-spacing'],
+  },
+  {
+    // E-37 detail file: G-3 spec-kitty/spec-kitty-design#509, G-8 Facts spec-kitty/spec-kitty-design#523.
+    id: 'E-37',
+    files: ['sk-drift-screen/detail-parts.ts'],
+    properties: ['font-family', 'color', 'font-size', 'font-weight', 'letter-spacing', 'text-transform', 'line-height', 'text-align', 'white-space'],
+    strict: ['font-family', 'font-weight', 'letter-spacing'],
+    unstrict: ['line-height'],
+    // G-10 (sunset spec-kitty/spec-kitty-design#535): `white-space: normal` (with the E-39 `overflow-wrap: anywhere`) on the authority pill's part, this file only.
+    // The G-4 pill rule (border, 1.2 line) lives once, in list-parts.ts.
+    keywords: { 'letter-spacing': ['0.08em'], 'white-space': ['normal'] },
+    values: {
+      'font-family': ['var(--sk-font-mono)', 'var(--sk-font-display)'],
+      color: ['var(--sk-fg-muted)', 'var(--sk-fg-subtle)', 'var(--sk-fg-default)'],
+      'font-size': ['var(--sk-text-xs)', 'var(--sk-text-lg)', 'var(--sk-text-sm)'],
+      'font-weight': ['var(--sk-weight-semibold)', 'var(--sk-weight-normal)', 'var(--sk-weight-bold)'],
+      'letter-spacing': ['0.08em'],
+      'text-transform': ['uppercase'],
+      'line-height': ['1.3'],
+      'text-align': ['start'],
+      'white-space': ['normal'],
+    },
+    pinned: ['font-family', 'color', 'font-size', 'font-weight', 'letter-spacing', 'text-transform', 'line-height', 'text-align', 'white-space'],
+    emProperties: ['letter-spacing'],
+  },
+  {
+    // E-37 (F-2 option C): the library data-table family keeps its frame; cells are mono, headers are eyebrows with 0.06em. Sunset spec-kitty/spec-kitty-design#533.
+    id: 'E-37',
+    files: ['sk-drift-screen/table-parts.ts'],
+    properties: ['font-family', 'color', 'font-size', 'letter-spacing', 'text-transform'],
+    strict: ['font-family', 'letter-spacing'],
+    keywords: { 'letter-spacing': ['0.06em'] },
+    values: {
+      'font-family': ['var(--sk-font-mono)'],
+      color: ['var(--sk-fg-subtle)', 'var(--sk-fg-body)'],
+      'font-size': ['var(--sk-text-xs)'],
+      'letter-spacing': ['0.06em'],
+      'text-transform': ['uppercase'],
+    },
+    pinned: ['font-family', 'color', 'font-size', 'letter-spacing', 'text-transform'],
+    emProperties: ['letter-spacing'],
+  },
+  {
+    // E-37 (G-3 eyebrow for "Suggested resolution", G-2 mono command, G-7 and F-3 for Copy). Sunsets: G-3 spec-kitty/spec-kitty-design#509, G-2 spec-kitty/spec-kitty-design#531, G-7 spec-kitty/spec-kitty-design#532.
+    id: 'E-37',
+    files: ['sk-drift-screen/resolution-parts.ts'],
+    properties: ['font-family', 'color', 'font-size', 'font-weight', 'letter-spacing', 'text-transform', 'min-block-size'],
+    strict: ['font-family', 'font-weight', 'letter-spacing'],
+    keywords: { 'letter-spacing': ['0.08em'] },
+    values: {
+      'font-family': ['var(--sk-font-mono)'],
+      color: ['var(--sk-fg-subtle)', 'var(--sk-fg-muted)', 'var(--sk-fg-body)'],
+      'font-size': ['var(--sk-text-xs)', 'var(--sk-text-sm)'],
+      'font-weight': ['var(--sk-weight-semibold)'],
+      'letter-spacing': ['0.08em'],
+      'text-transform': ['uppercase'],
+      // 44 px: the Copy button (F-3). 1.5em: the result region keeps one line so a result does not shift the layout (WP04 review addendum).
+      'min-block-size': ['44px', '1.5em'],
+    },
+    pinned: ['font-family', 'color', 'font-size', 'font-weight', 'letter-spacing', 'text-transform', 'min-block-size'],
+    pxProperties: ['min-block-size'],
+    emProperties: ['letter-spacing', 'min-block-size'],
+  },
+  {
+    // E-37 G-3 for the panel label in the `sk-section-header` eyebrow slot (F-6). Sunset spec-kitty/spec-kitty-design#509.
+    id: 'E-37',
+    files: ['sk-drift-screen/panel-parts.ts'],
+    properties: ['font-family', 'color', 'font-size', 'font-weight', 'letter-spacing', 'text-transform'],
+    strict: ['font-family', 'font-weight', 'letter-spacing'],
+    keywords: { 'letter-spacing': ['0.08em'] },
+    values: {
+      'font-family': ['var(--sk-font-mono)'],
+      color: ['var(--sk-fg-subtle)'],
+      'font-size': ['var(--sk-text-xs)'],
+      'font-weight': ['var(--sk-weight-semibold)'],
+      'letter-spacing': ['0.08em'],
+      'text-transform': ['uppercase'],
+    },
+    pinned: ['font-family', 'color', 'font-size', 'font-weight', 'letter-spacing', 'text-transform'],
+    emProperties: ['letter-spacing'],
+  },
+  {
+    // E-38 (re-scoped at CP-1, F-1 option a): the command field is our own `code` beside an `sk-button`; the wrapper paints the
+    // prototype's field and the command wraps. Sunset: a request-only copy field in the library, spec-kitty/spec-kitty-design#534.
+    id: 'E-38',
+    files: ['sk-drift-screen/resolution-parts.ts'],
+    properties: ['border', 'border-radius', 'background', 'overflow-wrap'],
+    keywords: { border: ['solid'], 'overflow-wrap': ['anywhere'] },
+    values: {
+      border: ['var(--sk-border-width-1) solid var(--sk-border-default)'],
+      'border-radius': ['var(--sk-radius-md)'],
+      background: ['var(--sk-surface-muted)'],
+      'overflow-wrap': ['anywhere'],
+    },
+    pinned: ['border', 'border-radius', 'background', 'overflow-wrap'],
+  },
+  {
+    // E-39 (F-4): the Mission slug in a row and in the header breaks mid-word instead of widening its column. Sunset spec-kitty/spec-kitty-design#535.
+    id: 'E-39',
+    files: ['sk-drift-screen/header-parts.ts', 'sk-drift-screen/list-parts.ts', 'sk-drift-screen/detail-parts.ts'],
+    properties: ['overflow-wrap'],
+    keywords: { 'overflow-wrap': ['anywhere'] },
+    values: { 'overflow-wrap': ['anywhere'] },
+    pinned: ['overflow-wrap'],
+  },
+  {
+    // E-18 extension (CP-1): the Drift panel (`sk-card` plus `sk-section-header`, label in the eyebrow slot) restyles four things,
+    // each pinned to one value: border width, radius, padding, and the label-to-body gap (block margin 0, header row gap 0).
+    // The title size and weight of the Work Package panel are NOT part of this entry. Same sunset (spec-kitty/spec-kitty-design#516).
+    id: 'E-18',
+    files: ['sk-drift-screen/panel-parts.ts'],
+    properties: ['border-width', 'border-radius', 'padding', 'margin-block', 'row-gap'],
+    strict: ['border-width'],
+    values: {
+      'border-width': ['var(--sk-border-width-1)'],
+      'border-radius': ['var(--sk-radius-md)'],
+      padding: ['var(--sk-space-5)'],
+      'margin-block': ['0'],
+      'row-gap': ['0'],
+    },
+    pinned: ['border-width', 'border-radius', 'padding', 'margin-block', 'row-gap'],
+  },
 ];
 
 const LENGTH_UNITS = ['px', 'em', 'ch', 'vw', 'vh'];

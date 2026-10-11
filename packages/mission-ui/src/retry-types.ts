@@ -41,8 +41,14 @@ export type RetryLoadDetail = WorkPackageRetryMember | ProjectRetryDetail | Proj
 /** The Artifact Viewer's payload: the open content (with its path) or the whole listing. */
 export type SkArtifactRetryDetail = { missionId: string; target: 'content'; path: string } | { missionId: string; target: 'listing' };
 
+/** The Drift screen's payload: a whole-project scan has no Work Package, so `missionId` is null when unscoped. */
+export interface DriftRetryDetail {
+  missionId: string | null;
+  target: 'drift-report';
+}
+
 /** The payload of every `sk-retry-load`, whichever screen dispatches it. */
-export type RetryLoadEventDetail = RetryLoadDetail | SkArtifactRetryDetail;
+export type RetryLoadEventDetail = RetryLoadDetail | SkArtifactRetryDetail | DriftRetryDetail;
 
 declare global {
   interface HTMLElementEventMap {

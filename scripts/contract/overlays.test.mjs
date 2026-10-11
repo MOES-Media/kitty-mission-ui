@@ -30,7 +30,7 @@ test('tallyLanes of nothing is nine zeros', () => {
 
 test('the overlays build exactly the registered fixtures, in registry order', () => {
   assert.deepEqual(Object.keys(fixtures), Object.keys(FIXTURES));
-  assert.equal(Object.keys(fixtures).length, 104);
+  assert.equal(Object.keys(fixtures).length, 121);
 });
 
 // The declared values of contract-pin.md, "Declared derived values": [wpTotal, blockedCount, doneCount, donePercentage, W].

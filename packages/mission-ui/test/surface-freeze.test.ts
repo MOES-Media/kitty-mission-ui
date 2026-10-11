@@ -152,6 +152,8 @@ describe('surface freeze', () => {
       'sk-open-mission',
       'sk-open-mission',
       'sk-open-mission',
+      'sk-open-mission',
+      'sk-open-missions',
       'sk-open-missions',
     ]);
     expect(declared).not.toContain('sk-mission-open');
@@ -360,10 +362,10 @@ describe('surface freeze: the Projects screen (five properties, three events) an
       .filter(([, declaration]) => (declaration.events ?? []).some((e) => e.name === 'sk-retry-load'))
       .map(([tag]) => tag)
       .sort();
-    expect(retryDeclarers).toEqual(['sk-artifact-screen', 'sk-open-project-dialog', 'sk-projects-screen', 'sk-work-package-screen']);
+    expect(retryDeclarers).toEqual(['sk-artifact-screen', 'sk-drift-screen', 'sk-open-project-dialog', 'sk-projects-screen', 'sk-work-package-screen']);
     // `some` per tag would pass a component that declares the event twice: count every declaration of the name.
     const retryDeclarations = [...declarations.values()].reduce((total, declaration) => total + (declaration.events ?? []).filter((e) => e.name === 'sk-retry-load').length, 0);
-    expect(retryDeclarations).toBe(4);
+    expect(retryDeclarations).toBe(5);
   });
 
   it('marks the Projects screen, and not the dialog, as a screen with the `@screen` line the manifest gate looks for', async () => {
@@ -555,5 +557,181 @@ describe('surface freeze: the Artifact Viewer (thirteen properties, five events)
     // Positive control: the other events do not carry the word, so the assertion is about this event's own text.
     const other = (declarations.get(tag)?.events ?? []).find((e) => e.name === 'sk-open-mission') as { description?: string } | undefined;
     expect(other?.description ?? '').not.toContain('untrusted');
+  });
+});
+
+describe('surface freeze: the Drift screen (eleven properties, six events)', () => {
+  const tag = 'sk-drift-screen';
+  // tag, property, attribute (undefined = property only), default
+  const DRIFT: [string, string | undefined, unknown][] = [
+    ['status', 'status', 'loading'],
+    ['report', undefined, null],
+    ['selectedFinding', undefined, null],
+    ['missionId', 'mission-id', ''],
+    ['missions', undefined, null],
+    ['rescanning', 'rescanning', false],
+    ['copyResult', 'copy-result', null],
+    ['refusalCode', 'refusal-code', null],
+    ['now', 'now', null],
+    ['labels', undefined, null],
+    ['errorMessage', 'error-message', ''],
+  ];
+  const ATTRIBUTES = ['copy-result', 'error-message', 'mission-id', 'now', 'refusal-code', 'rescanning', 'status'];
+
+  it('is registered and listed in the committed manifest', () => {
+    expect(customElements.get(tag)).toBeDefined();
+    expect(declarations.has(tag)).toBe(true);
+  });
+
+  it('has exactly eleven properties, each with its attribute and default in the manifest', () => {
+    expect(DRIFT).toHaveLength(11);
+    const declared = (declarations.get(tag)?.members ?? []).filter((m) => m.kind === 'field');
+    expect(declared.map((m) => m.name).sort()).toEqual(DRIFT.map(([name]) => name).sort());
+    expect(declared).toHaveLength(11);
+    let checked = 0;
+    for (const [name, attribute] of DRIFT) {
+      const member = declared.find((m) => m.name === name);
+      expect(member?.attribute, `${name} attribute`).toBe(attribute);
+      expect(member?.default, `${name} default`).toBeDefined();
+      checked += 1;
+    }
+    expect(checked).toBe(11);
+  });
+
+  it('has none of the properties the contract deliberately lacks', () => {
+    const names = (declarations.get(tag)?.members ?? []).map((m) => m.name);
+    let checked = 0;
+    for (const absent of ['findings', 'sort', 'sortBy', 'filter', 'page', 'pageInfo', 'cursor', 'clipboard', 'selectedIndex']) {
+      expect(names, absent).not.toContain(absent);
+      checked += 1;
+    }
+    expect(checked).toBe(9);
+  });
+
+  it('gives every property its contract default at run time', () => {
+    const el = document.createElement(tag) as unknown as Record<string, unknown>;
+    let checked = 0;
+    for (const [name, , expected] of DRIFT) {
+      expect(el[name], name).toEqual(expected);
+      checked += 1;
+    }
+    expect(checked).toBe(11);
+  });
+
+  it('declares exactly the six events, the three new ones among them, no slot and no part', () => {
+    const names = (declarations.get(tag)?.events ?? []).map((e) => e.name).sort();
+    expect(names).toEqual(['sk-copy-command', 'sk-open-mission', 'sk-open-missions', 'sk-rescan-drift', 'sk-retry-load', 'sk-select-finding']);
+    expect(declarations.get(tag)?.events).toHaveLength(6);
+    expect(declarations.get(tag)?.slots ?? []).toEqual([]);
+    expect(declarations.get(tag)?.cssParts ?? []).toEqual([]);
+  });
+
+  it('declares exactly the attributes of the contract, and every other property is property-only', () => {
+    expect((declarations.get(tag)?.attributes ?? []).map((a) => a.name).sort()).toEqual(ATTRIBUTES);
+    const ctor = customElements.get(tag) as unknown as { elementProperties: Map<string, unknown>; observedAttributes: string[] };
+    expect([...ctor.elementProperties.keys()].sort()).toEqual(DRIFT.map(([name]) => name).sort());
+    expect(ctor.elementProperties.size).toBe(11);
+    expect([...ctor.observedAttributes].sort()).toEqual(ATTRIBUTES);
+  });
+
+  it('reflects status, and neither rescanning nor copyResult', async () => {
+    const screen = document.createElement(tag) as HTMLElement & { status: string; rescanning: boolean; copyResult: string | null };
+    document.body.append(screen);
+    screen.status = 'not-found';
+    screen.rescanning = true;
+    screen.copyResult = 'copied';
+    await (screen as unknown as { updateComplete: Promise<boolean> }).updateComplete;
+    expect(screen.getAttribute('status')).toBe('not-found');
+    expect(screen.hasAttribute('rescanning')).toBe(false);
+    expect(screen.hasAttribute('copy-result')).toBe(false);
+    screen.remove();
+  });
+
+  it('reads its attributes: mission-id, rescanning, copy-result, refusal-code, now and error-message', async () => {
+    const screen = document.createElement(tag) as unknown as HTMLElement & Record<string, unknown>;
+    screen.setAttribute('mission-id', 'M1');
+    screen.setAttribute('rescanning', '');
+    screen.setAttribute('copy-result', 'manual');
+    screen.setAttribute('refusal-code', 'x_code');
+    screen.setAttribute('now', '2026-10-06T09:00:00Z');
+    screen.setAttribute('error-message', 'words');
+    document.body.append(screen);
+    await (screen as unknown as { updateComplete: Promise<boolean> }).updateComplete;
+    expect([screen['missionId'], screen['rescanning'], screen['copyResult'], screen['refusalCode'], screen['now'], screen['errorMessage']]).toEqual(['M1', true, 'manual', 'x_code', '2026-10-06T09:00:00Z', 'words']);
+    screen.remove();
+  });
+
+  it('declares no method of its own beyond the lifecycle hooks, the six dispatch methods and the private helpers', () => {
+    // The screen file is frozen after this work package: a new method, public or not, is a change of the file and shows here.
+    const proto = customElements.get(tag)?.prototype as object;
+    const own = Object.getOwnPropertyNames(proto).filter((name) => typeof Object.getOwnPropertyDescriptor(proto, name)?.value === 'function');
+    expect(own.sort()).toEqual(
+      [
+        'constructor',
+        'copyCommand',
+        'detailProps',
+        'effectiveState',
+        'focusFellToBody',
+        'headerProps',
+        'listProps',
+        'manualReadBack',
+        'moveFocusIntoView',
+        'openMission',
+        'openMissions',
+        'render',
+        'renderDetailRegion',
+        'renderReady',
+        'renderState',
+        'rescanDrift',
+        'retryLoad',
+        'selectFinding',
+        'selectedPosition',
+        'selectedView',
+        'shownCopyResult',
+        'shownReport',
+        'stateProps',
+        'updated',
+        'willUpdate',
+      ].sort(),
+    );
+    expect((declarations.get(tag)?.members ?? []).filter((m) => m.kind === 'method')).toEqual([]);
+  });
+
+  it('exports the element, every view type a host needs and the event detail types from the package entry (compile-time)', async () => {
+    const entry = await import('../src/index.js');
+    expect(entry.SkDriftScreen).toBeDefined();
+    const screen = new entry.SkDriftScreen();
+    // Compile-time: these names must resolve from the package entry, or `tsc` fails this file.
+    const report: import('../src/index.js').DriftReportView | null = screen.report;
+    const key: import('../src/index.js').DriftFindingKey | null = screen.selectedFinding;
+    const names: Readonly<Record<string, import('../src/index.js').DriftMissionName>> | null = screen.missions;
+    const status: import('../src/index.js').DriftScreenStatus = screen.status;
+    const copy: import('../src/index.js').DriftCopyResult | null = screen.copyResult;
+    const hooks: import('../src/index.js').LabelHooks | null = screen.labels;
+    const contract: import('../src/index.js').DriftReport | null = null;
+    const finding: import('../src/index.js').DriftFinding | null = null;
+    const view: [import('../src/index.js').DriftFindingView | null, import('../src/index.js').LaneComparisonView | null] = [null, null];
+    const refusal: [import('../src/index.js').DriftRefusal | null, import('../src/index.js').DriftRefusalCode | null] = [null, null];
+    // the Drift member joins the event union only; `RetryLoadDetail` (the Work Package and Projects payload) stays exact
+    const retry: import('../src/index.js').RetryLoadEventDetail = { missionId: null, target: 'drift-report' };
+    // @ts-expect-error the Drift member is not part of RetryLoadDetail
+    const notWp: import('../src/index.js').RetryLoadDetail = { missionId: null, target: 'drift-report' };
+    void notWp;
+    const drift: import('../src/index.js').DriftRetryDetail = { missionId: null, target: 'drift-report' };
+    const details: [
+      import('../src/index.js').SkSelectFindingDetail,
+      import('../src/index.js').SkRescanDriftDetail,
+      import('../src/index.js').SkCopyCommandDetail,
+      import('../src/index.js').SkDriftRetryLoadDetail,
+    ] = [{ missionId: 'm', kind: 'k', artifactPath: 'p' }, { missionId: null }, { text: 't', missionId: 'm', remedy: 'r' }, drift];
+    expect([report, key, names, status, copy, hooks, contract, finding, view, refusal, retry.target, details.length]).toEqual([null, null, null, 'loading', null, null, null, null, [null, null], [null, null], 'drift-report', 4]);
+    // the three new events are typed on HTMLElementEventMap: the detail needs no cast
+    screen.addEventListener('sk-select-finding', (event) => void event.detail.artifactPath);
+    screen.addEventListener('sk-rescan-drift', (event) => void event.detail.missionId);
+    screen.addEventListener('sk-copy-command', (event) => void event.detail.text);
+    // a listener for `sk-retry-load` on this screen sees the Drift member without a cast (it falls out of the event map if the member does)
+    screen.addEventListener('sk-retry-load', (event) => {
+      if (event.detail.target === 'drift-report') void event.detail.missionId;
+    });
   });
 });

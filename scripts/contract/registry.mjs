@@ -116,6 +116,26 @@ export const FIXTURES = {
   contentBom: f('ArtifactContent', 'valid', 'ArtifactContent'),
   contentPrompt: f('ArtifactContent', 'valid', 'ArtifactContent'),
   contentReviewCycle: f('ArtifactContent', 'valid', 'ArtifactContent'),
+
+  // ---- Drift screen (mission-ui#10): the six contract examples and eleven overlays. The 1000-finding report is NOT here:
+  // bulk.ts generates it and gate `contract` validates it (check.mjs, checkBulk), as for the 500-Mission page. ----
+  reportPopulated: f('DriftReport', 'valid', 'DriftReport'),
+  reportClean: f('DriftReport', 'valid', 'DriftReport'),
+  reportCorruptJson: f('DriftReport', 'valid', 'DriftReport'),
+  reportTruncated: f('DriftReport', 'valid', 'DriftReport'),
+  refusalMissionNotFound: f('DriftRefusal', 'valid', 'DriftRefusal'),
+  refusalScanUnreadable: f('DriftRefusal', 'valid', 'DriftRefusal'),
+  reportUnknownKind: f('DriftReport', 'relaxed', 'DriftReportView', 'drift-vocabulary-open'),
+  reportUnknownSeverity: f('DriftReport', 'relaxed', 'DriftReportView', 'drift-vocabulary-open'),
+  reportUnknownAuthority: f('DriftReport', 'relaxed', 'DriftReportView', 'drift-vocabulary-open'),
+  reportUnknownRemedy: f('DriftReport', 'relaxed', 'DriftReportView', 'drift-vocabulary-open'),
+  reportUnknownSourceCode: f('DriftReport', 'valid', 'DriftReport'),
+  reportOneSidedLane: f('DriftReport', 'valid', 'DriftReport'),
+  reportManyLanes: f('DriftReport', 'valid', 'DriftReport'),
+  reportLongSlugMission: f('DriftReport', 'valid', 'DriftReport'),
+  reportMissionUnlisted: f('DriftReport', 'valid', 'DriftReport'),
+  reportScoped: f('DriftReport', 'valid', 'DriftReport'),
+  reportScopedForeign: f('DriftReport', 'valid', 'DriftReport'),
 };
 
 /** Every distinct `satisfies` target, for the generated import line. */
@@ -218,6 +238,20 @@ export const RELAXATIONS = {
     patch(schema) {
       // the LAST allOf entry is the one that carries the closed seven-value code enum
       schema.allOf[schema.allOf.length - 1].properties.code = { type: 'string', minLength: 1 };
+    },
+  },
+  // ---- mission-ui#10: the vocabularies of a Drift finding are provisional and a client must tolerate a word it does not know ----
+  'drift-vocabulary-open': {
+    schema: 'DriftReport',
+    description: 'DriftFinding.kind, severity, authority, derivedSide and remedy (or null) and LaneComparison.persistedStatusLane and derivedStatusLane (or null) become open strings; sourceCode is a pattern and needs no widening',
+    allowedPath: /^\/findings\/\d+\/(?:kind|severity|authority|derivedSide|remedy|laneComparison\/\d+\/(?:persisted|derived)StatusLane)$/,
+    patch(schema) {
+      const finding = schema.properties.findings.items.properties;
+      for (const field of ['kind', 'severity', 'authority', 'derivedSide']) finding[field] = { type: 'string', minLength: 1 };
+      finding.remedy = { type: ['string', 'null'], minLength: 1 };
+      const row = finding.laneComparison.items.properties;
+      row.persistedStatusLane = { type: ['string', 'null'] };
+      row.derivedStatusLane = { type: ['string', 'null'] };
     },
   },
 };

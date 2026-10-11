@@ -1,0 +1,74 @@
+schema: review-findings/v1
+complete: true
+phase: plan
+lens_group: verify
+mission: drift-screen-01M4C93T
+# Profile debugger-debbie. Run in-session (see plan-gov.findings.yaml header).
+findings:
+  - id: PLAN-VERIFY-001
+    lens: "Silent-success"
+    severity: 4
+    title: "A copyResult left over from an earlier copy would announce \"Copied\" at the moment Copy is pressed, before the host has answered"
+    evidence:
+      - artifact: "spec.md § FR-021; operator-questions.md Q5 (a); contracts/sk-drift-screen.md (copyResult row)"
+    claim: "FR-021 says a result is shown only for the finding whose Copy was pressed, but not that a result already present at press time is stale. If the host forgets to reset copyResult, or resets it after the screen has re-rendered, the screen reports success for a copy that never happened or failed."
+    remediation: "The screen clears its displayed result and its pending key at press time and accepts as an answer only a CHANGE of copyResult observed after the press (in updated()); a value equal to the one present at press is ignored. Test: copyResult already 'copied' when Copy is pressed announces nothing until it changes to null and back, and a result for a different pending finding is dropped."
+  - id: PLAN-VERIFY-002
+    lens: "Falsifiability"
+    severity: 3
+    title: "DR-21 pass condition \"no flicker\" cannot fail"
+    evidence:
+      - artifact: "spec.md § State matrix DR-21"
+    claim: "A test cannot assert the absence of a visual flicker, so the row is vacuously passable."
+    remediation: "Reword to a DOM property: the option and detail elements present before the rescan are the same nodes after the new report arrives (no remount), the Rescan button keeps focus, aria-busy is true then false, and exactly one rescanned announcement is made."
+  - id: PLAN-VERIFY-003
+    lens: "Falsifiability / counts"
+    severity: 2
+    title: "The plan says 31 stories; the state matrix has 33 rows (DR-07a and DR-07b are two) and DR-09 has no story, so 32"
+    evidence:
+      - artifact: "spec.md § State matrix (DR-01..DR-32 with 07a/07b)"
+      - artifact: "plan.md Summary, Scale/Scope, Charter Check, IC-07, Traceability (31)"
+    claim: "A count that does not match the matrix makes the IC-07 exit check wrong from the start."
+    remediation: "Change every 31 to 32 in plan.md and state \"33 rows, 32 stories\"."
+  - id: PLAN-VERIFY-004
+    lens: "Sequencing / write scope"
+    severity: 3
+    title: "DR-01 and DR-24 (list plus detail together) are assigned to chains that cannot render them whole"
+    evidence:
+      - artifact: "plan.md § Traceability (DR-01..DR-08 to IC-05)"
+      - artifact: "plan.md § IC-04, IC-05 (parallel chains; the other chain's parts are stubs)"
+    claim: "In IC-05 the list part is a stub and in IC-04 the detail part is a stub, so the default ready story (DR-01) and the scoped story (DR-24) show a half screen in the lane that owns them and their side-by-side captures cannot be judged."
+    remediation: "DR-01 and DR-24 belong to IC-06 (after the merge of both chains); IC-04 and IC-05 captures are cropped to their own region and say so; the IC-04 and IC-05 exit checks name the region, not the whole screen."
+  - id: PLAN-VERIFY-005
+    lens: "Falsifiability"
+    severity: 3
+    title: "Listbox arrow semantics are unspecified (wrap or clamp, Left/Right, the case of one item)"
+    evidence:
+      - artifact: "spec.md § DR-17, FR-005"
+      - code: "kitty-desktop prototype.js bindArrowKeys: ArrowLeft/Up previous, ArrowRight/Down next, modulo wrap, Home/End"
+    claim: "Two implementers would pick different behaviour and the test cannot decide between them."
+    remediation: "Follow the prototype exactly: Up/Left previous and Down/Right next, wrapping, Home first and End last, no other keys, one item stays; pin it in logic/drift-keys.ts with a table test, and record the Left/Right acceptance as an a11y note rather than a drift."
+  - id: PLAN-VERIFY-006
+    lens: "Revert discipline"
+    severity: 2
+    title: "Exit checks of IC-04, IC-05 and IC-06 do not require a test that fails when the change is reverted"
+    evidence:
+      - artifact: "plan.md § IC-04, IC-05, IC-06 exit checks (IC-01, IC-02 have revert checks)"
+    claim: "The review-overlay's revert discipline is stated for two of the seven WPs only."
+    remediation: "Add \"each new test shown red against the reverted part\" to the exit checks of IC-03b to IC-07."
+  - id: PLAN-VERIFY-007
+    lens: "Silent-success"
+    severity: 2
+    title: "A ready report with a malformed shape (findings not an array) is not covered"
+    evidence:
+      - artifact: "data-model.md § effectiveState; spec.md § Edge Cases"
+    claim: "A host passing a hand-built object would make the screen throw in render or draw an empty list that reads as \"no drift\"."
+    remediation: "effectiveState treats a report whose findings is not an array as not loaded (loading look), never as clean, with a unit test and a foreign-shape story-free test."
+  - id: PLAN-VERIFY-008
+    lens: "Falsifiability"
+    severity: 2
+    title: "Behaviour when the host does not apply sk-select-finding is unspecified"
+    evidence:
+      - artifact: "spec.md § FR-022; research.md D-03"
+    claim: "Focus and tabindex move on arrow keys, aria-selected follows the property; a host that ignores the event leaves focus on one option and selection on another."
+    remediation: "State the controlled-component rule: aria-selected and the detail follow selectedFinding only; the roving focus is internal; after every update the roving tabindex re-syncs to the selected option when focus is not inside the list. Test with a host that ignores the event."

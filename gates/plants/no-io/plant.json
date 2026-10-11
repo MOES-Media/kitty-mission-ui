@@ -20,5 +20,16 @@
         "source": "plant-no-io-inline.ts.plant"
       }
     ]
+  },
+  {
+    "gate": "no-io",
+    "ciCommand": "pnpm lint:no-io && pnpm test:no-io",
+    "expectFailPattern": "plant-no-io-timer",
+    "overlays": [
+      {
+        "target": "packages/mission-ui/src/elements/plant-no-io-timer.ts",
+        "source": "plant-no-io-timer.ts.plant"
+      }
+    ]
   }
 ]

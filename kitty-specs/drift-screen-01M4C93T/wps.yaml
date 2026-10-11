@@ -1,0 +1,309 @@
+work_packages:
+- id: WP01
+  title: Drift contract wiring and fixtures
+  dependencies: []
+  owned_files:
+  - packages/mission-ui/src/contract/**
+  - scripts/contract/**
+  - gates/plants/contract/**
+  requirement_refs:
+  - FR-029
+  - FR-031
+  - C-002
+  - C-008
+  - C-012
+  - NFR-005
+  - NFR-007
+  plan_concern_refs:
+  - IC-01
+  subtasks:
+  - T001
+  - T002
+  - T003
+  - T004
+  - T005
+  - T006
+  prompt_file: tasks/WP01-drift-contract-wiring-fixtures.md
+  agent_profile: frontend-freddy
+  role: implementer
+  agent: claude
+- id: WP02
+  title: Defaults, logic, data-driven gate extension, hooks and retry member
+  dependencies:
+  - WP01
+  owned_files:
+  - packages/mission-ui/src/defaults/**
+  - packages/mission-ui/src/logic/**
+  - packages/mission-ui/test/drift-*.test.ts
+  - eslint.data-driven.config.mjs
+  - gates/data-driven.selftest.ts
+  - gates/fixtures/data-driven/**
+  - gates/plants/data-driven/**
+  requirement_refs:
+  - FR-007
+  - FR-011
+  - FR-013
+  - FR-014
+  - FR-019
+  - FR-020
+  - FR-021
+  - FR-022
+  - FR-026
+  - FR-027
+  - FR-028
+  - FR-031
+  - FR-033
+  - C-004
+  - C-007
+  - C-009
+  - NFR-005
+  - NFR-009
+  - NFR-010
+  plan_concern_refs:
+  - IC-02
+  subtasks:
+  - T007
+  - T008
+  - T009
+  - T010
+  - T011
+  - T012
+  prompt_file: tasks/WP02-drift-defaults-logic-gate-extension.md
+  agent_profile: frontend-freddy
+  role: implementer
+  agent: claude
+- id: WP03
+  title: Foundation spikes S1 to S6 and CP-1 evidence
+  dependencies:
+  - WP02
+  owned_files:
+  - spikes/ic-03a/**
+  requirement_refs:
+  - FR-024
+  - FR-030
+  - FR-032
+  - C-005
+  - C-006
+  - NFR-008
+  plan_concern_refs:
+  - IC-03
+  subtasks:
+  - T013
+  - T014
+  - T015
+  - T016
+  - T017
+  - T018
+  prompt_file: tasks/WP03-drift-foundation-spikes.md
+  agent_profile: frontend-freddy
+  role: implementer
+  agent: claude
+- id: WP04
+  title: Skeleton, layout and surface freeze
+  dependencies:
+  - WP03
+  owned_files:
+  - packages/mission-ui/src/elements/sk-drift-screen/sk-drift-screen.ts
+  - packages/mission-ui/src/elements/sk-drift-screen/panel-parts.ts
+  - packages/mission-ui/src/elements/sk-drift-screen/fixtures.ts
+  - packages/mission-ui/src/index.ts
+  - packages/mission-ui/custom-elements.json
+  - stylelint.config.mjs
+  - eslint.config.mjs
+  - scripts/stylelint-exceptions.test.mjs
+  - gates/plants/stylelint/**
+  - gates/plants/eslint/**
+  - packages/mission-ui/test/sk-drift-screen.skeleton.test.ts
+  - packages/mission-ui/test/surface-freeze.test.ts
+  requirement_refs:
+  - FR-001
+  - FR-008
+  - FR-024
+  - FR-030
+  - FR-031
+  - FR-032
+  - C-001
+  - C-005
+  - C-010
+  - NFR-005
+  plan_concern_refs:
+  - IC-03
+  subtasks:
+  - T019
+  - T020
+  - T021
+  - T022
+  - T023
+  - T024
+  prompt_file: tasks/WP04-drift-skeleton-layout-surface-freeze.md
+  agent_profile: frontend-freddy
+  role: implementer
+  agent: claude
+- id: WP05
+  title: Header, list, head and states (chain X)
+  dependencies:
+  - WP04
+  owned_files:
+  - packages/mission-ui/src/elements/sk-drift-screen/header-parts.ts
+  - packages/mission-ui/src/elements/sk-drift-screen/list-parts.ts
+  - packages/mission-ui/src/elements/sk-drift-screen/state-parts.ts
+  - packages/mission-ui/src/elements/sk-drift-screen/sk-drift-screen.list.stories.ts
+  - packages/mission-ui/src/elements/sk-drift-screen/sk-drift-screen.states.stories.ts
+  - packages/mission-ui/test/sk-drift-screen.events-list.test.ts
+  - packages/mission-ui/test/sk-drift-screen.list-keys.test.ts
+  - packages/mission-ui/test/sk-drift-screen.states.test.ts
+  - packages/mission-ui/test/sk-drift-screen.header.test.ts
+  requirement_refs:
+  - FR-002
+  - FR-003
+  - FR-004
+  - FR-005
+  - FR-006
+  - FR-007
+  - FR-008
+  - FR-009
+  - FR-018
+  - FR-019
+  - FR-020
+  - FR-022
+  - FR-025
+  - FR-026
+  - FR-031
+  - C-003
+  - C-005
+  - C-006
+  - NFR-003
+  - NFR-005
+  - NFR-008
+  - NFR-010
+  plan_concern_refs:
+  - IC-04
+  subtasks:
+  - T025
+  - T026
+  - T027
+  - T028
+  - T029
+  - T030
+  prompt_file: tasks/WP05-drift-header-list-states.md
+  agent_profile: frontend-freddy
+  role: implementer
+  agent: claude
+- id: WP06
+  title: Detail, lane table and resolution (chain Y)
+  dependencies:
+  - WP04
+  owned_files:
+  - packages/mission-ui/src/elements/sk-drift-screen/detail-parts.ts
+  - packages/mission-ui/src/elements/sk-drift-screen/table-parts.ts
+  - packages/mission-ui/src/elements/sk-drift-screen/resolution-parts.ts
+  - packages/mission-ui/src/elements/sk-drift-screen/sk-drift-screen.detail.stories.ts
+  - packages/mission-ui/test/sk-drift-screen.events-detail.test.ts
+  - packages/mission-ui/test/sk-drift-screen.detail.test.ts
+  - packages/mission-ui/test/sk-drift-screen.table.test.ts
+  - packages/mission-ui/test/sk-drift-screen.resolution.test.ts
+  requirement_refs:
+  - FR-010
+  - FR-011
+  - FR-012
+  - FR-013
+  - FR-014
+  - FR-015
+  - FR-016
+  - FR-017
+  - FR-021
+  - FR-027
+  - FR-031
+  - C-003
+  - C-005
+  - C-006
+  - C-008
+  - NFR-003
+  - NFR-005
+  - NFR-008
+  - NFR-010
+  plan_concern_refs:
+  - IC-05
+  subtasks:
+  - T031
+  - T032
+  - T033
+  - T034
+  - T035
+  - T036
+  prompt_file: tasks/WP06-drift-detail-table-resolution.md
+  agent_profile: frontend-freddy
+  role: implementer
+  agent: claude
+- id: WP07
+  title: Tiers, accessibility, edge cases and whole-screen stories
+  dependencies:
+  - WP05
+  - WP06
+  owned_files:
+  - packages/mission-ui/src/elements/sk-drift-screen/sk-drift-screen.screen.stories.ts
+  - packages/mission-ui/src/elements/sk-drift-screen/sk-drift-screen.tiers.stories.ts
+  - packages/mission-ui/test/sk-drift-screen.a11y.test.ts
+  - packages/mission-ui/test/sk-drift-screen.perf.test.ts
+  - packages/mission-ui/test/sk-drift-screen.time.test.ts
+  - packages/mission-ui/test/sk-drift-screen.tiers.test.ts
+  - packages/mission-ui/test/sk-drift-screen.edge.test.ts
+  requirement_refs:
+  - FR-024
+  - FR-025
+  - FR-026
+  - FR-031
+  - C-006
+  - NFR-003
+  - NFR-004
+  - NFR-006
+  - NFR-010
+  - NFR-011
+  plan_concern_refs:
+  - IC-06
+  subtasks:
+  - T037
+  - T038
+  - T039
+  - T040
+  - T041
+  - T042
+  prompt_file: tasks/WP07-drift-tiers-accessibility-edge-cases.md
+  agent_profile: frontend-freddy
+  role: implementer
+  agent: claude
+- id: WP08
+  title: Integration, 32 baselines and wrap-up inputs
+  dependencies:
+  - WP07
+  owned_files:
+  - apps/storybook/tests/visual/__snapshots__/mission-drift*.png
+  - packages/mission-ui/src/elements/sk-drift-screen/sk-drift-screen.shell.stories.ts
+  - scripts/drift-story-catalogue.test.mjs
+  - README.md
+  - CHANGELOG.md
+  - packages/mission-ui/README.md
+  - packages/mission-ui/CHANGELOG.md
+  - package.json
+  - .github/workflows/ci.yml
+  requirement_refs:
+  - FR-023
+  - FR-030
+  - FR-034
+  - C-006
+  - C-011
+  - NFR-001
+  - NFR-002
+  - NFR-008
+  plan_concern_refs:
+  - IC-07
+  subtasks:
+  - T043
+  - T044
+  - T045
+  - T046
+  - T047
+  prompt_file: tasks/WP08-drift-integration-baselines-docs.md
+  agent_profile: frontend-freddy
+  role: implementer
+  agent: claude

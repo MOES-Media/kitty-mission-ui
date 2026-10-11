@@ -2,6 +2,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { ESLint, Linter } from 'eslint';
 import { describe, expect, it, vi } from 'vitest';
+import { parse } from 'yaml';
 
 // The first lint call loads the TypeScript parser and the real-sources case lints the whole tree: a cold runner needs more than 5 s (the whole file runs in about 2 s warm; 30 s is ample and bounds a hang sooner).
 vi.setConfig({ testTimeout: 30_000 });
@@ -34,6 +35,13 @@ interface ConfigModule {
   ARTIFACT_CODES: string[];
   ARTIFACT_UNDERSCORED: string[];
   ARTIFACT_BARE_WORDS: string[];
+  DRIFT_KIND_WORDS: string[];
+  DRIFT_AUTHORITY_WORDS: string[];
+  DRIFT_SIDE_WORDS: string[];
+  DRIFT_REMEDY_WORDS: string[];
+  DRIFT_REFUSAL_WORDS: string[];
+  SOURCE_CODE_WORDS: string[];
+  DRIFT_WORDS: string[];
   S8B_METHODS: string[];
   ALLOW_LIST: string[];
 }
@@ -82,16 +90,31 @@ const EXPECTED_ARTIFACT_UNDERSCORED = ['review_cycle', 'work_package_prompt', 'd
 // Ordinary words: matched only in comparisons, case labels, includes, Map and Set calls and as object keys. `plan` and
 // `tasks` are phase words and already gated everywhere, so they are not repeated here.
 const EXPECTED_ARTIFACT_BARE_WORDS = ['spec', 'quickstart', 'research', 'contract', 'checklist', 'other'];
+// The Drift vocabulary (mission-ui#10): five enums read from the vendored schemas, written out here independently of them,
+// and the four source codes, which have no enum schema and are held in a constant of the config.
+const EXPECTED_DRIFT_KIND_WORDS = ['snapshot_disagrees_with_event_log', 'snapshot_or_event_log_missing', 'lane_branch_missing'];
+const EXPECTED_DRIFT_AUTHORITY_WORDS = ['event_log', 'git'];
+const EXPECTED_DRIFT_SIDE_WORDS = ['status_json', 'lanes_json'];
+const EXPECTED_DRIFT_REMEDY_WORDS = ['materialize_status'];
+const EXPECTED_DRIFT_REFUSAL_WORDS = ['mission_not_found', 'drift_scan_unreadable'];
+const EXPECTED_SOURCE_CODE_WORDS = ['SNAPSHOT_DRIFT', 'SNAPSHOT_DRIFT_PROVENANCE', 'SNAPSHOT_DRIFT_TERMINAL', 'CORRUPT_JSON'];
+// Gate words (literals, anywhere outside the allow-list): every enum member that is not an everyday word, so not `git`.
+const EXPECTED_DRIFT_WORDS = [
+  'snapshot_disagrees_with_event_log', 'snapshot_or_event_log_missing', 'lane_branch_missing', 'event_log', 'status_json', 'lanes_json',
+  'materialize_status', 'mission_not_found', 'drift_scan_unreadable', 'SNAPSHOT_DRIFT', 'SNAPSHOT_DRIFT_PROVENANCE', 'SNAPSHOT_DRIFT_TERMINAL', 'CORRUPT_JSON',
+];
 const EXPECTED_METHODS = ['at', 'slice', 'splice', 'with', 'toSpliced'];
 const EXPECTED_ENTRY_IDS = [
   'S1', 'S1b.1', 'S1b.2', 'S2', 'S3a', 'S3b', 'S3c.1', 'S3c.2', 'S4', 'S5', 'S5b.1', 'S5b.2', 'S5b.3', 'S6', 'S7',
   'S7b.1', 'S7b.2', 'S7b.3', 'S7b.4', 'S8a.1', 'S8a.2', 'S8b.1', 'S8b.2', 'S8c.1', 'S8c.2', 'S9.1', 'S9.2', 'S10', 'S11',
   'S12.1', 'S12.2', 'S13.1', 'S13.2', 'S13.3', 'S13.4', 'S13.5', 'S14.1', 'S14.2', 'S14.3', 'S14.4',
   'S15.1', 'S15.2', 'S15.3', 'S15.4', 'S15.5', 'S16.1', 'S16.2', 'S16.3', 'S16.4', 'S16.5', 'S16.6', 'S16.7', 'S16.8', 'S16.9', 'S16.10', 'S16.11',
+  'S17.1', 'S17.2', 'S17.3', 'S17.4', 'S17.5',
 ];
 // The fixtures on #5's tip, and the new ones of the Artifact Viewer extension.
 const FIXTURES_BEFORE = 46;
 const FIXTURES_ADDED = 21;
+const FIXTURES_DRIFT = 7;
 
 describe('data-driven gate self-test: configuration', () => {
   it('declares the vocabulary of the contract and every selector entry, each with a distinct id', async () => {
@@ -109,6 +132,13 @@ describe('data-driven gate self-test: configuration', () => {
     expect(cfg.ARTIFACT_CODES).toEqual(EXPECTED_ARTIFACT_CODES);
     expect(cfg.ARTIFACT_UNDERSCORED).toEqual(EXPECTED_ARTIFACT_UNDERSCORED);
     expect(cfg.ARTIFACT_BARE_WORDS).toEqual(EXPECTED_ARTIFACT_BARE_WORDS);
+    expect(cfg.DRIFT_KIND_WORDS).toEqual(EXPECTED_DRIFT_KIND_WORDS);
+    expect(cfg.DRIFT_AUTHORITY_WORDS).toEqual(EXPECTED_DRIFT_AUTHORITY_WORDS);
+    expect(cfg.DRIFT_SIDE_WORDS).toEqual(EXPECTED_DRIFT_SIDE_WORDS);
+    expect(cfg.DRIFT_REMEDY_WORDS).toEqual(EXPECTED_DRIFT_REMEDY_WORDS);
+    expect(cfg.DRIFT_REFUSAL_WORDS).toEqual(EXPECTED_DRIFT_REFUSAL_WORDS);
+    expect(cfg.SOURCE_CODE_WORDS).toEqual(EXPECTED_SOURCE_CODE_WORDS);
+    expect(cfg.DRIFT_WORDS).toEqual(EXPECTED_DRIFT_WORDS);
     expect(cfg.STATUS_WORDS).toEqual(EXPECTED_STATUS_WORDS);
     expect(cfg.UNDERSCORED).toEqual(EXPECTED_UNDERSCORED);
     expect(cfg.S8B_METHODS).toEqual(EXPECTED_METHODS);
@@ -116,7 +146,7 @@ describe('data-driven gate self-test: configuration', () => {
     expect(ids).toEqual(EXPECTED_ENTRY_IDS);
     expect(cfg.SELECTOR_ENTRIES.length).toBe(EXPECTED_ENTRY_IDS.length);
     expect(new Set(ids).size).toBe(EXPECTED_ENTRY_IDS.length);
-    expect(EXPECTED_ENTRY_IDS.length).toBe(40 + 16);
+    expect(EXPECTED_ENTRY_IDS.length).toBe(40 + 16 + 5);
   });
 
   it('turns inline configuration off', async () => {
@@ -127,10 +157,11 @@ describe('data-driven gate self-test: configuration', () => {
 });
 
 describe('data-driven gate self-test: positive fixtures', () => {
-  it('has the 46 positive fixtures of #5 and the 21 of the Artifact Viewer, and no other file', () => {
-    expect(positives.length).toBe(FIXTURES_BEFORE + FIXTURES_ADDED);
-    expect(readdirSync(FIXTURE_DIR).length).toBe(FIXTURES_BEFORE + FIXTURES_ADDED);
+  it('has the 46 positive fixtures of #5, the 21 of the Artifact Viewer and the 7 of the Drift screen, and no other file', () => {
+    expect(positives.length).toBe(FIXTURES_BEFORE + FIXTURES_ADDED + FIXTURES_DRIFT);
+    expect(readdirSync(FIXTURE_DIR).length).toBe(FIXTURES_BEFORE + FIXTURES_ADDED + FIXTURES_DRIFT);
     expect(positives.filter((f) => /^s1[56]-/.test(f)).length).toBe(FIXTURES_ADDED);
+    expect(positives.filter((f) => /^s17-/.test(f)).length).toBe(FIXTURES_DRIFT);
   });
 
   for (const name of positives) {
@@ -382,6 +413,118 @@ describe('data-driven gate self-test: the project health words (NFR-009)', () =>
   });
 });
 
+describe('data-driven gate self-test: every word of the Drift vocabulary', () => {
+  // A Drift word that holds an Artifact Viewer gate word (#7) is also reported by S15.3 / S15.4 (inside a longer string or
+  // template). Exactly one does: mission_not_found holds the artifact refusal code not_found.
+  const holdsArtifactWord = (cfg: ConfigModule, w: string): boolean => cfg.ARTIFACT_UNDERSCORED.some((a) => w.toLowerCase().includes(a.toLowerCase()));
+
+  it('knows which Drift words also hold an Artifact Viewer gate word', async () => {
+    const cfg = await loadConfig();
+    expect(cfg.DRIFT_WORDS.filter((w) => holdsArtifactWord(cfg, w))).toEqual(['mission_not_found']);
+  });
+
+  it('reports each gate word as a literal, in any case, as itself (S17.1) and inside a longer string (S17.3)', async () => {
+    const cfg = await loadConfig();
+    let ran = 0;
+    for (const w of cfg.DRIFT_WORDS) {
+      const also = holdsArtifactWord(cfg, w) ? ['S15.3'] : [];
+      for (const v of [w, w.toUpperCase(), w.toLowerCase()]) {
+        expect(selectorIds(await lint(`export const x = '${v}';\n`)).sort(), v).toEqual([...also, 'S17.1', 'S17.3']);
+        expect(selectorIds(await lint(`export const x = 'tone-${v}';\n`)).sort(), v).toEqual([...also, 'S17.3']);
+        ran += 1;
+      }
+    }
+    expect(ran).toBe(39);
+  });
+
+  it('reports each gate word as an expression-free template (S17.2) and inside a template (S17.4)', async () => {
+    const cfg = await loadConfig();
+    let ran = 0;
+    for (const w of cfg.DRIFT_WORDS) {
+      const also = holdsArtifactWord(cfg, w) ? ['S15.4'] : [];
+      expect(selectorIds(await lint(`export const x = \`${w}\`;\n`)).sort(), w).toEqual([...also, 'S17.2', 'S17.4']);
+      expect(selectorIds(await lint(`export const x = \`x-${w}-\${y}\`;\n`)).sort(), w).toEqual([...also, 'S17.4']);
+      ran += 1;
+    }
+    expect(ran).toBe(13);
+  });
+
+  it('reports each gate word as an object key (S17.5)', async () => {
+    const cfg = await loadConfig();
+    let ran = 0;
+    for (const w of cfg.DRIFT_WORDS) {
+      expect(selectorIds(await lint(`export const m = { ${w}: 1 };\n`)), w).toEqual(['S17.5']);
+      ran += 1;
+    }
+    expect(ran).toBe(13);
+  });
+
+  it('covers every member of the five enums, bar the bare word git, and the four source codes', async () => {
+    const cfg = await loadConfig();
+    const members = [...cfg.DRIFT_KIND_WORDS, ...cfg.DRIFT_AUTHORITY_WORDS, ...cfg.DRIFT_SIDE_WORDS, ...cfg.DRIFT_REMEDY_WORDS, ...cfg.DRIFT_REFUSAL_WORDS];
+    expect(members.length).toBe(10);
+    const covered = new Set(cfg.DRIFT_WORDS);
+    expect(members.filter((w) => !covered.has(w))).toEqual(['git']);
+    expect(cfg.SOURCE_CODE_WORDS.filter((w) => !covered.has(w))).toEqual([]);
+    expect(cfg.DRIFT_WORDS.length).toBe(13);
+  });
+
+  it('does not gate error, warning or git (they collide with the view-state, severity and everyday words), and a positive control is reported', async () => {
+    let ran = 0;
+    for (const w of ['error', 'warning', 'git']) {
+      expect(selectorIds(await lint(`export const f = (s: string): boolean => s === '${w}';\n`)), w).toEqual([]);
+      expect(selectorIds(await lint(`export const m = { ${w}: 1 };\n`)), w).toEqual([]);
+      ran += 1;
+    }
+    expect(ran).toBe(3);
+    expect(selectorIds(await lint("export const f = (s: string): boolean => s === 'event_log';\n")).sort()).toEqual(['S17.1', 'S17.3']);
+  });
+
+  it('is not triggered by camelCase, dotted or spaced forms of the same words (positive control: the underscored word is)', async () => {
+    let ran = 0;
+    for (const code of [
+      'export const eventLog = 1;',
+      "export const f = (s: string): boolean => s === 'event log';",
+      "export const f = (s: string): boolean => s === 'status.json';",
+      "export const f = (s: string): boolean => s === 'lanes-json';",
+      "export const f = (o: { kind: string }): string => o.kind + 'lane branch missing';",
+      "export const f = (s: string): boolean => s === 'SNAPSHOTDRIFT';",
+      "export const f = (s: string): boolean => s === 'CORRUPT';",
+    ]) {
+      expect(selectorIds(await lint(`${code}\n`)), code).toEqual([]);
+      ran += 1;
+    }
+    expect(ran).toBe(7);
+    expect(selectorIds(await lint("export const f = (s: string): boolean => s === 'lanes_json';\n")).length).toBe(2);
+  });
+});
+
+// The four source codes have no enum schema: DriftFinding.sourceCode is a pattern, and its description is the only place the
+// codes are written. The constant of the config must agree with that description, both ways.
+describe('data-driven gate self-test: the source codes agree with the DriftFinding.sourceCode description', () => {
+  const finding = parse(readFileSync(new URL('../contracts/spec-kitty/mission-status/schemas/DriftFinding.yaml', import.meta.url), 'utf8')) as {
+    properties: { sourceCode: { description: string } };
+  };
+  const describedCodes = (text: string): string[] => [...new Set(text.match(/\b[A-Z][A-Z0-9]+(?:_[A-Z0-9]+)*\b/g) ?? [])].sort();
+
+  it('names exactly the codes of the constant: none missing from the description, none missing from the constant', async () => {
+    const cfg = await loadConfig();
+    const described = describedCodes(finding.properties.sourceCode.description);
+    expect(described.length).toBe(4);
+    expect([...cfg.SOURCE_CODE_WORDS].sort()).toEqual(described);
+  });
+
+  it('detects a disagreement in either direction (positive control for the check itself)', async () => {
+    const cfg = await loadConfig();
+    const description = finding.properties.sourceCode.description;
+    const extraInDescription = describedCodes(`${description} A fifth, NEW_AUDIT_CODE.`);
+    expect([...cfg.SOURCE_CODE_WORDS].sort()).not.toEqual(extraInDescription);
+    const dropped = describedCodes(description.replace('CORRUPT_JSON', 'a corrupt file'));
+    expect([...cfg.SOURCE_CODE_WORDS].sort()).not.toEqual(dropped);
+    expect(dropped.length).toBe(3);
+  });
+});
+
 describe('data-driven gate self-test: negative fixtures', () => {
   const NEGATIVE: Record<string, string> = {
     'progress.done read': 'export const f = (progress: { done: number; total: number }) => progress.done + progress.total;',
@@ -402,6 +545,10 @@ describe('data-driven gate self-test: negative fixtures', () => {
     'object key unknown': 'export const m = { unknown: 1 };',
     'variable named stale': 'export const f = (): boolean => {\n  const stale = true;\n  return stale;\n};',
     'type member fresh': 'export interface R {\n  fresh: boolean;\n}',
+    'drift kind read from a property': 'export const f = (o: { kind: string }) => o.kind;',
+    'drift camelCase name': 'export const eventLog = { statusJson: 1, lanesJson: 2 };',
+    'drift word in a sentence with a space': "export const s = 'the event log decides';",
+    'file name with a dot': "export const p = 'status.json';",
     'comparison with a variable': 'export const f = (s: string, t: string): boolean => s === t;',
     'member read of other': 'export const f = (item: { other: string }): string => item.other;',
     'member read of spec': 'export const f = (item: { spec: string }): string => item.spec;',
@@ -417,7 +564,7 @@ describe('data-driven gate self-test: negative fixtures', () => {
   };
 
   it('has the declared number of negative cases', () => {
-    expect(Object.keys(NEGATIVE).length).toBe(19 + 11);
+    expect(Object.keys(NEGATIVE).length).toBe(19 + 11 + 4);
   });
 
   for (const [name, code] of Object.entries(NEGATIVE)) {
@@ -438,6 +585,7 @@ describe('data-driven gate self-test: negative fixtures', () => {
     expect(selectorIds(await lint("export const f = (item: { other: string }, s: string) => item.other && s === 'other';\n"))).toEqual(['S16.1']);
     expect(selectorIds(await lint("export const m = { other: 1 };\n"))).toEqual(['S16.8']);
     expect(selectorIds(await lint('export const t = `x` + (s === `research`);\n'))).toEqual(['S16.3']);
+    expect(selectorIds(await lint("export const f = (o: { kind: string }) => o.kind === 'lane_branch_missing';\n")).sort()).toEqual(['S17.1', 'S17.3']);
   });
 });
 

@@ -23,8 +23,8 @@
 //    analysis_report and every code) are matched as literals, templates, inside longer strings and as object keys (S15);
 //    the bare ordinary words (spec, quickstart, research, contract, checklist, other) only in a comparison, a case label,
 //    an includes argument or array receiver, a Map or Set has/get argument, and as an object-literal key (S16). plan and
-//    tasks are phase words and were already gated everywhere. The gate does NOT read the detail refusal codes of the Work
-//    Package screen (source_unreadable); the reviewer self-check list and the foreign-value tests cover them.
+//    tasks are phase words and were already gated everywhere. The one refusal code the gate does NOT read is the detail
+//    refusal code of the Work Package screen, source_unreadable; the reviewer self-check list and the foreign-value tests cover it.
 //  - Holes that stay open for the artifact words: kind.startsWith('spec'), a bare word held in a plain const and compared
 //    through the variable, a value assembled at run time, a shorthand property ({ other }), a bare word as a destructured
 //    name and a bare word as the argument of any other call. A comparison with a string literal that happens to be a bare
@@ -32,6 +32,14 @@
 //    composition test of the Artifact Viewer (a thirteenth kind, a refusal code outside the seven) is the backstop.
 //    Closed at wrap-up (WP03 review): a computed key ({ ['spec']: 1 }, S16.9, S16.11), indexOf and lastIndexOf as well as
 //    includes (S16.5, S16.6) and a computed read (o['contract'], S16.10, S16.11).
+//  - The Drift vocabulary (mission-ui#10) is gated the same way: the members of the enums DriftKind, DriftAuthority, DriftSide,
+//    DriftRemedy and DriftRefusalCode are read from the vendored schemas, and the four sourceCode values are held in the
+//    constant SOURCE_CODE_WORDS (DriftFinding.sourceCode is a pattern, not an enum; a self-test fails when the constant and the
+//    schema description disagree). Every one of them is underscored and is matched as a literal, an expression-free template,
+//    inside a longer string or template, and as an object key (S17.1 to S17.5). NOT gated: `error`, `warning` and `git`.
+//    `error` is a view-state word and a severity word, `warning` a severity word and `git` an everyday word: the same
+//    collision class as the verdict `approved`. They are covered by the foreign-value tests and the reviewer self-check list.
+//    The severity enum itself is not read, for the same reason.
 //  - Vocabulary in a .d.ts or JSON file, and code outside packages/*/src (tests), is not scanned.
 //  - An element that imports the vocabulary from defaults/ and then compares with a different literal it never
 //    imports is covered only by the behavioural test with a foreign vocabulary.
@@ -68,6 +76,18 @@ const ARTIFACT_ALL = [...new Set([...ARTIFACT_KINDS, ...ARTIFACT_CODES])].filter
 // Underscored words are matched anywhere as a literal; the rest are ordinary words, matched only in the shapes of S16.
 export const ARTIFACT_UNDERSCORED = ARTIFACT_ALL.filter((w) => w.includes('_'));
 export const ARTIFACT_BARE_WORDS = ARTIFACT_ALL.filter((w) => !w.includes('_'));
+// The Drift vocabulary (mission-ui#10). Five enums come from the schemas; the four audit codes behind a snapshot disagreement
+// exist only in the description of DriftFinding.sourceCode, so they are written out here and the self-test checks the agreement.
+export const DRIFT_KIND_WORDS = schema('DriftKind.yaml').enum;
+export const DRIFT_AUTHORITY_WORDS = schema('DriftAuthority.yaml').enum;
+export const DRIFT_SIDE_WORDS = schema('DriftSide.yaml').enum;
+export const DRIFT_REMEDY_WORDS = schema('DriftRemedy.yaml').enum;
+export const DRIFT_REFUSAL_WORDS = schema('DriftRefusalCode.yaml').enum;
+export const SOURCE_CODE_WORDS = ['SNAPSHOT_DRIFT', 'SNAPSHOT_DRIFT_PROVENANCE', 'SNAPSHOT_DRIFT_TERMINAL', 'CORRUPT_JSON'];
+// Only the underscored members are gated: a bare member (`git`) is an everyday word and stays out.
+export const DRIFT_WORDS = [
+  ...new Set([...DRIFT_KIND_WORDS, ...DRIFT_AUTHORITY_WORDS, ...DRIFT_SIDE_WORDS, ...DRIFT_REMEDY_WORDS, ...DRIFT_REFUSAL_WORDS, ...SOURCE_CODE_WORDS]),
+].filter((w) => w.includes('_'));
 const LANE_ONLY = LANES.filter((w) => w !== 'done');
 // Words used in identifier positions; `plan`, `review` and `done` are ordinary identifiers and are left out.
 export const IDENT_WORDS = [...LANE_ONLY, 'specify', 'implement', 'tasks'];
@@ -97,6 +117,7 @@ const NU = alt(NEW_UNDERSCORED);
 const NB = alt(NEW_BARE_WORDS);
 const AU = alt(ARTIFACT_UNDERSCORED);
 const AB = alt(ARTIFACT_BARE_WORDS);
+const DW = alt(DRIFT_WORDS);
 
 const entry = (id, selector, text) => ({ selector, message: `data-driven: ${id} ${text}` });
 
@@ -158,6 +179,11 @@ export const SELECTOR_ENTRIES = [
   entry('S16.9', `ObjectExpression > Property > Literal.key[value=/^(${AB})$/i]`, 'object key spelled like an artifact kind, computed or not; read it from src/defaults/'),
   entry('S16.10', `MemberExpression[computed=true] > Literal.property[value=/^(${AB})$/i]`, 'artifact kind read through a computed member; read it from src/defaults/'),
   entry('S16.11', `:matches(MemberExpression[computed=true], Property[computed=true]) > TemplateLiteral[expressions.length=0] > TemplateElement[value.cooked=/^(${AB})$/i]`, 'artifact kind as an expression-free template in a computed member or key; read it from src/defaults/'),
+  entry('S17.1', `Literal[value=/^(${DW})$/i]`, 'drift kind, authority, side, remedy, refusal or source-code word as a literal; read it from src/defaults/'),
+  entry('S17.2', `TemplateElement[value.cooked=/^(${DW})$/i]`, 'drift word as an exact template; read it from src/defaults/'),
+  entry('S17.3', `Literal[value=/(${DW})/i]`, 'drift word inside a longer string'),
+  entry('S17.4', `TemplateElement[value.cooked=/(${DW})/i]`, 'drift word inside a template'),
+  entry('S17.5', `Property[computed=false] > Identifier.key[name=/^(${DW})$/i]`, 'object key named like a drift word'),
 ];
 
 export default [

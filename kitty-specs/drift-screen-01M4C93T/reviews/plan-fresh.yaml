@@ -1,0 +1,25 @@
+schema: review-findings/v1
+complete: true
+phase: plan
+lens_group: fresh
+mission: drift-screen-01M4C93T
+# Fresh sweep by the phase agent after fix round 1 (in-session). It re-read the five planning artifacts and checked each new
+# claim against the vendored contract worktree.
+findings:
+  - id: PLAN-FRESH-001
+    lens: "Contracts / data-driven scope"
+    severity: 3
+    title: "contracts/defaults.md says the gate reads the four sourceCode values from the vendored schemas, but no such schema exists"
+    evidence:
+      - artifact: "contracts/defaults.md § Data-driven gate scope; plan.md IC-02"
+      - code: "contracts/mission-status/schemas/DriftFinding.yaml (sourceCode is type string|null with a pattern; no enum; no DriftSourceCode.yaml)"
+    claim: "IC-02 would try to read a non-existent enum and either fail or silently gate nothing for the four source codes."
+    remediation: "State the explicit constant with a description-agreement self-test."
+  - id: PLAN-FRESH-002
+    lens: "Contracts"
+    severity: 1
+    title: "data-model.md says the relaxation widens the six enum fields; sourceCode is not an enum"
+    evidence:
+      - artifact: "data-model.md § Fixtures"
+    claim: "Five enum fields and two lane fields need widening; a sixth would be a no-op."
+    remediation: "Reword."

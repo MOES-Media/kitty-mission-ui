@@ -41,5 +41,16 @@
         ]
       }
     ]
+  },
+  {
+    "gate": "eslint",
+    "ciCommand": "pnpm lint",
+    "expectFailPattern": "plant-eslint-drift-option",
+    "overlays": [
+      {
+        "target": "packages/mission-ui/src/elements/sk-drift-screen/plant-eslint-drift-option.ts",
+        "source": "plant-eslint-drift-option.ts.plant"
+      }
+    ]
   }
 ]

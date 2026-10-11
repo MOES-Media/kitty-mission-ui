@@ -1,0 +1,1 @@
+export const f = (host: { setTimeout: (cb: () => void) => number }) => host.setTimeout(() => undefined);

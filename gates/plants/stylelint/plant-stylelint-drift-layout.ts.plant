@@ -1,0 +1,14 @@
+import { css } from 'lit';
+
+// E-35 and E-36 (the 420 px track, the list rule, the option reset and marker) are file-scoped to the screen file and the list part:
+// in a sibling file of the Drift directory that no exception names, they must still fail.
+export const plantStylelintDriftLayout = css`
+  .plant-stylelint-drift-layout {
+    grid-template-columns: 420px minmax(0, 1fr);
+    border-inline-end: var(--sk-border-width-1) solid var(--sk-border-default);
+    border-inline-start: var(--sk-border-width-2) solid transparent;
+    border-inline-start-color: var(--sk-border-selected);
+    background: var(--sk-surface-pill);
+    inline-size: 100%;
+  }
+`;

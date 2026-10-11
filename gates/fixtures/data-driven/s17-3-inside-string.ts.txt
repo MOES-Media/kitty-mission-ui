@@ -1,0 +1,2 @@
+// expect: S17.3
+export const c = 'tone-drift_scan_unreadable';

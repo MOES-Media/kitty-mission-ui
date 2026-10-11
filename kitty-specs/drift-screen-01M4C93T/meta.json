@@ -1,0 +1,49 @@
+{
+  "accept_commit": "b6325370adfa75a766aa1d4a8a4ec80f033028b8",
+  "acceptance_history": [
+    {
+      "accept_commit": "6a02538d653ee57f77f71ba392e623577143966c",
+      "acceptance_mode": "local",
+      "accepted_at": "2026-10-11T12:42:57.918759+00:00",
+      "accepted_by": "<user>",
+      "accepted_from_commit": "e316063ed12491e1d4ec81056123737f7a8d70d2"
+    },
+    {
+      "accept_commit": "f07704f42cdac69d736c17f29e1d2508af6d106a",
+      "acceptance_mode": "local",
+      "accepted_at": "2026-10-11T13:46:18.131926+00:00",
+      "accepted_by": "<user>",
+      "accepted_from_commit": "01ab9981d79329e55bd4c4808641ea1cd753ea0d"
+    },
+    {
+      "accept_commit": "b6325370adfa75a766aa1d4a8a4ec80f033028b8",
+      "acceptance_mode": "local",
+      "accepted_at": "2026-10-11T14:06:29.721731+00:00",
+      "accepted_by": "<user>",
+      "accepted_from_commit": "0231c464bba15671afa4d2a094ed72ec0249f7de"
+    }
+  ],
+  "acceptance_mode": "local",
+  "accepted_at": "2026-10-11T14:06:29.721731+00:00",
+  "accepted_by": "<user>",
+  "accepted_from_commit": "0231c464bba15671afa4d2a094ed72ec0249f7de",
+  "baseline_merge_commit": "8aa46dccf481f8e86461bafd529a4ffef8476a50",
+  "created_at": "2026-10-07T22:52:58.653579+00:00",
+  "flattened": false,
+  "friendly_name": "Drift screen",
+  "merged_at": "2026-10-11T12:18:11.278072+00:00",
+  "merged_commit": "3efef3fc3b002159ff952c6fc25b92c5d1bf9da9",
+  "mid8": "01M4C93T",
+  "mission_id": "01M4C93TWKKB8CZ3D8Q1NCF81E",
+  "mission_number": 3,
+  "mission_slug": "drift-screen-01M4C93T",
+  "mission_type": "software-dev",
+  "purpose_context": "Build the Drift screen of mission-ui: findings where derived state disagrees with the deciding record, read-only, against the Mission Status contract.",
+  "purpose_tldr": "Drift screen against the Mission Status contract",
+  "slug": "drift-screen-01M4C93T",
+  "status_phase": "1",
+  "target_branch": "feat/drift-screen-10",
+  "topology": "lanes",
+  "vcs": "git",
+  "vcs_locked_at": "2026-10-09T21:30:25.708960+00:00"
+}

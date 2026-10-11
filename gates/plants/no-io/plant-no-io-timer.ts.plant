@@ -1,0 +1,2 @@
+// plant: a timer in a screen must fail the no-io gate (NFR-005, no timers)
+export const plantNoIoTimer = (): number => setTimeout(() => undefined, 0) as unknown as number;

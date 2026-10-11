@@ -1,0 +1,169 @@
+schema_version: 1
+mission_id: 01M4C93TWKKB8CZ3D8Q1NCF81E
+mission_slug: drift-screen-01M4C93T
+mission_number: 3
+friendly_name: Drift screen
+mission_type: software-dev
+target_branch: feat/drift-screen-10
+created_at: '2026-10-11T12:18:23.453327+00:00'
+created_by:
+  kind: runtime
+  id: spec-kitty-generator
+  display: Spec Kitty Generator
+provenance:
+  kind: runtime_post_completion
+  invoked_at: '2026-10-11T12:18:23.453327+00:00'
+  policy_resolved_from:
+    enabled: <default>
+    timing: <default>
+    failure_policy: <default>
+    write_record: <default>
+    generate_proposals: <default>
+    apply_proposals: <default>
+    permissions.write_record: <default>
+    permissions.inspect_mission_artifacts: <default>
+    permissions.propose_glossary_changes: <default>
+    permissions.propose_drg_changes: <default>
+    permissions.propose_doctrine_changes: <default>
+    permissions.apply_low_risk_changes: <default>
+    permissions.apply_structural_changes: <default>
+    precedence: <default>
+    generator: <default>
+policy_source:
+  enabled: <default>
+  timing: <default>
+  failure_policy: <default>
+  write_record: <default>
+  generate_proposals: <default>
+  apply_proposals: <default>
+  permissions.write_record: <default>
+  permissions.inspect_mission_artifacts: <default>
+  permissions.propose_glossary_changes: <default>
+  permissions.propose_drg_changes: <default>
+  permissions.propose_doctrine_changes: <default>
+  permissions.apply_low_risk_changes: <default>
+  permissions.apply_structural_changes: <default>
+  precedence: <default>
+  generator: <default>
+findings_status: has_findings
+helped:
+- id: h-004
+  category: doc
+  summary: analysis-report.md present with no recorded findings
+  evidence_refs:
+  - e-019
+  details: An analysis-report.md artifact is present and its frontmatter records zero findings with a resolved verdict —
+    the analysis raised nothing.
+- id: h-001
+  category: implementation
+  summary: WP01 completed without rejection cycles
+  evidence_refs:
+  - e-013
+- id: h-002
+  category: implementation
+  summary: WP03 completed without rejection cycles
+  evidence_refs:
+  - e-013
+- id: h-003
+  category: implementation
+  summary: WP08 completed without rejection cycles
+  evidence_refs:
+  - e-013
+not_helpful:
+- id: n-001
+  category: review_loop
+  summary: WP02 required 1 rejection cycle(s) before approval
+  evidence_refs:
+  - e-014
+  details: WP WP02 was sent back to an earlier lane with documented review feedback 1 time(s).
+- id: n-002
+  category: review_loop
+  summary: WP04 required 1 rejection cycle(s) before approval
+  evidence_refs:
+  - e-015
+  details: WP WP04 was sent back to an earlier lane with documented review feedback 1 time(s).
+- id: n-003
+  category: review_loop
+  summary: WP05 required 1 rejection cycle(s) before approval
+  evidence_refs:
+  - e-016
+  details: WP WP05 was sent back to an earlier lane with documented review feedback 1 time(s).
+- id: n-004
+  category: review_loop
+  summary: WP06 required 1 rejection cycle(s) before approval
+  evidence_refs:
+  - e-017
+  details: WP WP06 was sent back to an earlier lane with documented review feedback 1 time(s).
+- id: n-005
+  category: review_loop
+  summary: WP07 required 1 rejection cycle(s) before approval
+  evidence_refs:
+  - e-018
+  details: WP WP07 was sent back to an earlier lane with documented review feedback 1 time(s).
+gaps: []
+proposals: []
+evidence_refs:
+- id: e-001
+  kind: file
+  path: kitty-specs/drift-screen-01M4C93T/meta.json
+- id: e-002
+  kind: file
+  path: kitty-specs/drift-screen-01M4C93T/spec.md
+- id: e-003
+  kind: file
+  path: kitty-specs/drift-screen-01M4C93T/plan.md
+- id: e-004
+  kind: file
+  path: kitty-specs/drift-screen-01M4C93T/tasks.md
+- id: e-005
+  kind: file
+  path: kitty-specs/drift-screen-01M4C93T/tasks/WP01-drift-contract-wiring-fixtures.md
+- id: e-006
+  kind: file
+  path: kitty-specs/drift-screen-01M4C93T/tasks/WP02-drift-defaults-logic-gate-extension.md
+- id: e-007
+  kind: file
+  path: kitty-specs/drift-screen-01M4C93T/tasks/WP03-drift-foundation-spikes.md
+- id: e-008
+  kind: file
+  path: kitty-specs/drift-screen-01M4C93T/tasks/WP04-drift-skeleton-layout-surface-freeze.md
+- id: e-009
+  kind: file
+  path: kitty-specs/drift-screen-01M4C93T/tasks/WP05-drift-header-list-states.md
+- id: e-010
+  kind: file
+  path: kitty-specs/drift-screen-01M4C93T/tasks/WP06-drift-detail-table-resolution.md
+- id: e-011
+  kind: file
+  path: kitty-specs/drift-screen-01M4C93T/tasks/WP07-drift-tiers-accessibility-edge-cases.md
+- id: e-012
+  kind: file
+  path: kitty-specs/drift-screen-01M4C93T/tasks/WP08-drift-integration-baselines-docs.md
+- id: e-013
+  kind: file
+  path: kitty-specs/drift-screen-01M4C93T/status.events.jsonl
+- id: e-014
+  kind: event_range
+  path: kitty-specs/drift-screen-01M4C93T/status.events.jsonl
+  range: 01M4J7YENDH2M7J144AJJJGZV8
+- id: e-015
+  kind: event_range
+  path: kitty-specs/drift-screen-01M4C93T/status.events.jsonl
+  range: 01M4JC9A78583K63P8F08P23WG
+- id: e-016
+  kind: event_range
+  path: kitty-specs/drift-screen-01M4C93T/status.events.jsonl
+  range: 01M4JEDJ437M4VWK4H8C8TN81A
+- id: e-017
+  kind: event_range
+  path: kitty-specs/drift-screen-01M4C93T/status.events.jsonl
+  range: 01M4JE97T4X5NPYP60G1WFJNJ1
+- id: e-018
+  kind: event_range
+  path: kitty-specs/drift-screen-01M4C93T/status.events.jsonl
+  range: 01M4JHCBQ9AXA6SFPEYPXFZPJ9
+- id: e-019
+  kind: file
+  path: kitty-specs/drift-screen-01M4C93T/analysis-report.md
+generator_version: '1.0'
+provenance_history: []

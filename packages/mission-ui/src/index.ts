@@ -1,6 +1,7 @@
 // The single place custom elements are registered. Element modules do not self-register, so importing one (from a
 // test, a story or another package) never throws on a duplicate definition; the guard makes this entry idempotent.
 import { SkArtifactScreen } from './elements/sk-artifact-screen/sk-artifact-screen.js';
+import { SkDriftScreen } from './elements/sk-drift-screen/sk-drift-screen.js';
 import { SkFilterToggleGroup } from './elements/sk-filter-toggle-group/sk-filter-toggle-group.js';
 import { SkMissionSample } from './elements/sk-mission-sample/sk-mission-sample.js';
 import { SkMissionShell } from './elements/sk-mission-shell/sk-mission-shell.js';
@@ -53,9 +54,13 @@ if (!customElements.get('sk-open-project-dialog')) {
 if (!customElements.get('sk-artifact-screen')) {
   customElements.define('sk-artifact-screen', SkArtifactScreen);
 }
+if (!customElements.get('sk-drift-screen')) {
+  customElements.define('sk-drift-screen', SkDriftScreen);
+}
 
 export {
   SkArtifactScreen,
+  SkDriftScreen,
   SkFilterToggleGroup,
   SkMissionSample,
   SkMissionShell,
@@ -82,7 +87,15 @@ export type {
   ArtifactVocabulary,
 } from './logic/artifact-types.js';
 export type { SkArtifactRetryLoadDetail, SkOpenLinkDetail, SkSelectArtifactDetail } from './elements/sk-artifact-screen/sk-artifact-screen.js';
-export type { RetryLoadDetail, RetryLoadEventDetail, SkArtifactRetryDetail } from './retry-types.js';
+export type { DriftRetryDetail, RetryLoadDetail, RetryLoadEventDetail, SkArtifactRetryDetail } from './retry-types.js';
+export type {
+  DriftCopyResult,
+  DriftScreenStatus,
+  SkCopyCommandDetail,
+  SkDriftRetryLoadDetail,
+  SkRescanDriftDetail,
+  SkSelectFindingDetail,
+} from './elements/sk-drift-screen/sk-drift-screen.js';
 export type { SkFilterChangeDetail } from './elements/sk-filter-toggle-group/sk-filter-toggle-group.js';
 export type { SkLoadMoreDetail, SkOpenMissionDetail, SkSearchDetail } from './elements/sk-missions-screen/sk-missions-screen.js';
 export type { SkBrowseFolderDetail, SkConfirmOpenProjectDetail } from './elements/sk-open-project-dialog/sk-open-project-dialog.js';
@@ -109,6 +122,15 @@ export type {
   ArtifactContentView,
   ArtifactEntryView,
   ArtifactListingView,
+  DriftFinding,
+  DriftFindingKey,
+  DriftFindingView,
+  DriftMissionName,
+  DriftRefusal,
+  DriftRefusalCode,
+  DriftReport,
+  DriftReportView,
+  LaneComparisonView,
   MissionDetailView,
   MissionOverviewView,
   PageInfo,
