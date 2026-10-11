@@ -2,10 +2,12 @@ import { describe, expect, it } from 'vitest';
 import { resolveLinks } from '../src/logic/markdown/links.js';
 import { buildMarkdownModel } from '../src/logic/markdown/model.js';
 import { CORPUS, KIB, LISTING, OPEN_PATH } from './support/markdown-corpus-entries.js';
+import { CORPUS_SIZE } from './support/markdown-corpus-harness.js';
 
 describe('the corpus on the model', () => {
   it('builds every model inside its ceiling (model only, best of three after a warm-up)', () => {
     const slow: string[] = [];
+    let ran = 0;
     for (const entry of CORPUS) {
       const ceiling = entry.ceilingMs ?? (entry.source.length >= 100 * KIB ? 500 : 200);
       buildMarkdownModel(entry.source);
@@ -17,7 +19,9 @@ describe('the corpus on the model', () => {
         best = Math.min(best, performance.now() - start);
       }
       if (best > ceiling) slow.push(`${entry.name}: ${best.toFixed(0)} ms over ${ceiling} ms`);
+      ran += 1;
     }
+    expect(ran).toBe(CORPUS_SIZE);
     expect(slow.length, slow.join(' | ')).toBeLessThanOrEqual(0);
   });
 });
