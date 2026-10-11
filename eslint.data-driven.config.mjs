@@ -23,8 +23,8 @@
 //    analysis_report and every code) are matched as literals, templates, inside longer strings and as object keys (S15);
 //    the bare ordinary words (spec, quickstart, research, contract, checklist, other) only in a comparison, a case label,
 //    an includes argument or array receiver, a Map or Set has/get argument, and as an object-literal key (S16). plan and
-//    tasks are phase words and were already gated everywhere. The gate does NOT read the detail refusal codes of the Work
-//    Package screen (source_unreadable); the reviewer self-check list and the foreign-value tests cover them.
+//    tasks are phase words and were already gated everywhere. The one refusal code the gate does NOT read is the detail
+//    refusal code of the Work Package screen, source_unreadable; the reviewer self-check list and the foreign-value tests cover it.
 //  - Holes that stay open for the artifact words: kind.startsWith('spec'), a bare word held in a plain const and compared
 //    through the variable, a value assembled at run time, a shorthand property ({ other }), a bare word as a destructured
 //    name and a bare word as the argument of any other call. A comparison with a string literal that happens to be a bare
@@ -32,8 +32,6 @@
 //    composition test of the Artifact Viewer (a thirteenth kind, a refusal code outside the seven) is the backstop.
 //    Closed at wrap-up (WP03 review): a computed key ({ ['spec']: 1 }, S16.9, S16.11), indexOf and lastIndexOf as well as
 //    includes (S16.5, S16.6) and a computed read (o['contract'], S16.10, S16.11).
-//  - The gate does NOT read ArtifactKind (the review-cycle kind) or the detail refusal codes (not_found,
-//    source_unreadable); the reviewer self-check list and the foreign-value tests cover them.
 //  - The Drift vocabulary (mission-ui#10) is gated the same way: the members of the enums DriftKind, DriftAuthority, DriftSide,
 //    DriftRemedy and DriftRefusalCode are read from the vendored schemas, and the four sourceCode values are held in the
 //    constant SOURCE_CODE_WORDS (DriftFinding.sourceCode is a pattern, not an enum; a self-test fails when the constant and the
