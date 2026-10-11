@@ -666,6 +666,20 @@ test('checkBulk: a generated document written into the stored fixtures gives gua
   assert.ok(r.problems.some((p) => p.token === TOKENS.guard && /generated document/.test(p.message)), r.problems.map((p) => `${p.token}: ${p.message}`).join(' | '));
 });
 
+test('checkBulk: a generated Drift finding written into the stored fixtures gives guard (the generated source quotes no keys, so the probe is a value)', async () => {
+  const root = tempRepo();
+  const bulk = await loadBulk(root);
+  const report = bulk.makeDriftReport(1000);
+  const middle = report.findings[Math.floor(report.findings.length / 2)];
+  const deps = await mutateDocs(root, (d) => {
+    d.reportPopulated.findings[0].missionId = middle.missionId;
+    d.reportPopulated.findings[0].summary = middle.summary;
+  });
+  const r = await check(root, deps);
+  assert.ok(r.problems.some((p) => p.token === TOKENS.guard && /generated document is stored.*bulk Drift report/.test(p.message)), r.problems.map((p) => `${p.token}: ${p.message}`).join(' | '));
+  assert.ok(!(await check(tempRepo())).problems.some((p) => /bulk Drift report/.test(p.message)), 'positive control: the clean tree stores no generated Drift document');
+});
+
 test('checkBulk: the stored fixtures file over its size ceiling gives guard, and the clean file is well under it (positive control)', async () => {
   const size = Buffer.byteLength(readFileSync(join(ROOT, LAYOUT.fixtures)));
   assert.ok(size < 1_048_576 / 2, `the stored fixtures are ${size} bytes`);

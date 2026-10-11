@@ -422,7 +422,8 @@ function probeOf(doc) {
     const line = doc.content.split('\n').find((l) => l.length >= PROBE_LENGTH);
     return JSON.stringify(line ? line.slice(0, PROBE_LENGTH) : doc.content.slice(0, PROBE_LENGTH)).slice(1, -1);
   }
-  if (Array.isArray(doc.findings)) return JSON.stringify(doc.findings[Math.floor(doc.findings.length / 2)]).slice(1, -1);
+  // A value, not the finding's JSON: the generated source writes its keys unquoted, so a quoted-key slice never matches it.
+  if (Array.isArray(doc.findings)) return JSON.stringify(doc.findings[Math.floor(doc.findings.length / 2)].missionId).slice(1, -1);
   return JSON.stringify(doc.entries[Math.floor(doc.entries.length / 2)].path).slice(1, -1);
 }
 
