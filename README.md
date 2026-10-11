@@ -220,9 +220,9 @@ packages, never only the changed files.
 | `Gate: hygiene` | `pnpm hygiene` and `pnpm test:scripts` | no token, no absolute user path (CLI state files included), no agent scratchpad path, no tooling-ledger id, no username of the running account, no e-mail address in the contract and fixture paths, pinned dependencies and actions, safe workflow triggers, baseline PNG checks; then the `node:test` suites of the gate scripts (hygiene, gate-proof, preflight, manifest-screen, settle, the stylelint exception scope proofs, the story-catalogue and visual-tag tests and the terminology scan: the word "feature" never appears in `packages/*/src` or the mission quickstart, the canonical term is "mission") |
 | `Gate: contract` | `pnpm contract:check` and `pnpm test:contract` | the vendored Mission Status contract equals its pin, the generated types and fixtures are fresh, every fixture is a valid and coherent contract document (closed shapes), no event-stream identifier in `packages/*/src` |
 | `Gate: data-driven` | `pnpm lint:data-driven` and `pnpm test:data-driven` | no phase name, status lane or other contract status word (`pending`, `complete`, `draft`, `discarded`) hard-coded in `packages/*/src` outside `src/defaults/`, `src/contract/`, stories, fixtures and `src/story-support/`; 31 selectors, a self-test with 36 positive fixtures and inline `eslint-disable` comments ignored |
-| `Gate: storybook-build` | `pnpm build-storybook` | the static Storybook builds (255 stories), then the output is scanned for tokens |
+| `Gate: storybook-build` | `pnpm build-storybook` | the static Storybook builds (293 stories), then the output is scanned for tokens |
 | `Gate: unit-tests` | `pnpm test` | Vitest browser-mode tests in two projects run one after the other, `unit` and then `perf` (the wall-clock ceiling tests, one file at a time; see below): one test per emitted event and payload, plus the host composition test (both screens rendered from contract-shaped data with no I/O) |
-| `Gate: visual` | `pnpm visual` | screenshots of every story (255) against the committed baselines (255, one per story), inside the pinned Playwright container |
+| `Gate: visual` | `pnpm visual` | screenshots of every story (293) against the committed baselines (293, one per story), inside the pinned Playwright container |
 | `Gate: proof (<gate>)` | `pnpm gate-proof` | one leg per gate: passes clean, fails with the plant (see below) |
 | `Gate: proof` | (CI only) | checks coverage, assembles and schema-validates the proof record |
 | `Gate: all` | (CI only) | fails unless every job above succeeded; skipped or cancelled counts as failed |
@@ -237,11 +237,11 @@ digest-pinned Playwright image. `pnpm visual` builds Storybook then runs `script
 skips) if podman or docker cannot start the container. After an intentional visual change run `pnpm visual:update`
 and review the PNG diff in the PR. CI repeats each screenshot 5 times to catch flakiness.
 
-CI timeouts for the visual gate are derived from measured runs. Main run 37584109220 (174 stories) took 674 s for the
-`visual` job and 1528 s for `proof (visual)`. Scaled by 210/174 = 1.207 that is about 813 s (674 x 210/174) and 1844 s; the
-28-minute job timeout is about 2.07x the job estimate and the 47-minute proof leg timeout about 1.53x its estimate, in line with
-the 2.1x and 1.5x margins of the earlier derivation. `unit-tests` (150 s,
-219 s) keeps 8 and 10.
+CI timeouts for the visual gate are derived from measured runs. A run at 255 stories took 606 s for the `visual` job and
+1848 s for `proof (visual)`. Scaled to the 293 stories of the merged set (x 293/255) that is about 696 s for the job
+(606 x 293/255) and about 2123 s for the proof leg (1848 x 293/255). The 28-minute job timeout leaves the job estimate at
+about 41% of the limit (696 s of 1680 s), and the 55-minute proof leg timeout leaves its estimate at about 64% (2123 s of
+3300 s). `unit-tests` (150 s, 219 s) keeps 8 and 10.
 
 ### Installs are frozen
 

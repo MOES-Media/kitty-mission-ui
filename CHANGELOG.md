@@ -27,8 +27,8 @@ All user-visible changes to this repository. Per-package notes live in `packages
   explanation, authority panel, lane comparison table, suggested resolution with Copy and facts, plus the loading, clean,
   truncated, rescanning, unreadable, not-found and nothing-chosen states. A host passes only contract-shaped data; the
   screen performs no I/O and emits six events (`sk-select-finding`, `sk-rescan-drift`, `sk-copy-command`, `sk-open-mission`,
-  `sk-open-missions`, `sk-retry-load`). 38 new Storybook stories under `Screens/Drift/` with one visual baseline each, a
-  story-catalogue test, and CI timeouts re-derived for the larger set. Layout exceptions E-35 to E-39 and an extension of
+  `sk-open-missions`, `sk-retry-load`). 38 new Storybook stories under `Screens/Drift/` with one visual baseline each (293 in
+  total), a story-catalogue test, and CI timeouts re-derived for the larger set (the proof leg rises to 55 minutes). Layout exceptions E-35 to E-39 and an extension of
   E-18 are recorded in `stylelint.config.mjs`.
 - **Drift contract wiring: view types, 17 fixtures, the `drift-vocabulary-open` relaxation and a 1000-finding generator** (`#10`).
   `pnpm contract:check` also validates the generated report of exactly 1000 findings; a plant removes the relaxation.
