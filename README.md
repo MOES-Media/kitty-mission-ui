@@ -251,11 +251,11 @@ digest-pinned Playwright image. `pnpm visual` builds Storybook then runs `script
 skips) if podman or docker cannot start the container. After an intentional visual change run `pnpm visual:update`
 and review the PNG diff in the PR. CI repeats each screenshot 5 times to catch flakiness.
 
-CI timeouts for the visual gate are derived from measured runs. A run at 255 stories took 606 s for the `visual` job and
-1848 s for `proof (visual)`. Scaled to the 293 stories of the merged set (x 293/255) that is about 696 s for the job
-(606 x 293/255) and about 2123 s for the proof leg (1848 x 293/255). The 28-minute job timeout leaves the job estimate at
-about 41% of the limit (696 s of 1680 s), and the 55-minute proof leg timeout leaves its estimate at about 64% (2123 s of
-3300 s). `unit-tests` (150 s, 219 s) keeps 8 and 10.
+CI timeouts for the visual gate are derived from measured runs. The run on `main` at 293 stories (run 38148343620) took
+973 s for the `visual` job and 2102 s for `proof (visual)`. Scaled to the 330 stories of the merged set (x 330/293) that is
+about 1096 s for the job (973 x 330/293) and about 2367 s for the proof leg (2102 x 330/293). The 28-minute job timeout
+leaves the job estimate at about 65% of the limit (1096 s of 1680 s), and the 60-minute proof leg timeout leaves its
+estimate at about 66% (2367 s of 3600 s). `unit-tests` (150 s, 396 s in the same run) keeps 8 and 10.
 
 ### Installs are frozen
 
