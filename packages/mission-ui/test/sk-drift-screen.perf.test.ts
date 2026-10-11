@@ -18,8 +18,6 @@ afterEach(() => {
 
 const median = (values: number[]): number => [...values].sort((a, b) => a - b)[Math.floor(values.length / 2)] as number;
 const BUDGET_MS = 200;
-/** The budget predicate of both the real assertion and its control: the median of the samples runs over the budget. */
-const overBudget = (samples: number[]): boolean => median(samples) > BUDGET_MS;
 const frame = (): Promise<unknown> => new Promise((resolve) => requestAnimationFrame(() => resolve(null)));
 
 async function mount(props: DriftScreenProps): Promise<{ screen: SkDriftScreen; ms: number }> {
@@ -94,8 +92,9 @@ describe('NFR-006: 1000 findings', () => {
       slow.push(performance.now() - start);
     }
     expect(slow).toHaveLength(3);
-    expect(overBudget(slow)).toBe(true);
-    expect(overBudget([5, 6, 7])).toBe(false);
+    // The control runs the very matcher that guards the budget below: slow samples make it throw, fast ones do not.
+    expect(() => expect(median(slow)).toBeLessThanOrEqual(BUDGET_MS)).toThrow();
+    expect(() => expect(median([5, 6, 7])).toBeLessThanOrEqual(BUDGET_MS)).not.toThrow();
   });
 
   it('the budget: the median of the warmed initial renders and of the warmed selection changes is 200 ms or less', async () => {
@@ -122,8 +121,7 @@ describe('NFR-006: 1000 findings', () => {
     }
     expect(renders).toHaveLength(SAMPLES);
     expect(changes).toHaveLength(SAMPLES);
-    // The ceiling as an upper-bound matcher (the perf-split guard reads it); the same predicate the control above trips.
-    expect(overBudget(renders)).toBe(median(renders) > BUDGET_MS);
+    // The ceiling as an upper-bound matcher (the perf-split guard reads it); the control above trips this same matcher.
     expect(median(renders), `renders ${JSON.stringify(renders)}`).toBeLessThanOrEqual(BUDGET_MS);
     expect(median(changes), `changes ${JSON.stringify(changes)}`).toBeLessThanOrEqual(BUDGET_MS);
   });
