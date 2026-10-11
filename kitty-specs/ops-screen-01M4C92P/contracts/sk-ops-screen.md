@@ -14,7 +14,7 @@ Twelve properties as in `data-model.md` (the twelfth, `project`, was added at th
 | 2 | `status` is `error` | error |
 | 3 | `status` is `empty`, or unknown | empty |
 | 4 | `status` is `ready` and `items` is empty | empty (OP-37) |
-| 5 | `status` is `ready`, `profile` non-null and some `item.profileId !== profile` | loading, nothing announced (FR-032) |
+| 5 | `status` is `ready`, `profile` non-null and non-empty (null or empty means no filter) and some `item.profileId !== profile` | loading, nothing announced (FR-032) |
 | 6 | otherwise | ready |
 
 Empty wording (CP-1): the headline is `profile` non-null: "No records for this profile"; else the plain wording. Whenever `skippedCount > 0` the skipped note ("in this project" wording) is appended, so the count is never hidden.

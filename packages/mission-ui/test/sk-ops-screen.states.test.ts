@@ -178,6 +178,18 @@ describe('OP-22: the loading look', () => {
   });
 });
 
+describe('an empty profile filter is no filter', () => {
+  it('rows of another profile are shown under profile "" (positive control: under a non-empty profile they are the loading look)', async () => {
+    const rows = opsProps.mismatchedProfile();
+    const unfiltered = await mount({ ...rows, profile: '' });
+    expect(lookOf(unfiltered)).toBe('ready');
+    expect(qa(unfiltered, '[data-row-id]')).toBe(rows.items.length);
+    const filtered = await mount(rows);
+    expect(lookOf(filtered)).toBe('loading');
+    expect(qa(filtered, '[data-row-id]')).toBe(0);
+  });
+});
+
 describe('OP-19..OP-21, OP-37: the empty look', () => {
   it('OP-19: the heading and the plain sentence, no list and no badge', async () => {
     const screen = await mount(opsProps.empty());

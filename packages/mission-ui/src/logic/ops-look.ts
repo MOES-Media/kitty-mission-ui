@@ -17,9 +17,9 @@ export interface OpsLookProps {
 /**
  * The one decision of the screen (plan D-02), evaluated in the order of contracts/sk-ops-screen.md: `loading`, `error` and
  * `empty` win as given, and any other status (unknown included) is `empty`; `ready` with no items is `empty`; `ready` with a
- * non-null `profile` and some item whose `profileId` is not exactly that string is `loading` (a page of another request is
+ * non-empty `profile` and some item whose `profileId` is not exactly that string is `loading` (a page of another request is
  * not the current one); otherwise `ready`. The comparison is exact string equality, no case folding, no trimming. A null
- * `profile` makes no check. Nothing here reads the order of `items`.
+ * or empty `profile` makes no check. Nothing here reads the order of `items`.
  */
 export function resolveOpsLook(props: OpsLookProps): OpsLookResult {
   if (props.status === 'loading') return { look: 'loading', reason: 'status' };
@@ -27,6 +27,6 @@ export function resolveOpsLook(props: OpsLookProps): OpsLookResult {
   if (props.status !== 'ready') return { look: 'empty', reason: 'status' };
   if (props.items.length === 0) return { look: 'empty', reason: 'empty-ready' };
   const profile = props.profile;
-  if (profile !== null && props.items.some((item) => item.profileId !== profile)) return { look: 'loading', reason: 'mismatch' };
+  if (profile !== null && profile !== '' && props.items.some((item) => item.profileId !== profile)) return { look: 'loading', reason: 'mismatch' };
   return { look: 'ready', reason: 'ready' };
 }

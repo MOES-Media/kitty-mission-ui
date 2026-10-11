@@ -51,15 +51,22 @@ describe('resolveOpsLook: the precedence table', () => {
       ['ops-a ', 'ops-a'],
       [' ops-a', 'ops-a'],
       ['ops-a', ''],
-      ['', 'ops-a'],
     ];
     for (const [profile, profileId] of cases) {
       expect(resolveOpsLook(props({ profile, items: [row(profileId)] })), `${profile}|${profileId}`).toEqual({ look: 'loading', reason: 'mismatch' });
     }
-    expect(cases.length).toBe(6);
+    expect(cases.length).toBe(5);
     // positive control: the identical strings agree
     expect(resolveOpsLook(props({ profile: 'Ops-A', items: [row('Ops-A')] }))).toEqual({ look: 'ready', reason: 'ready' });
     expect(resolveOpsLook(props({ profile: '', items: [row('')] }))).toEqual({ look: 'ready', reason: 'ready' });
+  });
+
+  it('row 6: an empty profile is no filter, like null (positive control: any non-empty profile that disagrees is loading)', () => {
+    const items = [row('a'), row('b')];
+    expect(resolveOpsLook(props({ profile: '', items }))).toEqual({ look: 'ready', reason: 'ready' });
+    expect(resolveOpsLook(props({ profile: '', items: [row('a')] }))).toEqual(resolveOpsLook(props({ profile: null, items: [row('a')] })));
+    expect(resolveOpsLook(props({ profile: ' ', items }))).toEqual({ look: 'loading', reason: 'mismatch' });
+    expect(resolveOpsLook(props({ profile: 'c', items }))).toEqual({ look: 'loading', reason: 'mismatch' });
   });
 
   it('row 6: a null profile makes no check; agreeing items are ready', () => {
