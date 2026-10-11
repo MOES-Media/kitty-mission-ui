@@ -112,8 +112,8 @@ export const STALE_SELECTION_NOTE = 'The selected finding is not in this scan.';
 export const REFUSAL_WORDS: Readonly<Record<string, string>> = {
   drift_scan_unreadable: 'The scan could not read a Mission, so no report is shown.',
 };
-export const REFUSAL_GENERIC = 'The drift scan could not be loaded.';
-export const RETRY_LABEL = 'Try again';
+export const DRIFT_REFUSAL_GENERIC = 'The drift scan could not be loaded.';
+export const DRIFT_RETRY_LABEL = 'Try again';
 /** The accessible name of the finding listbox. */
 export const FINDINGS_LIST_LABEL = 'Drift findings';
 

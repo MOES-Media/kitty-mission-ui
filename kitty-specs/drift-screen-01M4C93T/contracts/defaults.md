@@ -30,7 +30,7 @@ does not (spec Gaps 3, 8, 12, 16, 17).
 | `TRUNCATION_TEXT(n)` | fn | `Showing the first ${n} findings.` |
 | `CHOOSE_HEADING`, `STALE_SELECTION_NOTE` | string | "Choose a finding"; "The selected finding is not in this scan." |
 | `FINDINGS_LIST_LABEL` | string | "Drift findings" (the accessible name of the finding listbox) |
-| `REFUSAL_WORDS`, `REFUSAL_GENERIC`, `RETRY_LABEL` | record / string | `drift_scan_unreadable` -> "The scan could not read a Mission, so no report is shown."; generic "The drift scan could not be loaded."; "Try again" |
+| `REFUSAL_WORDS`, `DRIFT_REFUSAL_GENERIC`, `DRIFT_RETRY_LABEL` | record / string | `drift_scan_unreadable` -> "The scan could not read a Mission, so no report is shown."; generic "The drift scan could not be loaded."; "Try again" |
 | `DRIFT_NOT_FOUND_HEADING/BODY` (prefixed: the unprefixed names already exist in #5's `wp-copy.ts`), `RETURN_TO_MISSIONS_LABEL` | string | "Mission not found"; "No Mission has this identity."; "Return to Missions" |
 | `DRIFT_LOADING_LABEL` (prefixed: `LOADING_LABEL` already exists in `lifecycle.ts`), `RESCANNED_TEXT` | string / fn | "Loading drift scan"; announcement strings (live region) |
 | `RESCAN_UNCHANGED_ANNOUNCEMENT` | string | "Rescan complete: no changes" (the one polite line that ends a rescan whose report, state and words are what they were when it started; every state; said in the update where `rescanning` falls) |

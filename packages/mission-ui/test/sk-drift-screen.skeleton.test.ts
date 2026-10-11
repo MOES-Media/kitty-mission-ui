@@ -33,7 +33,7 @@ import {
   unlistedMissionId,
 } from '../src/elements/sk-drift-screen/fixtures.js';
 import type { DriftScreenProps } from '../src/elements/sk-drift-screen/fixtures.js';
-import { COPY_RESULT_TEXT, DRIFT_LOADING_LABEL, DRIFT_NOT_FOUND_HEADING, READY_ANNOUNCEMENT, RESCANNED_TEXT, ERROR_ANNOUNCEMENT, REFUSAL_GENERIC, REFUSAL_WORDS } from '../src/defaults/index.js';
+import { COPY_RESULT_TEXT, DRIFT_LOADING_LABEL, DRIFT_NOT_FOUND_HEADING, READY_ANNOUNCEMENT, RESCANNED_TEXT, ERROR_ANNOUNCEMENT, DRIFT_REFUSAL_GENERIC, REFUSAL_WORDS } from '../src/defaults/index.js';
 import { reportPopulated } from '../src/contract/fixtures.generated.js';
 import type { DriftFindingKey } from '../src/contract/types.js';
 
@@ -573,7 +573,7 @@ describe('the live region: silent on first render, one line per change of what i
     expect(liveSeq(screen)).toBe(seq);
     screen.refusalCode = 'a_code_the_screen_has_never_seen';
     await settle(screen);
-    expect(liveText(screen)).toBe(ERROR_ANNOUNCEMENT(REFUSAL_GENERIC));
+    expect(liveText(screen)).toBe(ERROR_ANNOUNCEMENT(DRIFT_REFUSAL_GENERIC));
     expect(liveSeq(screen)).not.toBe(seq);
     screen.errorMessage = 'The host says it with its own words.';
     await settle(screen);

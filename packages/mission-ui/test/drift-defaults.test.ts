@@ -7,8 +7,8 @@ const NAMED = [
   'DRIFT_TITLE', 'DRIFT_SUBTITLE', 'RESCAN_LABEL', 'RESCANNING_LABEL', 'LAST_SCAN_TEXT', 'FINDINGS_COUNT_TEXT', 'SEVERITY_WORDS',
   'SEVERITY_ROLLUP_TEXT', 'KIND_COPY', 'AUTHORITY_WORDS', 'DERIVED_SIDE_WORDS', 'REMEDY_COMMANDS', 'NOT_PRESENT_WORD',
   'LANE_TABLE_HEADERS', 'CORRUPT_JSON_NOTE', 'LANE_NOTES', 'UNKNOWN_MISSION_COMMAND_NOTE', 'COPY_LABEL', 'COPY_RESULT_TEXT',
-  'CLEAN_HEADING', 'CLEAN_BODY', 'TRUNCATION_TEXT', 'CHOOSE_HEADING', 'STALE_SELECTION_NOTE', 'REFUSAL_WORDS', 'REFUSAL_GENERIC',
-  'RETRY_LABEL', 'DRIFT_NOT_FOUND_HEADING', 'DRIFT_NOT_FOUND_BODY', 'RETURN_TO_MISSIONS_LABEL', 'DRIFT_LOADING_LABEL', 'RESCANNED_TEXT', 'RESCAN_UNCHANGED_ANNOUNCEMENT', 'ANNOUNCEMENT_SEPARATOR',
+  'CLEAN_HEADING', 'CLEAN_BODY', 'TRUNCATION_TEXT', 'CHOOSE_HEADING', 'STALE_SELECTION_NOTE', 'REFUSAL_WORDS', 'DRIFT_REFUSAL_GENERIC',
+  'DRIFT_RETRY_LABEL', 'DRIFT_NOT_FOUND_HEADING', 'DRIFT_NOT_FOUND_BODY', 'RETURN_TO_MISSIONS_LABEL', 'DRIFT_LOADING_LABEL', 'RESCANNED_TEXT', 'RESCAN_UNCHANGED_ANNOUNCEMENT', 'ANNOUNCEMENT_SEPARATOR',
   'READY_ANNOUNCEMENT', 'ERROR_ANNOUNCEMENT', 'FINDINGS_LIST_LABEL',
   'DRIFT_AUTHORITY_TITLE', 'DRIFT_FACTS_TITLE', 'DRIFT_FACT_MISSION', 'DRIFT_FACT_FILE', 'DRIFT_FACT_DERIVED_SIDE', 'DRIFT_RESOLUTION_TITLE',
   'LANE_TABLE_LABEL', 'LANE_TABLE_SCROLLER_LABEL', 'COPY_MANUAL_FALLBACK', 'RESCANNING_ANNOUNCEMENT', 'COPY_ACCESSIBLE_LABEL', 'ROLLUP_SHOWN_TEXT',
@@ -57,7 +57,7 @@ describe('drift-copy: words, sentences and templates', () => {
     expect(copy.CLEAN_HEADING).toBe('No drift found');
     expect(copy.CHOOSE_HEADING).toBe('Choose a finding');
     expect(copy.STALE_SELECTION_NOTE).toBe('The selected finding is not in this scan.');
-    expect(copy.RETRY_LABEL).toBe('Try again');
+    expect(copy.DRIFT_RETRY_LABEL).toBe('Try again');
     expect(copy.FINDINGS_LIST_LABEL).toBe('Drift findings');
     expect(copy.DRIFT_NOT_FOUND_BODY).toBe('No Mission has this identity.');
     expect(copy.RETURN_TO_MISSIONS_LABEL).toBe('Return to Missions');
@@ -132,7 +132,7 @@ describe('drift-copy: words, sentences and templates', () => {
 
   it('words the unreadable scan and a generic refusal', () => {
     expect(copy.REFUSAL_WORDS).toEqual({ drift_scan_unreadable: 'The scan could not read a Mission, so no report is shown.' });
-    expect(copy.REFUSAL_GENERIC).toBe('The drift scan could not be loaded.');
+    expect(copy.DRIFT_REFUSAL_GENERIC).toBe('The drift scan could not be loaded.');
   });
 
   it('never says everything is consistent on a clean scan, and never says "feature"', () => {

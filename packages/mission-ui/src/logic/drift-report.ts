@@ -3,7 +3,7 @@
 import {
   FINDINGS_COUNT_TEXT,
   LAST_SCAN_TEXT,
-  REFUSAL_GENERIC,
+  DRIFT_REFUSAL_GENERIC,
   REFUSAL_WORDS,
   ROLLUP_SHOWN_TEXT,
   SEVERITY_ROLLUP_TEXT,
@@ -90,8 +90,8 @@ export function effectiveStatus(status: string, report: DriftReportView | null, 
 
 /** hook, then the refusal words; a code the screen has never seen, or none, is the generic words. */
 export function resolveDriftRefusal(code: string | null, hooks: LabelHooks | null): string {
-  if (code === null || code === '') return REFUSAL_GENERIC;
-  return hooks?.refusal?.(code) ?? lookup(REFUSAL_WORDS, code) ?? REFUSAL_GENERIC;
+  if (code === null || code === '') return DRIFT_REFUSAL_GENERIC;
+  return hooks?.refusal?.(code) ?? lookup(REFUSAL_WORDS, code) ?? DRIFT_REFUSAL_GENERIC;
 }
 
 /** "last scan <relative time>": the time hook, else relative to `now`, else the ISO instant as given; empty when the scan has no time. */

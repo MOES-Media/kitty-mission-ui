@@ -20,7 +20,7 @@ import {
   DRIFT_NOT_FOUND_HEADING,
   ERROR_ANNOUNCEMENT,
   READY_ANNOUNCEMENT,
-  REFUSAL_GENERIC,
+  DRIFT_REFUSAL_GENERIC,
   REFUSAL_WORDS,
   STALE_SELECTION_NOTE,
   TRUNCATION_TEXT,
@@ -155,13 +155,13 @@ describe('error and not-found', () => {
     let ran = 0;
     for (const props of [stateProps.unknownRefusal(), stateProps.error(), { ...stateProps.error(), refusalCode: '' }, { ...stateProps.error(), refusalCode: 'constructor' }]) {
       const screen = await mount(props);
-      expect(text(one(stateRegion(screen), 'sk-notice'))).toBe(REFUSAL_GENERIC);
+      expect(text(one(stateRegion(screen), 'sk-notice'))).toBe(DRIFT_REFUSAL_GENERIC);
       ran += 1;
     }
     expect(ran).toBe(4);
-    expect(REFUSAL_GENERIC).toBe('The drift scan could not be loaded.');
+    expect(DRIFT_REFUSAL_GENERIC).toBe('The drift scan could not be loaded.');
     const known = await mount(refusalProps('refusalScanUnreadable'));
-    expect(text(one(stateRegion(known), 'sk-notice'))).not.toBe(REFUSAL_GENERIC);
+    expect(text(one(stateRegion(known), 'sk-notice'))).not.toBe(DRIFT_REFUSAL_GENERIC);
   });
 
   it('the host error text and the refusal hook win over the table, in that order', async () => {

@@ -11,7 +11,7 @@ import {
   DRIFT_LOADING_LABEL,
   DRIFT_NOT_FOUND_BODY,
   DRIFT_NOT_FOUND_HEADING,
-  RETRY_LABEL,
+  DRIFT_RETRY_LABEL,
   RETURN_TO_MISSIONS_LABEL,
   STALE_SELECTION_NOTE,
 } from '../../defaults/index.js';
@@ -89,7 +89,7 @@ export function renderClean(p: StateProps): TemplateResult {
 export function renderError(p: StateProps): TemplateResult {
   return html`<div data-state-body="error">
     <sk-notice tone="danger" announce="off">${p.refusalText}</sk-notice>
-    <sk-button variant="secondary" data-retry @click=${p.onRetry}>${RETRY_LABEL}</sk-button>
+    <sk-button variant="secondary" data-retry @click=${p.onRetry}>${DRIFT_RETRY_LABEL}</sk-button>
   </div>`;
 }
 
