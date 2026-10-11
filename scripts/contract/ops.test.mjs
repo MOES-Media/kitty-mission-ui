@@ -210,7 +210,7 @@ test('ops-vocab-open does not exempt a fixture that is not registered with it: t
 
 test('ops-field-length: none was needed, so it is not registered', () => {
   assert.equal(Object.hasOwn(RELAXATIONS, 'ops-field-length'), false);
-  assert.equal(Object.keys(RELAXATIONS).length, 8);
+  assert.equal(Object.keys(RELAXATIONS).length, 11);
 });
 
 test('every Ops actor handle is in the allow-list, and the allow-list rejects a handle that is not', () => {
