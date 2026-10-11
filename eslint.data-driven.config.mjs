@@ -244,7 +244,10 @@ export const SELECTOR_ENTRIES = [
 // changed: the Ops block ignores logic/markdown/ instead, and every other selector still scans it. Two blocks that both set
 // `no-restricted-syntax` would REPLACE each other's list for a file both match, so the Ops block runs the same core rule under
 // its own name (`data-driven-ops/no-restricted-syntax`); its messages begin `data-driven: S19.` like the others.
-export const OPS_BARE_IGNORES = ['packages/mission-ui/src/logic/markdown/**'];
+// The same class, found at the port: the open-project dialog (#9) reads Lit's changed-properties map by its own property name,
+// `changed.has('open')` and `changed.get('open')`, which S19.7 (a bare word as a Map get or has key) refuses. That file is
+// ignored by the Ops block on the same terms; #9's code is not changed and every other selector still scans it.
+export const OPS_BARE_IGNORES = ['packages/mission-ui/src/logic/markdown/**', 'packages/mission-ui/src/elements/sk-open-project-dialog/sk-open-project-dialog.ts'];
 const isOpsBare = (entry) => entry.message.startsWith('data-driven: S19.');
 export const OPS_BARE_ENTRIES = SELECTOR_ENTRIES.filter(isOpsBare);
 export const BASE_ENTRIES = SELECTOR_ENTRIES.filter((entry) => !isOpsBare(entry));

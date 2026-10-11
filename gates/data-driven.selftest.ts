@@ -946,7 +946,7 @@ describe('data-driven gate self-test: the Ops bare-word block (BOUNDARY-001)', (
     expect(ids(cfg.BASE_ENTRIES).some((id) => id?.startsWith('S19.'))).toBe(false);
     expect(cfg.BASE_ENTRIES.length + cfg.OPS_BARE_ENTRIES.length).toBe(cfg.SELECTOR_ENTRIES.length);
     expect(cfg.OPS_BARE_WORDS).toContain('text');
-    expect(cfg.OPS_BARE_IGNORES).toEqual(['packages/mission-ui/src/logic/markdown/**']);
+    expect(cfg.OPS_BARE_IGNORES).toEqual(['packages/mission-ui/src/logic/markdown/**', 'packages/mission-ui/src/elements/sk-open-project-dialog/sk-open-project-dialog.ts']);
     const [gate, ops] = cfg.default;
     expect(gate?.ignores).toEqual(cfg.ALLOW_LIST);
     expect(ops?.ignores).toEqual([...cfg.ALLOW_LIST, ...cfg.OPS_BARE_IGNORES]);
@@ -972,6 +972,18 @@ describe('data-driven gate self-test: the Ops bare-word block (BOUNDARY-001)', (
       ran += 1;
     }
     expect(ran).toBe(3);
+  });
+
+  it("does not scan the open-project dialog with the Ops block (Lit's changed.has('open')), and every other selector still scans it", async () => {
+    const DIALOG = 'packages/mission-ui/src/elements/sk-open-project-dialog/sk-open-project-dialog.ts';
+    const LIT = "export const f = (changed: Map<string, unknown>): boolean => changed.has('open') && changed.get('open') === true;\n";
+    expect(selectorIds(await lint(LIT, DIALOG))).toEqual([]);
+    // positive controls: the same code in an Ops file is refused by S19.7, and the gate block still scans the dialog
+    expect(selectorIds(await lint(LIT, OPS_FILE))).toEqual(['S19.7', 'S19.7']);
+    expect(selectorIds(await lint("export const x = 'blocked';\n", DIALOG))).toEqual(['S1']);
+    expect(selectorIds(await lint("export const x = 'doctor_sweep';\n", DIALOG)).sort()).toEqual(['S18.1', 'S18.3']);
+    // the ignore names that one file: a sibling file of the dialog is scanned by the Ops block
+    expect(selectorIds(await lint(LIT, 'packages/mission-ui/src/elements/sk-open-project-dialog/dialog-parts.ts'))).toEqual(['S19.7', 'S19.7']);
   });
 
   it('scans look-alike paths with the Ops block: the ignore is logic/markdown/ of the package and nothing wider', async () => {
