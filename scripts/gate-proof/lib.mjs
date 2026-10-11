@@ -215,13 +215,13 @@ export async function applyPlant(cwd, plantRoot, plant) {
  */
 export function restorePlant(cwd, targets) {
   for (const t of targets) {
-    const listed = git(cwd, ['ls-files', '--', t]);
+    const listed = git(cwd, ['--literal-pathspecs', 'ls-files', '--', t]);
     if (listed.status !== 0) throw new Error(`cannot restore ${t}: git ls-files exited ${listed.status}: ${listed.err.trim()}`);
     if (listed.out.trim() === '') {
       rmSync(join(cwd, t), { force: true });
       continue;
     }
-    const back = git(cwd, ['checkout', 'HEAD', '--', t]);
+    const back = git(cwd, ['--literal-pathspecs', 'checkout', 'HEAD', '--', t]);
     if (back.status !== 0) throw new Error(`cannot restore ${t}: git checkout exited ${back.status}: ${back.err.trim()}`);
   }
 }
