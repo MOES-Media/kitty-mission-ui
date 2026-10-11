@@ -56,6 +56,7 @@
 import { readFileSync } from 'node:fs';
 import { parse } from 'yaml';
 import tseslint from 'typescript-eslint';
+import { builtinRules } from 'eslint/use-at-your-own-risk';
 
 // The vocabulary is read from the vendored contract schemas (pinned and hash-checked by `contract:check`), so a contract
 // bump that adds a lane or a phase widens the gate with no edit here.
@@ -237,12 +238,33 @@ export const SELECTOR_ENTRIES = [
   entry('S19.11', `MemberExpression[computed=true] > Literal.property[value=/^(${OB})$/i], ${TPL('MemberExpression[computed=true]')}`, 'Ops vocabulary word as a computed property read; read it from src/defaults/'),
 ];
 
+// The Ops bare-word shapes (S19) run in a block of their own (BOUNDARY-001, operator ruling (b)). The Artifact Viewer's markdown
+// renderer (#7) compares markdown-it token types, and `text` is one of them (`token.type === 'text'`, `case 'text':`); it is
+// also an Ops evidence class, so S19.1 and S19.2 would refuse #7's code. The word stays in OPS_BARE_WORDS and #7's code is not
+// changed: the Ops block ignores logic/markdown/ instead, and every other selector still scans it. Two blocks that both set
+// `no-restricted-syntax` would REPLACE each other's list for a file both match, so the Ops block runs the same core rule under
+// its own name (`data-driven-ops/no-restricted-syntax`); its messages begin `data-driven: S19.` like the others.
+export const OPS_BARE_IGNORES = ['packages/mission-ui/src/logic/markdown/**'];
+const isOpsBare = (entry) => entry.message.startsWith('data-driven: S19.');
+export const OPS_BARE_ENTRIES = SELECTOR_ENTRIES.filter(isOpsBare);
+export const BASE_ENTRIES = SELECTOR_ENTRIES.filter((entry) => !isOpsBare(entry));
+export const OPS_BARE_RULE = 'data-driven-ops/no-restricted-syntax';
+const opsPlugin = { rules: { 'no-restricted-syntax': builtinRules.get('no-restricted-syntax') } };
+
 export default [
   {
     files: ['**/*.ts'],
     ignores: ALLOW_LIST,
     languageOptions: { parser: tseslint.parser, sourceType: 'module' },
     linterOptions: { noInlineConfig: true },
-    rules: { 'no-restricted-syntax': ['error', ...SELECTOR_ENTRIES] },
+    rules: { 'no-restricted-syntax': ['error', ...BASE_ENTRIES] },
+  },
+  {
+    files: ['**/*.ts'],
+    ignores: [...ALLOW_LIST, ...OPS_BARE_IGNORES],
+    languageOptions: { parser: tseslint.parser, sourceType: 'module' },
+    linterOptions: { noInlineConfig: true },
+    plugins: { 'data-driven-ops': opsPlugin },
+    rules: { [OPS_BARE_RULE]: ['error', ...OPS_BARE_ENTRIES] },
   },
 ];

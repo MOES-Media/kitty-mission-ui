@@ -55,6 +55,10 @@ interface ConfigModule {
   OPS_UNDERSCORED: string[];
   S8B_METHODS: string[];
   ALLOW_LIST: string[];
+  OPS_BARE_IGNORES: string[];
+  OPS_BARE_ENTRIES: SelectorEntry[];
+  BASE_ENTRIES: SelectorEntry[];
+  OPS_BARE_RULE: string;
 }
 
 async function loadConfig(): Promise<ConfigModule> {
@@ -66,10 +70,13 @@ async function lint(code: string, filename: string = ELEMENT_FILE): Promise<Lint
   return new Linter({ configType: 'flat' }).verify(code, loaded.default, { filename });
 }
 
+/** The two rule ids of the gate: the core rule, and the same rule under the Ops bare-word block's name (BOUNDARY-001). */
+const DATA_DRIVEN_RULES = ['no-restricted-syntax', 'data-driven-ops/no-restricted-syntax'];
+
 /** The selector ids of the data-driven errors in a lint result (rule id and severity checked, message parsed). */
 function selectorIds(messages: Linter.LintMessage[]): string[] {
   return messages
-    .filter((m) => m.ruleId === 'no-restricted-syntax' && m.severity === 2)
+    .filter((m) => DATA_DRIVEN_RULES.includes(m.ruleId ?? '') && m.severity === 2)
     .map((m) => /^data-driven: (S[\w.]+) /.exec(m.message)?.[1] ?? `UNPARSED(${m.message})`);
 }
 
@@ -188,8 +195,10 @@ describe('data-driven gate self-test: configuration', () => {
 
   it('turns inline configuration off', async () => {
     const cfg = await loadConfig();
+    // both blocks: the gate and the Ops bare-word block (BOUNDARY-001); each is unsilenceable on its own
     const scoped = cfg.default.filter((c) => c.linterOptions?.noInlineConfig === true);
-    expect(scoped.length).toBe(1);
+    expect(scoped.length).toBe(2);
+    expect(cfg.default.length).toBe(2);
   });
 });
 
@@ -823,7 +832,7 @@ describe('data-driven gate self-test: negative fixtures', () => {
     it(`stays silent on ${name}`, async () => {
       const messages = await lint(`${code}\n`);
       // Messages without a rule id (a configuration notice) do not count in this case only.
-      expect(messages.filter((m) => m.ruleId === 'no-restricted-syntax').map((m) => m.message)).toEqual([]);
+      expect(messages.filter((m) => DATA_DRIVEN_RULES.includes(m.ruleId ?? '')).map((m) => m.message)).toEqual([]);
     });
   }
 
@@ -905,6 +914,69 @@ describe('data-driven gate self-test: inline configuration', () => {
       expect(errors.length).toBe(1);
       expect(errors[0]?.severity).toBe(2);
       expect(errors[0]?.message.startsWith('data-driven: S1 ')).toBe(true);
+    }
+  });
+
+  it('still reports an Ops bare word under a directive that names the Ops block rule (BOUNDARY-001)', async () => {
+    const line = "// eslint-disable-next-line data-driven-ops/no-restricted-syntax\nexport const f = (s: string): boolean => s === 'failed';\n";
+    const block = "/* eslint-disable */\nexport const g = (s: string): boolean => s === 'failed';\n";
+    for (const code of [line, block]) {
+      const errors = (await lint(code)).filter((m) => m.ruleId === 'data-driven-ops/no-restricted-syntax');
+      expect(errors.length).toBe(1);
+      expect(errors[0]?.severity).toBe(2);
+      expect(errors[0]?.message.startsWith('data-driven: S19.1 ')).toBe(true);
+    }
+  });
+});
+
+// BOUNDARY-001 (operator ruling (b)): the Ops bare-word shapes (S19) run in their own block, which ignores the Artifact Viewer's
+// markdown renderer. `text` is a markdown-it token type there and an Ops evidence class here; it stays in the Ops list and #7's
+// code is not changed. Both halves are proven: `text` is refused in an Ops file, and logic/markdown/ is not scanned by the Ops
+// block (while every other selector still scans it).
+describe('data-driven gate self-test: the Ops bare-word block (BOUNDARY-001)', () => {
+  const OPS_FILE = 'packages/mission-ui/src/elements/sk-ops-screen/ops-row-parts.ts';
+  const MARKDOWN_FILES = ['packages/mission-ui/src/logic/markdown/model.ts', 'packages/mission-ui/src/logic/markdown/render.ts', 'packages/mission-ui/src/logic/markdown/nested/deep.ts'];
+  const TEXT_COMPARE = "export const f = (t: { type: string }): boolean => t.type === 'text';\n";
+  const TEXT_CASE = "export function f(t: { type: string }): number {\n  switch (t.type) {\n    case 'text':\n      return 1;\n    default:\n      return 0;\n  }\n}\n";
+
+  it('splits the selectors: the S19 entries live in the Ops block only, every other entry in the gate block', async () => {
+    const cfg = await loadConfig();
+    const ids = (entries: SelectorEntry[]) => entries.map((e) => /^data-driven: (S[\w.]+) /.exec(e.message)?.[1]);
+    expect(ids(cfg.OPS_BARE_ENTRIES)).toEqual(['S19.1', 'S19.2', 'S19.3', 'S19.4', 'S19.5', 'S19.6', 'S19.7', 'S19.9', 'S19.10', 'S19.11']);
+    expect(ids(cfg.BASE_ENTRIES).some((id) => id?.startsWith('S19.'))).toBe(false);
+    expect(cfg.BASE_ENTRIES.length + cfg.OPS_BARE_ENTRIES.length).toBe(cfg.SELECTOR_ENTRIES.length);
+    expect(cfg.OPS_BARE_WORDS).toContain('text');
+    expect(cfg.OPS_BARE_IGNORES).toEqual(['packages/mission-ui/src/logic/markdown/**']);
+    const [gate, ops] = cfg.default;
+    expect(gate?.ignores).toEqual(cfg.ALLOW_LIST);
+    expect(ops?.ignores).toEqual([...cfg.ALLOW_LIST, ...cfg.OPS_BARE_IGNORES]);
+    expect(Object.keys(ops?.rules ?? {})).toEqual([cfg.OPS_BARE_RULE]);
+  });
+
+  it('refuses `text` compared or used as a case label in an Ops file (S19.1, S19.2)', async () => {
+    expect(selectorIds(await lint(TEXT_COMPARE, OPS_FILE))).toEqual(['S19.1']);
+    expect(selectorIds(await lint(TEXT_CASE, OPS_FILE))).toEqual(['S19.2']);
+    // the same in any other element file
+    expect(selectorIds(await lint(TEXT_COMPARE, ELEMENT_FILE))).toEqual(['S19.1']);
+  });
+
+  it('does not scan logic/markdown/ with the Ops block, and every other selector still scans it', async () => {
+    let ran = 0;
+    for (const file of MARKDOWN_FILES) {
+      expect(selectorIds(await lint(TEXT_COMPARE, file)), file).toEqual([]);
+      expect(selectorIds(await lint(TEXT_CASE, file)), file).toEqual([]);
+      // positive controls: a lane word, an artifact bare word and an Ops underscored word are still refused there
+      expect(selectorIds(await lint("export const x = 'blocked';\n", file)), file).toEqual(['S1']);
+      expect(selectorIds(await lint("export const f = (s: string): boolean => s === 'spec';\n", file)), file).toEqual(['S16.1']);
+      expect(selectorIds(await lint("export const x = 'doctor_sweep';\n", file)).sort(), file).toEqual(['S18.1', 'S18.3']);
+      ran += 1;
+    }
+    expect(ran).toBe(3);
+  });
+
+  it('scans look-alike paths with the Ops block: the ignore is logic/markdown/ of the package and nothing wider', async () => {
+    for (const file of ['packages/mission-ui/src/logic/markdown.ts', 'packages/mission-ui/src/logic/markdown-copy.ts', 'packages/mission-ui/src/elements/markdown/x.ts', 'packages/other/src/logic/markdown/model.ts']) {
+      expect(selectorIds(await lint(TEXT_COMPARE, file)), file).toEqual(['S19.1']);
     }
   });
 });
