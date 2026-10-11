@@ -9,7 +9,7 @@ const elementFiles = (import.meta as unknown as { glob: Glob }).glob('../src/ele
 const logicFiles = (import.meta as unknown as { glob: Glob }).glob('../src/logic/ops-*.ts', { eager: true, query: '?raw', import: 'default' });
 const files: Record<string, string> = { ...elementFiles, ...logicFiles };
 
-const EXPECTED_FILE_COUNT = 13;
+const EXPECTED_FILE_COUNT = 14;
 
 const stripComments = (source: string): string => source.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/(^|[^:'"`\\])\/\/.*$/gm, '$1');
 
