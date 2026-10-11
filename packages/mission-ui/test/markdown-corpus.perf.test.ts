@@ -30,6 +30,6 @@ describe('the whole pipeline stays inside the ceilings of NFR-006, measured in C
       ran += 1;
     }
     expect(ran).toBe(CORPUS_SIZE);
-    expect(slow).toEqual([]);
+    expect(slow.length, slow.join(' | ')).toBeLessThanOrEqual(0);
   });
 });

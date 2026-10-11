@@ -18,6 +18,6 @@ describe('the corpus on the model', () => {
       }
       if (best > ceiling) slow.push(`${entry.name}: ${best.toFixed(0)} ms over ${ceiling} ms`);
     }
-    expect(slow).toEqual([]);
+    expect(slow.length, slow.join(' | ')).toBeLessThanOrEqual(0);
   });
 });

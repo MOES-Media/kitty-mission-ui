@@ -2,16 +2,18 @@
 // measured while other test files share the browser. This guard keeps the split honest in both directions: a test file that
 // reads `performance.now()` and asserts a ceiling must be a `*.perf.test.ts`, and a `*.perf.test.ts` must hold one.
 import assert from 'node:assert/strict';
-import { readdirSync, readFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { test } from 'node:test';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const PERF = /\.perf\.test\.ts$/;
-const CLOCK = /\bperformance\.now\s*\(/;
-// A ceiling assertion: an upper-bound matcher, or a list of the entries that went over their ceiling (the word "ceiling").
-const CEILING = /\.toBeLessThan(?:OrEqual)?\s*\(|\bceiling/i;
+// Every clock a test can read: the monotonic one, the wall one, and the User Timing marks and measures.
+const CLOCK = /\b(?:performance\.(?:now|mark|measure)|Date\.now)\s*\(/;
+// A ceiling assertion: an upper-bound matcher call. A comment or a variable that merely says "ceiling" is not an assertion.
+const CEILING = /\.toBeLessThan(?:OrEqual)?\s*\(/;
 
 /** The test files of every package, relative to the root, sorted. `support/` holds helpers and is not a test file. */
 function testFiles(root) {
@@ -31,7 +33,7 @@ function testFiles(root) {
   return found.sort();
 }
 
-/** True when the source measures with the clock and asserts a ceiling. */
+/** True when the source reads a clock and asserts a ceiling with an upper-bound matcher. */
 export function hasTimingCeiling(source) {
   return CLOCK.test(source) && CEILING.test(source);
 }
@@ -46,9 +48,34 @@ export function audit(root) {
 
 test('the classifier: a clock plus an upper bound is a timing ceiling, either alone is not', () => {
   assert.equal(hasTimingCeiling('const t = performance.now();\nexpect(t).toBeLessThan(200);'), true);
-  assert.equal(hasTimingCeiling('const t = performance.now();\nexpect(slow).toEqual([]); // every entry under its ceiling'), true);
+  assert.equal(hasTimingCeiling('const t = performance.now();\nexpect(t).toBeLessThanOrEqual(200);'), true);
   assert.equal(hasTimingCeiling('const t = performance.now();\nexpect(t).toBeGreaterThan(0);'), false);
   assert.equal(hasTimingCeiling('expect(n).toBeLessThan(500);'), false);
+});
+
+test('the classifier sees every clock, and needs a real matcher rather than the word ceiling', () => {
+  // A unit file that reads the wall clock and asserts an upper bound is a timing test, whichever clock it reads.
+  assert.equal(hasTimingCeiling('const t = Date.now();\nexpect(Date.now() - t).toBeLessThan(200);'), true);
+  assert.equal(hasTimingCeiling('performance.mark("a");\nexpect(elapsed).toBeLessThan(200);'), true);
+  assert.equal(hasTimingCeiling('performance.measure("a", "b");\nexpect(elapsed).toBeLessThanOrEqual(200);'), true);
+  // A clock alone, or an upper bound alone, is not.
+  assert.equal(hasTimingCeiling('const t = Date.now();\nexpect(t).toBeGreaterThan(0);'), false);
+  assert.equal(hasTimingCeiling('performance.mark("a");\nexpect(n).toBe(1);'), false);
+  // A perf file whose only "ceiling" is a comment or a name asserts nothing and is flagged as empty.
+  const commentOnly = 'const t = performance.now();\n// every entry stays under its ceiling\nconst ceiling = 200;\nexpect(slow).toEqual([]);';
+  assert.equal(hasTimingCeiling(commentOnly), false);
+  const root = mkdtempSync(join(tmpdir(), 'perf-split-'));
+  try {
+    mkdirSync(join(root, 'packages/p/test'), { recursive: true });
+    writeFileSync(join(root, 'packages/p/test/a.test.ts'), 'const t = Date.now();\nexpect(Date.now() - t).toBeLessThan(200);\n');
+    writeFileSync(join(root, 'packages/p/test/b.perf.test.ts'), commentOnly);
+    writeFileSync(join(root, 'packages/p/test/c.perf.test.ts'), 'const t = performance.now();\nexpect(performance.now() - t).toBeLessThan(200);\n');
+    const { misplaced, empty } = audit(root);
+    assert.deepEqual(misplaced, ['packages/p/test/a.test.ts']);
+    assert.deepEqual(empty, ['packages/p/test/b.perf.test.ts']);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 });
 
 test('every test file that asserts a timing ceiling is a *.perf.test.ts', () => {
