@@ -1,5 +1,4 @@
 {
-  "accept_commit": "7b991662673bbc7c364ec5b79e69f28f83d5a2da",
   "acceptance_history": [
     {
       "accept_commit": "ba018e066c9db448d8e9301d5d4fdf090c6238b0",
@@ -14,12 +13,18 @@
       "accepted_at": "2026-10-10T08:59:25.946438+00:00",
       "accepted_by": "<user>",
       "accepted_from_commit": "2e785b14234e509345b9826b16117f2053f9fba8"
+    },
+    {
+      "acceptance_mode": "local",
+      "accepted_at": "2026-10-11T08:40:21.914027+00:00",
+      "accepted_by": "<user>",
+      "accepted_from_commit": "82a988e20a3a5aa50fa4eb6c6a28097f01f180d7"
     }
   ],
   "acceptance_mode": "local",
-  "accepted_at": "2026-10-10T08:59:25.946438+00:00",
+  "accepted_at": "2026-10-11T08:40:21.914027+00:00",
   "accepted_by": "<user>",
-  "accepted_from_commit": "2e785b14234e509345b9826b16117f2053f9fba8",
+  "accepted_from_commit": "82a988e20a3a5aa50fa4eb6c6a28097f01f180d7",
   "created_at": "2026-10-06T05:41:21.658615+00:00",
   "flattened": false,
   "friendly_name": "Artifact Viewer screen",
