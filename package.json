@@ -33,8 +33,8 @@
     "contract:update": "node scripts/contract/update.mjs",
     "contract:verify-remote": "node scripts/contract/verify-remote.mjs",
     "test:contract": "node --test scripts/contract/*.test.mjs",
-    "test:scripts": "node --test scripts/hygiene scripts/gate-proof scripts/preflight.test.mjs scripts/manifest-screen.test.mjs scripts/settle.test.mjs scripts/stylelint-exceptions.test.mjs scripts/terminology.test.mjs",
-    "test:terminology": "node scripts/terminology.mjs && node --test scripts/terminology.test.mjs scripts/wp-story-catalogue.test.mjs scripts/visual-tags.test.mjs"
+    "test:scripts": "node --test scripts/hygiene scripts/gate-proof scripts/preflight.test.mjs scripts/manifest-screen.test.mjs scripts/settle.test.mjs scripts/stylelint-exceptions.test.mjs scripts/terminology.test.mjs scripts/wp-story-catalogue.test.mjs scripts/drift-story-catalogue.test.mjs scripts/visual-tags.test.mjs",
+    "test:terminology": "node scripts/terminology.mjs && node --test scripts/terminology.test.mjs scripts/wp-story-catalogue.test.mjs scripts/drift-story-catalogue.test.mjs scripts/visual-tags.test.mjs"
   },
   "devDependencies": {
     "@apidevtools/json-schema-ref-parser": "16.0.3",
