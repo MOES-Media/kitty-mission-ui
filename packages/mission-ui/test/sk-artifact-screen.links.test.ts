@@ -101,6 +101,37 @@ describe('EV-1: an internal link emits sk-select-artifact', () => {
   });
 });
 
+describe('EV-1: Enter on a link ignores chords and key repeat', () => {
+  const press = (el: HTMLElement, init: KeyboardEventInit): KeyboardEvent => {
+    const event = new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, composed: true, cancelable: true, ...init });
+    el.dispatchEvent(event);
+    return event;
+  };
+
+  it('Alt, Ctrl, Meta and Shift with Enter emit nothing (positive control: plain Enter on the same link emits exactly once)', async () => {
+    const screen = await mount();
+    const events = record(screen);
+    const link = linkText(screen, 'data model');
+    for (const chord of [{ altKey: true }, { ctrlKey: true }, { metaKey: true }, { shiftKey: true }]) {
+      expect(press(link, chord).defaultPrevented).toBe(false);
+    }
+    expect(events).toHaveLength(0);
+    press(link, {});
+    expectOne(events, 'sk-select-artifact', { missionId: missionFacts.missionId, path: 'data-model.md', kind: 'data_model' });
+  });
+
+  it('a held Enter (a repeated keydown) emits nothing (positive control: the first keydown of the same press emits exactly once)', async () => {
+    const screen = await mount();
+    const events = record(screen);
+    const link = linkText(screen, 'data model');
+    expect(press(link, { repeat: true }).defaultPrevented).toBe(false);
+    press(link, { repeat: true });
+    expect(events).toHaveLength(0);
+    press(link, { repeat: false });
+    expectOne(events, 'sk-select-artifact', { missionId: missionFacts.missionId, path: 'data-model.md', kind: 'data_model' });
+  });
+});
+
 describe('EV-2: an external link emits sk-open-link', () => {
   it('carries only the href, once per click, and once for Enter', async () => {
     const screen = await mount();

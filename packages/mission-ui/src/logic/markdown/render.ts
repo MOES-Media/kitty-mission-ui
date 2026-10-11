@@ -53,6 +53,8 @@ function alignWord(align: TableAlign): string {
 function control(label: Part[], title: string | typeof nothing, suffix: string, activate: () => void): TemplateResult {
   const onKey = (event: KeyboardEvent): void => {
     if (event.key !== 'Enter') return;
+    // A chord belongs to the browser or the system, and a held key must not activate again: the bare first Enter answers.
+    if (event.repeat || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
     event.preventDefault();
     activate();
   };
