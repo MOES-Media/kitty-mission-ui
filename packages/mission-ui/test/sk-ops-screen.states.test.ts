@@ -190,6 +190,30 @@ describe('an empty profile filter is no filter', () => {
   });
 });
 
+describe('an empty profile draws and says nothing about a profile', () => {
+  it('the empty look under profile "" has the plain sentence and no profile code (controls: null is the same, a set profile names it)', async () => {
+    const empty = await mount({ ...opsProps.emptyProfile(), profile: '' });
+    expect(textOf(empty, '[data-look="empty"]')).toContain(OPS_COPY.emptyBody);
+    expect(textOf(empty, '[data-look="empty"]')).not.toContain(OPS_COPY.emptyProfile);
+    expect(qa(empty, 'code[data-empty-profile]')).toBe(0);
+    expect(qa(empty, '[data-profile-fact]')).toBe(0);
+    const none = await mount({ ...opsProps.emptyProfile(), profile: null });
+    expect(textOf(none, '[data-look="empty"]')).toBe(textOf(empty, '[data-look="empty"]'));
+    const set = await mount(opsProps.emptyProfile());
+    expect(textOf(set, '[data-look="empty"]')).toContain(OPS_COPY.emptyProfile);
+    expect(qa(set, 'code[data-empty-profile]')).toBe(1);
+  });
+
+  it('the ready look draws no profile fact under profile "" (controls: null draws none, a matching set profile draws one)', async () => {
+    const rows = opsProps.mismatchedProfile();
+    expect(qa(await mount({ ...rows, profile: '' }), '[data-profile-fact]')).toBe(0);
+    expect(qa(await mount({ ...rows, profile: null }), '[data-profile-fact]')).toBe(0);
+    const item = rows.items[0] as { profileId: string };
+    const same = await mount({ ...rows, items: rows.items.map((i) => ({ ...i, profileId: item.profileId })), profile: item.profileId });
+    expect(qa(same, '[data-profile-fact]')).toBe(1);
+  });
+});
+
 describe('OP-19..OP-21, OP-37: the empty look', () => {
   it('OP-19: the heading and the plain sentence, no list and no badge', async () => {
     const screen = await mount(opsProps.empty());

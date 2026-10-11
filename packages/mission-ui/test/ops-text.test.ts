@@ -56,8 +56,9 @@ describe('opsEmptyText: the headline is profile over plain; the skipped note is 
   it('the heading is always the empty heading; the headline follows profile then plain, and each is a full sentence', () => {
     expect(opsEmptyText('p-1', 0, null)).toEqual({ heading: 'No invocation records', body: 'No records for this profile.', skipped: null });
     expect(opsEmptyText(null, 0, null)).toEqual({ heading: 'No invocation records', body: 'No invocation records are available for this project.', skipped: null });
-    // an empty-string profile is a profile (the screen never trims or reinterprets it)
-    expect(opsEmptyText('', 0, null).body).toBe('No records for this profile.');
+    // an empty profile is no filter, like null; a space is a profile (nothing is trimmed)
+    expect(opsEmptyText('', 0, null).body).toBe(OPS_COPY.emptyBody);
+    expect(opsEmptyText(' ', 0, null).body).toBe(OPS_COPY.emptyProfile);
     expect(OPS_COPY.emptyProfile.endsWith('.')).toBe(true);
     expect(OPS_COPY.emptyBody.endsWith('.')).toBe(true);
   });

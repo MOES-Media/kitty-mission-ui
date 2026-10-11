@@ -1,6 +1,6 @@
 // T009: resolveOpsLook, the six rows of contracts/sk-ops-screen.md in the order stated.
 import { describe, expect, it } from 'vitest';
-import { resolveOpsLook, type OpsLookProps } from '../src/logic/ops-look.js';
+import { opsProfileFilter, resolveOpsLook, type OpsLookProps } from '../src/logic/ops-look.js';
 
 const row = (profileId: string): { profileId: string } => ({ profileId });
 const props = (over: Partial<OpsLookProps>): OpsLookProps => ({ status: 'ready', items: [row('python-pedro')], profile: null, ...over });
@@ -104,5 +104,14 @@ describe('resolveOpsLook: defensive input and purity', () => {
     const b = resolveOpsLook(props({}));
     expect(a).toEqual(b);
     expect(a).not.toBe(b);
+  });
+});
+
+describe('opsProfileFilter: the one rule that an empty profile is no filter', () => {
+  it('maps null and the empty string to null and keeps every other string as it is', () => {
+    expect(opsProfileFilter(null)).toBeNull();
+    expect(opsProfileFilter('')).toBeNull();
+    expect(opsProfileFilter(' ')).toBe(' ');
+    expect(opsProfileFilter('architect-alphonso')).toBe('architect-alphonso');
   });
 });

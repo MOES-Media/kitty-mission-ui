@@ -4,7 +4,7 @@ import { property } from 'lit/decorators.js';
 import { keyed } from 'lit/directives/keyed.js';
 import '@spec-kitty/elements';
 import { CURSOR_REFUSAL_CODE, OPS_VOCABULARY, profileFactText } from '../../defaults/ops-copy.js';
-import { buildOpsRow, copyResolver, lookAnnouncement, opsCopyText, opsCountLabel, opsEmptyText, opsErrorText, opsRetryDetail, opsSkippedLabel, resolveOpsLook } from '../../logic/index.js';
+import { buildOpsRow, copyResolver, lookAnnouncement, opsCopyText, opsCountLabel, opsEmptyText, opsErrorText, opsProfileFilter, opsRetryDetail, opsSkippedLabel, resolveOpsLook } from '../../logic/index.js';
 import type { OpsLabelHooks, OpsLookResult } from '../../logic/index.js';
 import type { OpsInvocationView, PageInfo, Project } from '../../contract/types.js';
 import { visuallyHidden } from '../../visually-hidden.js';
@@ -139,6 +139,11 @@ export class SkOpsScreen extends LitElement {
   // The element that had focus inside the shadow root when the current update began.
   private focusedBefore: Element | null = null;
 
+  /** The profile filter in force: an empty `profile` is no filter. */
+  private get filter(): string | null {
+    return opsProfileFilter(this.profile);
+  }
+
   // ---- Dispatch: one literal site per event; the part files receive these as arguments.
 
   protected loadMore(): void {
@@ -263,7 +268,7 @@ export class SkOpsScreen extends LitElement {
       sectionEyebrow: copy('sectionEyebrow'),
       sectionHeading: copy('sectionHeading'),
       countText: opsCountLabel(this.items.length, this.totalCount, labels),
-      profileFact: this.profile === null ? null : profileFactText(this.profile, copyResolver(labels)),
+      profileFact: this.filter === null ? null : profileFactText(this.filter, copyResolver(labels)),
       skippedNote: this.skippedCount > 0 ? opsSkippedLabel(this.skippedCount, labels) : null,
       loadMore:
         this.loadMoreError === null && this.pageInfo?.hasNextPage === true && cursor !== null
@@ -302,7 +307,7 @@ export class SkOpsScreen extends LitElement {
           ),
         );
       case 'empty':
-        return renderOpsFrame(this.pageView(), renderOpsEmpty({ ...opsEmptyText(this.profile, this.skippedCount, labels), profile: this.profile }));
+        return renderOpsFrame(this.pageView(), renderOpsEmpty({ ...opsEmptyText(this.profile, this.skippedCount, labels), profile: this.filter }));
       default:
         return renderOpsFrame(this.pageView(), renderOpsLoading({ label: opsCopyText('loadingLabel', labels), body: opsCopyText('loadingBody', labels) }));
     }

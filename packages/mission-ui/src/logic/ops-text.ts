@@ -9,7 +9,7 @@ import {
   type OpsCopyResolver,
 } from '../defaults/ops-copy.js';
 import { lookup } from './lookup.js';
-import type { OpsLookResult } from './ops-look.js';
+import { opsProfileFilter, type OpsLookResult } from './ops-look.js';
 import { formatUtcInstant } from './ops-time.js';
 
 /**
@@ -63,7 +63,7 @@ export function opsEmptyText(profile: string | null, skippedCount: number, label
   const copy = copyResolver(labels);
   return {
     heading: copy('emptyHeading'),
-    body: copy(profile !== null ? 'emptyProfile' : 'emptyBody'),
+    body: copy(opsProfileFilter(profile) !== null ? 'emptyProfile' : 'emptyBody'),
     skipped: skippedCount > 0 ? skippedText(skippedCount, copy) : null,
   };
 }
