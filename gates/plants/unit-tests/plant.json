@@ -18,7 +18,7 @@
   {
     "gate": "unit-tests",
     "ciCommand": "pnpm test",
-    "expectFailPattern": "corpus escape",
+    "expectFailPattern": "Error: corpus escape: ",
     "overlays": [
       {
         "target": "packages/mission-ui/src/logic/markdown/render.ts",
@@ -34,7 +34,7 @@
   {
     "gate": "unit-tests",
     "ciCommand": "pnpm test",
-    "expectFailPattern": "corpus escape",
+    "expectFailPattern": "Error: corpus escape: ",
     "overlays": [
       {
         "target": "packages/mission-ui/src/logic/markdown/render.ts",
@@ -50,7 +50,7 @@
   {
     "gate": "unit-tests",
     "ciCommand": "pnpm test",
-    "expectFailPattern": "corpus escape",
+    "expectFailPattern": "Error: corpus escape: ",
     "overlays": [
       {
         "target": "packages/mission-ui/src/logic/markdown/render.ts",
