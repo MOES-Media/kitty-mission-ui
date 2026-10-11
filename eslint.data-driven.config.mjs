@@ -246,12 +246,18 @@ export const SELECTOR_ENTRIES = [
 // its own name (`data-driven-ops/no-restricted-syntax`); its messages begin `data-driven: S19.` like the others.
 // The same class, found at the port: the open-project dialog (#9) reads Lit's changed-properties map by its own property name,
 // `changed.has('open')` and `changed.get('open')`, which S19.7 (a bare word as a Map get or has key) refuses. That file is
-// ignored by the Ops block on the same terms; #9's code is not changed and every other selector still scans it.
-export const OPS_BARE_IGNORES = ['packages/mission-ui/src/logic/markdown/**', 'packages/mission-ui/src/elements/sk-open-project-dialog/sk-open-project-dialog.ts'];
+// exempt from that one shape and no other: S19.7 runs in a block of its own, under its own rule name, that also ignores the
+// dialog, so S19.1-S19.6 and S19.9-S19.11 still scan it. #9's code is not changed.
+export const OPS_BARE_IGNORES = ['packages/mission-ui/src/logic/markdown/**'];
+export const OPS_KEYED_IGNORES = [...OPS_BARE_IGNORES, 'packages/mission-ui/src/elements/sk-open-project-dialog/sk-open-project-dialog.ts'];
 const isOpsBare = (entry) => entry.message.startsWith('data-driven: S19.');
+const isOpsKeyed = (entry) => entry.message.startsWith('data-driven: S19.7 ');
 export const OPS_BARE_ENTRIES = SELECTOR_ENTRIES.filter(isOpsBare);
+export const OPS_KEYED_ENTRIES = OPS_BARE_ENTRIES.filter(isOpsKeyed);
+export const OPS_UNKEYED_ENTRIES = OPS_BARE_ENTRIES.filter((entry) => !isOpsKeyed(entry));
 export const BASE_ENTRIES = SELECTOR_ENTRIES.filter((entry) => !isOpsBare(entry));
 export const OPS_BARE_RULE = 'data-driven-ops/no-restricted-syntax';
+export const OPS_KEYED_RULE = 'data-driven-ops-keyed/no-restricted-syntax';
 const opsPlugin = { rules: { 'no-restricted-syntax': builtinRules.get('no-restricted-syntax') } };
 
 export default [
@@ -268,6 +274,14 @@ export default [
     languageOptions: { parser: tseslint.parser, sourceType: 'module' },
     linterOptions: { noInlineConfig: true },
     plugins: { 'data-driven-ops': opsPlugin },
-    rules: { [OPS_BARE_RULE]: ['error', ...OPS_BARE_ENTRIES] },
+    rules: { [OPS_BARE_RULE]: ['error', ...OPS_UNKEYED_ENTRIES] },
+  },
+  {
+    files: ['**/*.ts'],
+    ignores: [...ALLOW_LIST, ...OPS_KEYED_IGNORES],
+    languageOptions: { parser: tseslint.parser, sourceType: 'module' },
+    linterOptions: { noInlineConfig: true },
+    plugins: { 'data-driven-ops-keyed': opsPlugin },
+    rules: { [OPS_KEYED_RULE]: ['error', ...OPS_KEYED_ENTRIES] },
   },
 ];

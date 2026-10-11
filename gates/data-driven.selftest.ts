@@ -59,6 +59,10 @@ interface ConfigModule {
   OPS_BARE_ENTRIES: SelectorEntry[];
   BASE_ENTRIES: SelectorEntry[];
   OPS_BARE_RULE: string;
+  OPS_KEYED_IGNORES: string[];
+  OPS_KEYED_ENTRIES: SelectorEntry[];
+  OPS_UNKEYED_ENTRIES: SelectorEntry[];
+  OPS_KEYED_RULE: string;
 }
 
 async function loadConfig(): Promise<ConfigModule> {
@@ -70,8 +74,8 @@ async function lint(code: string, filename: string = ELEMENT_FILE): Promise<Lint
   return new Linter({ configType: 'flat' }).verify(code, loaded.default, { filename });
 }
 
-/** The two rule ids of the gate: the core rule, and the same rule under the Ops bare-word block's name (BOUNDARY-001). */
-const DATA_DRIVEN_RULES = ['no-restricted-syntax', 'data-driven-ops/no-restricted-syntax'];
+/** The rule ids of the gate: the core rule, and the same rule under the names of the two Ops bare-word blocks (BOUNDARY-001). */
+const DATA_DRIVEN_RULES = ['no-restricted-syntax', 'data-driven-ops/no-restricted-syntax', 'data-driven-ops-keyed/no-restricted-syntax'];
 
 /** The selector ids of the data-driven errors in a lint result (rule id and severity checked, message parsed). */
 function selectorIds(messages: Linter.LintMessage[]): string[] {
@@ -195,10 +199,10 @@ describe('data-driven gate self-test: configuration', () => {
 
   it('turns inline configuration off', async () => {
     const cfg = await loadConfig();
-    // both blocks: the gate and the Ops bare-word block (BOUNDARY-001); each is unsilenceable on its own
+    // all three blocks: the gate, the Ops bare-word block (BOUNDARY-001) and the Ops keyed-lookup block; each is unsilenceable on its own
     const scoped = cfg.default.filter((c) => c.linterOptions?.noInlineConfig === true);
-    expect(scoped.length).toBe(2);
-    expect(cfg.default.length).toBe(2);
+    expect(scoped.length).toBe(3);
+    expect(cfg.default.length).toBe(3);
   });
 });
 
@@ -927,6 +931,17 @@ describe('data-driven gate self-test: inline configuration', () => {
       expect(errors[0]?.message.startsWith('data-driven: S19.1 ')).toBe(true);
     }
   });
+
+  it('still reports a keyed Ops lookup under a directive that names the keyed block rule', async () => {
+    const line = "// eslint-disable-next-line data-driven-ops-keyed/no-restricted-syntax\nexport const f = (m: Map<string, number>): boolean => m.has('failed');\n";
+    const block = "/* eslint-disable */\nexport const g = (m: Map<string, number>): boolean => m.has('failed');\n";
+    for (const code of [line, block]) {
+      const errors = (await lint(code)).filter((m) => m.ruleId === 'data-driven-ops-keyed/no-restricted-syntax');
+      expect(errors.length).toBe(1);
+      expect(errors[0]?.severity).toBe(2);
+      expect(errors[0]?.message.startsWith('data-driven: S19.7 ')).toBe(true);
+    }
+  });
 });
 
 // BOUNDARY-001 (operator ruling (b)): the Ops bare-word shapes (S19) run in their own block, which ignores the Artifact Viewer's
@@ -946,11 +961,16 @@ describe('data-driven gate self-test: the Ops bare-word block (BOUNDARY-001)', (
     expect(ids(cfg.BASE_ENTRIES).some((id) => id?.startsWith('S19.'))).toBe(false);
     expect(cfg.BASE_ENTRIES.length + cfg.OPS_BARE_ENTRIES.length).toBe(cfg.SELECTOR_ENTRIES.length);
     expect(cfg.OPS_BARE_WORDS).toContain('text');
-    expect(cfg.OPS_BARE_IGNORES).toEqual(['packages/mission-ui/src/logic/markdown/**', 'packages/mission-ui/src/elements/sk-open-project-dialog/sk-open-project-dialog.ts']);
-    const [gate, ops] = cfg.default;
+    expect(cfg.OPS_BARE_IGNORES).toEqual(['packages/mission-ui/src/logic/markdown/**']);
+    expect(cfg.OPS_KEYED_IGNORES).toEqual([...cfg.OPS_BARE_IGNORES, 'packages/mission-ui/src/elements/sk-open-project-dialog/sk-open-project-dialog.ts']);
+    expect(ids(cfg.OPS_KEYED_ENTRIES)).toEqual(['S19.7']);
+    expect(ids(cfg.OPS_UNKEYED_ENTRIES)).toEqual(['S19.1', 'S19.2', 'S19.3', 'S19.4', 'S19.5', 'S19.6', 'S19.9', 'S19.10', 'S19.11']);
+    const [gate, ops, keyed] = cfg.default;
     expect(gate?.ignores).toEqual(cfg.ALLOW_LIST);
     expect(ops?.ignores).toEqual([...cfg.ALLOW_LIST, ...cfg.OPS_BARE_IGNORES]);
     expect(Object.keys(ops?.rules ?? {})).toEqual([cfg.OPS_BARE_RULE]);
+    expect(keyed?.ignores).toEqual([...cfg.ALLOW_LIST, ...cfg.OPS_KEYED_IGNORES]);
+    expect(Object.keys(keyed?.rules ?? {})).toEqual([cfg.OPS_KEYED_RULE]);
   });
 
   it('refuses `text` compared or used as a case label in an Ops file (S19.1, S19.2)', async () => {
@@ -974,13 +994,18 @@ describe('data-driven gate self-test: the Ops bare-word block (BOUNDARY-001)', (
     expect(ran).toBe(3);
   });
 
-  it("does not scan the open-project dialog with the Ops block (Lit's changed.has('open')), and every other selector still scans it", async () => {
+  it("exempts the open-project dialog from S19.7 alone (Lit's changed.has('open')), and every other selector still scans it", async () => {
     const DIALOG = 'packages/mission-ui/src/elements/sk-open-project-dialog/sk-open-project-dialog.ts';
     const LIT = "export const f = (changed: Map<string, unknown>): boolean => changed.has('open') && changed.get('open') === true;\n";
     expect(selectorIds(await lint(LIT, DIALOG))).toEqual([]);
     // positive controls: the same code in an Ops file is refused by S19.7, and the gate block still scans the dialog
     expect(selectorIds(await lint(LIT, OPS_FILE))).toEqual(['S19.7', 'S19.7']);
     expect(selectorIds(await lint("export const x = 'blocked';\n", DIALOG))).toEqual(['S1']);
+    // the other Ops bare-word shapes still scan the dialog: a comparison, a case label, a search and a quoted key all fire
+    expect(selectorIds(await lint("export const f = (s: string): boolean => s === 'closed';\n", DIALOG))).toEqual(['S19.1']);
+    expect(selectorIds(await lint(TEXT_CASE, DIALOG))).toEqual(['S19.2']);
+    expect(selectorIds(await lint("export const f = (s: string): boolean => s.includes('open');\n", DIALOG))).toEqual(['S19.5']);
+    expect(selectorIds(await lint("export const o = { 'open': 1 };\n", DIALOG))).toEqual(['S19.9']);
     expect(selectorIds(await lint("export const x = 'doctor_sweep';\n", DIALOG)).sort()).toEqual(['S18.1', 'S18.3']);
     // the ignore names that one file: a sibling file of the dialog is scanned by the Ops block
     expect(selectorIds(await lint(LIT, 'packages/mission-ui/src/elements/sk-open-project-dialog/dialog-parts.ts'))).toEqual(['S19.7', 'S19.7']);
