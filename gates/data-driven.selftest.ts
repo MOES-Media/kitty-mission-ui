@@ -630,7 +630,7 @@ describe('data-driven gate self-test: every word of the Ops vocabularies', () =>
     for (const w of cfg.OPS_BARE_WORDS) {
       for (const method of ['includes', 'indexOf', 'lastIndexOf']) {
         expect(selectorIds(await lint(`export const f = (s: string): boolean => s.${method}('${w}') !== false;\n`)), `${method} ${w}`).toEqual(['S19.5']);
-        expect(selectorIds(await lint(`export const f = (s: string): unknown => ['${w}', 'other'].${method}(s);\n`)), `array ${method} ${w}`).toEqual(['S19.6']);
+        expect(selectorIds(await lint(`export const f = (s: string): unknown => ['${w}', 'neutral'].${method}(s);\n`)), `array ${method} ${w}`).toEqual(['S19.6']);
       }
       for (const method of ['get', 'has']) expect(selectorIds(await lint(`export const f = (m: Map<string, number>): unknown => m.${method}('${w.toUpperCase()}');\n`)), `${method} ${w}`).toEqual(['S19.7']);
       expect(selectorIds(await lint(`export const o = { '${w}': 1 };\n`)), w).toEqual(['S19.9']);
@@ -652,7 +652,7 @@ describe('data-driven gate self-test: every word of the Ops vocabularies', () =>
         expect(selectorIds(await lint(`export const f = (s: string): boolean => s.${method}('${w}');\n`)), `${method} ${w}`).toEqual(['S19.5']);
       }
       for (const method of ['get', 'has']) expect(selectorIds(await lint(`export const f = (m: Map<string, number>): unknown => m.${method}(\`${w}\`);\n`)), `template ${method} ${w}`).toEqual(['S19.7']);
-      expect(selectorIds(await lint(`export const f = (s: string): boolean => new Set(['${w}', 'other']).has(s);\n`)), `set ${w}`).toEqual(['S19.6']);
+      expect(selectorIds(await lint(`export const f = (s: string): boolean => new Set(['${w}', 'neutral']).has(s);\n`)), `set ${w}`).toEqual(['S19.6']);
       expect(selectorIds(await lint(`export const f = (s: string): boolean => new Set([\`${w}\`]).has(s);\n`)), `set template ${w}`).toEqual(['S19.6']);
       expect(selectorIds(await lint(`export const f = (s: string): unknown => new Map([['${w}', 1]]).get(s);\n`)), `map ${w}`).toEqual(['S19.6']);
       ran += 1;
@@ -666,7 +666,7 @@ describe('data-driven gate self-test: every word of the Ops vocabularies', () =>
     for (const w of cfg.OPS_BARE_WORDS) {
       expect(selectorIds(await lint(`export const f = (o: Record<string, number>): number | undefined => o[\`${w}\`];\n`)), `computed template ${w}`).toEqual(['S19.11']);
       for (const method of ['some', 'every', 'find', 'findIndex', 'findLast', 'findLastIndex', 'filter']) {
-        expect(selectorIds(await lint(`export const f = (s: string): unknown => ['${w}', 'other'].${method}((x) => x === s);\n`)).filter((id) => id !== 'S19.1'), `array ${method} ${w}`).toEqual(['S19.6']);
+        expect(selectorIds(await lint(`export const f = (s: string): unknown => ['${w}', 'neutral'].${method}((x) => x === s);\n`)).filter((id) => id !== 'S19.1'), `array ${method} ${w}`).toEqual(['S19.6']);
         expect(selectorIds(await lint(`export const f = (s: string): unknown => [\`${w}\`].${method}((x) => x.length > s.length);\n`)), `template array ${method} ${w}`).toEqual(['S19.6']);
       }
       expect(selectorIds(await lint(`export const f = (o: object): boolean => '${w}' in o;\n`)), `in ${w}`).toEqual(['S19.7']);
@@ -678,11 +678,11 @@ describe('data-driven gate self-test: every word of the Ops vocabularies', () =>
 
   it('keeps the round-3 shapes silent for other words, for an expression and for a variable left side (positive controls: the shapes above fire)', async () => {
     const silent = [
-      'export const f = (o: Record<string, number>): number | undefined => o[`other`];\n',
+      'export const f = (o: Record<string, number>): number | undefined => o[`neutral`];\n',
       'export const f = (o: Record<string, number>, w: string): number | undefined => o[`${w}`];\n',
       "export const f = (s: string): unknown => ['alpha', 'beta'].some((x) => x === s);\n",
       "export const f = (s: string): unknown => ['alpha'].find((x) => x === s);\n",
-      "export const f = (o: object): boolean => 'other' in o;\n",
+      "export const f = (o: object): boolean => 'neutral' in o;\n",
       'export const f = (o: object, k: string): boolean => k in o;\n',
     ];
     for (const code of silent) expect(selectorIds(await lint(code)), code).toEqual([]);
@@ -692,10 +692,10 @@ describe('data-driven gate self-test: every word of the Ops vocabularies', () =>
 
   it('keeps those shapes silent for other words and for a template with an expression (positive controls: the shapes above fire)', async () => {
     const silent = [
-      'export const f = (s: string): boolean => s.includes(`other`);\n',
+      'export const f = (s: string): boolean => s.includes(`neutral`);\n',
       'export const f = (s: string, w: string): boolean => s.includes(`${w}`);\n',
-      "export const f = (s: string): boolean => s.startsWith('other');\n",
-      "export const f = (s: string): boolean => s.endsWith(`other`);\n",
+      "export const f = (s: string): boolean => s.startsWith('neutral');\n",
+      "export const f = (s: string): boolean => s.endsWith(`neutral`);\n",
       "export const f = (s: string): boolean => new Set(['alpha', 'beta']).has(s);\n",
       "export const f = (s: string): unknown => new Map([['alpha', 1]]).get(s);\n",
       "export const f = (k: string): unknown => new Set([k]).has(k);\n",
@@ -707,12 +707,12 @@ describe('data-driven gate self-test: every word of the Ops vocabularies', () =>
 
   it('keeps the same shapes silent when no bare word is in them, and the identifier key (not copied from #7) silent (positive controls: the shapes above fire)', async () => {
     const silent = [
-      "export const f = (s: string): boolean => s.includes('other');\n",
+      "export const f = (s: string): boolean => s.includes('neutral');\n",
       "export const f = (s: string): number => ['alpha', 'beta'].indexOf(s);\n",
-      "export const f = (m: Map<string, number>): number | undefined => m.get('other');\n",
+      "export const f = (m: Map<string, number>): number | undefined => m.get('neutral');\n",
       'export const f = (m: Map<string, number>, k: string): number | undefined => m.get(k);\n',
-      "export const o = { 'other': 1, ['another']: 2 };\n",
-      "export const f = (o: Record<string, number>): number | undefined => o['other'];\n",
+      "export const o = { 'neutral': 1, ['another']: 2 };\n",
+      "export const f = (o: Record<string, number>): number | undefined => o['neutral'];\n",
       // an identifier key named like a bare word is a legitimate key (#7's S16.8 would flag it; it is not copied)
       'export const o = { text: 1, url: 2, open: true };\n',
       'export const f = (o: Record<string, number>, k: string): number | undefined => o[k];\n',
