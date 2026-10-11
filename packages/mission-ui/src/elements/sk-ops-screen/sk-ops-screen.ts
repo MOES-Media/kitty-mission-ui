@@ -120,6 +120,7 @@ export class SkOpsScreen extends LitElement {
     cursor: string | null;
     busy: boolean;
     errorKey: string | null;
+    errorRef: OpsLoadMoreError | null;
   } = {
     look: null,
     reason: null,
@@ -128,10 +129,13 @@ export class SkOpsScreen extends LitElement {
     cursor: null,
     busy: false,
     errorKey: null,
+    errorRef: null,
   };
   private current: OpsLookResult = { look: 'loading', reason: 'status' };
   // The cursor of the Load more request already emitted and not yet answered.
   private requestedCursor: string | null = null;
+  // Whether a load-more retry was emitted since the load-more error was last announced: a fresh error object after it is a new failure.
+  private retryEmitted = false;
   // The element that had focus inside the shadow root when the current update began.
   private focusedBefore: Element | null = null;
 
@@ -154,6 +158,7 @@ export class SkOpsScreen extends LitElement {
       const key = this.pageInfo?.nextPageCursor ?? '';
       if (key === this.requestedCursor) return;
       this.requestedCursor = key;
+      this.retryEmitted = true;
     }
     this.dispatchEvent(new CustomEvent<SkOpsRetryLoadDetail>('sk-retry-load', { detail, bubbles: true, composed: true }));
   }
@@ -175,7 +180,7 @@ export class SkOpsScreen extends LitElement {
 
   protected override willUpdate(changed: PropertyValues<this>): void {
     // The host answered (`loadingMore` moved, a page arrived or `pageInfo` was replaced): Load more may ask again.
-    if (changed.has('loadingMore') || changed.has('items') || changed.has('pageInfo')) this.requestedCursor = null;
+    if (changed.has('loadingMore') || changed.has('items') || changed.has('pageInfo') || changed.has('loadMoreError')) this.requestedCursor = null;
     // On every update: any property can detach the focused node; `updated` moves focus only when the captured node is gone.
     this.focusedBefore = this.shadowRoot?.activeElement ?? null;
 
@@ -187,25 +192,29 @@ export class SkOpsScreen extends LitElement {
     const firstId = look === 'ready' ? (this.items[0]?.invocationId ?? null) : null;
     const cursor = look === 'ready' ? (this.pageInfo?.nextPageCursor ?? null) : null;
     const previous = this.shown;
+    const errorRef = errorKey === null ? null : this.loadMoreError;
+    // A retry failing again hands the host's fresh error object back with the same code: that is a new failure to announce.
+    const failedAgain = errorRef !== null && this.retryEmitted && errorRef !== previous.errorRef;
     if (this.announcing) {
-      const text = this.announcementText(previous, rows, firstId, cursor, errorKey);
+      const text = this.announcementText(previous, rows, firstId, cursor, errorKey, failedAgain);
       if (text !== null) {
         this.announcement = text;
         this.announcementSeq += 1;
       }
     }
-    this.shown = { look, reason, rows, firstId, cursor, busy: this.loadingMore, errorKey };
+    if (errorRef === null || failedAgain) this.retryEmitted = false;
+    this.shown = { look, reason, rows, firstId, cursor, busy: this.loadingMore, errorKey, errorRef };
     this.announcing = true;
   }
 
   /**
-   * The text for the change since `previous`, or null when nothing that is announced changed: the load-more error appearing; Load
+   * The text for the change since `previous`, or null when nothing that is announced changed: the load-more error appearing (or arriving afresh after a retry); Load
    * more starting; a different look; or, in the ready look, a different page (its rows, or its first record or next-page cursor,
    * differ). The empty look is one look however it is reached, so its reason is ignored.
    */
-  private announcementText(previous: SkOpsScreen['shown'], rows: number, firstId: string | null, cursor: string | null, errorKey: string | null): string | null {
+  private announcementText(previous: SkOpsScreen['shown'], rows: number, firstId: string | null, cursor: string | null, errorKey: string | null, failedAgain: boolean): string | null {
     const { look, reason } = this.current;
-    if (errorKey !== null && errorKey !== previous.errorKey) {
+    if (errorKey !== null && (errorKey !== previous.errorKey || failedAgain)) {
       return opsCopyText(this.loadMoreError?.code === CURSOR_REFUSAL_CODE ? 'refusedCursor' : 'loadMoreError', this.labels);
     }
     const sameReason = look === 'empty' || reason === previous.reason;

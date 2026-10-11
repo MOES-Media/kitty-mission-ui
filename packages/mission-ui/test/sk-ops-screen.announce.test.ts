@@ -302,6 +302,30 @@ describe('FR-033, WP07 fix round 1: the markup of the empty look is the same how
     expect(liveText(screen)).toBe(OPS_COPY.emptyHeading);
   });
 
+  it('a retry that fails again is announced again (positive control: the same error object re-rendered, with no retry, is silent)', async () => {
+    const screen = await mount(opsProps.ready());
+    const w = watch(screen);
+    const error = { code: null };
+    await update(screen, { loadMoreError: error });
+    expect(w.count()).toBe(1);
+    // the same object again, and no retry: silent
+    await update(screen, { loadMoreError: error, errorMessage: 'x' });
+    expect(w.count()).toBe(0);
+    // a fresh object without a retry having been asked for: silent
+    await update(screen, { loadMoreError: { code: null } });
+    expect(w.count()).toBe(0);
+    // the retry is pressed, the host loads, and the retry fails with a fresh error of the same code
+    (root(screen).querySelector('[data-retry]') as HTMLElement).click();
+    await update(screen, { loadingMore: true });
+    w.count();
+    await update(screen, { loadingMore: false, loadMoreError: { code: null } });
+    expect(liveText(screen)).toBe(OPS_COPY.loadMoreError);
+    expect(w.count()).toBe(1);
+    // and only once: the same fresh object re-rendered is silent again
+    await update(screen, { errorMessage: 'y' });
+    expect(w.count()).toBe(0);
+  });
+
   it('a load-more error that goes straight from a null code to the refused cursor announces exactly once, with the refused-cursor sentence', async () => {
     const screen = await mount(opsProps.ready());
     await update(screen, { loadMoreError: { code: null } });
