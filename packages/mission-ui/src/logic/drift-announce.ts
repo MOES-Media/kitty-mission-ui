@@ -80,7 +80,16 @@ export function nextAnnouncement(prev: AnnounceInput | null, next: AnnounceInput
 
 /** True when `next` shows what `base` showed: the same state, the same scan time and count, the same refusal words. */
 const sameAsBase = (base: AnnounceInput, next: AnnounceInput): boolean =>
-  base.state === next.state && base.scannedAt === next.scannedAt && base.count === next.count && base.refusalText === next.refusalText;
+  base.state === next.state && sameScanTime(base.scannedAt, next.scannedAt) && base.count === next.count && base.refusalText === next.refusalText;
+
+/** The same instant is the same scan time, however it is written (as `reportLine` reads it); text that is not a time must match as text. */
+function sameScanTime(a: string | null, b: string | null): boolean {
+  if (a === b) return true;
+  if (a === null || b === null) return false;
+  const left = Date.parse(a);
+  const right = Date.parse(b);
+  return !Number.isNaN(left) && !Number.isNaN(right) && left === right;
+}
 
 /**
  * The line that ends a rescan, decided against the input captured when the rescan STARTED (`base`), not against the previous

@@ -59,6 +59,12 @@ describe('nextAnnouncement: text only when the announced input changed', () => {
     expect(nextAnnouncement(base, input({ scannedAt: '2026-10-01T12:00:00+00:00' }))).toBeNull();
     expect(nextAnnouncement(base, input({ scannedAt: '2026-10-01T14:00:00+02:00' }))).toBeNull();
     expect(nextAnnouncement(base, input({ scannedAt: '2026-10-01T14:04:00+02:00' }))).toBe('Rescanned: 3 findings, last scan 1 minute ago');
+    // the end of a rescan compares the instants too: the same instant with milliseconds, or in another offset, is "no changes"
+    const rescanning = { ...base, rescanning: true };
+    expect(rescanCompletion(rescanning, input({ scannedAt: '2026-10-01T12:00:00.000Z' }))).toBe('Rescan complete: no changes');
+    expect(rescanCompletion(rescanning, input({ scannedAt: '2026-10-01T14:00:00+02:00' }))).toBe('Rescan complete: no changes');
+    expect(rescanCompletion(rescanning, input({ scannedAt: '2026-10-01T12:00:00.500Z' }))).not.toBe('Rescan complete: no changes');
+    expect(rescanCompletion(rescanning, input({ scannedAt: 'not a time' }))).not.toBe('Rescan complete: no changes');
   });
 
   it('announces a report that replaces a different state, ready or empty', () => {
