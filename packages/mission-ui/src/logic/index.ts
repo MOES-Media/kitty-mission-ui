@@ -15,3 +15,7 @@ export * from './wp-files.js';
 export * from './wp-staleness.js';
 export * from './wp-history.js';
 export * from './wp-retry.js';
+export * from './ops-look.js';
+export * from './ops-row.js';
+export * from './ops-text.js';
+export * from './ops-time.js';

@@ -9,3 +9,4 @@ export * from './files.js';
 export * from './refusals.js';
 export * from './staleness.js';
 export * from './wp-copy.js';
+export * from './ops-copy.js';
