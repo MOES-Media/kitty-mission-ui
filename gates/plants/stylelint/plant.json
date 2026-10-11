@@ -64,5 +64,27 @@
         "source": "plant-stylelint-weight.ts.plant"
       }
     ]
+  },
+  {
+    "gate": "stylelint",
+    "ciCommand": "pnpm lint:styles",
+    "expectFailPattern": "plant-stylelint-ops-frame-leak",
+    "overlays": [
+      {
+        "target": "packages/mission-ui/src/elements/sk-ops-screen/plant-stylelint-ops-frame-leak.ts",
+        "source": "plant-stylelint-ops-frame-leak.ts.plant"
+      }
+    ]
+  },
+  {
+    "gate": "stylelint",
+    "ciCommand": "pnpm lint:styles",
+    "expectFailPattern": "plant-stylelint-ops-wrap-leak",
+    "overlays": [
+      {
+        "target": "packages/mission-ui/src/elements/sk-ops-screen/plant-stylelint-ops-wrap-leak.ts",
+        "source": "plant-stylelint-ops-wrap-leak.ts.plant"
+      }
+    ]
   }
 ]

@@ -1,0 +1,2 @@
+// expect: S16.9
+export const o = { 'failed': 1 };

@@ -1,0 +1,4 @@
+import { html } from 'lit';
+
+// plant: an attribute bound to an item value in an Ops part file (R-ops-1)
+export const plantOpsR1 = (evidenceValue: string) => html`<sk-pill-tag href=${evidenceValue}>evidence</sk-pill-tag>`;

@@ -208,6 +208,99 @@ const CASES = [
       'grid-template-rows: minmax(220px, 1fr);',
     ],
   },
+  {
+    // E-40 (CP-1 confirmed 2026-10-11, widened; sunset: a spec-kitty-design record-row element and a leading token): the row frame and
+    // the row typography of the Ops screen, plus the badge clause, in the row part file only. Token values only; `solid` is the only
+    // non-token word; `line-height: 1.5` is the one pinned literal. Padding is a layout property and passes everywhere, so it is not listed.
+    id: 'E-40',
+    files: [`${EL}/sk-ops-screen/ops-row-parts.ts`],
+    allowed:
+      'border: var(--sk-border-width-1) solid var(--sk-border-default); border-radius: var(--sk-radius-md); background: var(--sk-surface-card); font-size: var(--sk-text-sm); font-family: var(--sk-font-mono); font-weight: var(--sk-weight-bold); font-variant-numeric: tabular-nums; color: var(--sk-fg-subtle); line-height: 1.5; line-height: 1.2; border-block-end: var(--sk-border-width-1) solid var(--sk-border-default); border-block-end: 0;',
+    stillFails: [
+      'border-block-end: 1px solid var(--sk-border-default);',
+      'border-block-end: var(--sk-border-width-1) dashed var(--sk-border-default);',
+      'border-block-end: var(--sk-border-width-1) solid red;',
+      'border-block-end: 2px;',
+      'border: 1px solid var(--sk-border-default);',
+      'border: var(--sk-border-width-1) dashed var(--sk-border-default);',
+      'border: var(--sk-border-width-1) solid red;',
+      'border-style: solid;',
+      'border-color: var(--sk-border-default);',
+      'border-radius: 8px;',
+      'background: #123456;',
+      'background: red;',
+      'font-size: 14px;',
+      'font-family: monospace;',
+      'font-family: serif;',
+      'font-weight: 700;',
+      'font-variant-numeric: var(--sk-space-4);',
+      'font-variant-numeric: lining-nums;',
+      'color: #fff;',
+      'color: solid;',
+      'line-height: 1.4;',
+      'line-height: 1.20;',
+      'line-height: 1.25;',
+      'line-height: 1.50;',
+      'line-height: 2;',
+      'line-height: 24px;',
+      'line-height: normal;',
+      'line-height: var(--sk-space-4);',
+      'box-shadow: var(--sk-shadow-md);',
+      'letter-spacing: var(--sk-tracking-wide);',
+      'text-transform: uppercase;',
+      'margin-bottom: var(--sk-space-3);',
+    ],
+  },
+  {
+    // E-40 badge clause, page file (Ops G-3; same sunset as E-40): the five properties of the outlined mono badge for the "Read only" and
+    // count pills, in ops-page-parts.ts only. NOT the frame (radius, background), the size or the colour: those stay refused here.
+    id: 'E-40',
+    files: [`${EL}/sk-ops-screen/ops-page-parts.ts`],
+    allowed:
+      'border: var(--sk-border-width-1) solid var(--sk-border-default); font-family: var(--sk-font-mono); font-weight: var(--sk-weight-normal); font-variant-numeric: tabular-nums; line-height: 1.2;',
+    stillFails: [
+      'border: 1px solid var(--sk-border-default);',
+      'border: var(--sk-border-width-1) dashed var(--sk-border-default);',
+      'border: var(--sk-border-width-1) solid red;',
+      'border-radius: var(--sk-radius-md);',
+      'background: var(--sk-surface-card);',
+      'font-size: var(--sk-text-sm);',
+      'color: var(--sk-fg-subtle);',
+      'font-family: monospace;',
+      'font-weight: 700;',
+      'font-variant-numeric: lining-nums;',
+      'line-height: 1.5;',
+      'line-height: 1.4;',
+      'line-height: 1.20;',
+      'line-height: normal;',
+      'line-height: 18px;',
+    ],
+  },
+  {
+    // E-42 (CP-1 confirmed, narrowed; sunset: E-21's): the words-only wrapping keywords, in the two Ops part files that draw text.
+    id: 'E-42',
+    files: [`${EL}/sk-ops-screen/ops-row-parts.ts`, `${EL}/sk-ops-screen/ops-page-parts.ts`],
+    allowed: 'text-overflow: ellipsis; white-space: nowrap; overflow-wrap: break-word;',
+    stillFails: [
+      'text-overflow: clip;',
+      'text-overflow: "…";',
+      'white-space: pre;',
+      'white-space: pre-wrap;',
+      'overflow-wrap: foo;',
+      'word-break: break-all;',
+      'hyphens: auto;',
+      'max-width: 50%;',
+      'max-inline-size: 100%;',
+    ],
+  },
+  {
+    // E-43 (CP-1 confirmed; sunset: spec-kitty-design long-token text treatment): `overflow-wrap: anywhere` for the id and the
+    // evidence value, in the row part file only (the page part gets E-42's `break-word` and nothing more).
+    id: 'E-43',
+    files: [`${EL}/sk-ops-screen/ops-row-parts.ts`],
+    allowed: 'overflow-wrap: anywhere;',
+    stillFails: ['overflow-wrap: foo;', 'overflow-wrap: break-all;', 'word-break: break-all;', 'word-break: break-word;', 'hyphens: auto;', 'text-overflow: clip;'],
+  },
 ];
 
 describe('exception blocks: allowed in scope, absent elsewhere', () => {
@@ -558,5 +651,186 @@ describe('E-17: the class= overrides of the Work Package screen, per file, with 
   test('there is no sk-breadcrumbs row for state-parts.ts', async () => {
     assert.ok((await lintClass('state-parts.ts', 'sk-breadcrumbs')).length >= 1);
     assert.deepEqual(await lintClass('header-parts.ts', 'sk-breadcrumbs'), []);
+  });
+});
+
+describe('E-40, E-42, E-43 (Ops screen): sibling files hold none of the grants, and E-41 does not exist', () => {
+  const ROW = `${EL}/sk-ops-screen/ops-row-parts.ts`;
+  const PAGE = `${EL}/sk-ops-screen/ops-page-parts.ts`;
+  const STATE = `${EL}/sk-ops-screen/ops-state-parts.ts`;
+  const SCREEN = `${EL}/sk-ops-screen/sk-ops-screen.ts`;
+  const FRAME = [
+    'border: var(--sk-border-width-1) solid var(--sk-border-default);',
+    'border-radius: var(--sk-radius-md);',
+    'background: var(--sk-surface-card);',
+    'font-size: var(--sk-text-sm);',
+    'font-family: var(--sk-font-mono);',
+    'font-weight: var(--sk-weight-bold);',
+    'font-variant-numeric: tabular-nums;',
+    'color: var(--sk-fg-subtle);',
+    'line-height: 1.5;',
+    'line-height: 1.2;',
+    'border-block-end: var(--sk-border-width-1) solid var(--sk-border-default);',
+  ];
+  test('the E-40 frame and typography are refused declaration by declaration in the other Ops files and in a foreign part file', async () => {
+    let ran = 0;
+    for (const file of [SCREEN, OTHER]) {
+      for (const css of FRAME) {
+        assert.ok((await problems(file, css)).length >= 1, `${file} ${css}`);
+        ran += 1;
+      }
+    }
+    assert.equal(ran, 22);
+    // The state part holds the Ops G-4 card and the Ops G-6 typography (WP07 fix round 1): five of the eleven pass there (border, radius,
+    // background, weight token, line height 1.5), and the other six stay refused.
+    const CARD_AND_TYPE = [FRAME[0], FRAME[1], FRAME[2], FRAME[5], FRAME[8]];
+    let statePassed = 0;
+    let stateRefused = 0;
+    for (const css of FRAME) {
+      const found = await problems(STATE, css);
+      if (CARD_AND_TYPE.includes(css)) {
+        assert.deepEqual(found, [], css);
+        statePassed += 1;
+      } else {
+        assert.ok(found.length >= 1, css);
+        stateRefused += 1;
+      }
+    }
+    assert.equal(statePassed, 5);
+    assert.equal(stateRefused, 6);
+    // The page part holds the badge clause only (Ops G-3): five of the eleven pass there, and the other six stay refused.
+    const BADGE = [FRAME[0], FRAME[4], FRAME[5], FRAME[6], FRAME[9]];
+    let passed = 0;
+    let refused = 0;
+    for (const css of FRAME) {
+      const found = await problems(PAGE, css);
+      if (BADGE.includes(css)) {
+        assert.deepEqual(found, [], css);
+        passed += 1;
+      } else {
+        assert.ok(found.length >= 1, css);
+        refused += 1;
+      }
+    }
+    assert.equal(passed, 5);
+    assert.equal(refused, 6);
+  });
+  test('E-43 anywhere is allowed in ops-row-parts.ts only; the page part allows break-word and nothing else of it', async () => {
+    assert.deepEqual(await problems(ROW, 'overflow-wrap: anywhere;'), []);
+    // Ops G-5 (WP07 fix round 1): the state part takes the same keyword, for the profile; E-42's other keywords stay refused there.
+    assert.deepEqual(await problems(STATE, 'overflow-wrap: anywhere;'), []);
+    let ran = 0;
+    for (const file of [PAGE, SCREEN, OTHER]) {
+      assert.ok((await problems(file, 'overflow-wrap: anywhere;')).length >= 1, file);
+      ran += 1;
+    }
+    assert.deepEqual(await problems(PAGE, 'overflow-wrap: break-word;'), []);
+    assert.equal(ran, 3);
+  });
+  test('E-42 keywords are refused in the state part, the screen file and a foreign file (positive control: the two named files pass)', async () => {
+    const css = 'text-overflow: ellipsis; white-space: nowrap;';
+    assert.deepEqual(await problems(ROW, css), []);
+    assert.deepEqual(await problems(PAGE, css), []);
+    let ran = 0;
+    for (const file of [STATE, SCREEN, OTHER]) {
+      for (const one of ['text-overflow: ellipsis;', 'white-space: nowrap;', 'overflow-wrap: break-word;']) {
+        assert.ok((await problems(file, one)).length >= 1, `${file} ${one}`);
+        ran += 1;
+      }
+    }
+    assert.equal(ran, 9);
+  });
+  test('the page part gets the badge clause and E-42, and no frame, size, colour or row line height from E-40', async () => {
+    assert.deepEqual(await problems(PAGE, 'text-overflow: ellipsis;'), []);
+    assert.deepEqual(await problems(PAGE, 'line-height: 1.2;'), []);
+    assert.deepEqual(await problems(PAGE, 'border: var(--sk-border-width-1) solid var(--sk-border-default);'), []);
+    assert.ok((await problems(PAGE, 'line-height: 1.5;')).length >= 1);
+    // The row file does not take the badge line height from this clause: its own E-40 pins 1.5 (WP05 adds 1.2 there under Ops G-2).
+    assert.ok((await problems(STATE, 'line-height: 1.2;')).length >= 1);
+    assert.ok((await problems(SCREEN, 'line-height: 1.2;')).length >= 1);
+    assert.ok((await problems(OTHER, 'line-height: 1.2;')).length >= 1);
+  });
+  test('E-41 is deleted: the term minimum is a calc of two space tokens that the unmodified config passes in every Ops file, and 5rem is refused', async () => {
+    const minimum = 'grid-template-columns: minmax(calc(var(--sk-space-10) + var(--sk-space-4)), .55fr) minmax(0, 1fr);';
+    let ran = 0;
+    for (const file of [ROW, PAGE, STATE, SCREEN, OTHER]) {
+      assert.deepEqual(await problems(file, minimum), [], file);
+      assert.deepEqual(await problems(file, 'margin-block: 0 var(--sk-space-3);'), [], file);
+      assert.ok((await problems(file, 'margin-bottom: var(--sk-space-3);')).length >= 1, file);
+      assert.ok((await problems(file, 'grid-template-columns: minmax(80px, .55fr) minmax(0, 1fr);')).length >= 1, file);
+      assert.ok((await problems(file, 'grid-template-columns: minmax(5rem, .55fr) minmax(0, 1fr);')).length >= 1, file);
+      ran += 1;
+    }
+    assert.equal(ran, 5);
+  });
+});
+
+describe('Ops G-4, Ops G-5, Ops G-6 (Ops state part, WP07 fix round 1): the grants are this file only and token or keyword only', () => {
+  const STATE = `${EL}/sk-ops-screen/ops-state-parts.ts`;
+  const OTHERS = [`${EL}/sk-ops-screen/ops-row-parts.ts`, `${EL}/sk-ops-screen/ops-page-parts.ts`, `${EL}/sk-ops-screen/sk-ops-screen.ts`, OTHER];
+  test('the card passes in the state part with dashed or solid and tokens, and the dashed keyword is refused in every other file', async () => {
+    for (const keyword of ['dashed', 'solid']) {
+      assert.deepEqual(await problems(STATE, `border: var(--sk-border-width-1) ${keyword} var(--sk-border-control);`), [], keyword);
+    }
+    let ran = 0;
+    for (const file of OTHERS) {
+      assert.ok((await problems(file, 'border: var(--sk-border-width-1) dashed var(--sk-border-control);')).length >= 1, file);
+      ran += 1;
+    }
+    assert.equal(ran, 4);
+    for (const css of ['border: 1px dashed var(--sk-border-control);', 'border: var(--sk-border-width-1) dotted var(--sk-border-control);', 'border-radius: 16px;', 'background: #181a1f;']) {
+      assert.ok((await problems(STATE, css)).length >= 1, css);
+    }
+  });
+  test('the typography passes as a weight token and a line height of 1.5 only, and other values are refused', async () => {
+    assert.deepEqual(await problems(STATE, 'font-weight: var(--sk-weight-bold);'), []);
+    assert.deepEqual(await problems(STATE, 'line-height: 1.5;'), []);
+    for (const css of ['font-weight: 700;', 'line-height: 1.6;', 'line-height: 21px;']) {
+      assert.ok((await problems(STATE, css)).length >= 1, css);
+    }
+  });
+});
+
+describe('Ops G-7 (pre-merge fix round 2, F-1): max-width: 100% is the Ops row part file only, and only that keyword value', () => {
+  const ROW = `${EL}/sk-ops-screen/ops-row-parts.ts`;
+  const OTHERS = [`${EL}/sk-ops-screen/ops-page-parts.ts`, `${EL}/sk-ops-screen/ops-state-parts.ts`, `${EL}/sk-ops-screen/sk-ops-screen.ts`, OTHER];
+  test('passes in the row part file and is refused in every other Ops file and in a foreign part file (leak plant)', async () => {
+    assert.deepEqual(await problems(ROW, 'max-width: 100%;'), []);
+    let ran = 0;
+    for (const file of OTHERS) {
+      assert.ok((await problems(file, 'max-width: 100%;')).length >= 1, file);
+      ran += 1;
+    }
+    assert.equal(ran, 4);
+  });
+  test('any other value is refused in the row part file (a pixel width, a percentage, a rem, a calc)', async () => {
+    let ran = 0;
+    for (const value of ['50%', '300px', '20rem', 'calc(100% - 4px)', 'none']) {
+      assert.ok((await problems(ROW, `max-width: ${value};`)).length >= 1, value);
+      ran += 1;
+    }
+    assert.equal(ran, 5);
+  });
+  test('the grant is registered as "Ops G-7" and covers the one property', async () => {
+    const { readFileSync } = await import('node:fs');
+    const source = readFileSync(join(root, 'stylelint.config.mjs'), 'utf8');
+    const block = source.slice(source.indexOf("id: 'Ops G-7'"));
+    assert.ok(block.startsWith("id: 'Ops G-7',\n    files: ['sk-ops-screen/ops-row-parts.ts'],\n    properties: ['max-width'],"));
+  });
+});
+
+describe('exception ids: the Ops grants cannot be confused with #10\'s G-n (BOUNDARY-010)', () => {
+  test('no exception in stylelint.config.mjs has a bare G-n id, and the Ops grants are registered as "Ops G-n"', async () => {
+    const { readFileSync } = await import('node:fs');
+    const source = readFileSync(join(root, 'stylelint.config.mjs'), 'utf8');
+    const ids = [...source.matchAll(/^\s+id: '([^']+)',$/gm)].map((m) => m[1]);
+    assert.ok(ids.length > 20, `the scan found ${ids.length} ids`);
+    assert.deepEqual(ids.filter((id) => /^G-\d/.test(id)), []);
+    assert.ok(ids.includes('Ops G-4'));
+    assert.ok(ids.includes('Ops G-6'));
+    assert.ok(ids.includes('Ops G-7'));
+    // positive control: the matcher refuses what it is for
+    assert.ok(/^G-\d/.test('G-4'));
+    assert.ok(!/^G-\d/.test('Ops G-4'));
   });
 });

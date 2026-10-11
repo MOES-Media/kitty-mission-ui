@@ -1,0 +1,13 @@
+import { css } from 'lit';
+
+// Exception E-40 allows the Ops row frame and typography (and the pinned `line-height: 1.5`) in ops-row-parts.ts only; the same
+// declarations in a sibling file of the same directory must still fail (no leak).
+export const plantStylelintOpsFrameLeak = css`
+  .plant-stylelint-ops-frame-leak {
+    border: var(--sk-border-width-1) solid var(--sk-border-default);
+    border-radius: var(--sk-radius-md);
+    background: var(--sk-surface-card);
+    font-family: var(--sk-font-mono);
+    line-height: 1.5;
+  }
+`;

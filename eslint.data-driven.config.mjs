@@ -18,6 +18,16 @@
 //    a bare word held in a plain string (const x = 'fresh') is therefore not seen. An expression-free template literal
 //    (s === `fresh`, case `fresh`:) is the same comparison and is matched (S14.3, S14.4). The underscored and whole-word
 //    members (changes_requested, not_applicable, unchanged, the two reason codes) are matched as literals, as the lanes are.
+//  - The Ops vocabularies (mission-ui#11) follow the same split: the underscored and rare members (task_execution, mission_step,
+//    doctor_sweep, repo_path, ops_unreadable, invalid_page_cursor, abandoned) are matched as literals; the common identifiers
+//    (open, closed, agent, query, text, url, failed, advisory) only in a comparison or case label, so an object key, a
+//    property, a type member or a variable of that name stays clean, and a bare word held in a plain string is not seen.
+//    `done` is an Ops outcome and already gated as a lane. The profile and action of an Op are open text and have no word.
+//    The bare words are also caught as the argument (a string or an expression-free template) of includes, indexOf, lastIndexOf,
+//    startsWith, endsWith, get and has, in an array searched with includes, indexOf or lastIndexOf, in a Set or Map built from
+//    them, as a quoted or computed object key and as a computed read (S16.5 to S16.11); a bare word
+//    as a plain identifier key stays clean. Also: a template computed read, an array of them searched with some, every, find,
+//    findIndex, findLast, findLastIndex or filter, and the left side of the `in` operator.
 //  - The gate does NOT read ArtifactKind (the review-cycle kind) or the detail refusal codes (not_found,
 //    source_unreadable); the reviewer self-check list and the foreign-value tests cover them.
 //  - Vocabulary in a .d.ts or JSON file, and code outside packages/*/src (tests), is not scanned.
@@ -41,6 +51,22 @@ export const CHANGE_STATE_WORDS = schema('ChangeState.yaml').enum;
 export const STALENESS_STATUS_WORDS = schema('Staleness.yaml').properties.status.enum;
 // The reason enum lists null as its last member; only the codes are words.
 export const STALENESS_REASON_WORDS = schema('Staleness.yaml').properties.reason.enum.filter((w) => typeof w === 'string');
+// The Ops enums (mission-ui#11, plan D-12) and the page-cursor refusal constant.
+export const OPS_OUTCOME_WORDS = schema('OpsOutcome.yaml').enum;
+export const OPS_CLOSED_BY_WORDS = schema('OpsClosedBy.yaml').enum;
+export const OPS_MODE_WORDS = schema('OpsModeOfWork.yaml').enum;
+export const OPS_EVIDENCE_KIND_WORDS = schema('OpsEvidenceKind.yaml').enum;
+export const OPS_STATUS_WORDS = schema('OpsInvocationStatus.yaml').enum;
+export const OPS_REFUSAL_WORDS = schema('OpsRefusalCode.yaml').enum;
+export const OPS_CURSOR_REFUSAL_CODE = schema('PageCursorRefusal.yaml').allOf.find((part) => part.properties?.code?.const !== undefined).properties.code.const;
+const OPS_ALL = [
+  ...new Set([...OPS_OUTCOME_WORDS, ...OPS_CLOSED_BY_WORDS, ...OPS_MODE_WORDS, ...OPS_EVIDENCE_KIND_WORDS, ...OPS_STATUS_WORDS, ...OPS_REFUSAL_WORDS, OPS_CURSOR_REFUSAL_CODE]),
+];
+// Common identifiers: matched only in a comparison or a case label.
+export const OPS_BARE_WORDS = ['open', 'closed', 'agent', 'query', 'text', 'url', 'failed', 'advisory'].filter((w) => OPS_ALL.includes(w));
+// Matched anywhere as a literal; a lane word (`done`) is already gated by S1 and is left out here.
+export const OPS_WORDS = OPS_ALL.filter((w) => !OPS_BARE_WORDS.includes(w) && !WORDS.includes(w));
+export const OPS_UNDERSCORED = OPS_WORDS.filter((w) => w.includes('_'));
 const NEW_ALL = [...new Set([...VERDICT_WORDS, ...CHANGE_STATE_WORDS, ...STALENESS_STATUS_WORDS, ...STALENESS_REASON_WORDS])].filter((w) => !WORDS.includes(w));
 // Matched anywhere as a literal: underscored members and whole words that are not everyday identifiers.
 export const NEW_BARE_WORDS = ['changed', 'unknown', 'fresh', 'stale'].filter((w) => NEW_ALL.includes(w));
@@ -73,10 +99,18 @@ const M = alt(S8B_METHODS);
 const NW = alt(NEW_WORDS);
 const NU = alt(NEW_UNDERSCORED);
 const NB = alt(NEW_BARE_WORDS);
+const OW = alt(OPS_WORDS);
+const OU = alt(OPS_UNDERSCORED);
+const OB = alt(OPS_BARE_WORDS);
+const OPS_ARRAY_METHODS = alt(['includes', 'indexOf', 'lastIndexOf', 'some', 'every', 'find', 'findIndex', 'findLast', 'findLastIndex', 'filter']);
+const OPS_STRING_METHODS = alt(['includes', 'indexOf', 'lastIndexOf', 'startsWith', 'endsWith']);
+/** The expression-free template form of a bare word (F-5): `\`failed\``. */
+const TPL = (parent) => `${parent} > TemplateLiteral[expressions.length=0] > TemplateElement[value.cooked=/^(${OB})$/i]`;
+const OPS_KEYED_METHODS = alt(['get', 'has']);
 
 const entry = (id, selector, text) => ({ selector, message: `data-driven: ${id} ${text}` });
 
-/** One entry per selector alternative (40), so a message names the alternative that fired. */
+/** One entry per selector alternative, so a message names the alternative that fired. */
 export const SELECTOR_ENTRIES = [
   entry('S1', `Literal[value=/^(${W})$/i]`, 'phase name or lane value as a literal; read it from src/defaults/'),
   entry('S1b.1', `Literal[value=/^(${SW})$/i]`, 'status word as a literal; read it from src/defaults/'),
@@ -118,6 +152,23 @@ export const SELECTOR_ENTRIES = [
   entry('S14.2', `SwitchCase > Literal.test[value=/^(${NB})$/i]`, 'change-state or staleness word as a case label; read it from src/defaults/'),
   entry('S14.3', `BinaryExpression[operator=/^[!=]==?$/] > TemplateLiteral[expressions.length=0] > TemplateElement[value.cooked=/^(${NB})$/i]`, 'change-state or staleness word compared as an expression-free template; read it from src/defaults/'),
   entry('S14.4', `SwitchCase > TemplateLiteral.test[expressions.length=0] > TemplateElement[value.cooked=/^(${NB})$/i]`, 'change-state or staleness word as a template case label; read it from src/defaults/'),
+  entry('S15.1', `Literal[value=/^(${OW})$/i]`, 'Ops vocabulary word as a literal; read it from src/defaults/'),
+  entry('S15.2', `TemplateElement[value.cooked=/^(${OW})$/i]`, 'Ops vocabulary word as an exact template'),
+  entry('S15.3', `Literal[value=/${OU}/i]`, 'underscored Ops vocabulary word inside a longer string'),
+  entry('S15.4', `TemplateElement[value.cooked=/${OU}/i]`, 'underscored Ops vocabulary word inside a template'),
+  entry('S15.5', `Property[computed=false] > Identifier.key[name=/^(${OU})$/]`, 'object key named like an Ops vocabulary word'),
+  entry('S16.1', `BinaryExpression[operator=/^[!=]==?$/] > Literal[value=/^(${OB})$/i]`, 'Ops vocabulary word compared as a literal; read it from src/defaults/'),
+  entry('S16.2', `SwitchCase > Literal.test[value=/^(${OB})$/i]`, 'Ops vocabulary word as a case label; read it from src/defaults/'),
+  entry('S16.3', `BinaryExpression[operator=/^[!=]==?$/] > TemplateLiteral[expressions.length=0] > TemplateElement[value.cooked=/^(${OB})$/i]`, 'Ops vocabulary word compared as an expression-free template; read it from src/defaults/'),
+  entry('S16.4', `SwitchCase > TemplateLiteral.test[expressions.length=0] > TemplateElement[value.cooked=/^(${OB})$/i]`, 'Ops vocabulary word as a template case label; read it from src/defaults/'),
+  // The shapes #7's bare-word gate closed after its review (BOUNDARY-006); the numbers follow #7's S16.5-S16.7 and S16.9-S16.11.
+  // Its identifier-key shape (#7's S16.8) is NOT copied: it would flag legitimate keys such as `{ text: ... }`.
+  entry('S16.5', `CallExpression[callee.property.name=/^(${OPS_STRING_METHODS})$/] > Literal[value=/^(${OB})$/i], ${TPL(`CallExpression[callee.property.name=/^(${OPS_STRING_METHODS})$/]`)}`, 'Ops vocabulary word searched for with includes, indexOf, lastIndexOf, startsWith or endsWith (as a string or an expression-free template); read it from src/defaults/'),
+  entry('S16.6', `MemberExpression[property.name=/^(${OPS_ARRAY_METHODS})$/] > ArrayExpression.object > Literal[value=/^(${OB})$/i], ${TPL(`MemberExpression[property.name=/^(${OPS_ARRAY_METHODS})$/] > ArrayExpression.object`)}, NewExpression[callee.name=/^(Set|Map)$/] > ArrayExpression > Literal[value=/^(${OB})$/i], NewExpression[callee.name='Map'] > ArrayExpression > ArrayExpression > Literal:first-child[value=/^(${OB})$/i], ${TPL('NewExpression[callee.name=/^(Set|Map)$/] > ArrayExpression')}`, 'Ops vocabulary word in an array searched with includes, indexOf or lastIndexOf, or in a Set or Map built from it; read it from src/defaults/'),
+  entry('S16.7', `CallExpression[callee.property.name=/^(${OPS_KEYED_METHODS})$/] > Literal[value=/^(${OB})$/i], ${TPL(`CallExpression[callee.property.name=/^(${OPS_KEYED_METHODS})$/]`)}, BinaryExpression[operator='in'] > Literal.left[value=/^(${OB})$/i], ${TPL("BinaryExpression[operator='in']")}`, 'Ops vocabulary word as the key of a Map or Set get or has, or the left side of the in operator (as a string or an expression-free template); read it from src/defaults/'),
+  entry('S16.9', `Property[computed=false] > Literal.key[value=/^(${OB})$/i]`, 'Ops vocabulary word as a quoted object key; read it from src/defaults/'),
+  entry('S16.10', `Property[computed=true] > Literal.key[value=/^(${OB})$/i]`, 'Ops vocabulary word as a computed object key; read it from src/defaults/'),
+  entry('S16.11', `MemberExpression[computed=true] > Literal.property[value=/^(${OB})$/i], ${TPL('MemberExpression[computed=true]')}`, 'Ops vocabulary word as a computed property read; read it from src/defaults/'),
 ];
 
 export default [

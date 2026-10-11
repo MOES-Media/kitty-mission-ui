@@ -1,0 +1,8 @@
+import { css as styles } from 'lit';
+
+// plant: an aliased lit css tag hides the template from postcss-lit and so from every Stylelint rule
+export const plantCssAlias = styles`
+  :host {
+    color: red;
+  }
+`;

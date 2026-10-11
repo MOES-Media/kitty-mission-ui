@@ -1,6 +1,7 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { ESLint, Linter } from 'eslint';
+import tseslint from 'typescript-eslint';
 import { describe, expect, it, vi } from 'vitest';
 
 // The first lint call loads the TypeScript parser and the real-sources case lints the whole tree: a cold runner needs more than 5 s (the whole file runs in about 2 s warm; 30 s is ample and bounds a hang sooner).
@@ -29,6 +30,16 @@ interface ConfigModule {
   NEW_WORDS: string[];
   NEW_UNDERSCORED: string[];
   NEW_BARE_WORDS: string[];
+  OPS_OUTCOME_WORDS: string[];
+  OPS_CLOSED_BY_WORDS: string[];
+  OPS_MODE_WORDS: string[];
+  OPS_EVIDENCE_KIND_WORDS: string[];
+  OPS_STATUS_WORDS: string[];
+  OPS_REFUSAL_WORDS: string[];
+  OPS_CURSOR_REFUSAL_CODE: string;
+  OPS_BARE_WORDS: string[];
+  OPS_WORDS: string[];
+  OPS_UNDERSCORED: string[];
   S8B_METHODS: string[];
   ALLOW_LIST: string[];
 }
@@ -67,15 +78,30 @@ const EXPECTED_NEW_WORDS = ['changes_requested', 'unchanged', 'not_applicable', 
 const EXPECTED_NEW_UNDERSCORED = ['changes_requested', 'not_applicable', 'planning_artifact_repo_root_shared_workspace', 'live_claim_process'];
 // Common identifiers: matched only in comparisons and case labels.
 const EXPECTED_NEW_BARE_WORDS = ['changed', 'unknown', 'fresh', 'stale'];
+// The vocabulary of the Ops screen (mission-ui#11, plan D-12): the enums of the vendored Ops schemas and the page-cursor refusal
+// constant, written out here independently of the schemas. `done` is already gated as a lane.
+const EXPECTED_OPS_OUTCOME_WORDS = ['done', 'failed', 'abandoned'];
+const EXPECTED_OPS_CLOSED_BY_WORDS = ['agent', 'doctor_sweep'];
+const EXPECTED_OPS_MODE_WORDS = ['task_execution', 'advisory', 'mission_step', 'query'];
+const EXPECTED_OPS_EVIDENCE_KIND_WORDS = ['repo_path', 'url', 'text'];
+const EXPECTED_OPS_STATUS_WORDS = ['open', 'closed'];
+const EXPECTED_OPS_REFUSAL_WORDS = ['ops_unreadable'];
+const EXPECTED_OPS_CURSOR_REFUSAL_CODE = 'invalid_page_cursor';
+// Gate words (literals, anywhere outside the allow-list), then the common identifiers matched only in a comparison or case label.
+const EXPECTED_OPS_WORDS = ['abandoned', 'doctor_sweep', 'task_execution', 'mission_step', 'repo_path', 'ops_unreadable', 'invalid_page_cursor'];
+const EXPECTED_OPS_UNDERSCORED = ['doctor_sweep', 'task_execution', 'mission_step', 'repo_path', 'ops_unreadable', 'invalid_page_cursor'];
+const EXPECTED_OPS_BARE_WORDS = ['open', 'closed', 'agent', 'query', 'text', 'url', 'failed', 'advisory'];
 const EXPECTED_METHODS = ['at', 'slice', 'splice', 'with', 'toSpliced'];
 const EXPECTED_ENTRY_IDS = [
   'S1', 'S1b.1', 'S1b.2', 'S2', 'S3a', 'S3b', 'S3c.1', 'S3c.2', 'S4', 'S5', 'S5b.1', 'S5b.2', 'S5b.3', 'S6', 'S7',
   'S7b.1', 'S7b.2', 'S7b.3', 'S7b.4', 'S8a.1', 'S8a.2', 'S8b.1', 'S8b.2', 'S8c.1', 'S8c.2', 'S9.1', 'S9.2', 'S10', 'S11',
   'S12.1', 'S12.2', 'S13.1', 'S13.2', 'S13.3', 'S13.4', 'S13.5', 'S14.1', 'S14.2', 'S14.3', 'S14.4',
+  'S15.1', 'S15.2', 'S15.3', 'S15.4', 'S15.5', 'S16.1', 'S16.2', 'S16.3', 'S16.4',
+  'S16.5', 'S16.6', 'S16.7', 'S16.9', 'S16.10', 'S16.11',
 ];
 
 describe('data-driven gate self-test: configuration', () => {
-  it('declares the vocabulary of the contract and the 40 selector entries, each with a distinct id', async () => {
+  it('declares the vocabulary of the contract and the 55 selector entries, each with a distinct id', async () => {
     const cfg = await loadConfig();
     expect(cfg.WORDS).toEqual(EXPECTED_WORDS);
     expect(cfg.VERDICT_WORDS).toEqual(EXPECTED_VERDICT_WORDS);
@@ -85,13 +111,23 @@ describe('data-driven gate self-test: configuration', () => {
     expect(cfg.NEW_WORDS).toEqual(EXPECTED_NEW_WORDS);
     expect(cfg.NEW_UNDERSCORED).toEqual(EXPECTED_NEW_UNDERSCORED);
     expect(cfg.NEW_BARE_WORDS).toEqual(EXPECTED_NEW_BARE_WORDS);
+    expect(cfg.OPS_OUTCOME_WORDS).toEqual(EXPECTED_OPS_OUTCOME_WORDS);
+    expect(cfg.OPS_CLOSED_BY_WORDS).toEqual(EXPECTED_OPS_CLOSED_BY_WORDS);
+    expect(cfg.OPS_MODE_WORDS).toEqual(EXPECTED_OPS_MODE_WORDS);
+    expect(cfg.OPS_EVIDENCE_KIND_WORDS).toEqual(EXPECTED_OPS_EVIDENCE_KIND_WORDS);
+    expect(cfg.OPS_STATUS_WORDS).toEqual(EXPECTED_OPS_STATUS_WORDS);
+    expect(cfg.OPS_REFUSAL_WORDS).toEqual(EXPECTED_OPS_REFUSAL_WORDS);
+    expect(cfg.OPS_CURSOR_REFUSAL_CODE).toBe(EXPECTED_OPS_CURSOR_REFUSAL_CODE);
+    expect(cfg.OPS_WORDS).toEqual(EXPECTED_OPS_WORDS);
+    expect(cfg.OPS_UNDERSCORED).toEqual(EXPECTED_OPS_UNDERSCORED);
+    expect(cfg.OPS_BARE_WORDS).toEqual(EXPECTED_OPS_BARE_WORDS);
     expect(cfg.STATUS_WORDS).toEqual(EXPECTED_STATUS_WORDS);
     expect(cfg.UNDERSCORED).toEqual(EXPECTED_UNDERSCORED);
     expect(cfg.S8B_METHODS).toEqual(EXPECTED_METHODS);
     const ids = cfg.SELECTOR_ENTRIES.map((e) => /^data-driven: (S[\w.]+) /.exec(e.message)?.[1]);
     expect(ids).toEqual(EXPECTED_ENTRY_IDS);
-    expect(cfg.SELECTOR_ENTRIES.length).toBe(40);
-    expect(new Set(ids).size).toBe(40);
+    expect(cfg.SELECTOR_ENTRIES.length).toBe(55);
+    expect(new Set(ids).size).toBe(55);
   });
 
   it('turns inline configuration off', async () => {
@@ -102,9 +138,9 @@ describe('data-driven gate self-test: configuration', () => {
 });
 
 describe('data-driven gate self-test: positive fixtures', () => {
-  it('has the 46 positive fixtures and no other file', () => {
-    expect(positives.length).toBe(46);
-    expect(readdirSync(FIXTURE_DIR).length).toBe(46);
+  it('has the 61 positive fixtures and no other file', () => {
+    expect(positives.length).toBe(61);
+    expect(readdirSync(FIXTURE_DIR).length).toBe(61);
   });
 
   for (const name of positives) {
@@ -240,6 +276,215 @@ describe('data-driven gate self-test: every word of the verdict, change-state an
   });
 });
 
+describe('data-driven gate self-test: every word of the Ops vocabularies', () => {
+  it('reads the vocabulary from the vendored schemas: every enum member and the cursor code is a lane, a gate word or a bare word', async () => {
+    const cfg = await loadConfig();
+    const all = [
+      ...cfg.OPS_OUTCOME_WORDS,
+      ...cfg.OPS_CLOSED_BY_WORDS,
+      ...cfg.OPS_MODE_WORDS,
+      ...cfg.OPS_EVIDENCE_KIND_WORDS,
+      ...cfg.OPS_STATUS_WORDS,
+      ...cfg.OPS_REFUSAL_WORDS,
+      cfg.OPS_CURSOR_REFUSAL_CODE,
+    ];
+    expect(all.length).toBe(16);
+    const covered = new Set([...cfg.WORDS, ...cfg.OPS_WORDS, ...cfg.OPS_BARE_WORDS]);
+    expect(all.filter((w) => !covered.has(w))).toEqual([]);
+    // the three lists partition the vocabulary: a word is a lane, a gate word or a bare word, never two
+    expect(new Set(all).size).toBe(16);
+    expect(cfg.OPS_WORDS.filter((w) => cfg.WORDS.includes(w) || cfg.OPS_BARE_WORDS.includes(w))).toEqual([]);
+    expect(cfg.OPS_BARE_WORDS.filter((w) => cfg.WORDS.includes(w))).toEqual([]);
+  });
+
+  it('reports each gate word as a literal (S15.1), in any case, and the underscored ones inside a longer string (S15.3)', async () => {
+    const cfg = await loadConfig();
+    let ran = 0;
+    for (const w of cfg.OPS_WORDS) {
+      for (const v of [w, w.toUpperCase()]) {
+        expect(selectorIds(await lint(`export const x = '${v}';\n`)), v).toContain('S15.1');
+        ran += 1;
+      }
+    }
+    expect(ran).toBe(14);
+    let inside = 0;
+    for (const w of cfg.OPS_UNDERSCORED) {
+      expect(selectorIds(await lint(`export const x = 'tone-${w}';\n`)), w).toEqual(['S15.3']);
+      expect(selectorIds(await lint(`export const x = \`tone-${w}\`;\n`)), w).toEqual(['S15.4']);
+      expect(selectorIds(await lint(`export const x = { ${w}: 1 };\n`)), w).toEqual(['S15.5']);
+      inside += 1;
+    }
+    expect(inside).toBe(6);
+  });
+
+  it('reports each bare word only in a comparison (S16.1, S16.3) or a case label (S16.2, S16.4), as a string or a template', async () => {
+    const cfg = await loadConfig();
+    let ran = 0;
+    for (const w of cfg.OPS_BARE_WORDS) {
+      expect(selectorIds(await lint(`export const f = (s: string): boolean => s === '${w}';\n`)), w).toEqual(['S16.1']);
+      expect(selectorIds(await lint(`export const f = (s: string): boolean => '${w}' !== s;\n`)), w).toEqual(['S16.1']);
+      expect(selectorIds(await lint(`export const f = (s: string): boolean => s == '${w.toUpperCase()}';\n`)), w).toEqual(['S16.1']);
+      expect(selectorIds(await lint(`export function f(s: string): number {\n  switch (s) {\n    case '${w}':\n      return 1;\n    default:\n      return 0;\n  }\n}\n`)), w).toEqual(['S16.2']);
+      expect(selectorIds(await lint(`export const f = (s: string): boolean => s === \`${w}\`;\n`)), w).toEqual(['S16.3']);
+      expect(selectorIds(await lint(`export function f(s: string): number {\n  switch (s) {\n    case \`${w}\`:\n      return 1;\n    default:\n      return 0;\n  }\n}\n`)), w).toEqual(['S16.4']);
+      // not a bare word: a template with an expression, a plain string, an object key, a member read (positive control: the six above are)
+      expect(selectorIds(await lint(`export const f = (s: string, t: string): boolean => s === \`${w}\${t}\`;\n`)), w).toEqual([]);
+      expect(selectorIds(await lint(`export const x = '${w}';\n`)), w).toEqual([]);
+      expect(selectorIds(await lint(`export const o = { ${w}: 1 };\n`)), w).toEqual([]);
+      expect(selectorIds(await lint(`export const f = (o: { ${w}: string }): string => o.${w};\n`)), w).toEqual([]);
+      ran += 1;
+    }
+    expect(ran).toBe(8);
+  });
+
+  it('reports each bare word in the shapes of #7 (BOUNDARY-006): a search or key argument, an array receiver, a quoted or computed key, a computed read', async () => {
+    const cfg = await loadConfig();
+    let ran = 0;
+    for (const w of cfg.OPS_BARE_WORDS) {
+      for (const method of ['includes', 'indexOf', 'lastIndexOf']) {
+        expect(selectorIds(await lint(`export const f = (s: string): boolean => s.${method}('${w}') !== false;\n`)), `${method} ${w}`).toEqual(['S16.5']);
+        expect(selectorIds(await lint(`export const f = (s: string): unknown => ['${w}', 'other'].${method}(s);\n`)), `array ${method} ${w}`).toEqual(['S16.6']);
+      }
+      for (const method of ['get', 'has']) expect(selectorIds(await lint(`export const f = (m: Map<string, number>): unknown => m.${method}('${w.toUpperCase()}');\n`)), `${method} ${w}`).toEqual(['S16.7']);
+      expect(selectorIds(await lint(`export const o = { '${w}': 1 };\n`)), w).toEqual(['S16.9']);
+      expect(selectorIds(await lint(`export const o = { ['${w}']: 1 };\n`)), w).toEqual(['S16.10']);
+      expect(selectorIds(await lint(`export const f = (o: Record<string, number>): number | undefined => o['${w}'];\n`)), w).toEqual(['S16.11']);
+      ran += 1;
+    }
+    expect(ran).toBe(8);
+  });
+
+  it('reports each bare word as an expression-free template argument, as startsWith or endsWith, and in a Set or Map built from it (F-5)', async () => {
+    const cfg = await loadConfig();
+    let ran = 0;
+    for (const w of cfg.OPS_BARE_WORDS) {
+      for (const method of ['includes', 'indexOf', 'lastIndexOf', 'startsWith', 'endsWith']) {
+        expect(selectorIds(await lint(`export const f = (s: string): unknown => s.${method}(\`${w}\`);\n`)), `template ${method} ${w}`).toEqual(['S16.5']);
+      }
+      for (const method of ['startsWith', 'endsWith']) {
+        expect(selectorIds(await lint(`export const f = (s: string): boolean => s.${method}('${w}');\n`)), `${method} ${w}`).toEqual(['S16.5']);
+      }
+      for (const method of ['get', 'has']) expect(selectorIds(await lint(`export const f = (m: Map<string, number>): unknown => m.${method}(\`${w}\`);\n`)), `template ${method} ${w}`).toEqual(['S16.7']);
+      expect(selectorIds(await lint(`export const f = (s: string): boolean => new Set(['${w}', 'other']).has(s);\n`)), `set ${w}`).toEqual(['S16.6']);
+      expect(selectorIds(await lint(`export const f = (s: string): boolean => new Set([\`${w}\`]).has(s);\n`)), `set template ${w}`).toEqual(['S16.6']);
+      expect(selectorIds(await lint(`export const f = (s: string): unknown => new Map([['${w}', 1]]).get(s);\n`)), `map ${w}`).toEqual(['S16.6']);
+      ran += 1;
+    }
+    expect(ran).toBe(8);
+  });
+
+  it('reports each bare word as a template computed read, in an array searched with some, find or filter, and before the in operator (F-5, round 3)', async () => {
+    const cfg = await loadConfig();
+    let ran = 0;
+    for (const w of cfg.OPS_BARE_WORDS) {
+      expect(selectorIds(await lint(`export const f = (o: Record<string, number>): number | undefined => o[\`${w}\`];\n`)), `computed template ${w}`).toEqual(['S16.11']);
+      for (const method of ['some', 'every', 'find', 'findIndex', 'findLast', 'findLastIndex', 'filter']) {
+        expect(selectorIds(await lint(`export const f = (s: string): unknown => ['${w}', 'other'].${method}((x) => x === s);\n`)).filter((id) => id !== 'S16.1'), `array ${method} ${w}`).toEqual(['S16.6']);
+        expect(selectorIds(await lint(`export const f = (s: string): unknown => [\`${w}\`].${method}((x) => x.length > s.length);\n`)), `template array ${method} ${w}`).toEqual(['S16.6']);
+      }
+      expect(selectorIds(await lint(`export const f = (o: object): boolean => '${w}' in o;\n`)), `in ${w}`).toEqual(['S16.7']);
+      expect(selectorIds(await lint(`export const f = (o: object): boolean => \`${w}\` in o;\n`)), `in template ${w}`).toEqual(['S16.7']);
+      ran += 1;
+    }
+    expect(ran).toBe(8);
+  });
+
+  it('keeps the round-3 shapes silent for other words, for an expression and for a variable left side (positive controls: the shapes above fire)', async () => {
+    const silent = [
+      'export const f = (o: Record<string, number>): number | undefined => o[`other`];\n',
+      'export const f = (o: Record<string, number>, w: string): number | undefined => o[`${w}`];\n',
+      "export const f = (s: string): unknown => ['alpha', 'beta'].some((x) => x === s);\n",
+      "export const f = (s: string): unknown => ['alpha'].find((x) => x === s);\n",
+      "export const f = (o: object): boolean => 'other' in o;\n",
+      'export const f = (o: object, k: string): boolean => k in o;\n',
+    ];
+    for (const code of silent) expect(selectorIds(await lint(code)), code).toEqual([]);
+    expect(silent.length).toBe(6);
+    expect(selectorIds(await lint("export const f = (o: object): boolean => 'text' in o;\n"))).toEqual(['S16.7']);
+  });
+
+  it('keeps those shapes silent for other words and for a template with an expression (positive controls: the shapes above fire)', async () => {
+    const silent = [
+      'export const f = (s: string): boolean => s.includes(`other`);\n',
+      'export const f = (s: string, w: string): boolean => s.includes(`${w}`);\n',
+      "export const f = (s: string): boolean => s.startsWith('other');\n",
+      "export const f = (s: string): boolean => s.endsWith(`other`);\n",
+      "export const f = (s: string): boolean => new Set(['alpha', 'beta']).has(s);\n",
+      "export const f = (s: string): unknown => new Map([['alpha', 1]]).get(s);\n",
+      "export const f = (k: string): unknown => new Set([k]).has(k);\n",
+    ];
+    for (const code of silent) expect(selectorIds(await lint(code)), code).toEqual([]);
+    expect(silent.length).toBe(7);
+    expect(selectorIds(await lint('export const f = (s: string): boolean => s.includes(`text`);\n'))).toEqual(['S16.5']);
+  });
+
+  it('keeps the same shapes silent when no bare word is in them, and the identifier key (not copied from #7) silent (positive controls: the shapes above fire)', async () => {
+    const silent = [
+      "export const f = (s: string): boolean => s.includes('other');\n",
+      "export const f = (s: string): number => ['alpha', 'beta'].indexOf(s);\n",
+      "export const f = (m: Map<string, number>): number | undefined => m.get('other');\n",
+      'export const f = (m: Map<string, number>, k: string): number | undefined => m.get(k);\n',
+      "export const o = { 'other': 1, ['another']: 2 };\n",
+      "export const f = (o: Record<string, number>): number | undefined => o['other'];\n",
+      // an identifier key named like a bare word is a legitimate key (#7's S16.8 would flag it; it is not copied)
+      'export const o = { text: 1, url: 2, open: true };\n',
+      'export const f = (o: Record<string, number>, k: string): number | undefined => o[k];\n',
+    ];
+    for (const code of silent) expect(selectorIds(await lint(code)), code).toEqual([]);
+    expect(silent.length).toBe(8);
+    expect(selectorIds(await lint("export const f = (s: string): boolean => s.includes('text');\n"))).toEqual(['S16.5']);
+  });
+
+  it('finds exactly the expected violations in one file that holds one of each class (counted, so the gate cannot pass vacuously)', async () => {
+    const cfg = await loadConfig();
+    const anywhere = cfg.OPS_WORDS.map((w, i) => `export const a${i} = '${w}';`);
+    const bare = cfg.OPS_BARE_WORDS.map((w, i) => `export const b${i} = (s: string): boolean => s === '${w}';`);
+    const clean = cfg.OPS_BARE_WORDS.map((w, i) => `export const c${i} = { ${w}: '' };`);
+    const messages = await lint(`${[...anywhere, ...bare, ...clean].join('\n')}\n`);
+    const ids = selectorIds(messages);
+    // 7 gate words (6 of them underscored, so S15.1 and S15.3 each) and 8 bare words (S16.1 each); the 8 bare-word keys are silent
+    expect(anywhere.length + bare.length + clean.length).toBe(23);
+    expect(ids.filter((i) => i === 'S15.1').length).toBe(7);
+    expect(ids.filter((i) => i === 'S15.3').length).toBe(6);
+    expect(ids.filter((i) => i === 'S16.1').length).toBe(8);
+    expect(ids.length).toBe(21);
+  });
+
+  it('keeps the bare words as plain identifiers and properties silent, while their twin in a comparison is reported', async () => {
+    const silent = [
+      'export const row = { text: "x", url: "y", agent: "z", query: "q", open: true, closed: false, failed: 0, advisory: "" };',
+      'export interface Cell {\n  text: string;\n  url: string | null;\n}',
+      'export const f = (o: { text: string; url: string }): string => o.text + o.url;',
+      'export const g = (evidence: { url: string }): string => evidence.url;',
+      'export class C {\n  text = "";\n  url = "";\n}',
+      'export const { text, url } = { text: "", url: "" };',
+    ];
+    for (const code of silent) expect(selectorIds(await lint(`${code}\n`)), code).toEqual([]);
+    expect(silent.length).toBe(6);
+    expect(selectorIds(await lint("export const f = (o: { text: string }): boolean => o.text === 'text';\n"))).toEqual(['S16.1']);
+    expect(selectorIds(await lint("export const f = (o: { url: string }): boolean => 'url' === o.url;\n"))).toEqual(['S16.1']);
+  });
+
+  it('exempts the Ops words in defaults and contract paths and reports them in an element', async () => {
+    const code = "export const f = (s: string): boolean => s === 'doctor_sweep' || s === 'open';\n";
+    let ran = 0;
+    for (const file of ['packages/sample/src/defaults/ops-copy.ts', 'packages/sample/src/contract/types.ts']) {
+      expect((await lint(code, file)).map((m) => m.ruleId), file).toEqual([null]);
+      ran += 1;
+    }
+    expect(ran).toBe(2);
+    expect(selectorIds(await lint(code, ELEMENT_FILE)).sort()).toEqual(['S15.1', 'S15.3', 'S16.1']);
+  });
+
+  it('does not touch the earlier vocabularies: a lane, a verdict word and a staleness word are still reported once', async () => {
+    expect(selectorIds(await lint("export const x = 'blocked';\n"))).toEqual(['S1']);
+    expect(selectorIds(await lint("export const x = 'changes_requested';\n"))).toEqual(['S13.1', 'S13.3']);
+    expect(selectorIds(await lint("export const f = (s: string): boolean => s === 'stale';\n"))).toEqual(['S14.1']);
+    // `done` is a lane word and is reported as one, not twice
+    expect(selectorIds(await lint("export const x = 'done';\n"))).toEqual(['S1']);
+  });
+});
+
 describe('data-driven gate self-test: negative fixtures', () => {
   const NEGATIVE: Record<string, string> = {
     'progress.done read': 'export const f = (progress: { done: number; total: number }) => progress.done + progress.total;',
@@ -261,10 +506,15 @@ describe('data-driven gate self-test: negative fixtures', () => {
     'variable named stale': 'export const f = (): boolean => {\n  const stale = true;\n  return stale;\n};',
     'type member fresh': 'export interface R {\n  fresh: boolean;\n}',
     'comparison with a variable': 'export const f = (s: string, t: string): boolean => s === t;',
+    'object key text': 'export const c = { text: "x" };',
+    'object key url': 'export const c = { url: "x" };',
+    'member read evidence.url': 'export const f = (e: { url: string }) => e.url;',
+    'type member agent': 'export interface R {\n  agent: string;\n}',
+    'variable named open': 'export const f = (): boolean => {\n  const open = true;\n  return open;\n};',
   };
 
   it('has the declared number of negative cases', () => {
-    expect(Object.keys(NEGATIVE).length).toBe(19);
+    expect(Object.keys(NEGATIVE).length).toBe(24);
   });
 
   for (const [name, code] of Object.entries(NEGATIVE)) {
@@ -352,6 +602,85 @@ describe('data-driven gate self-test: inline configuration', () => {
   });
 });
 
+// R-ops-1 (contracts/gates.md): the selectors that keep an item-derived value out of a link, an address or markup in the Ops part
+// files. They live in eslint.config.mjs (scoped to elements/sk-ops-screen/*-parts.ts) and are exercised here on their own, so the
+// proof does not depend on the typed-lint run. The plant in gates/plants/eslint proves the scoped rule inside `pnpm lint`.
+describe('R-ops-1: the Ops parts-file selectors', () => {
+  const CONFIG = new URL('../eslint.config.mjs', import.meta.url).href;
+  interface Opsconfig {
+    OPS_PARTS_GLOB: string;
+    opsPartsRestrictions: SelectorEntry[];
+  }
+  async function loadOps(): Promise<Opsconfig> {
+    return (await import(CONFIG)) as Opsconfig;
+  }
+  async function lintParts(code: string): Promise<string[]> {
+    const { opsPartsRestrictions } = await loadOps();
+    const config: Linter.Config[] = [
+      { files: ['**/*.ts'], languageOptions: { parser: tseslint.parser, sourceType: 'module' }, rules: { 'no-restricted-syntax': ['error', ...opsPartsRestrictions] } },
+    ];
+    const messages = new Linter({ configType: 'flat' }).verify(code, config, { filename: 'packages/sample/src/elements/sk-ops-screen/ops-row-parts.ts' });
+    return messages.filter((m) => m.ruleId === 'no-restricted-syntax').map((m) => /^ops-parts: (R-ops-1\.\w) /.exec(m.message)?.[1] ?? m.message);
+  }
+  const tpl = (attr: string): string => `import { html } from 'lit';\nexport const t = (v: string) => html\`${attr}\`;\n`;
+
+  it('is scoped to the parts files of the Ops screen and declares five entries with distinct ids', async () => {
+    const { OPS_PARTS_GLOB, opsPartsRestrictions } = await loadOps();
+    expect(OPS_PARTS_GLOB).toBe('packages/*/src/elements/sk-ops-screen/*-parts.ts');
+    const ids = opsPartsRestrictions.map((e) => /^ops-parts: (R-ops-1\.\w) /.exec(e.message)?.[1]);
+    expect(ids).toEqual(['R-ops-1.a', 'R-ops-1.b', 'R-ops-1.c', 'R-ops-1.d', 'R-ops-1.e']);
+  });
+
+  it('refuses unsafeHTML and unsafeSVG, as an identifier and as an import', async () => {
+    // an import specifier is two identifier nodes (imported and local), so the identifier entry fires twice beside the source entry
+    expect((await lintParts("import { unsafeHTML } from 'lit/directives/unsafe-html.js';\n")).sort()).toEqual(['R-ops-1.a', 'R-ops-1.a', 'R-ops-1.b']);
+    expect((await lintParts("import { unsafeSVG } from 'lit/directives/unsafe-svg.js';\n")).sort()).toEqual(['R-ops-1.a', 'R-ops-1.a', 'R-ops-1.b']);
+    expect(await lintParts('export const x = (v: string) => unsafeHTML(v);\n')).toEqual(['R-ops-1.a']);
+  });
+
+  it('refuses innerHTML: a read, an assignment and a computed name', async () => {
+    expect(await lintParts('export const r = (e: Element) => e.innerHTML;\n')).toEqual(['R-ops-1.c']);
+    expect(await lintParts('export const w = (e: Element, v: string) => { e.innerHTML = v; };\n')).toEqual(['R-ops-1.c']);
+    expect(await lintParts("export const w = (e: Element, v: string) => { e['innerHTML'] = v; };\n")).toEqual(['R-ops-1.d']);
+  });
+
+  it('refuses an attribute binding named href, src, srcset, action, formaction or xlink:href', async () => {
+    const names = ['href', 'src', 'srcset', 'action', 'formaction', 'xlink:href'];
+    let ran = 0;
+    for (const name of names) {
+      expect(await lintParts(tpl(`<sk-x ${name}=\${v}></sk-x>`)), name).toEqual(['R-ops-1.e']);
+      expect(await lintParts(tpl(`<sk-x ${name}="\${v}"></sk-x>`)), `${name} quoted`).toEqual(['R-ops-1.e']);
+      expect(await lintParts(tpl(`<sk-x ${name}="/p/\${v}"></sk-x>`)), `${name} concatenated`).toEqual(['R-ops-1.e']);
+      expect(await lintParts(tpl(`<sk-x .${name}=\${v}></sk-x>`)), `${name} property`).toEqual(['R-ops-1.e']);
+      expect(await lintParts(tpl(`<sk-x ?${name}=\${v}></sk-x>`)), `${name} boolean`).toEqual(['R-ops-1.e']);
+      expect(await lintParts(tpl(`<sk-x ${name.toUpperCase()} = \${v}></sk-x>`)), `${name} upper case`).toEqual(['R-ops-1.e']);
+      ran += 1;
+    }
+    expect(ran).toBe(6);
+    // the svg tag is covered as the html tag is
+    expect(await lintParts("import { svg } from 'lit';\nexport const t = (v: string) => svg`<use xlink:href=${v}></use>`;\n")).toEqual(['R-ops-1.e']);
+  });
+
+  it('keeps ordinary bindings, static values, look-alike names and plain words silent (positive controls above)', async () => {
+    const silent = [
+      tpl('<sk-x label=${v}></sk-x>'),
+      tpl('<sk-x data-src=${v} data-href="${v}"></sk-x>'),
+      tpl('<sk-x resrc=${v} hreflang=${v}></sk-x>'),
+      tpl('<sk-x href="/static" title="${v}"></sk-x>'),
+      tpl('<p>href = ${v}</p>'),
+      tpl('<bdi>${v}</bdi>'),
+      "export const href = 1;\nexport const src = (e: { src: string }) => e.src;\n",
+      "export const f = (e: Element) => e.textContent;\n",
+    ];
+    let ran = 0;
+    for (const code of silent) {
+      expect(await lintParts(code), code).toEqual([]);
+      ran += 1;
+    }
+    expect(ran).toBe(8);
+  });
+});
+
 describe('data-driven gate self-test: the real sources', () => {
   it('reports 0 problems on every scanned file of packages/*/src, and scanned a non-empty list', async () => {
     const eslint = new ESLint({ cwd: ROOT, overrideConfigFile: CONFIG_PATH });
@@ -374,5 +703,36 @@ describe('data-driven gate self-test: the real sources', () => {
     );
     expect(scanned.length).toBeGreaterThan(0);
     expect(results.length).toBe(scanned.length);
+  });
+});
+
+// Aliasing lit's `css` hides the template from postcss-lit (and so from every Stylelint rule). The selector lives in
+// eslint-rules/index.mjs and applies to every package source file; the plant in gates/plants/eslint proves it inside `pnpm lint`.
+describe('css alias ban', () => {
+  const RULES = new URL('../eslint-rules/index.mjs', import.meta.url).href;
+  async function lintCss(code: string): Promise<string[]> {
+    const { elementSyntaxRestrictions } = (await import(RULES)) as { elementSyntaxRestrictions: SelectorEntry[] };
+    const config: Linter.Config[] = [
+      { files: ['**/*.ts'], languageOptions: { parser: tseslint.parser, sourceType: 'module' }, rules: { 'no-restricted-syntax': ['error', ...elementSyntaxRestrictions] } },
+    ];
+    const messages = new Linter({ configType: 'flat' }).verify(code, config, { filename: 'packages/sample/src/x.ts' });
+    return messages.filter((m) => m.ruleId === 'no-restricted-syntax').map((m) => m.message);
+  }
+
+  it('refuses an aliased css import, from lit and from a lit subpath', async () => {
+    const cases = ["import { css as styles } from 'lit';\n", "import { css as c, html } from 'lit';\n", "import { css as c } from 'lit/static-html.js';\n"];
+    let ran = 0;
+    for (const code of cases) {
+      const messages = await lintCss(code);
+      expect(messages.filter((m) => m.startsWith("Do not alias lit's css tag")).length, code).toBe(1);
+      ran += 1;
+    }
+    expect(ran).toBe(3);
+  });
+
+  it('accepts the plain css import and an alias of another name (positive controls)', async () => {
+    expect((await lintCss("import { css } from 'lit';\nexport const s = css`:host { display: block; }`;\n")).length).toBe(0);
+    expect((await lintCss("import { LitElement as L } from 'lit';\nexport const x = L;\n")).length).toBe(0);
+    expect((await lintCss("import { css as c } from './local.js';\nexport const x = c;\n")).length).toBe(0);
   });
 });
