@@ -130,5 +130,16 @@
         "source": "plant-stylelint-ops-wrap-leak.ts.plant"
       }
     ]
+  },
+  {
+    "gate": "stylelint",
+    "ciCommand": "pnpm lint:styles",
+    "expectFailPattern": "plant-stylelint-ops-ellipsis-leak",
+    "overlays": [
+      {
+        "target": "packages/mission-ui/src/elements/sk-ops-screen/plant-stylelint-ops-ellipsis-leak.ts",
+        "source": "plant-stylelint-ops-ellipsis-leak.ts.plant"
+      }
+    ]
   }
 ]

@@ -1,0 +1,11 @@
+import { css } from 'lit';
+
+// Exception E-42 allows the ellipsis keywords (`text-overflow`, `white-space`) in the row and page parts only; the same
+// declarations in any other file of the directory must still fail (no leak). This plant holds those two declarations and
+// nothing from E-43, so widening E-42 alone makes it pass.
+export const plantStylelintOpsEllipsisLeak = css`
+  .plant-stylelint-ops-ellipsis-leak {
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+`;
