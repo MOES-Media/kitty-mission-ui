@@ -106,7 +106,8 @@ function renderInline(nodes: readonly ResolvedInline[], insideLink: boolean, han
       case 'strike':
         return html`<s>${renderInline(node.children, insideLink, handlers)}</s>`;
       case 'link':
-        return linkControl(node.target, renderInline(node.children, true, handlers), handlers);
+        // A link inside a link (an autolink in link text) is drawn as its text: one control per activation, the outer one.
+        return insideLink ? html`${renderInline(node.children, true, handlers)}` : linkControl(node.target, renderInline(node.children, true, handlers), handlers);
       case 'image':
         return image(node.alt, node.target, insideLink, handlers);
       default:

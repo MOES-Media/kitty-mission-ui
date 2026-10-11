@@ -205,6 +205,8 @@ export const CORPUS: readonly CorpusEntry[] = [
   { name: 'autolink with a quote breakout', origin: 'authored', source: '<http://a.invalid"onmouseover="alert(1)>', outcome: 'ok', text: ['onmouseover'], controls: [ext('http://a.invalid%22onmouseover=%22alert(1)')] },
   { name: 'mailto autolink', origin: 'authored', source: '<mailto:a@example.invalid>', outcome: 'ok', text: ['mailto:a@example.invalid'], controls: [ext('mailto:a@example.invalid')] },
   { name: 'link text equal to its destination', origin: 'contract', source: '[https://example.invalid/p](https://example.invalid/p)', outcome: 'ok', text: ['https://example.invalid/p'], controls: [ext('https://example.invalid/p')] },
+  { name: 'autolink inside the text of an artifact link', origin: 'contract', source: '[<https://evil.example/x>](b.md)', outcome: 'ok', text: ['https://evil.example/x'], controls: [B] },
+  { name: 'mailto autolink inside the text of an external link', origin: 'contract', source: '[see <mailto:a@b.example>](https://good.example)', outcome: 'ok', text: ['see ', 'mailto:a@b.example'], controls: [ext('https://good.example')] },
   { name: 'two adjacent links', origin: 'contract', source: '[a](b.md)[c](x.md)', outcome: 'ok', text: ['a', 'c'], controls: [B, X] },
   { name: 'link inside emphasis', origin: 'contract', source: '*see [x](b.md) now*', outcome: 'ok', text: ['see ', 'x', ' now'], controls: [B] },
   { name: 'link inside a heading', origin: 'contract', source: '# Heading [x](y.md)', outcome: 'ok', text: ['Heading ', 'x'], controls: [Y] },
@@ -474,7 +476,7 @@ export const CORPUS: readonly CorpusEntry[] = [
   ]),
 ];
 
-/** The elements `render.ts` writes for one inline node; links never nest controls (an image inside a link is plain text). */
+/** The elements `render.ts` writes for one inline node; links never nest controls (an image or a link inside a link is plain text). */
 function inlineElements(nodes: readonly ResolvedInline[], insideLink: boolean): number {
   let count = 0;
   for (const node of nodes) {
@@ -492,8 +494,8 @@ function inlineElements(nodes: readonly ResolvedInline[], insideLink: boolean): 
         count += 1 + inlineElements(node.children, insideLink);
         break;
       case 'link':
-        // The control or the inert span, its hidden suffix word, and the children.
-        count += 2 + inlineElements(node.children, true);
+        // The control or the inert span, its hidden suffix word, and the children; inside a link only the children (no second control).
+        count += (insideLink ? 0 : 2) + inlineElements(node.children, true);
         break;
       case 'image':
         // The placeholder; as a control (not inside a link, an external destination) it also carries the hidden suffix word.

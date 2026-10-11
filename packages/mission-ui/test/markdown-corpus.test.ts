@@ -14,7 +14,7 @@ import { CORPUS_SIZE, recorder } from './support/markdown-corpus-harness.js';
 import { walkAllowed } from './support/walk-allowed.js';
 
 /** Pinned: the number of entries. A change to the corpus changes this number on purpose. */
-const EXPECTED_ENTRIES = 326;
+const EXPECTED_ENTRIES = 328;
 
 type Renderer = (blocks: ResolvedBlock[], handlers: LinkHandlers) => TemplateResult;
 

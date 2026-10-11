@@ -138,6 +138,41 @@ describe('EV-2: an external link emits sk-open-link', () => {
   });
 });
 
+describe('a link whose text holds an autolink draws one control, not two', () => {
+  const SOURCE = 'See [the <https://evil.example/x> page](data-model.md) and [also <mailto:a@b.example>](https://good.example/y).\n';
+
+  /** The element that directly holds the text `needle`, the way a pointer or the keyboard reaches the inner words. */
+  function holder(screen: Element, needle: string): HTMLElement {
+    const walker = document.createTreeWalker(root(screen), NodeFilter.SHOW_TEXT);
+    for (let node = walker.nextNode(); node !== null; node = walker.nextNode()) {
+      if ((node.textContent ?? '').includes(needle) && node.parentElement !== null) return node.parentElement;
+    }
+    throw new Error(`no text ${needle}`);
+  }
+  const enter = (el: HTMLElement): void => {
+    el.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, composed: true, cancelable: true }));
+  };
+
+  it('a click and Enter on the inner text each emit exactly one event, the one of the OUTER link', async () => {
+    const screen = await mount({ content: markdown(SOURCE), selectedPath: 'plan.md' });
+    const events = record(screen);
+    expect(links(screen)).toHaveLength(2);
+    for (const a of links(screen)) expect(a.querySelector('a')).toBeNull();
+    const first = { missionId: missionFacts.missionId, path: 'data-model.md', kind: 'data_model' };
+    holder(screen, 'https://evil.example/x').click();
+    expectOne(events, 'sk-select-artifact', first);
+    events.length = 0;
+    enter(holder(screen, 'https://evil.example/x'));
+    expectOne(events, 'sk-select-artifact', first);
+    events.length = 0;
+    holder(screen, 'mailto:a@b.example').click();
+    expectOne(events, 'sk-open-link', { href: 'https://good.example/y' });
+    events.length = 0;
+    enter(holder(screen, 'mailto:a@b.example'));
+    expectOne(events, 'sk-open-link', { href: 'https://good.example/y' });
+  });
+});
+
 describe('EV-3: an inert link emits nothing', () => {
   const SOURCE = 'A [missing](missing.md) file, a [section](#top) and a [real one](data-model.md).\n';
 

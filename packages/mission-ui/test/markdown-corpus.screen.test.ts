@@ -19,7 +19,7 @@ import { walkAllowed } from './support/walk-allowed.js';
 /** The structural attributes the screen draws around the document (each is a fixed word, never document text). */
 const SCREEN_ATTRIBUTES = new Set(['data-document', 'data-scroll', 'id', 'aria-labelledby', 'aria-label']);
 const EVENT_NAMES = ['sk-select-artifact', 'sk-open-link', 'sk-select-work-package', 'sk-open-mission', 'sk-retry-load'] as const;
-const EXPECTED_ENTRIES = 326;
+const EXPECTED_ENTRIES = 328;
 
 const frames = async (n = 1): Promise<void> => {
   for (let i = 0; i < n; i += 1) await new Promise((resolve) => requestAnimationFrame(() => resolve(null)));

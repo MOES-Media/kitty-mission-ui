@@ -9,7 +9,7 @@ import { buildMarkdownModel } from '../src/logic/markdown/model.js';
 import { parseTokens } from '../src/logic/markdown/parse.js';
 import { CORPUS, LISTING, OPEN_PATH, expectedElementCount, type Activation, type CorpusEntry } from './support/markdown-corpus-entries.js';
 
-const EXPECTED_ENTRIES = 326;
+const EXPECTED_ENTRIES = 328;
 
 /** The plain text of an inline run: what the reader sees of the document's own words (suffix words are the renderer's). */
 function inlineText(nodes: readonly ResolvedInline[]): string {
@@ -76,9 +76,12 @@ function controlsOf(blocks: readonly ResolvedBlock[]): { controls: Activation[];
   const inline = (nodes: readonly ResolvedInline[], insideLink: boolean): void => {
     for (const node of nodes) {
       if (node.kind === 'link') {
-        const act = activation(node.target);
-        if (act === null) found.inert += 1;
-        else found.controls.push(act);
+        // A link inside a link is drawn as its text: no second control and no second inert span.
+        if (!insideLink) {
+          const act = activation(node.target);
+          if (act === null) found.inert += 1;
+          else found.controls.push(act);
+        }
         inline(node.children, true);
       } else if (node.kind === 'image') {
         // An external image outside a link is the one placeholder that is a control.
