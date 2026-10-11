@@ -13,12 +13,6 @@ export type {
   WorkPackageRetryMember,
 } from '../retry-types.js';
 
-/** The retry of the Drift report: a whole-project scan has no Work Package, so `missionId` is null when unscoped. */
-export interface DriftRetryDetail {
-  missionId: string | null;
-  target: 'drift-report';
-}
-
 /** What the builder reads from the host's properties. */
 export interface RetryProps {
   mission: { missionId: string } | null;

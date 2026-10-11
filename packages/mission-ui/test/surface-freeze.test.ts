@@ -361,10 +361,10 @@ describe('surface freeze: the Projects screen (five properties, three events) an
       .filter(([, declaration]) => (declaration.events ?? []).some((e) => e.name === 'sk-retry-load'))
       .map(([tag]) => tag)
       .sort();
-    expect(retryDeclarers).toEqual(['sk-artifact-screen', 'sk-open-project-dialog', 'sk-projects-screen', 'sk-work-package-screen']);
+    expect(retryDeclarers).toEqual(['sk-artifact-screen', 'sk-drift-screen', 'sk-open-project-dialog', 'sk-projects-screen', 'sk-work-package-screen']);
     // `some` per tag would pass a component that declares the event twice: count every declaration of the name.
     const retryDeclarations = [...declarations.values()].reduce((total, declaration) => total + (declaration.events ?? []).filter((e) => e.name === 'sk-retry-load').length, 0);
-    expect(retryDeclarations).toBe(4);
+    expect(retryDeclarations).toBe(5);
   });
 
   it('marks the Projects screen, and not the dialog, as a screen with the `@screen` line the manifest gate looks for', async () => {
@@ -711,7 +711,11 @@ describe('surface freeze: the Drift screen (eleven properties, six events)', () 
     const finding: import('../src/index.js').DriftFinding | null = null;
     const view: [import('../src/index.js').DriftFindingView | null, import('../src/index.js').LaneComparisonView | null] = [null, null];
     const refusal: [import('../src/index.js').DriftRefusal | null, import('../src/index.js').DriftRefusalCode | null] = [null, null];
-    const retry: import('../src/index.js').RetryLoadDetail = { missionId: null, target: 'drift-report' };
+    // the Drift member joins the event union only; `RetryLoadDetail` (the Work Package and Projects payload) stays exact
+    const retry: import('../src/index.js').RetryLoadEventDetail = { missionId: null, target: 'drift-report' };
+    // @ts-expect-error the Drift member is not part of RetryLoadDetail
+    const notWp: import('../src/index.js').RetryLoadDetail = { missionId: null, target: 'drift-report' };
+    void notWp;
     const drift: import('../src/index.js').DriftRetryDetail = { missionId: null, target: 'drift-report' };
     const details: [
       import('../src/index.js').SkSelectFindingDetail,

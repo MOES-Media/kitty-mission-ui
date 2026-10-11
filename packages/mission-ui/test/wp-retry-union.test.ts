@@ -16,8 +16,6 @@ function describeTarget(detail: SkRetryLoadDetail): string {
       return 'projects';
     case 'folders':
       return 'folders';
-    case 'drift-report':
-      return `drift of ${detail.missionId ?? 'the project'}`;
     default: {
       const unreachable: never = detail;
       return unreachable;

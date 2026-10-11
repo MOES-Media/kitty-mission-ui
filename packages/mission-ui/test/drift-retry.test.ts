@@ -1,9 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { driftRetryDetail } from '../src/logic/drift-retry.js';
-import { retryDetail, type DriftRetryDetail, type RetryLoadDetail } from '../src/logic/wp-retry.js';
+import { retryDetail } from '../src/logic/wp-retry.js';
+import type { DriftRetryDetail, WorkPackageRetryMember } from '../src/retry-types.js';
+
+/** The members this file builds: the two Work Package members and the Drift member of the event union. */
+type Built = WorkPackageRetryMember | DriftRetryDetail;
 
 /** Exhaustive over every member: a union member without a branch here fails the typecheck. */
-function describeTarget(detail: RetryLoadDetail): string {
+function describeTarget(detail: Built): string {
   switch (detail.target) {
     case 'work-package':
       return `read ${detail.wpId}`;
@@ -41,7 +45,7 @@ describe('driftRetryDetail: the retry of a whole-project scan needs no Work Pack
   });
 });
 
-describe('the retry union with the drift member', () => {
+describe('the event union with the drift member', () => {
   it('narrows on target for all three members, and the two existing members still build', () => {
     const props = { mission: { missionId: 'M1' }, wpId: 'WP01' };
     const whole = retryDetail('work-package', props);
@@ -49,8 +53,8 @@ describe('the retry union with the drift member', () => {
     const drift: DriftRetryDetail = driftRetryDetail('M1');
     expect(whole).toEqual({ missionId: 'M1', wpId: 'WP01', target: 'work-package' });
     expect(detail).toEqual({ missionId: 'M1', wpId: 'WP01', target: 'detail' });
-    expect(describeTarget(whole as RetryLoadDetail)).toBe('read WP01');
-    expect(describeTarget(detail as RetryLoadDetail)).toBe('detail of WP01');
+    expect(describeTarget(whole as Built)).toBe('read WP01');
+    expect(describeTarget(detail as Built)).toBe('detail of WP01');
     expect(describeTarget(drift)).toBe('drift of M1');
     expect(describeTarget(driftRetryDetail(null))).toBe('drift of the project');
   });

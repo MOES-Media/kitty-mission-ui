@@ -87,7 +87,7 @@ export type {
   ArtifactVocabulary,
 } from './logic/artifact-types.js';
 export type { SkArtifactRetryLoadDetail, SkOpenLinkDetail, SkSelectArtifactDetail } from './elements/sk-artifact-screen/sk-artifact-screen.js';
-export type { RetryLoadDetail, RetryLoadEventDetail, SkArtifactRetryDetail } from './retry-types.js';
+export type { DriftRetryDetail, RetryLoadDetail, RetryLoadEventDetail, SkArtifactRetryDetail } from './retry-types.js';
 export type {
   DriftCopyResult,
   DriftScreenStatus,
@@ -118,7 +118,6 @@ export type {
   LaneGroup,
   StateBadge,
 } from './logic/types.js';
-export type { DriftRetryDetail } from './logic/wp-retry.js';
 export type {
   ArtifactContentView,
   ArtifactEntryView,

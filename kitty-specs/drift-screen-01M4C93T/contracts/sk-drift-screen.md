@@ -30,7 +30,7 @@ Deliberately absent: a `findings` filter, a sort, a page cursor, a clipboard han
 | `sk-copy-command` | `SkCopyCommandDetail` | `{ text, missionId, remedy }` | IC-03b |
 | `sk-open-mission` | `SkOpenMissionDetail` (existing) | `{ missionId, slug }` | IC-03b |
 | `sk-open-missions` | `SkOpenMissionsDetail` (existing) | `{}` | IC-03b |
-| `sk-retry-load` | `SkDriftRetryLoadDetail` (the alias of `DriftRetryDetail`, one new member of the existing `RetryLoadDetail` union) | `{ missionId: string \| null, target: 'drift-report' }`, built by the new `driftRetryDetail(missionId)` (IC-02), not by `retryDetail()` | IC-03b |
+| `sk-retry-load` | `SkDriftRetryLoadDetail` (the alias of `DriftRetryDetail`, a member of the event union `RetryLoadEventDetail` in `src/retry-types.ts` only; `RetryLoadDetail` stays exact) | `{ missionId: string \| null, target: 'drift-report' }`, built by the new `driftRetryDetail(missionId)` (IC-02), not by `retryDetail()` | IC-03b |
 
 `sk-open-mission`, `sk-open-missions` and `sk-retry-load` are NOT redeclared in `HTMLElementEventMap`: this element adds the
 `DriftRetryDetail` member to the union where `main` holds it (today `logic/wp-retry.ts`; `src/retry-types.ts` once #7 lands) and

@@ -43,7 +43,7 @@
   selection. Every kind, severity, authority and remedy word is read from `src/defaults/` (`#10`).
 - Drift logic (`src/logic`): the pure `drift-finding`, `drift-report`, `drift-keys`, `drift-announce` and `drift-retry` modules, and the
   `drift-copy` vocabulary in `src/defaults`; optional `LabelHooks` members (`kind`, `severity`, `authority`, `derivedSide`, `refusal`);
-  `sk-retry-load` gains the member `{ target: 'drift-report' }` (`DriftRetryDetail`); the `data-driven` gate is extended to the Drift
+  `sk-retry-load` gains the member `{ target: 'drift-report' }` (`DriftRetryDetail`, joined to `RetryLoadEventDetail` in `src/retry-types.ts` only, as `SkArtifactRetryDetail` is); the `data-driven` gate is extended to the Drift
   vocabulary (`#10`).
 - `sk-work-package-screen` (screen): one Work Package of a Mission. Ten properties (`status`, `detailStatus`,
   `detailRefusalCode`, `workPackage`, `detail`, `mission`, `wpId`, `now`, `labels`, `errorMessage`) and four events

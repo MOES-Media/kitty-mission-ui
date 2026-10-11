@@ -1,4 +1,4 @@
-import type { DriftRetryDetail } from './wp-retry.js';
+import type { DriftRetryDetail } from '../retry-types.js';
 
 /**
  * The `sk-retry-load` payload of the Drift screen. `retryDetail()` returns null without a Mission and needs a Work Package id,

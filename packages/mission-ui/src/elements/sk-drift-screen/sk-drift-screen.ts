@@ -26,7 +26,8 @@ import {
   sameKey,
   selectedIndex,
 } from '../../logic/index.js';
-import type { AnnounceInput, DriftRetryDetail, DriftScreenStatus, FindingView, LabelHooks } from '../../logic/index.js';
+import type { AnnounceInput, DriftScreenStatus, FindingView, LabelHooks } from '../../logic/index.js';
+import type { DriftRetryDetail } from '../../retry-types.js';
 import type { DriftFindingKey, DriftMissionName, DriftReportView } from '../../contract/types.js';
 import { dataTableSheet, emptyStateSheet, factsSheet } from '../../library-sheets.js';
 import { OverflowRegion } from '../../overflow-region.js';
@@ -68,7 +69,7 @@ export interface SkCopyCommandDetail {
   missionId: string;
   remedy: string;
 }
-/** Payload of `sk-retry-load` from this screen: the Drift member of the shared union (`logic/wp-retry.ts`), never declared again. */
+/** Payload of `sk-retry-load` from this screen: the Drift member of the event union (`src/retry-types.ts`), never declared again. */
 export type SkDriftRetryLoadDetail = DriftRetryDetail;
 
 /** The copy request the screen is waiting to be answered: the finding whose Copy was pressed, the report it was pressed on, the answer seen since. */
