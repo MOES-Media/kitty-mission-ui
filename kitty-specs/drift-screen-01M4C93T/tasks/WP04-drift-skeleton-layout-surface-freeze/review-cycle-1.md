@@ -10,7 +10,7 @@ wp_id: WP04
 
 # WP04 review feedback, cycle 1: changes requested
 
-The independent review is in scratchpad `ui10-wp04-review.md`. The rulings are in the tracer section "CP-1 addendum at the WP04 review (2026-10-10)". Both outrank this summary.
+The independent review is in the orchestrator's private review notes. The rulings are in the tracer section "CP-1 addendum at the WP04 review (2026-10-10)". Both outrank this summary.
 
 1. **Must fix: skeleton tests that WP05/WP06 cannot edit will break once the real parts land** (`test/sk-drift-screen.skeleton.test.ts`):
    - Lines ~327/~330: filter the exact `regionIds` lists to the screen's own wrapper ids.

@@ -21,5 +21,5 @@ The rulings are in the tracer section "Rulings at WP06: scoped button rules and 
 2. **Move the copy into `defaults/drift-copy.ts`.** This is a named out-of-map edit to WP02's file.
    - The static labels: Authoritative side, Facts, Mission, File, Derived side, Suggested resolution, and the table `aria-label`.
    - The S5 fallback sentence: "Select the command and copy it with your keyboard". Implement the read-back-mismatch path with it, red-first.
-   - The parts import these. Write the `contracts/defaults.md` change as a patch to `scratchpad/ui10-wp06-kitty-specs.patch`.
+   - The parts import these. Write the `contracts/defaults.md` change as a patch in the orchestrator's private review notes.
 3. Then re-run the gates (no visual, `pnpm test --maxWorkers=2`).

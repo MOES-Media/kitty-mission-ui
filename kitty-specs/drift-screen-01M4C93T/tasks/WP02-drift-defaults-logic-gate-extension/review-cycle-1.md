@@ -10,7 +10,7 @@ wp_id: WP02
 
 # WP02 review feedback, cycle 1: changes requested
 
-The independent review is in scratchpad `ui10-wp02-review.md`, and the tracer section "WP02 review (2026-10-10)" also applies. Both outrank this summary.
+The independent review is in the orchestrator's private review notes, and the tracer section "WP02 review (2026-10-10)" also applies. Both outrank this summary.
 
 1. **Must fix: the explanation follows the spec, which is pair-keyed.** spec.md:189 says an unknown `sourceCode` gets "no explanation", FR-011 says "none for an unknown pair", and the contract view-model has `explanation: null` for an unknown pair.
    - Files: `logic/drift-finding.ts` `explanationOf` (around line 98) and `test/drift-finding.test.ts:84`.
