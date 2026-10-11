@@ -9,6 +9,9 @@ const f = (schema, kind, satisfies, relaxation) => ({ schema, kind, satisfies, .
 export const FIXTURES = {
   project: f('Project', 'valid', 'Project'),
   projectEmpty: f('Project', 'valid', 'Project'),
+  // ---- Projects screen (mission-ui#9): two host overlays the contract examples do not give ----
+  projectUnknownHealth: f('Project', 'relaxed', 'ProjectView', 'health-open'),
+  projectLong: f('Project', 'valid', 'Project'),
   pageMixed: f('MissionOverviewPage', 'host', 'MissionOverviewPageView'),
   pageFull: f('MissionOverviewPage', 'host', 'MissionOverviewPageView'),
   pageLast: f('MissionOverviewPage', 'host', 'MissionOverviewPageView'),
@@ -79,6 +82,43 @@ export const FIXTURES = {
   detailLong: f('WorkPackageDetail', 'valid', 'WorkPackageDetail'),
   detailUnknownLanes: f('WorkPackageDetail', 'relaxed', 'WorkPackageDetailView', 'detail-lane-open'),
   detailOmittedProvisional: f('WorkPackageDetail', 'relaxed', 'WorkPackageDetailView', 'detail-omittable'),
+  // ---- Ops screen (mission-ui#11): 14 contract examples and 22 overlays; the four foreign-vocabulary rows are relaxed ----
+  opsPageFirst: f('OpsInvocationPage', 'valid', 'OpsInvocationPage'),
+  opsPageLast: f('OpsInvocationPage', 'valid', 'OpsInvocationPage'),
+  opsPageEmpty: f('OpsInvocationPage', 'valid', 'OpsInvocationPage'),
+  opsOpen: f('OpsInvocation', 'valid', 'OpsInvocation'),
+  opsClosedByAgent: f('OpsInvocation', 'valid', 'OpsInvocation'),
+  opsClosedBySweep: f('OpsInvocation', 'valid', 'OpsInvocation'),
+  opsEvidenceNull: f('OpsInvocation', 'valid', 'OpsInvocation'),
+  opsEvidenceRepoPath: f('OpsInvocation', 'valid', 'OpsInvocation'),
+  opsEvidenceUrl: f('OpsInvocation', 'valid', 'OpsInvocation'),
+  opsEvidenceUrlRedacted: f('OpsInvocation', 'valid', 'OpsInvocation'),
+  opsEvidenceText: f('OpsInvocation', 'valid', 'OpsInvocation'),
+  opsEvidenceTextRedacted: f('OpsInvocation', 'valid', 'OpsInvocation'),
+  opsFailed: f('OpsInvocation', 'valid', 'OpsInvocation'),
+  opsAbandoned: f('OpsInvocation', 'valid', 'OpsInvocation'),
+  opsModeAdvisory: f('OpsInvocation', 'valid', 'OpsInvocation'),
+  opsModeQuery: f('OpsInvocation', 'valid', 'OpsInvocation'),
+  opsRedactedMarkers: f('OpsInvocation', 'valid', 'OpsInvocation'),
+  opsActorNull: f('OpsInvocation', 'valid', 'OpsInvocation'),
+  opsNoMissionNoWp: f('OpsInvocation', 'valid', 'OpsInvocation'),
+  opsMissionOnly: f('OpsInvocation', 'valid', 'OpsInvocation'),
+  opsEvidence512: f('OpsInvocation', 'valid', 'OpsInvocation'),
+  opsEvidenceMarkup: f('OpsInvocation', 'valid', 'OpsInvocation'),
+  opsEvidenceJavascriptUrl: f('OpsInvocation', 'valid', 'OpsInvocation'),
+  opsEvidenceUnbroken512: f('OpsInvocation', 'valid', 'OpsInvocation'),
+  opsEvidenceBidi: f('OpsInvocation', 'valid', 'OpsInvocation'),
+  opsRefusalUnreadable: f('OpsRefusal', 'valid', 'OpsRefusal'),
+  opsCursorRefusal: f('PageCursorRefusal', 'valid', 'PageCursorRefusal'),
+  opsUnknownOutcome: f('OpsInvocation', 'relaxed', 'OpsInvocationView', 'ops-vocab-open'),
+  opsUnknownCloser: f('OpsInvocation', 'relaxed', 'OpsInvocationView', 'ops-vocab-open'),
+  opsUnknownMode: f('OpsInvocation', 'relaxed', 'OpsInvocationView', 'ops-vocab-open'),
+  opsUnknownEvidenceKind: f('OpsInvocation', 'relaxed', 'OpsInvocationView', 'ops-vocab-open'),
+  opsProfile128: f('OpsInvocation', 'valid', 'OpsInvocation'),
+  opsActionLong: f('OpsInvocation', 'valid', 'OpsInvocation'),
+  opsOffsetStart: f('OpsInvocation', 'valid', 'OpsInvocation'),
+  opsPageMixed: f('OpsInvocationPage', 'valid', 'OpsInvocationPage'),
+  opsPageEmptySkipped: f('OpsInvocationPage', 'valid', 'OpsInvocationPage'),
 };
 
 /** Every distinct `satisfies` target, for the generated import line. */
@@ -151,6 +191,30 @@ export const RELAXATIONS = {
     allowedMissing: ['reviewCycles', 'workspace'],
     patch(schema) {
       schema.required = schema.required.filter((k) => k !== 'reviewCycles' && k !== 'workspace');
+    },
+  },
+  // ---- mission-ui#9: ProjectHealth is provisional and a client must tolerate a value it does not know ----
+  'health-open': {
+    schema: 'Project',
+    description: 'Project.health becomes an open string; nothing else changes',
+    allowedPath: /^\/health$/,
+    patch(schema) {
+      schema.properties.health = { type: 'string' };
+    },
+  },
+  // ---- mission-ui#11: the Ops vocabularies are closed in the contract and a client must tolerate a word it does not know ----
+  'ops-vocab-open': {
+    schema: 'OpsInvocation',
+    description: 'outcome, closedBy, modeOfWork and evidence.kind become open strings (outcome, closedBy and evidence stay nullable); nothing else changes',
+    // /evidence itself is listed because Ajv reports the failed oneOf at the nullable member; the relaxed schema stays the real guard
+    allowedPath: /^\/(outcome|closedBy|modeOfWork|evidence(\/kind)?)$/,
+    patch(schema) {
+      const p = schema.properties;
+      p.outcome = { type: ['string', 'null'] };
+      p.closedBy = { type: ['string', 'null'] };
+      p.modeOfWork = { type: 'string' };
+      const evidence = p.evidence.oneOf.find((x) => x.type === 'object');
+      evidence.properties.kind = { type: 'string' };
     },
   },
 };

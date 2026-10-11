@@ -101,8 +101,8 @@ test('positive control: the repository itself passes every check, and the checks
   assert.deepEqual(clean.problems, []);
   // independent literals, deliberately not computed from PIN.files (a pin and a directory that shrink together would
   // keep a derived floor green); edited deliberately at each re-pin
-  assert.equal(clean.summary.vendoredFiles, 151);
-  assert.equal(clean.summary.fixtures, 70);
+  assert.equal(clean.summary.vendoredFiles, 200);
+  assert.equal(clean.summary.fixtures, 108);
   assert.equal(clean.summary.anchorFiles, 5);
   assert.equal(clean.summary.bulkPages, 2);
   assert.ok(clean.summary.c7Files > 0);
@@ -411,6 +411,53 @@ test('C4 WorkPackage fixtures: an actor outside SYNTHETIC_ACTORS is a violation 
   assert.equal(n, 4);
 });
 
+test('C4 covers the Ops bulk pages: a work package id that breaks the pattern is a violation naming the page; the untouched generator passes', async () => {
+  const root = tempRepo();
+  edit(root, 'packages/mission-ui/src/contract/bulk.ts', "`WP${String((index % 9) + 1).padStart(2, '0')}`", "'wp-bad'");
+  const r = await check(root);
+  const hit = r.problems.filter((p) => p.token === TOKENS.violates && p.message.startsWith('ops bulk page of'));
+  assert.equal(hit.length, 2, tokens(r).join());
+  assert.deepEqual(tokens(await check(tempRepo())), [], 'positive control');
+});
+
+test('C4 Ops fixtures: an actor outside SYNTHETIC_ACTORS is a violation on a single Op and on a page item, and a known one is not (positive control)', async () => {
+  const cases = [
+    (d) => { d.opsOpen.actor = 'someone-real'; },
+    (d) => { d.opsPageFirst.items[1].actor = 'someone-real'; },
+    (d) => { d.opsUnknownMode.actor = 'someone-real'; },
+  ];
+  let n = 0;
+  for (const mutate of cases) {
+    const root = tempRepo();
+    const deps = await mutateDocs(root, mutate);
+    const r = await check(root, deps);
+    assert.ok(r.problems.some((p) => p.token === TOKENS.violates && p.message.includes('someone-real')), tokens(r).join());
+    n += 1;
+  }
+  assert.equal(n, 3);
+  const root = tempRepo();
+  const deps = await mutateDocs(root, (d) => { d.opsOpen.actor = 'codex'; });
+  assert.deepEqual(tokens(await check(root, deps)), [], 'codex is a synthetic actor');
+});
+
+test('C4 Ops fixtures: a foreign vocabulary word is refused unless the fixture is registered with ops-vocab-open', async () => {
+  const root = tempRepo();
+  const registry = { ...FIXTURES, opsUnknownOutcome: { ...FIXTURES.opsUnknownOutcome, kind: 'valid' } };
+  delete registry.opsUnknownOutcome.relaxation;
+  const r = await check(root, { registry });
+  assert.ok(r.problems.some((p) => p.token === TOKENS.violates && p.message.includes('opsUnknownOutcome')), tokens(r).join());
+  const control = await check(tempRepo());
+  assert.deepEqual(tokens(control), [], 'positive control: the registry as it is passes');
+});
+
+test('C4 Ops fixtures: a second defect next to a foreign word, and a known word registered as relaxed, both give relaxation', async () => {
+  const root = tempRepo();
+  const deps = await mutateDocs(root, (d) => { d.opsUnknownCloser.profileId = 'has space'; });
+  assert.ok(tokens(await check(root, deps)).includes(TOKENS.relaxation));
+  const registry = { ...FIXTURES, opsFailed: { ...FIXTURES.opsFailed, kind: 'relaxed', relaxation: 'ops-vocab-open' } };
+  assert.ok(tokens(await check(tempRepo(), { registry })).includes(TOKENS.relaxation), 'a stale relaxed entry');
+});
+
 test('C4: a relaxed fixture whose schema differs from its relaxation schema gives relaxation', async () => {
   const root = tempRepo();
   const registry = { ...FIXTURES, wpUnknownLane: { ...FIXTURES.wpUnknownLane, schema: 'WorkPackageDetail' } };
@@ -560,20 +607,20 @@ test('C7: the contract directory itself may name stream identifiers', async () =
 });
 
 // ---- guards ----
-test('guard: a registry of 69 entries against 70 exports is reported with both counts', async () => {
+test('guard: a registry of 107 entries against 108 exports is reported with both counts', async () => {
   const root = tempRepo();
   const registry = without(FIXTURES, 'pageLong');
-  assert.equal(Object.keys(registry).length, 69);
+  assert.equal(Object.keys(registry).length, 107);
   const r = await check(root, { registry });
   assert.ok(tokens(r).includes(TOKENS.unregistered));
-  assert.match(r.problems.find((p) => p.token === TOKENS.unregistered).message, /69.*70|70.*69/);
+  assert.match(r.problems.find((p) => p.token === TOKENS.unregistered).message, /107.*108|108.*107/);
 });
 
-test('guard: a PIN.files of 150 keys against 151 files gives file set', async () => {
+test('guard: a PIN.files of 199 keys against 200 files gives file set', async () => {
   const root = tempRepo();
   const pin = JSON.parse(read(root, LAYOUT.pin));
   delete pin.files[Object.keys(pin.files)[0]];
-  assert.equal(Object.keys(pin.files).length, 150);
+  assert.equal(Object.keys(pin.files).length, 199);
   write(root, LAYOUT.pin, JSON.stringify(pin, null, 2));
   assert.deepEqual(tokens(await check(root)), [TOKENS.fileSet]);
 });
@@ -587,8 +634,8 @@ test('guard: the floors fail when the vendored set shrinks by one file together 
   });
   const r = await check(root);
   assert.equal(r.problems.some((p) => p.token === TOKENS.fileSet), false, 'the pin and the directory agree, so C1 alone is silent');
-  assert.equal(r.summary.vendoredFiles, 150);
-  assert.notEqual(r.summary.vendoredFiles, 151, 'the literal floor of the positive control would fail on this');
+  assert.equal(r.summary.vendoredFiles, 199);
+  assert.notEqual(r.summary.vendoredFiles, 200, 'the literal floor of the positive control would fail on this');
 });
 
 test('guard: a vendored set missing a named anchor file gives guard and names the file', async () => {

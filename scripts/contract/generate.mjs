@@ -47,7 +47,10 @@ const fixturesHeader = (pin) => `/**
  */
 `;
 
-const literal = (doc) => JSON.stringify(doc, null, 2).replace(/^(\s*)"([A-Za-z_][A-Za-z0-9_]*)":/gm, '$1$2:');
+// Bidirectional controls are written as escapes: a raw one in a source file reorders how an editor shows the line.
+const BIDI = new RegExp(`[${String.fromCharCode(0x200e, 0x200f)}${String.fromCharCode(0x202a)}-${String.fromCharCode(0x202e)}${String.fromCharCode(0x2066)}-${String.fromCharCode(0x2069)}]`, 'g');
+const escapeBidi = (text) => text.replace(BIDI, (c) => `\\u${c.charCodeAt(0).toString(16).padStart(4, '0')}`);
+const literal = (doc) => escapeBidi(JSON.stringify(doc, null, 2).replace(/^(\s*)"([A-Za-z_][A-Za-z0-9_]*)":/gm, '$1$2:'));
 
 /** `buildFixtures` and `bulk` default to the repository's own; tests inject changed ones. */
 export async function generateFixturesSource(root = ROOT, deps = {}) {

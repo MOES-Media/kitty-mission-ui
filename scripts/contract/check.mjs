@@ -146,6 +146,8 @@ async function validators(root, schemaName, relaxation) {
 }
 
 const WORK_PACKAGE_SCHEMAS = ['WorkPackage', 'WorkPackageDetail'];
+/** Ops documents: the actor handle of an Op, alone or in a page, is checked for every kind (mission-ui#11). */
+const OPS_SCHEMAS = ['OpsInvocation', 'OpsInvocationPage'];
 
 const summarise = (errors) => errors.slice(0, 3).map((e) => `${e.path || '/'} ${e.message}`).join('; ');
 
@@ -165,6 +167,7 @@ export function actorProblems(doc) {
   for (const wp of doc.workPackages ?? []) if ('actor' in wp) found.push(...handlesOf(wp.actor));
   if ('actor' in doc) found.push(...handlesOf(doc.actor));
   for (const entry of doc.history ?? []) found.push(...handlesOf(entry?.actor));
+  for (const op of doc.items ?? []) if (op && typeof op === 'object' && 'actor' in op) found.push(...handlesOf(op.actor));
   const reviewer = doc.review?.latestResult?.reviewer;
   if (typeof reviewer === 'string') found.push(reviewer);
   for (const cycle of doc.reviewCycles ?? []) if (typeof cycle?.reviewer === 'string') found.push(cycle.reviewer);
@@ -179,7 +182,7 @@ function staleProblems(doc) {
 async function checkFixtureDoc(root, name, def, doc) {
   const out = [];
   const where = `fixture ${name}`;
-  if (WORK_PACKAGE_SCHEMAS.includes(def.schema)) {
+  if (WORK_PACKAGE_SCHEMAS.includes(def.schema) || OPS_SCHEMAS.includes(def.schema)) {
     const bad = actorProblems(doc);
     if (bad.length) out.push(problem(TOKENS.violates, `${where} has an actor outside SYNTHETIC_ACTORS: ${bad.join(', ')}`));
   }
@@ -188,7 +191,7 @@ async function checkFixtureDoc(root, name, def, doc) {
     if (!r.valid) out.push(problem(TOKENS.violates, `${where} violates the closed contract: ${summarise(r.errors)}`));
     return out;
   }
-  const bad = WORK_PACKAGE_SCHEMAS.includes(def.schema) ? [] : actorProblems(doc);
+  const bad = WORK_PACKAGE_SCHEMAS.includes(def.schema) || OPS_SCHEMAS.includes(def.schema) ? [] : actorProblems(doc);
   if (bad.length) out.push(problem(TOKENS.violates, `${where} has an actor outside SYNTHETIC_ACTORS: ${bad.join(', ')}`));
   if (staleProblems(doc)) out.push(problem(TOKENS.violates, `${where} has a non-boolean stale`));
   const stripped = stripHost(doc);
@@ -352,6 +355,13 @@ async function checkBulk(root) {
   const v = await validators(root, 'MissionOverviewPage');
   for (const [label, page] of Object.entries(pages)) {
     const r = validateWith(v, page);
+    if (!r.valid) out.push(problem(TOKENS.violates, `${label} violates the closed contract: ${summarise(r.errors)}`));
+  }
+  // the Ops pages (mission-ui#11) are validated here too, but are not Mission records: they join no coherence check
+  const opsV = await validators(root, 'OpsInvocationPage');
+  const opsPages = { 'ops bulk page of 200': bulk.makeOpsPage(200, true), 'ops bulk page of 1000': bulk.makeOpsPage(1000, false) };
+  for (const [label, page] of Object.entries(opsPages)) {
+    const r = validateWith(opsV, page);
     if (!r.valid) out.push(problem(TOKENS.violates, `${label} violates the closed contract: ${summarise(r.errors)}`));
   }
   return { problems: out, pages };

@@ -5,6 +5,9 @@ import type { components } from './types.generated.js';
 type Schemas = components['schemas'];
 
 export type Project = Schemas['Project'];
+
+/** A project whose provisional `health` is an open string: a value outside the enum must survive (mission-ui#9). */
+export type ProjectView = Omit<Project, 'health'> & { health: string };
 export type MissionHead = Schemas['MissionHead'];
 export type MissionOverview = Schemas['MissionOverview'];
 export type MissionOverviewPage = Schemas['MissionOverviewPage'];
@@ -95,4 +98,31 @@ export type WorkPackageDetailView = Omit<WorkPackageDetail, 'subtasks' | 'depend
   dependencies: DependencyRefView[];
   reviewCycles?: ReviewCycle[];
   workspace?: Workspace;
+};
+
+// ---- The Ops screen reads these contract types (mission-ui#11); the aliases only name them. ----
+export type OpsInvocation = Schemas['OpsInvocation'];
+export type OpsInvocationPage = Schemas['OpsInvocationPage'];
+export type OpsEvidence = Schemas['OpsEvidence'];
+export type OpsEvidenceKind = Schemas['OpsEvidenceKind'];
+export type OpsInvocationStatus = Schemas['OpsInvocationStatus'];
+export type OpsOutcome = Schemas['OpsOutcome'];
+export type OpsClosedBy = Schemas['OpsClosedBy'];
+export type OpsModeOfWork = Schemas['OpsModeOfWork'];
+export type OpsRefusal = Schemas['OpsRefusal'];
+export type OpsRefusalCode = Schemas['OpsRefusalCode'];
+export type PageCursorRefusal = Schemas['PageCursorRefusal'];
+
+/** The evidence of an Op whose class word the screen has never seen (the contract enum is closed). */
+export type OpsEvidenceView = Omit<OpsEvidence, 'kind'> & { kind: string };
+
+/**
+ * An Op whose outcome, closer, mode or evidence class is a word the screen has never seen. A supertype of
+ * `OpsInvocation`, so a contract fixture is accepted without a cast. `status` stays closed.
+ */
+export type OpsInvocationView = Omit<OpsInvocation, 'outcome' | 'closedBy' | 'modeOfWork' | 'evidence'> & {
+  outcome: string | null;
+  closedBy: string | null;
+  modeOfWork: string;
+  evidence: OpsEvidenceView | null;
 };

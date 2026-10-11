@@ -30,7 +30,7 @@ test('tallyLanes of nothing is nine zeros', () => {
 
 test('the overlays build exactly the registered fixtures, in registry order', () => {
   assert.deepEqual(Object.keys(fixtures), Object.keys(FIXTURES));
-  assert.equal(Object.keys(fixtures).length, 70);
+  assert.equal(Object.keys(fixtures).length, 108);
 });
 
 // The declared values of contract-pin.md, "Declared derived values": [wpTotal, blockedCount, doneCount, donePercentage, W].
@@ -116,6 +116,27 @@ test('page shapes: counts, next-page flags', () => {
   assert.equal(fixtures.pageExhausted.items.length, 0);
   assert.equal(fixtures.pageLongNames.items.length, 1);
   assert.equal(fixtures.projectEmpty.missionCount, 0);
+});
+
+// ---- the Projects screen fixtures (mission-ui#9): two host overlays the contract examples do not give ----
+test('projectUnknownHealth: a project whose health is outside the enum, every other member as the example', () => {
+  const base = loadExamples(ROOT)['Project.example'];
+  const p = fixtures.projectUnknownHealth;
+  assert.equal(p.health, 'unheard_of_health');
+  assert.deepEqual({ ...p, health: base.health }, base);
+  assert.equal(Object.keys(p).length, 7);
+});
+
+test('projectLong: a 255-character branch, a 64-character version and a long name, all matching the contract patterns', () => {
+  const p = fixtures.projectLong;
+  assert.equal(Object.keys(p).length, 7);
+  assert.equal(p.currentBranch.length, 255);
+  assert.match(p.currentBranch, /^[A-Za-z0-9][A-Za-z0-9._/-]*$/);
+  assert.equal(p.specKittyVersion.length, 64);
+  assert.match(p.specKittyVersion, /^[0-9A-Za-z][0-9A-Za-z.+!_-]{0,63}$/);
+  assert.ok(p.name.length > 100 && !/\s/.test(p.name.slice(0, 60)), 'a long unbroken name');
+  assert.equal(p.health, 'healthy');
+  assert.equal(Number.isInteger(p.missionCount) && p.missionCount > 0, true);
 });
 
 // ---- the Work Package fixtures: the lane-rewrite rule and the facts the pairing relies on ----
