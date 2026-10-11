@@ -22,6 +22,8 @@ import type { TableAlign } from './model.js';
 export interface LinkHandlers {
   openArtifact(path: string, kind: string): void;
   openExternal(href: string): void;
+  /** False while the screen has no Mission: an artifact link needs its id to emit, so it is drawn inert (external links stay live). */
+  artifactLinks: boolean;
   overflowing: ReadonlySet<number>;
 }
 
@@ -69,6 +71,7 @@ function linkControl(target: LinkTarget, label: Part[], handlers: LinkHandlers):
   switch (target.kind) {
     case 'artifact': {
       const { path, entryKind } = target;
+      if (!handlers.artifactLinks) return inertLink(label, path);
       return control(label, nothing, LINK_SUFFIX.artifact, () => handlers.openArtifact(path, entryKind));
     }
     case 'external': {

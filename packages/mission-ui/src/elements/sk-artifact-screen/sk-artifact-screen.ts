@@ -649,6 +649,7 @@ export class SkArtifactScreen extends LitElement {
     const handlers: LinkHandlers = {
       openArtifact: (path, kind) => this.selectArtifact(path, kind),
       openExternal: (href) => this.openLink(href),
+      artifactLinks: this.mission !== null,
       overflowing: scroll.tables,
     };
     const truncation = renderTruncationNote(this.truncationText());

@@ -17,6 +17,7 @@ export function recorder(overflowing: ReadonlySet<number> = new Set()): Recorder
     handlers: {
       openArtifact: (path, kind) => events.push({ artifact: { path, kind } }),
       openExternal: (href) => events.push({ external: href }),
+      artifactLinks: true,
       overflowing,
     },
   };

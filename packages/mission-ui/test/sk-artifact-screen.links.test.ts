@@ -89,15 +89,30 @@ describe('EV-1: an internal link emits sk-select-artifact', () => {
     expectOne(events, 'sk-select-artifact', { missionId: missionFacts.missionId, path: 'data-model.md', kind: 'data_model' });
   });
 
-  it('the same link emits nothing while no Mission exists, and once one does (positive control on the same listener)', async () => {
+  it('with no Mission an artifact link is drawn inert (no role, no tab stop) and emits nothing; with a Mission the same link is live (positive control on the same listener)', async () => {
     const screen = await mount({ mission: null });
     const events = record(screen);
-    linkText(screen, 'data model').click();
+    const text = (el: Element): string => (el.textContent ?? '').replace(/\s+/g, ' ');
+    expect(links(screen).some((a) => text(a).startsWith('data model'))).toBe(false);
+    const inert = Array.from(root(screen).querySelectorAll<HTMLElement>('span[data-md="inert-link"]')).find((s) => text(s).startsWith('data model'));
+    if (inert === undefined) throw new Error('the artifact link is not drawn inert');
+    expect(inert.hasAttribute('role')).toBe(false);
+    expect(inert.hasAttribute('tabindex')).toBe(false);
+    inert.click();
+    inert.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, composed: true }));
     expect(events).toHaveLength(0);
     screen.mission = missionFacts;
     await settle(screen);
+    expect(root(screen).querySelectorAll('span[data-md="inert-link"]').length).toBeLessThan(Array.from(root(screen).querySelectorAll('a[data-md="link"]')).length);
     linkText(screen, 'data model').click();
-    expect(events.map((e) => e.type)).toEqual(['sk-select-artifact']);
+    expectOne(events, 'sk-select-artifact', { missionId: missionFacts.missionId, path: 'data-model.md', kind: 'data_model' });
+  });
+
+  it('with no Mission an external link stays live and still emits (the Mission id is not part of its event)', async () => {
+    const screen = await mount({ mission: null });
+    const events = record(screen);
+    linkText(screen, 'the project site').click();
+    expectOne(events, 'sk-open-link', { href: 'https://example.org/docs/plan' });
   });
 });
 

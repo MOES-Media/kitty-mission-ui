@@ -148,7 +148,9 @@ describe('the five events', () => {
   it('an artifact link needs a Mission, an external link does not (positive control inside the test)', async () => {
     const screen = await mount({ mission: null });
     const events = record(screen, EVENT_NAMES);
-    byText<HTMLElement>(root(screen), 'a[data-md="link"]', 'data model').click();
+    // With no Mission the artifact link is drawn inert: not a control, so nothing to click for an event.
+    expect(Array.from(root(screen).querySelectorAll('a[data-md="link"]')).some((a) => (a.textContent ?? '').includes('data model'))).toBe(false);
+    byText<HTMLElement>(root(screen), 'span[data-md="inert-link"]', 'data model').click();
     expect(events).toHaveLength(0);
     byText<HTMLElement>(root(screen), 'a[data-md="link"]', 'project site').click();
     expect(events.map((e) => e.type)).toEqual(['sk-open-link']);
