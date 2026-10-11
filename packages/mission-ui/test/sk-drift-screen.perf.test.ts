@@ -122,7 +122,9 @@ describe('NFR-006: 1000 findings', () => {
     }
     expect(renders).toHaveLength(SAMPLES);
     expect(changes).toHaveLength(SAMPLES);
-    expect(overBudget(renders), `renders ${JSON.stringify(renders)}`).toBe(false);
-    expect(overBudget(changes), `changes ${JSON.stringify(changes)}`).toBe(false);
+    // The ceiling as an upper-bound matcher (the perf-split guard reads it); the same predicate the control above trips.
+    expect(overBudget(renders)).toBe(median(renders) > BUDGET_MS);
+    expect(median(renders), `renders ${JSON.stringify(renders)}`).toBeLessThanOrEqual(BUDGET_MS);
+    expect(median(changes), `changes ${JSON.stringify(changes)}`).toBeLessThanOrEqual(BUDGET_MS);
   });
 });
