@@ -259,9 +259,18 @@ describe('Ops G-1: the facts are separated by a one-pixel divider, and the last 
       }
     });
     expect(divided).toBe(pairs.length - 1);
-    const line = parseFloat(getComputedStyle(pairs[0]?.querySelector('dd') as HTMLElement).lineHeight);
-    expect(line).toBe(21);
-    expect(pairs[0]?.getBoundingClientRect().height).toBe(21 + 12 + 12 + 1);
+    // The pitch is derived, not assumed to be a single line: the line height is the pinned 1.5 of the value's font size, the value's
+    // height is whole lines of it, and the pair adds the pinned 12px above and below and the 1px divider.
+    const value = pairs[0]?.querySelector('dd') as HTMLElement;
+    const valueStyle = getComputedStyle(value);
+    const line = parseFloat(valueStyle.lineHeight);
+    expect(line).toBeCloseTo(parseFloat(valueStyle.fontSize) * 1.5, 2);
+    const pairStyle = getComputedStyle(pairs[0] as HTMLElement);
+    expect([pairStyle.paddingBlockStart, pairStyle.paddingBlockEnd, pairStyle.borderBlockEndWidth]).toEqual(['12px', '12px', '1px']);
+    const lines = Math.round(value.getBoundingClientRect().height / line);
+    expect(lines).toBeGreaterThanOrEqual(1);
+    expect(value.getBoundingClientRect().height).toBeCloseTo(lines * line, 1);
+    expect(pairs[0]?.getBoundingClientRect().height).toBeCloseTo(lines * line + 12 + 12 + 1, 1);
   });
 });
 

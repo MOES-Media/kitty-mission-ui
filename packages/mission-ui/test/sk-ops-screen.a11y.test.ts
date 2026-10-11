@@ -376,6 +376,7 @@ describe('200 percent text hides nothing in the section header and the page pill
     await frames();
     return screen;
   }
+  const HEADER_CELLS = 15;
   /** The header texts: the heading, the eyebrow, the profile fact, the page pills (their parts) and the notice. */
   const headerCells = (screen: SkOpsScreen): Element[] => {
     const cells: Element[] = q(screen, 'h1, h2, [data-section-eyebrow], [data-profile-fact], [data-source-notice], [data-count], [data-read-only]');
@@ -394,7 +395,8 @@ describe('200 percent text hides nothing in the section header and the page pill
         const screen = await mountProfile(width, profile);
         const cells = headerCells(screen);
         expect(q(screen, '[data-profile-fact]'), `${width}`).toHaveLength(1);
-        expect(cells.length, `${width} cells`).toBeGreaterThanOrEqual(9);
+        // exact, so a header text that stops being drawn is noticed: the same 15 cells at every width and for every profile
+        expect(cells.length, `${width} cells`).toBe(HEADER_CELLS);
         for (const cell of cells) {
           if (cell.scrollWidth > cell.clientWidth) cutCells.push(`${profile.length}@${width}: ${cell.tagName.toLowerCase()} ${(cell.textContent ?? '').trim().slice(0, 30)}`);
         }
