@@ -371,6 +371,7 @@ export class SkDriftScreen extends LitElement {
     }
     if (this.announcing) {
       let text = nextAnnouncement(before, input, this.labels);
+      let manualOwed = false;
       const copyText = input.copyResult === null ? null : lookup(COPY_RESULT_TEXT, input.copyResult);
       // A line other than the start or a copy answer already told the host's news: the end of the rescan has nothing to add.
       if (text !== null && text !== RESCANNING_ANNOUNCEMENT && text !== copyText) this.rescanSpoke = true;
@@ -382,6 +383,7 @@ export class SkDriftScreen extends LitElement {
         if (end !== null) {
           // One update speaks one line: a copy answer that lands with the end of the rescan is kept, the end follows it.
           const manualPending = text !== null && input.copyResult === 'manual' && text === copyText;
+          manualOwed = manualPending;
           text = text === null || manualPending ? end : /[.!?]$/.test(text) ? `${text} ${end}` : `${text}${ANNOUNCEMENT_SEPARATOR}${end}`;
         }
       }
@@ -391,7 +393,8 @@ export class SkDriftScreen extends LitElement {
       } else if (text !== null) {
         this.announcement = text;
         this.announcementSeq += 1;
-        this.awaitingReadBack = false;
+        // The end line was spoken in place of the manual words: the read-back still owes them (FR-021).
+        this.awaitingReadBack = manualOwed;
       }
     }
     this.lastInput = input;

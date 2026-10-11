@@ -13,7 +13,7 @@ import { html, render } from 'lit';
 import type { SkDriftScreen } from '../src/elements/sk-drift-screen/sk-drift-screen.js';
 import { driftFrame, reportProps, stateProps } from '../src/elements/sk-drift-screen/fixtures.js';
 import type { DriftScreenProps } from '../src/elements/sk-drift-screen/fixtures.js';
-import { DRIFT_LOADING_LABEL, ERROR_ANNOUNCEMENT, READY_ANNOUNCEMENT, RESCANNING_ANNOUNCEMENT, RESCANNED_TEXT, RESCAN_UNCHANGED_ANNOUNCEMENT } from '../src/defaults/index.js';
+import { COPY_RESULT_TEXT, DRIFT_LOADING_LABEL, ERROR_ANNOUNCEMENT, READY_ANNOUNCEMENT, RESCANNING_ANNOUNCEMENT, RESCANNED_TEXT, RESCAN_UNCHANGED_ANNOUNCEMENT } from '../src/defaults/index.js';
 import { reportPopulated, reportScoped, reportScopedForeign } from '../src/contract/fixtures.generated.js';
 import type { DriftReportView } from '../src/contract/types.js';
 
@@ -245,6 +245,28 @@ describe('the end of a rescan is decided against the report captured at its star
     await afterHost(screen);
     expect(live(screen)).toBe('Copied. Rescan complete: no changes');
     expect(seqOf(screen)).toBe(2);
+  });
+
+  it('a manual copy answer that arrives with the end of the rescan is spoken after the end line, not dropped', async () => {
+    const screen = await mount();
+    await startRescan(screen);
+    (root(screen).querySelector('[data-copy]') as HTMLElement).click();
+    await screen.updateComplete;
+    const spoken: string[] = [];
+    const region = root(screen).querySelector('[data-live]');
+    if (region === null) throw new Error('no live region');
+    const watch = new MutationObserver(() => {
+      const line = live(screen);
+      if (line !== '' && spoken[spoken.length - 1] !== line) spoken.push(line);
+    });
+    watch.observe(region, { childList: true, characterData: true, subtree: true });
+    screen.rescanning = false;
+    screen.copyResult = 'manual';
+    await afterHost(screen);
+    await afterHost(screen);
+    watch.disconnect();
+    expect(spoken).toEqual([RESCAN_UNCHANGED_ANNOUNCEMENT, COPY_RESULT_TEXT.manual]);
+    expect(seqOf(screen)).toBe(3);
   });
 
   it('a second rescan is announced again, and its own end too (positive control)', async () => {
