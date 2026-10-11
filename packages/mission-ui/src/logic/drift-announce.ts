@@ -116,10 +116,11 @@ export function announcementInput(props: AnnounceProps): AnnounceInput {
     state,
     // Only a non-empty string is a scan time: anything else must never reach the words ("last scan undefined").
     scannedAt: showsReport && props.report !== null && typeof props.report.scannedAt === 'string' && props.report.scannedAt !== '' ? props.report.scannedAt : null,
-    count: showsReport && props.report !== null ? props.report.findings.length : 0,
+    // The clean look draws no finding, so it announces none, whatever the report holds.
+    count: state === 'ready' && props.report !== null ? props.report.findings.length : 0,
     now: props.now,
     rescanning: props.rescanning,
-    withheld: state === 'loading' && normaliseViewState(props.status) === 'ready',
+    withheld: state === 'loading' && ['ready', 'empty'].includes(normaliseViewState(props.status)),
     refusalText: state === 'error' ? (props.errorMessage !== '' ? props.errorMessage : resolveDriftRefusal(props.refusalCode, props.labels)) : null,
     copyResult: state === 'ready' ? props.copyResult : null,
   };

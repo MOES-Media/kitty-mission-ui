@@ -154,6 +154,15 @@ describe('agreesWithScope and effectiveStatus (DR-24, FR-009)', () => {
     expect(effectiveStatus('ready', report([finding({})]), '')).toBe('ready');
   });
 
+  it('checks an empty status like a ready one: a foreign or malformed report is not loaded, a usable one is the clean look (FR-009)', () => {
+    const mixed = report([finding({ missionId: A }), finding({ missionId: B })]);
+    expect(effectiveStatus('empty', mixed, A)).toBe('loading');
+    expect(effectiveStatus('empty', { scannedAt: 'x', truncated: false } as unknown as DriftReportView, '')).toBe('loading');
+    expect(effectiveStatus('empty', mixed, '')).toBe('empty');
+    expect(effectiveStatus('empty', report([finding({ missionId: A })]), A)).toBe('empty');
+    expect(effectiveStatus('empty', report([]), A)).toBe('empty');
+  });
+
   it('passes loading, error and not-found through, and collapses an unknown status to empty', () => {
     expect(effectiveStatus('loading', report([finding({})]), '')).toBe('loading');
     expect(effectiveStatus('error', null, '')).toBe('error');

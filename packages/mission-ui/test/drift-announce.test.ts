@@ -189,6 +189,19 @@ describe('announcementInput: what the screen shows becomes the input', () => {
     expect(announcementInput({ ...foreign, missionId: '' }).state).toBe('ready');
   });
 
+  it('the clean look announces the count it shows, none, even when the report holds findings (positive control: ready counts them)', () => {
+    const five = { ...report, findings: [{}, {}, {}, {}, {}] as never };
+    expect(announcementInput({ ...make, status: 'empty', report: five })).toMatchObject({ state: 'empty', count: 0 });
+    expect(announcementInput({ ...make, status: 'ready', report: { ...report, findings: [] } })).toMatchObject({ state: 'empty', count: 0 });
+    expect(announcementInput({ ...make, status: 'ready', report: five })).toMatchObject({ state: 'ready', count: 5 });
+  });
+
+  it("an empty status with another Mission's report in a scoped screen is loading and withheld, like ready", () => {
+    const foreign = { ...make, status: 'empty', missionId: 'M1', report: { ...report, findings: [{ missionId: 'OTHER' }] as never } };
+    expect(announcementInput(foreign)).toMatchObject({ state: 'loading', withheld: true, count: 0 });
+    expect(announcementInput({ ...foreign, missionId: '' })).toMatchObject({ state: 'empty', withheld: false });
+  });
+
   it('a scan time that is not a non-empty string is null, so no half sentence can be built from it (positive control: a string stays)', () => {
     const withTime = (scannedAt: unknown) => announcementInput({ ...make, report: { ...report, scannedAt, findings: [{}] as never } as never });
     expect(withTime(undefined).scannedAt).toBeNull();

@@ -82,10 +82,13 @@ export function agreesWithScope(report: DriftReportView, missionId: string): boo
 export function effectiveStatus(status: string, report: DriftReportView | null, missionId: string): DriftScreenStatus {
   if (status === 'not-found') return 'not-found';
   const state = normaliseViewState(status);
-  if (state !== 'ready') return state;
-  if (report === null || !Array.isArray(report.findings)) return 'loading';
+  if (state !== 'ready' && state !== 'empty') return state;
+  // A report that is not usable here is not shown whatever the status says: `empty` is checked like `ready` (FR-009).
+  // `empty` with no report at all stays the clean look: the host said there is nothing, and there is nothing to check.
+  if (report === null) return state === 'empty' ? 'empty' : 'loading';
+  if (!Array.isArray(report.findings)) return 'loading';
   if (!agreesWithScope(report, missionId)) return 'loading';
-  return report.findings.length === 0 ? 'empty' : 'ready';
+  return state === 'empty' || report.findings.length === 0 ? 'empty' : 'ready';
 }
 
 /** hook, then the refusal words; a code the screen has never seen, or none, is the generic words. */

@@ -413,6 +413,11 @@ describe('the status switch draws every container and region id', () => {
     expect(stateOf(await mount({ ...reportProps('reportScopedForeign', { select: 0 }), missionId: '' }))).toBe('ready');
     expect(stateOf(await mount(reportProps('reportScoped', { select: 0 })))).toBe('ready');
   });
+  it("an empty status with another Mission's report in a scoped scan is the loading look too (FR-009); unscoped it is the clean look", async () => {
+    const foreign = { ...reportProps('reportScopedForeign', { select: 0 }), status: 'empty' as const };
+    expect(stateOf(await mount(foreign))).toBe('loading');
+    expect(stateOf(await mount({ ...foreign, missionId: '' }))).toBe('empty');
+  });
   it('the detail region says what it holds: the finding, the choose-a-finding look, or a selection that is not in this scan', async () => {
     const detailOf = (screen: SkDriftScreen): string => one<HTMLElement>(root(screen), '[data-region="detail"]').getAttribute('data-detail') ?? '';
     expect(detailOf(await mount())).toBe('finding');
