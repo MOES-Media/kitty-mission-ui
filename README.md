@@ -88,6 +88,20 @@ Retry ownership: the shell owns a whole-page failure (`sk-shell-retry`); a scree
 (`sk-retry-load`). The `sk-retry-load` payload is a union keyed on `target`; this screen's members are `'work-package'` and
 `'detail'`, and a later screen adds its own member to the union instead of declaring the event again.
 
+## The Ops screen
+
+`sk-ops-screen` shows the invocation records (Ops) of a project, newest first, read only. A host passes contract-shaped data
+only: `status` (`loading`, `error`, `empty`, `ready`), `project`, `items`, `pageInfo`, `totalCount`, `skippedCount`,
+`profile`, `loadingMore`, `loadMoreError`, `refusalCode`, `labels` (optional word hooks) and `errorMessage`. Two events, each
+with `bubbles` and `composed` true: `sk-load-more` (Load more, once per cursor) and `sk-retry-load` (Try again, or Refresh
+from the newest after a refused cursor). The screen performs no I/O, never turns a value of a record into a link, and draws
+every word from the tables in `src/defaults/`. Its exceptions are E-40, E-42 and E-43 (row paint and typography, words-only
+wrapping, `overflow-wrap: anywhere` on the id and the evidence) and the grants Ops G-1 to Ops G-7 (the fact dividers, the badge
+line height, the page badges, the state card, the profile wrap, the empty-look typography and the badge width cap; named "Ops G-n" so they are not
+confused with other screens' grants). Its 37 stories are under `Screens/Ops/` (four titles), with
+one visual baseline each; a node test (`scripts/ops-story-catalogue.test.mjs`) ties the stories to the specification's state
+matrix and pins which baselines may be byte-identical.
+
 ## Gates
 
 One workflow, `.github/workflows/ci.yml`; the job ids are the gate ids and the check names are `Gate: <id>`. The list
@@ -104,10 +118,10 @@ packages, never only the changed files.
 | `Gate: manifest` | `pnpm manifest:check` | `custom-elements.json` equals a fresh regeneration and declares every property and event |
 | `Gate: hygiene` | `pnpm hygiene` and `pnpm test:scripts` | no token, no absolute user path, no e-mail address in the contract and fixture paths, pinned dependencies and actions, safe workflow triggers, baseline PNG checks; then the `node:test` suites of the gate scripts (hygiene, gate-proof, preflight, manifest-screen, settle, the stylelint exception scope proofs and the terminology scan: the word "feature" never appears in `packages/*/src` or the mission quickstart, the canonical term is "mission") |
 | `Gate: contract` | `pnpm contract:check` and `pnpm test:contract` | the vendored Mission Status contract equals its pin, the generated types and fixtures are fresh, every fixture is a valid and coherent contract document (closed shapes), no event-stream identifier in `packages/*/src` |
-| `Gate: data-driven` | `pnpm lint:data-driven` and `pnpm test:data-driven` | no phase name, status lane or other contract status word (`pending`, `complete`, `draft`, `discarded`) hard-coded in `packages/*/src` outside `src/defaults/`, `src/contract/`, stories, fixtures and `src/story-support/`; 31 selectors, a self-test with 36 positive fixtures and inline `eslint-disable` comments ignored |
-| `Gate: storybook-build` | `pnpm build-storybook` | the static Storybook builds (118 stories), then the output is scanned for tokens |
+| `Gate: data-driven` | `pnpm lint:data-driven` and `pnpm test:data-driven` | no phase name, status lane or other contract status word (`pending`, `complete`, `draft`, `discarded`) hard-coded in `packages/*/src` outside `src/defaults/`, `src/contract/`, stories, fixtures and `src/story-support/`; the selector list is `SELECTOR_ENTRIES` in `eslint.data-driven.config.mjs` (it reads the phase, lane, review, change-state, staleness and Ops vocabularies from the vendored schemas), with a self-test over positive fixtures in `gates/fixtures/data-driven/` and inline `eslint-disable` comments ignored |
+| `Gate: storybook-build` | `pnpm build-storybook` | the static Storybook builds (211 stories), then the output is scanned for tokens |
 | `Gate: unit-tests` | `pnpm test` | Vitest browser-mode tests: one per emitted event and payload, plus the host composition test (both screens rendered from contract-shaped data with no I/O) |
-| `Gate: visual` | `pnpm visual` | screenshots of every story (118) against the committed baselines (118, one per story), inside the pinned Playwright container |
+| `Gate: visual` | `pnpm visual` | screenshots of every story (211) against the committed baselines (211, one per story), inside the pinned Playwright container |
 | `Gate: proof (<gate>)` | `pnpm gate-proof` | one leg per gate: passes clean, fails with the plant (see below) |
 | `Gate: proof` | (CI only) | checks coverage, assembles and schema-validates the proof record |
 | `Gate: all` | (CI only) | fails unless every job above succeeded; skipped or cancelled counts as failed |
