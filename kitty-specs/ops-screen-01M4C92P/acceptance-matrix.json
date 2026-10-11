@@ -1,0 +1,449 @@
+{
+  "mission_slug": "ops-screen-01M4C92P",
+  "mission_number": "3",
+  "mission_type": "software-dev",
+  "overall_verdict": "pass",
+  "criteria": [
+    {
+      "criterion_id": "FR-001",
+      "description": "Verify FR-001 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/surface-freeze.test.ts, packages/mission-ui/test/sk-ops-screen.skeleton.test.ts: assert sk-ops-screen has exactly twelve properties (items, pageInfo, totalCount, skippedCount, profile, status, loadingMore, loadMoreError, refusalCode, labels, errorMessage, project), seven attributes, two events, their defaults, and the package entry export; packages/mission-ui/test/ops-page-parts.test.ts: project line drawn only when project is set",
+      "pass_fail": "pass",
+      "verified_by": "<user>",
+      "verified_at": "2026-10-11T14:30:59.783089+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-002",
+      "description": "Verify FR-002 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/ops-row.test.ts: fact values are the served strings with no re-formatting, building a row does not change the item; packages/mission-ui/test/ops-look.test.ts: the look resolver does not sort, copy or mutate items; packages/mission-ui/test/sk-ops-screen.edge.test.ts: the DOM keeps the served order and duplicate ids",
+      "pass_fail": "pass",
+      "verified_by": "<user>",
+      "verified_at": "2026-10-11T14:31:04.670275+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-003",
+      "description": "Verify FR-003 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/ops-page-parts.test.ts: header draws eyebrow, the one h1 title, Read only badge; project name is the only supporting line and none when null or empty (paired); packages/mission-ui/test/sk-ops-screen.states.test.ts: eyebrow, title, project line, badge and notice drawn in each non-ready look",
+      "pass_fail": "pass",
+      "verified_by": "<user>",
+      "verified_at": "2026-10-11T14:31:06.326603+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-004",
+      "description": "Verify FR-004 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/ops-page-parts.test.ts: exactly one neutral sk-notice with the source sentence, no path or format; packages/mission-ui/test/sk-ops-screen.states.test.ts and packages/mission-ui/test/ops-copy.test.ts: default sentences are host-neutral (OQ-6) and reached through labels.copy",
+      "pass_fail": "pass",
+      "verified_by": "<user>",
+      "verified_at": "2026-10-11T14:31:08.005084+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-005",
+      "description": "Verify FR-005 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/ops-page-parts.test.ts: section heading draws eyebrow, focusable h2 and count badge; badge reads 6 of 249, matching total as records, and the given total when smaller (6 of 2) with no extra notice; packages/mission-ui/test/sk-ops-screen.states.test.ts: no heading or count outside the ready look",
+      "pass_fail": "pass",
+      "verified_by": "<user>",
+      "verified_at": "2026-10-11T14:31:09.632202+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-006",
+      "description": "Verify FR-006 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-ops-screen.rows.test.ts: one li per item in served order with a badge and facts, no tabindex/role/listener on any row, clicking a row/id/evidence/time emits nothing, Tab never lands in a row; packages/mission-ui/test/ops-row-parts.test.ts: li with head (id, badge) and a definition list, no link or role",
+      "pass_fail": "pass",
+      "verified_by": "<user>",
+      "verified_at": "2026-10-11T14:31:11.286429+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-007",
+      "description": "Verify FR-007 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/ops-row.test.ts: base fact order (Profile, Action, Actor, Started, Completed, Evidence) is the same for every fixture, values served as given in mono; packages/mission-ui/test/ops-row-parts.test.ts: facts in view order with mono class; packages/mission-ui/test/sk-ops-screen.edge.test.ts: each nullable field null draws a quiet word, never undefined or null",
+      "pass_fail": "pass",
+      "verified_by": "<user>",
+      "verified_at": "2026-10-11T14:31:12.929467+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-008",
+      "description": "Verify FR-008 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-ops-screen.rows.test.ts: twelve cases assert outcome word and tone per fixture and OP-26 foreign values show raw with neutral tone; packages/mission-ui/test/ops-row.test.ts: outcome word and tone, unknown raw neutral, tone table is data, hooks reword the word; packages/mission-ui/test/ops-copy.test.ts: done success, failed danger, abandoned attention",
+      "pass_fail": "pass",
+      "verified_by": "<user>",
+      "verified_at": "2026-10-11T14:31:14.513868+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-009",
+      "description": "Verify FR-009 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-ops-screen.rows.test.ts: OP-05 an open Op shows the open status word with Completed and Evidence not recorded yet and no outcome; packages/mission-ui/test/ops-row.test.ts: open Op Completed and Evidence are Not recorded yet; packages/mission-ui/test/ops-copy.test.ts: open is neutral",
+      "pass_fail": "pass",
+      "verified_by": "<user>",
+      "verified_at": "2026-10-11T14:31:16.110783+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-010",
+      "description": "Verify FR-010 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-ops-screen.rows.test.ts: OP-06 swept Op reads Closed by sweep, agent-closed paired row has no such fact; packages/mission-ui/test/ops-row.test.ts: Closed by is last for a sweep, absent for agent closure, unknown closer drawn raw; packages/mission-ui/test/ops-row-parts.test.ts: raw word for an unknown closer",
+      "pass_fail": "pass",
+      "verified_by": "<user>",
+      "verified_at": "2026-10-11T14:31:17.690056+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-011",
+      "description": "Verify FR-011 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-ops-screen.rows.test.ts: OP-13 each of the four modes shows its vocabulary word; packages/mission-ui/test/ops-row.test.ts: every mode word mapped, unknown shown raw, mode hook rewords",
+      "pass_fail": "pass",
+      "verified_by": "<user>",
+      "verified_at": "2026-10-11T14:31:19.302818+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-012",
+      "description": "Verify FR-012 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-ops-screen.rows.test.ts: OP-12 Mission and Work Package shown in mono when set, absent when null (both, one, none); packages/mission-ui/test/ops-row.test.ts: facts removed when null, omitted fields draw nothing; packages/mission-ui/test/ops-row-parts.test.ts: drawn only when the view has them, no link or role",
+      "pass_fail": "pass",
+      "verified_by": "<user>",
+      "verified_at": "2026-10-11T14:31:24.238952+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-013",
+      "description": "Verify FR-013 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-ops-screen.evidence.test.ts: for all 18 evidence fixtures (hostile included) no anchor, image, src, href or loadable element is drawn and values show as text with 512-char token whole; packages/mission-ui/test/sk-ops-screen.rows.test.ts: OP-08 to OP-10 plain text with class word; packages/mission-ui/test/ops-row-parts.test.ts: mono value span in a bdi with quiet class label",
+      "pass_fail": "pass",
+      "verified_by": "<user>",
+      "verified_at": "2026-10-11T14:31:25.831047+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-014",
+      "description": "Verify FR-014 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-ops-screen.rows.test.ts: OP-07 null evidence says Not recorded, OP-33 null actor says Not shown, paired with rows that have values; packages/mission-ui/test/ops-row.test.ts: omitted/null evidence, actor and completedAt draw quiet words; packages/mission-ui/test/ops-copy.test.ts: quiet words table",
+      "pass_fail": "pass",
+      "verified_by": "<user>",
+      "verified_at": "2026-10-11T14:31:27.408966+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-015",
+      "description": "Verify FR-015 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-ops-screen.rows.test.ts: OP-11 markers [path]/[email] shown as given with the changed word, absent on the unredacted paired row; packages/mission-ui/test/ops-row-parts.test.ts: changed word and its description only for a redacted value (paired); packages/mission-ui/test/ops-row.test.ts: changed flag is the contract redacted flag",
+      "pass_fail": "pass",
+      "verified_by": "<user>",
+      "verified_at": "2026-10-11T14:31:28.987008+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-016",
+      "description": "Verify FR-016 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-ops-screen.rows.test.ts: OP-09 the 512-character value is shown in full, not cut, and the row stays inside the width; packages/mission-ui/test/sk-ops-screen.evidence.test.ts: the 512-char unbroken token wraps inside the row at 1280 and 390; packages/mission-ui/test/sk-ops-screen.hostile.test.ts: token stays inside its row",
+      "pass_fail": "pass",
+      "verified_by": "<user>",
+      "verified_at": "2026-10-11T14:31:30.627852+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-017",
+      "description": "Verify FR-017 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-ops-screen.rows.test.ts: OP-14 time text is UTC and datetime is the served string to the character (+02:00 source); packages/mission-ui/test/ops-time.test.ts: formatUtcInstant forms, offset rollovers, invalid dates return null; packages/mission-ui/test/ops-row.test.ts and packages/mission-ui/test/ops-text.test.ts: unparsable shown as given with no datetime, hook rewords text not datetime",
+      "pass_fail": "pass",
+      "verified_by": "<user>",
+      "verified_at": "2026-10-11T14:31:32.231797+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-018",
+      "description": "Verify FR-018 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/ops-no-clock.test.ts: scans 13 Ops element/logic files (equality) for Date, .now(, performance, RelativeTimeFormat, ago/in N minutes; positive control detects plants; red with Date.now() planted in ops-time.ts",
+      "pass_fail": "pass",
+      "verified_by": "<user>",
+      "verified_at": "2026-10-11T14:34:30.980208+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-019",
+      "description": "Verify FR-019 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-ops-screen.rows.test.ts: no tabindex/role/listener on rows, clicking id/evidence/time emits nothing; packages/mission-ui/test/ops-row-parts.test.ts: id, mono facts and evidence value carry mono attributes, no link, role or tabindex; packages/mission-ui/test/sk-ops-screen.evidence.test.ts: no anchor or loadable element in any row",
+      "pass_fail": "pass",
+      "verified_by": "<user>",
+      "verified_at": "2026-10-11T14:31:33.847553+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-020",
+      "description": "Verify FR-020 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-ops-screen.rows.test.ts: OP-27 fact values wrap with full text in title, id and evidence wrap anywhere; packages/mission-ui/test/sk-ops-screen.a11y.test.ts: at 200 percent text no fact, header or pill text is truncated at 1280/800/620/390 and status badges keep their whole word; scripts/stylelint-exceptions.test.mjs: E-42/E-43 wrap grants scoped to their files",
+      "pass_fail": "pass",
+      "verified_by": "<user>",
+      "verified_at": "2026-10-11T14:31:35.472560+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-021",
+      "description": "Verify FR-021 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-ops-screen.events.test.ts: sk-load-more emits once with { cursor }, not again for the same cursor until loadingMore/items/pageInfo changes, not while loadingMore, no control on last page; packages/mission-ui/test/ops-page-parts.test.ts: secondary busy-capable sk-button, li aria-busy while loading more; packages/mission-ui/test/sk-ops-screen.skeleton.test.ts: cursor carried",
+      "pass_fail": "pass",
+      "verified_by": "<user>",
+      "verified_at": "2026-10-11T14:31:37.077612+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-022",
+      "description": "Verify FR-022 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/ops-page-parts.test.ts: badge reads 6 of 249, 6 records when loaded equals total, 1 record, and 6 of 2 as given when total is smaller, with no caveat notice; packages/mission-ui/test/ops-copy.test.ts: opsCountText; packages/mission-ui/test/sk-ops-screen.edge.test.ts: total smaller than loaded shown as given",
+      "pass_fail": "pass",
+      "verified_by": "<user>",
+      "verified_at": "2026-10-11T14:31:38.705134+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-023",
+      "description": "Verify FR-023 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/ops-page-parts.test.ts: OP-17 last page badge reads loaded equals total with no Load more, Load more absent on last page and null cursor (paired); packages/mission-ui/test/sk-ops-screen.events.test.ts: no control drawn on the last page",
+      "pass_fail": "pass",
+      "verified_by": "<user>",
+      "verified_at": "2026-10-11T14:31:40.308455+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-024",
+      "description": "Verify FR-024 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/ops-page-parts.test.ts: quiet neutral skipped notice below the list, singular and plural sentences say in this project and never for this profile, none at 0; packages/mission-ui/test/sk-ops-screen.states.test.ts: OP-20 and R-C skipped note named, skipped records not in the DOM; packages/mission-ui/test/ops-copy.test.ts: skippedText singular/plural",
+      "pass_fail": "pass",
+      "verified_by": "<user>",
+      "verified_at": "2026-10-11T14:31:41.944517+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-025",
+      "description": "Verify FR-025 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-ops-screen.states.test.ts: OP-19 heading and plain sentence with no list/badge, OP-20 skipped in this project wording, OP-21 profile headline names profile in mono, CP-1 and CONTRACT-002 profile plus skipped as two sentences with the code between; packages/mission-ui/test/ops-state-parts.test.ts and packages/mission-ui/test/ops-text.test.ts: headline order and skipped note never hidden",
+      "pass_fail": "pass",
+      "verified_by": "<user>",
+      "verified_at": "2026-10-11T14:31:43.586563+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-026",
+      "description": "Verify FR-026 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-ops-screen.states.test.ts: loading look has labelled indeterminate progress, the no-agent sentence, focusable heading, busy only while loading, no rows; packages/mission-ui/test/ops-state-parts.test.ts: progress, sentence and heading drawn busy with no list, count badge or retry",
+      "pass_fail": "pass",
+      "verified_by": "<user>",
+      "verified_at": "2026-10-11T14:31:45.213197+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-027",
+      "description": "Verify FR-027 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-ops-screen.states.test.ts: assertive danger notice with heading, sentence and retry; unknown and null codes show the generic body; errorMessage overrides, copy hook reaches the generic key, foreign message rendered as text; packages/mission-ui/test/ops-text.test.ts: injected code-to-key lookup table; packages/mission-ui/test/ops-state-parts.test.ts and packages/mission-ui/test/ops-copy.test.ts: ops_unreadable maps to errorBody; no path or format in any sentence",
+      "pass_fail": "pass",
+      "verified_by": "<user>",
+      "verified_at": "2026-10-11T14:31:46.791178+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-028",
+      "description": "Verify FR-028 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-ops-screen.events-retry.test.ts: first-page retry emits exactly once { target: ops-page } bubbling, composed, no cursor even when pageInfo holds one, for click/Enter/Space and every refusal code; packages/mission-ui/test/ops-retry-union.test.ts: Ops union member narrows on target with no missionId and earlier members still build",
+      "pass_fail": "pass",
+      "verified_by": "<user>",
+      "verified_at": "2026-10-11T14:31:48.517611+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-029",
+      "description": "Verify FR-029 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-ops-screen.events.test.ts: load-more retry emits { target: ops-page, cursor } with the failed cursor exactly once, inert with no cursor; packages/mission-ui/test/ops-page-parts.test.ts: a load-more error replaces Load more while rows/badge stay, sentence The next records could not be loaded with Try again; packages/mission-ui/test/ops-retry-union.test.ts: cursor member",
+      "pass_fail": "pass",
+      "verified_by": "<user>",
+      "verified_at": "2026-10-11T14:31:50.811803+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-030",
+      "description": "Verify FR-030 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-ops-screen.events.test.ts: refused cursor Refresh emits { target } with NO cursor key even when pageInfo holds one, other codes still send it; packages/mission-ui/test/ops-page-parts.test.ts: refused code shows the refresh wording, other codes the generic one; packages/mission-ui/test/sk-ops-screen.skeleton.test.ts: refused-cursor error refreshes from the newest",
+      "pass_fail": "pass",
+      "verified_by": "<user>",
+      "verified_at": "2026-10-11T14:31:55.869613+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-031",
+      "description": "Verify FR-031 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/ops-page-parts.test.ts: profile fact printed only when a profile is given, with no control or event hook, through the screen (paired); packages/mission-ui/test/sk-ops-screen.skeleton.test.ts: profile fact only when a profile is given; packages/mission-ui/test/sk-ops-screen.edge.test.ts: long profile wraps with full text as title; packages/mission-ui/test/ops-copy.test.ts: profileFactText",
+      "pass_fail": "pass",
+      "verified_by": "<user>",
+      "verified_at": "2026-10-11T14:32:01.937746+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-032",
+      "description": "Verify FR-032 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/ops-look.test.ts: row 5 a page with an item of another profile is loading (mismatch) wherever the item sits, comparison by exact equality (case, padding, empty), null profile makes no check; packages/mission-ui/test/sk-ops-screen.states.test.ts: mismatched page draws the loading look and no row; packages/mission-ui/test/sk-ops-screen.announce.test.ts: mismatch announces nothing",
+      "pass_fail": "pass",
+      "verified_by": "<user>",
+      "verified_at": "2026-10-11T14:32:04.237458+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-033",
+      "description": "Verify FR-033 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-ops-screen.announce.test.ts: one polite status region; asserts loading, loaded-of-total, empty, Loading more records then N more records loaded, load-more error and refused-cursor sentences announced once, error look not duplicated, same pair/mismatched page announce nothing, key is first id and cursor; packages/mission-ui/test/ops-text.test.ts: announcement texts per look",
+      "pass_fail": "pass",
+      "verified_by": "<user>",
+      "verified_at": "2026-10-11T14:32:05.937272+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-034",
+      "description": "Verify FR-034 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-ops-screen.states.test.ts: focus moves to the section heading when the focused Load more is removed (last page) and to the new state heading, stays on Load more/retry while kept, not taken when focus was elsewhere or on the body (paired controls), rows never focus targets, documented order heading then Load more/retry; packages/mission-ui/test/sk-ops-screen.skeleton.test.ts: same focus cases",
+      "pass_fail": "pass",
+      "verified_by": "<user>",
+      "verified_at": "2026-10-11T14:32:08.347928+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-035",
+      "description": "Verify FR-035 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-ops-screen.a11y.test.ts: in every look the tab stops are exactly the controls shown in order with a ring, rows add none, no trap, Shift+Tab walks back; Enter and Space each emit one sk-load-more and one sk-retry-load for Load more, Retry, Refresh and first-page retry",
+      "pass_fail": "pass",
+      "verified_by": "<user>",
+      "verified_at": "2026-10-11T14:32:10.319717+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-036",
+      "description": "Verify FR-036 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-ops-screen.a11y.test.ts: every state word is visible text of its row (outcome, status, closer, mode, evidence class, redaction) and the error and refusal sentences are text; packages/mission-ui/test/sk-ops-screen.states.test.ts: skipped and error words in DOM",
+      "pass_fail": "pass",
+      "verified_by": "<user>",
+      "verified_at": "2026-10-11T14:32:18.092960+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-037",
+      "description": "Verify FR-037 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/sk-ops-screen.tiers.test.ts: per width fact columns/head direction/heading tracks, facts one column at 696 px and two at 697, head and heading stack at 588 and not 589, rule follows the container not the viewport, rem thresholds 43.5rem and 36.75rem in the parts only and follow 200 percent text (A11Y-001 ruling)",
+      "pass_fail": "pass",
+      "verified_by": "<user>",
+      "verified_at": "2026-10-11T14:32:22.659238+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-038",
+      "description": "Verify FR-038 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "gates/data-driven.selftest.ts: data-driven gate learns every Ops vocabulary word from the vendored schemas (outcome, closedBy, mode, evidence kind, status, refusal, cursor refusal) and reports them outside defaults and contract paths; packages/mission-ui/test/ops-copy.test.ts: every default string in defaults/ops-copy.ts, covers every vendored enum member, re-exported by defaults/index.ts, disjoint names",
+      "pass_fail": "pass",
+      "verified_by": "<user>",
+      "verified_at": "2026-10-11T14:32:24.782565+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-039",
+      "description": "Verify FR-039 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/ops-row.test.ts (row view-model: outcome/status word and tone, facts, closer, evidence, times), packages/mission-ui/test/ops-time.test.ts (UTC formatter cases and rollovers), packages/mission-ui/test/ops-text.test.ts (count, skipped, empty, error, announcement texts with hooks), packages/mission-ui/test/ops-look.test.ts (look resolver), packages/mission-ui/test/ops-copy.test.ts (vocabulary object): pure helpers, vocabulary taken as input with defaults as default, no mutation",
+      "pass_fail": "pass",
+      "verified_by": "<user>",
+      "verified_at": "2026-10-11T14:32:26.367245+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-040",
+      "description": "Verify FR-040 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "scripts/ops-story-catalogue.test.mjs: every Ops story file frames the screen with the Ops nav item current (nav-ops) and binds the project, with a positive-control failing copy; packages/mission-ui/test/sk-ops-screen.a11y.test.ts and packages/mission-ui/test/sk-ops-screen.tiers.test.ts: render the screen in shellFrame with flush and current nav-ops; shell stories ProjectOps1280 and ProjectOps800 use nav-ops",
+      "pass_fail": "pass",
+      "verified_by": "<user>",
+      "verified_at": "2026-10-11T14:32:28.020132+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-041",
+      "description": "Verify FR-041 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/ops-fixtures.test.ts: generated module exports 108 fixtures, 36 Ops, helpers expose generated exports by identity, refusal fixtures carry ops_unreadable/invalid_page_cursor, overlay fixtures keep their named properties; scripts/contract/check.test.mjs: C4 Ops fixture checks (page, synthetic actors, ops-vocab-open); scripts/contract/cli.test.mjs: check --require-main; contracts/spec-kitty/PIN.json provenance main",
+      "pass_fail": "pass",
+      "verified_by": "<user>",
+      "verified_at": "2026-10-11T14:32:29.622891+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-042",
+      "description": "Verify FR-042 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-ui/test/surface-freeze.test.ts: the committed custom-elements.json declares sk-ops-screen with exactly twelve properties, seven attributes, two events, no slot or part, and the entry exports SkOpsScreen; the Ops events share sk-load-more and sk-retry-load declarers; (manifest:check itself is a gate, not covered here)",
+      "pass_fail": "pass",
+      "verified_by": "<user>",
+      "verified_at": "2026-10-11T14:32:40.158783+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-043",
+      "description": "Verify FR-043 is satisfied",
+      "proof_type": "automated_test",
+      "evidence": "scripts/stylelint-exceptions.test.mjs: E-40, E-42 and E-43 granted only in the named Ops part files, sibling files and foreign files refuse the same declarations (proof cases), E-41 deleted, G-4/G-5/G-6 confined; packages/mission-ui/test/ops-part-selectors.test.ts: pinned selectors and leak plants; gates/plants/stylelint plant-stylelint-ops-frame-leak and ops-wrap-leak",
+      "pass_fail": "pass",
+      "verified_by": "<user>",
+      "verified_at": "2026-10-11T14:32:41.792273+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    },
+    {
+      "criterion_id": "FR-044",
+      "description": "Verify FR-044 is satisfied",
+      "proof_type": "visual_baseline",
+      "evidence": "scripts/ops-story-catalogue.test.mjs: 36 built matrix rows map to 37 stories (16/9/8/4 per title), and 37 committed Ops baselines in apps/storybook/tests/visual/__snapshots__ are byte-identical only for the intended same-look sets; interaction tests for every event: packages/mission-ui/test/sk-ops-screen.events.test.ts, packages/mission-ui/test/sk-ops-screen.events-retry.test.ts, packages/mission-ui/test/sk-ops-screen.a11y.test.ts",
+      "pass_fail": "pass",
+      "verified_by": "<user>",
+      "verified_at": "2026-10-11T14:32:43.410893+00:00",
+      "notes": "TODO: replace with a real acceptance criterion"
+    }
+  ],
+  "negative_invariants": []
+}
