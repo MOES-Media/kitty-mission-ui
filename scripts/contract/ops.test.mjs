@@ -6,7 +6,7 @@ import { FIXTURES, RELAXATIONS, errorAllowed } from './registry.mjs';
 import { ROOT } from './common.mjs';
 import { loadSchema, relaxedSchema, compile, validateWith } from './validate.mjs';
 import { loadExamples, generateFixturesSource } from './generate.mjs';
-import { buildFixtures, SYNTHETIC_ACTORS } from './overlays.mjs';
+import { buildFixtures, OPS_ACTORS, SYNTHETIC_ACTORS } from './overlays.mjs';
 import { actorProblems } from './check.mjs';
 import * as bulk from '../../packages/mission-ui/src/contract/bulk.ts';
 
@@ -218,11 +218,15 @@ test('every Ops actor handle is in the allow-list, and the allow-list rejects a 
   for (const name of [...CONTRACT_DERIVED, ...OVERLAYS]) {
     const d = fixtures[name];
     if (!(d.items || d.invocationId)) continue;
-    assert.deepEqual(actorProblems(d), [], name);
+    assert.deepEqual(actorProblems(d, [...SYNTHETIC_ACTORS, ...OPS_ACTORS]), [], name);
     n += 1;
   }
   assert.equal(n, 34);
-  for (const handle of ['claude', 'codex', 'operator']) assert.ok(SYNTHETIC_ACTORS.includes(handle), handle);
+  assert.ok(SYNTHETIC_ACTORS.includes('claude'));
+  for (const handle of ['codex', 'operator']) {
+    assert.ok(OPS_ACTORS.includes(handle), handle);
+    assert.equal(SYNTHETIC_ACTORS.includes(handle), false, `${handle} is not a general synthetic actor`);
+  }
   const bad = structuredClone(fixtures.opsOpen);
   bad.actor = 'someone-real';
   assert.deepEqual(actorProblems(bad), ['someone-real']);

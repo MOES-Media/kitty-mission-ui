@@ -17,9 +17,9 @@ export const SYNTHETIC_ACTORS = [
   // two deliberately long handles (at most 128 characters, the contract's limit) for the long-text fixture
   'implementer-profile-with-a-deliberately-long-handle-to-test-wrapping-in-the-facts-panel-of-the-screen',
   'reviewer-profile-with-a-deliberately-long-handle-to-test-wrapping-in-the-review-summary-of-the-screen',
-  // the handles of the contract's own Ops examples (mission-ui#11)
-  'codex', 'operator',
 ];
+/** The handles of the contract's own Ops examples (mission-ui#11): allowed on Ops fixtures only, never on any other kind. */
+export const OPS_ACTORS = ['codex', 'operator'];
 // Looked up by name, never by position: reordering SYNTHETIC_ACTORS must not change a fixture.
 const actorNamed = (prefix) => {
   const found = SYNTHETIC_ACTORS.filter((a) => a.startsWith(prefix));

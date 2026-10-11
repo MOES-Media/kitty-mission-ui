@@ -442,6 +442,20 @@ test('C4 Ops fixtures: an actor outside SYNTHETIC_ACTORS is a violation on a sin
   assert.deepEqual(tokens(await check(root, deps)), [], 'codex is a synthetic actor');
 });
 
+test('C4: the Ops handles are allowed on Ops fixtures only (a Work Package fixture with actor operator is refused; positive control: an Ops fixture with it passes)', async () => {
+  let root = tempRepo();
+  let deps = await mutateDocs(root, (d) => { d.wpUnknownLane.actor.profile = 'operator'; });
+  let r = await check(root, deps);
+  assert.ok(r.problems.some((p) => p.token === TOKENS.violates && p.message.includes('operator')), tokens(r).join());
+  root = tempRepo();
+  deps = await mutateDocs(root, (d) => { d.wpApproved.review.latestResult.reviewer = 'codex'; });
+  r = await check(root, deps);
+  assert.ok(r.problems.some((p) => p.token === TOKENS.violates && p.message.includes('codex')), tokens(r).join());
+  root = tempRepo();
+  deps = await mutateDocs(root, (d) => { d.opsOpen.actor = 'operator'; });
+  assert.deepEqual(tokens(await check(root, deps)), [], 'operator is an Ops actor');
+});
+
 test('C4 Ops fixtures: a foreign vocabulary word is refused unless the fixture is registered with ops-vocab-open', async () => {
   const root = tempRepo();
   const registry = { ...FIXTURES, opsUnknownOutcome: { ...FIXTURES.opsUnknownOutcome, kind: 'valid' } };

@@ -13,7 +13,7 @@ import {
 } from './common.mjs';
 import { generateFixturesSource, generateTypesSource, importTs, loadBulk } from './generate.mjs';
 import { FIXTURES, RELAXATIONS, errorAllowed, relaxationSchemas } from './registry.mjs';
-import { SYNTHETIC_ACTORS } from './overlays.mjs';
+import { OPS_ACTORS, SYNTHETIC_ACTORS } from './overlays.mjs';
 import { compile, loadSchema, relaxedSchema, stripHost, validateWith } from './validate.mjs';
 
 // One property per line: the plant for the node tests renames the incoherent token (gates.md, plant 3).
@@ -160,9 +160,9 @@ const handlesOf = (actor) => {
 /**
  * Every actor value of a document that is not in SYNTHETIC_ACTORS. Mission detail: the host `actor` of each work
  * package. Work Package: `actor`, `history[].actor` and `review.latestResult.reviewer`. Work Package detail:
- * `reviewCycles[].reviewer`.
+ * `reviewCycles[].reviewer`. `allowed` is SYNTHETIC_ACTORS, plus OPS_ACTORS for an Ops document.
  */
-export function actorProblems(doc) {
+export function actorProblems(doc, allowed = SYNTHETIC_ACTORS) {
   const found = [];
   for (const wp of doc.workPackages ?? []) if ('actor' in wp) found.push(...handlesOf(wp.actor));
   if ('actor' in doc) found.push(...handlesOf(doc.actor));
@@ -171,7 +171,7 @@ export function actorProblems(doc) {
   const reviewer = doc.review?.latestResult?.reviewer;
   if (typeof reviewer === 'string') found.push(reviewer);
   for (const cycle of doc.reviewCycles ?? []) if (typeof cycle?.reviewer === 'string') found.push(cycle.reviewer);
-  return [...new Set(found.filter((h) => !SYNTHETIC_ACTORS.includes(h)))];
+  return [...new Set(found.filter((h) => !allowed.includes(h)))];
 }
 
 function staleProblems(doc) {
@@ -183,7 +183,7 @@ async function checkFixtureDoc(root, name, def, doc) {
   const out = [];
   const where = `fixture ${name}`;
   if (WORK_PACKAGE_SCHEMAS.includes(def.schema) || OPS_SCHEMAS.includes(def.schema)) {
-    const bad = actorProblems(doc);
+    const bad = actorProblems(doc, OPS_SCHEMAS.includes(def.schema) ? [...SYNTHETIC_ACTORS, ...OPS_ACTORS] : SYNTHETIC_ACTORS);
     if (bad.length) out.push(problem(TOKENS.violates, `${where} has an actor outside SYNTHETIC_ACTORS: ${bad.join(', ')}`));
   }
   if (def.kind === 'valid') {
