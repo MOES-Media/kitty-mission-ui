@@ -13,5 +13,7 @@
   "purpose_tldr": "Lay the foundation the Kitty Desktop and Kitty Dashboard hosts build on: proof that Svelte hosts the Lit screens, a mixed TypeScript and Rust workspace inside the existing gates, and a contract-shaped data port with a local stub.",
   "slug": "phase0-bootstrap-01M4V5KK",
   "target_branch": "feat/phase0-bootstrap-17",
-  "topology": "coord"
+  "topology": "coord",
+  "vcs": "git",
+  "vcs_locked_at": "2026-10-13T20:48:35.738672+00:00"
 }
