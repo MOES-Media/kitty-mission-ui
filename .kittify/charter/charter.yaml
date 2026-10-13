@@ -3,10 +3,10 @@ governance:
   testing:
     min_coverage: 0
     tdd_required: false
-    framework: vitest + storybook test runner (Playwright)
-    type_checking: tsc --noEmit (strict)
+    framework: vitest + storybook test runner (Playwright); cargo test
+    type_checking: tsc --noEmit (strict); svelte-check
   quality:
-    linting: eslint + stylelint
+    linting: eslint + stylelint; cargo fmt --check + clippy -D warnings
     pr_approvals: 1
     pre_commit_hooks: false
   commits: {}
@@ -44,6 +44,7 @@ catalog:
   languages:
   - typescript
   - javascript
+  - rust
   references:
   - id: USER:PROJECT_PROFILE
     kind: user_profile

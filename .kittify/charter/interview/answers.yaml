@@ -3,29 +3,41 @@ mission: software-dev
 profile: comprehensive
 answers:
   project_intent: >-
-    One set of Spec Kitty mission screens, shipped as @spec-kitty/mission-ui (Lit
-    web components), rendered identically by the spec-kitty dashboard (browser) and
-    Kitty Desktop (Tauri). Screens are presentational: data in as properties typed
-    from the spec-kitty OpenAPI read contract, user intents out as sk-* events, no
-    I/O. Storybook is the visual source of truth, and the screens implement the
-    approved Kitty Desktop V2 interactive prototype.
+    One set of Spec Kitty mission screens, shipped as @moes-media/mission-ui (Lit
+    web components), plus the host applications that render them: Kitty Desktop
+    (Tauri 2) and Kitty Dashboard (a loopback web server). Screens are
+    presentational: data in as properties typed from the spec-kitty Mission Status
+    contract, user intents out as sk-* events, no I/O. The hosts share one Svelte 5
+    shell (@moes-media/mission-shell) and one Rust core (kitty-core) that read
+    spec-kitty's mission-status-api service. Storybook is the visual source of
+    truth, and the screens implement the approved Kitty Desktop V2 interactive
+    prototype.
   languages_frameworks: >-
-    TypeScript, Lit 3, Storybook, Vite, pnpm workspaces. Design primitives come from
-    @spec-kitty/tokens, @spec-kitty/styles and @spec-kitty/elements, installed from
-    GitHub Packages (private, currently 1.1.0-rc.x). Packages in this repo:
-    @spec-kitty/mission-ui (screen and pattern elements) and, later,
-    @spec-kitty/dashboard-web (browser container built to a static dist).
+    TypeScript, Lit 3, Svelte 5, Storybook, Vite, pnpm workspaces for the screens and
+    the shell. Rust (stable) with a Cargo workspace for kitty-core and the hosts:
+    Tauri 2 for Kitty Desktop, axum for the Kitty Dashboard server. Design
+    primitives come from @spec-kitty/tokens, @spec-kitty/styles and
+    @spec-kitty/elements, installed from GitHub Packages (private, currently
+    1.1.0-rc.x). Layout: packages/* hold the screens (@moes-media/mission-ui) and
+    the shell (@moes-media/mission-shell); crates/* hold shared Rust; apps/* hold
+    Storybook and the two hosts.
   testing_requirements: >-
     Every screen has a Storybook story per view state (ready, empty, loading,
     error) driven by synthetic fixtures. Visual regression runs against the approved
     prototype in a headless browser. Pure display-mapping functions have unit
     tests. Interaction tests assert every emitted sk-* event and its detail payload.
+    The shell is tested against a fixture adapter of its client port. Rust code has
+    unit and integration tests; the hosts are tested against a local stub of the
+    mission-status-api contract, and every host security rule has its own test.
   quality_gates: >-
     Before merge: typecheck, ESLint, Stylelint, Storybook build, unit and
     interaction tests, visual regression, and a custom-elements manifest that is
     current and declares every public property and event. An architectural gate
-    fails if a screen or pattern package performs I/O (fetch, XMLHttpRequest,
-    WebSocket, Tauri APIs, localStorage/sessionStorage/IndexedDB). Elements over
+    fails if any package under packages/* (screens, pattern elements, the shell)
+    performs I/O (fetch, XMLHttpRequest, EventSource, WebSocket, Tauri APIs,
+    localStorage/sessionStorage/IndexedDB); I/O lives only in adapters under apps/*
+    and crates/*. Rust code passes cargo fmt --check, clippy with warnings as
+    errors, and cargo test; svelte-check passes for Svelte code. Elements over
     CSS: every UI primitive that @spec-kitty/elements provides (card, notice, pill
     tag, nav pill, status indicator, button, and so on) is rendered with that sk-*
     element; re-implementing it with hand-written CSS or copied @spec-kitty/styles
@@ -42,10 +54,12 @@ answers:
     Long lists are virtualised; a project with about 450 missions must render and
     scroll smoothly. Exact budgets are set per mission.
   deployment_constraints: >-
-    Private repository in the spec-kitty GitHub org; the source stays private.
-    @spec-kitty/mission-ui and @spec-kitty/dashboard-web publish to GitHub
-    Packages; the dashboard-web dist is also attached to a GitHub Release. The
-    built bundle becomes public once vendored into spec-kitty. Installing
+    Public repository in the MOES-Media GitHub org, licensed AGPL-3.0-or-later.
+    @moes-media/mission-ui and @moes-media/mission-shell are consumed from source
+    inside the workspace. Kitty Desktop ships as installers for Linux, macOS and
+    Windows, and the Kitty Dashboard ships as a native binary, both attached to
+    GitHub Releases with the AGPL source offer. Neither bundles spec-kitty or its
+    mission-status-api service: both discover the installed service. Installing
     @spec-kitty/* needs a read:packages token, locally and in CI. Must build on
     macOS and Linux developer machines.
   documentation_policy: >-
@@ -53,9 +67,16 @@ answers:
     properties, events and view states. README and CHANGELOG are updated with every
     user-visible change.
   risk_boundaries: >-
-    Screens never perform I/O. Fixtures contain no real user data, no absolute
-    filesystem paths and no OS usernames. No secrets or tokens are committed. Do not
-    relax quality or security standards without explicit operator approval.
+    Screens and the shell never perform I/O. Hosts read spec-kitty state only
+    through published contracts (the mission-status-api REST and SSE contract) and
+    documented --json CLI verbs, never by parsing kitty-specs/, .kittify/,
+    worktrees or event logs directly. Every host server binds 127.0.0.1 only and
+    enforces its own Host and Origin checks; the hosts never ask spec-kitty's
+    service to loosen its loopback, Host or Origin protections. The desktop
+    webview makes no network requests; credentials never reach a webview.
+    Fixtures contain no real user data, no absolute filesystem paths and no OS
+    usernames. No secrets or tokens are committed. Do not relax quality or
+    security standards without explicit operator approval.
   amendment_process: >-
     Charter changes are proposed via PR and require operator approval.
   exception_policy: >-
