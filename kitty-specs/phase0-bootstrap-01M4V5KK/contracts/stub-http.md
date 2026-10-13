@@ -12,7 +12,7 @@ kitty-stub --fixtures <dir> [--port <n>] [--heartbeat-ms <ms>] [--time-scale <f>
 | `--heartbeat-ms` | `30000` | interval between `: heartbeat` comments |
 | `--time-scale` | `1.0` | multiplier for every item's `delayMs`; tests use `0` |
 
-The stub binds `127.0.0.1:<port>` only. The first line on stdout is `listening 127.0.0.1:<port>`, so tests and later missions can read the bound port. (The upstream service does not announce its port, epic #16; the stub deliberately does.) The stub loads every file in `<dir>` once at start-up.
+The stub binds `127.0.0.1:<port>` only. The first line on stdout is `listening <addr>`, printed from the bound listener's `local_addr()` (never from configuration), so tests and later missions can read the bound port. The loopback test runs the real binary, asserts the announced address is `127.0.0.1`, and connects on the first non-loopback local address expecting a refusal (skipped, with the reason logged, when the machine has none) (R2-08). (The upstream service does not announce its port, epic #16; the stub deliberately does.) The stub loads every file in `<dir>` once at start-up.
 
 ## Request rules (all routes, mirroring the upstream service)
 
@@ -33,12 +33,19 @@ Any request that breaks a rule gets `403`, with body `{"code":"<rule>"}`:
 
 Which body is served:
 1. With header `X-Kitty-Stub-Fixture: <fixture name>`: that `fixtures.json` value. An unknown name gets `404` with `{"code":"no-fixture"}`.
-2. Otherwise, with header `X-Kitty-Stub-Example: <Schema>.<name>`: that `examples.json` value. Every vendored example is reachable this way. An unknown name gets `404` with `{"code":"no-example"}`.
-3. Otherwise: the route's `defaultExample`. When that is `null`: `501` with `{"code":"no-example","operationId":"<id>"}`. This branch is tested with a synthetic routes file, because the current pin has no null.
+2. Otherwise, with header `X-Kitty-Stub-Example: <Schema>.<name>`: that `examples.json` value. An unknown name gets `404` with `{"code":"no-example"}`.
+3. Otherwise: the route's `defaultExample`.
 
-These two headers and the `code` values are stub-local, not part of the contract.
+A selection (1 or 2) is accepted only when the entry's schema fits the route (R2-06):
+- equal to the route's `responseSchema`: served with `200`;
+- equal to one of the route's declared refusal schemas (`routes.json` `refusals`): served with that response's contract status (for example a `WorkPackageDetailRefusal` with the status the contract declares for it);
+- anything else, including every event example (`StatusTransitionEvent`, `MissionLifecycleEvent`, `LogTruncatedEvent`) and refusals of other operations: `400` with `{"code":"schema-mismatch","schema":"<entry schema>","operationId":"<id>"}`.
 
-A successful response is `200` with `content-type: application/json`. The body is **JSON-value-equal** to the selected entry. `serde_json` with `preserve_order` keeps the file's key order for readability, but byte layout and key order are not contractual. The tests compare parsed values against `examples.json`, which the contract gate has verified against the YAML. That makes the oracle independent of what the stub serves.
+So every vendored example remains reachable on a route whose contract response it belongs to, and the stub never serves a refusal or an event payload as a successful read. When the default is `null`: `501` with `{"code":"no-example","operationId":"<id>"}`. This branch is tested with a synthetic routes file, because the current pin has no null.
+
+These two headers and the `code` values (`no-fixture`, `no-example`, `schema-mismatch`) are stub-local, not part of the contract.
+
+A served entry has `content-type: application/json` and the status given above. The body is **JSON-value-equal** to the selected entry. `serde_json` with `preserve_order` keeps the file's key order for readability, but byte layout and key order are not contractual. The tests compare parsed values against `examples.json`, which the contract gate has verified against the YAML. That makes the oracle independent of what the stub serves.
 
 A path that matches no route gets `404`.
 
@@ -50,7 +57,7 @@ Each item of `changes.json` is written after `delayMs × time-scale` millisecond
 
 ```
 event: <event>
-id: <id>          # only when the item has an id AND the request is mission-scoped
+id: <id>          # only when the item has an id AND the request is mission-scoped (never on log-truncated)
 data: <JSON of data, one line>
 
 ```
@@ -65,4 +72,4 @@ The output is deterministic (NFR-004). The test runs with `--time-scale 0 --hear
 
 ## Not provided (by design)
 
-Cursor resume, contract refusals (400, 404 and 409 per the contract), and paging behaviour. The stub serves data; it does not reproduce the service's semantics.
+Cursor resume, the contract's *conditional* refusal behaviour (it never decides on its own to answer 400, 404 or 409 the way the service would; refusal bodies are served only when selected), and paging behaviour. The stub serves data; it does not reproduce the service's semantics.

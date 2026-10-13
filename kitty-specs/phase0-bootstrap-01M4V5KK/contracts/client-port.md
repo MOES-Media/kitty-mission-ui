@@ -33,10 +33,12 @@ export type ConnectionState =
 
 export type Change =
   | { kind: 'status-transition'; cursor: string | null; data: Schemas['StatusTransitionEvent'] }
-  | { kind: 'mission-lifecycle'; cursor: null; data: Schemas['MissionLifecycleEvent'] }
+  | { kind: 'mission-lifecycle'; cursor: string | null; data: Schemas['MissionLifecycleEvent'] }
   | { kind: 'log-truncated'; cursor: null; data: Schemas['LogTruncatedEvent'] };
 
 export interface SubscriptionScope { missionId?: string; cursor?: string }
+// cursor: string on a mission-scoped subscription for status-transition and mission-lifecycle;
+// null on an unscoped subscription, and always null for log-truncated (contract paths/events.yaml).
 
 export interface MissionStatusClient {
   getProject(params: Params<'getProject'>): Promise<Result<'getProject'>>;

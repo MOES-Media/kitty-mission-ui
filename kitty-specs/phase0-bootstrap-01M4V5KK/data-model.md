@@ -6,11 +6,11 @@ There is no persistent storage. The entities are the shapes that cross module bo
 
 | Field | Type | Rule |
 |---|---|---|
-| key | `<Schema>.<name>` | one per vendored file `examples/<Schema>.<name>.yaml` (about 78 at the current pin) |
+| key | `<Schema>.<name>` | one per vendored file `examples/<Schema>.<name>.yaml` (77 at the current pin; `_index.yaml` is not an example and is excluded, as `loadExamples` in `generate.mjs` already does) |
 | `schema` | string | the schema the example belongs to |
 | `value` | JSON | the parsed YAML value, unchanged: no overlays, invisible characters escaped (F-21) |
 
-**Invariant**: the set of keys and every value equal a fresh parse of the vendored YAML files. `Gate: contract` checks this, and it is the independent oracle for the stub test (F-04).
+**Invariant**: the set of keys and every value equal a fresh parse of the vendored YAML files, `_index.yaml` excluded. `Gate: contract` checks this, and it is the independent oracle for the stub test (F-04).
 
 ## RouteEntry (generated, `contracts/fixtures/mission-status.routes.json`)
 
@@ -22,8 +22,9 @@ There is no persistent storage. The entities are the shapes that cross module bo
 | `kind` | `"read"` or `"stream"` | `stream` only for `streamEvents` |
 | `responseSchema` | string or null | the schema name of the 200 response; `null` for `stream` |
 | `defaultExample` | ExampleEntry key or null | taken from the reviewed `DEFAULT_EXAMPLES` map in `generate.mjs`; `null` only where the map says so explicitly; generation fails on a read whose schema is missing from the map |
+| `refusals` | object `{ <HTTP status>: <schema name> }` | every non-200 JSON response the operation declares in `openapi.yaml`, with its status; `{}` when none; `{}` for `stream` (R2-06) |
 
-**Invariant**: the set of `operationId`s equals the contract's set. This is checked by the contract gate (staleness) and by the coverage test (FR-009).
+**Invariant**: the set of `operationId`s equals the contract's set, and each route's `refusals` equals the operation's declared non-200 responses. This is checked by the contract gate (staleness) and by the coverage test (FR-009).
 
 ## FixtureEntry (generated, `contracts/fixtures/mission-status.fixtures.json`)
 
@@ -40,7 +41,7 @@ There is no persistent storage. The entities are the shapes that cross module bo
 | Field | Type | Rule |
 |---|---|---|
 | `event` | `"status-transition"`, `"mission-lifecycle"` or `"log-truncated"` | the three SSE event names in the contract |
-| `id` | StreamCursorString or absent | present only on mission-scoped status transitions; never on `log-truncated` (contract rule) |
+| `id` | StreamCursorString or absent | the cursor the item carries on a **mission-scoped** stream: present on `status-transition` and `mission-lifecycle` items, never on `log-truncated` (contract rule). On an unscoped stream no item is sent with an `id:` line, whatever this field says (R2-05) |
 | `data` | object | validates against `StatusTransitionEvent`, `MissionLifecycleEvent` or `LogTruncatedEvent` |
 | `delayMs` | integer ≥ 0 | pause before this item; scaled by the consumer's time scale (0 in tests) |
 
@@ -61,10 +62,10 @@ The fixture adapter starts in `connected`, and tests can force any state. Real t
 
 A discriminated union by `kind`:
 - `{ kind: 'status-transition'; cursor: string | null; data: StatusTransitionEvent }`
-- `{ kind: 'mission-lifecycle'; cursor: null; data: MissionLifecycleEvent }`
+- `{ kind: 'mission-lifecycle'; cursor: string | null; data: MissionLifecycleEvent }`
 - `{ kind: 'log-truncated'; cursor: null; data: LogTruncatedEvent }`
 
-`cursor` mirrors the SSE `id:`, and it is set only on a mission-scoped subscription.
+`cursor` mirrors the SSE `id:`. It is a string for `status-transition` and `mission-lifecycle` on a mission-scoped subscription, `null` for every kind on an unscoped subscription, and always `null` for `log-truncated` (contract `paths/events.yaml`; R2-05).
 
 ## SubscriptionScope (TypeScript, `mission-shell`)
 

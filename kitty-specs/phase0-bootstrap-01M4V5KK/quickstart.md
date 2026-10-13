@@ -7,7 +7,7 @@ Prerequisites:
 
 ```bash
 pnpm install
-rustup show                                # installs the pinned toolchain
+rustup toolchain install                   # installs the toolchain pinned in rust-toolchain.toml
 cargo fetch --locked
 cargo build --workspace --frozen           # all crates, including the placeholders
 

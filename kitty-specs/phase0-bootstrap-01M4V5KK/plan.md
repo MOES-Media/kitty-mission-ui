@@ -46,7 +46,7 @@ This plan lays the ground for the host missions (#18 to #21). It has three parts
 
 **Constraints**: no I/O under `packages/*` (C-001); mission-ui untouched (C-002, SC-005); pinned contract only (C-003); offline gate checks (NFR-001); exact pins (NFR-003); deterministic sequence (NFR-004).
 
-**Scale/Scope**: 9 contract reads plus `streamEvents` (10 operations), 15 custom elements, about 78 vendored examples, and 1 scripted sequence of at least 3 changes.
+**Scale/Scope**: 9 contract reads plus `streamEvents` (10 operations), 15 custom elements, 77 vendored examples (`_index.yaml` excluded), and 1 scripted sequence of at least 3 changes.
 
 ## Charter Check
 
@@ -176,7 +176,7 @@ scripts/terminology.mjs            # EXTENDED: .svelte sources and crates/**/*.r
 gates/plants/{rust,typecheck,eslint,no-io,unit-tests,manifest,contract,hygiene}/  # NEW/EXTENDED plants
 .github/workflows/ci.yml           # EXTENDED: Gate: rust (+ fetch steps, proof-leg matrix + steps, all.needs), timeouts
 .github/workflows/contract-drift.yml  # NEW scheduled + workflow_dispatch, not a gate, no install, no secrets
-eslint.config.mjs, eslint.no-io.config.mjs  # EXTENDED: Svelte parser, shell scope, target/ ignores
+eslint.config.mjs, eslint.no-io.config.mjs, eslint.data-driven.config.mjs  # EXTENDED: Svelte parser, shell scope, target/ ignores, generated-file ignore
 .gitignore                         # EXTENDED: target/, apps/*/src-tauri/gen
 ```
 
@@ -219,7 +219,7 @@ eslint.config.mjs, eslint.no-io.config.mjs  # EXTENDED: Svelte parser, shell sco
 - **Risks**:
   - Cold build time (R-02).
   - Rust plants must be anchored `edits` to compiled files, or `tests/plant_*.rs`. An unreachable `.rs` file would make a plant vacuous (F-20).
-  - The proof leg needs the same `rustup show` and `cargo fetch --locked` steps.
+  - The proof leg needs the same `rustup toolchain install` and `cargo fetch --locked` steps.
 
 ### IC-03 — `mission-shell` package and Svelte tooling in the gates
 
@@ -271,10 +271,11 @@ eslint.config.mjs, eslint.no-io.config.mjs  # EXTENDED: Svelte parser, shell sco
 - **Relevant requirements**: FR-001, FR-002, FR-003, SC-001.
 - **Affected surfaces**:
   - `packages/mission-shell/src/harness/BindingHarness.svelte` and `test/binding.test.ts`;
+  - the root `package.json` `test` script (it runs every workspace package's `test`; `ciCommand` stays `pnpm test`), requested from IC-03 (R2-12);
   - `gates/plants/unit-tests/` (the registration-order plant; the intent-path plant).
 - **Sequencing/depends-on**: IC-03, IC-04, IC-05.
 - **Risks**:
-  - Svelte sets objects as properties even before registration. So the test also asserts that primitives (a boolean `false`, the `status` string) arrive as properties. The registration-order plant mounts before the side-effect import, so the boolean arrives as the attribute `"false"` and the test fails (F-01).
+  - Svelte sets objects as properties even before registration, so a list-only assertion cannot see a registration-order failure (F-01). The harness therefore passes `loadingMore={true}`: a non-default primitive whose Lit attribute (`loading-more`) differs from the lower-cased prop name, so it can only arrive through the property. The test asserts that the property is `true`, **and** that the element carries no attribute named after any prop the harness passed (lower-cased), unless that prop reflects. When mounted before registration, Svelte sets the attribute `loadingmore`, which Lit does not observe: the property stays `false` and a stray attribute exists, so both assertions fail (R2-01).
   - The test enumerates every event the hosted screen declares in `custom-elements.json` and requires each to reach its handler. One is triggered through real UI, the others are dispatched from the element (F-11).
 
 ### IC-07 — Scheduled upstream drift alert and workflow hygiene
@@ -282,14 +283,15 @@ eslint.config.mjs, eslint.no-io.config.mjs  # EXTENDED: Svelte parser, shell sco
 - **Purpose**: tell the operator when the upstream contract moves away from `PIN.json`, without touching merge gates, and check every workflow file's pins and permissions.
 - **Relevant requirements**: FR-012, NFR-001, NFR-002.
 - **Affected surfaces**:
-  - `scripts/contract/common.mjs` (the shared compare-with-pin function, builtin-only imports), `verify-remote.mjs` (refactored onto it), `drift.mjs` and `drift.test.mjs` (injectable fetcher; offline cases for no-drift, drift, unreachable and error);
+  - `scripts/contract/common.mjs` (the tree compare that `verify-remote.mjs` already performs, extracted as one function), `verify-remote.mjs` (refactored onto it), `drift.mjs` and `drift.test.mjs`. Drift reuses `remote.mjs` (`git fetch --depth 1`, built-ins only) and its `CONTRACT_REMOTE_URL` override, which the tests point at local repositories for the no-drift, drift, unreachable and error cases. There is no second network path and no HTTP directory listing (R2-07);
   - `.github/workflows/contract-drift.yml`;
   - `scripts/check-hygiene.mjs` (action-pin, permissions and checkout-credential checks on every workflow; gate-structure checks stay `ci.yml`-only);
   - `gates/plants/hygiene/` (an unpinned action in a non-ci workflow);
   - `package.json` script `contract:drift`.
 - **Sequencing/depends-on**: none.
 - **Risks**:
-  - `drift.mjs` must import only Node built-ins, so the workflow runs `node scripts/contract/drift.mjs` with no install and no secrets. The WP verifies the import graph (F-41).
+  - `drift.mjs` must import only Node built-ins (through `remote.mjs` and `common.mjs`), so the workflow runs `node scripts/contract/drift.mjs` with no install and no secrets. The WP verifies the import graph (F-41).
+  - The workflow pins Node 22.22.2 with the SHA-pinned `actions/setup-node` step already used in `ci.yml`, which needs no credentials (R2-15).
   - Exit codes: 0 in sync, 1 drift, 2 unreachable, 3 other error.
   - The workflow has `permissions: contents: read` and `persist-credentials: false`, interpolates no upstream data into `run:`, writes the summary through a file, and fails (red) on exit 1 to 3, so GitHub notifies.
   - Scheduled workflows in public repositories are disabled after 60 days without activity; the README documents this (F-39).
@@ -301,10 +303,11 @@ eslint.config.mjs, eslint.no-io.config.mjs  # EXTENDED: Svelte parser, shell sco
 - **Affected surfaces**: `crates/kitty-stub/{Cargo.toml (publish = false), src/lib.rs, src/main.rs, tests/}`.
 - **Sequencing/depends-on**: IC-01, IC-02.
 - **Risks**:
-  - The SSE framing must match the contract (`event:`, `id:`, `data:`, blank line). Unscoped streams carry no `id:`.
+  - The SSE framing must match the contract (`event:`, `id:`, `data:`, blank line). On a mission-scoped stream, `status-transition` and `mission-lifecycle` items carry `id:`; unscoped streams carry no `id:`, and `log-truncated` never does (R2-05).
+  - Selection headers are accepted only for the route's success schema (served `200`) or one of its declared refusal schemas (served with that response's contract status, from `routes.json` `refusals`). Event examples cannot be selected on reads, and any other selection is a `400` with a stub-local code (R2-06).
   - The heartbeat interval and time scale are injectable for tests.
   - No request value is ever used to build a filesystem path; a test sends a `../` traversal.
-  - The loopback test runs the real binary.
+  - The loopback test runs the real binary. The announcement must be printed from `listener.local_addr()` (a review check), and the test also connects on the first non-loopback local address and expects a refusal; it is skipped, with the reason logged, when the machine has no such address (R2-08).
   - The 501 "no example" branch is tested with a synthetic routes file.
   - The comparison oracle is `examples.json`, which the contract gate verified against the YAML. Equality is JSON-value equality.
 
@@ -322,10 +325,11 @@ Each shared file has exactly one owning IC. Other ICs request their changes thro
 
 | File | Owner | Requested by |
 |---|---|---|
-| root `package.json` (scripts, devDependencies, `test:scripts` list) | IC-03 | IC-01, IC-02 (`cargo-pins`), IC-04, IC-05, IC-06, IC-07 |
+| root `package.json` (scripts, devDependencies, `test:scripts` list) | IC-03 | IC-01, IC-02 (`cargo-pins`), IC-04, IC-05, IC-06 (root `test` script), IC-07 |
 | `pnpm-lock.yaml` | IC-03 | IC-04 (none expected after F-30) |
-| `.github/workflows/ci.yml` (all jobs, proof-leg matrix and steps, timeouts, `all.needs`) | IC-02 | IC-03, IC-06 (timeouts) |
-| `eslint.config.mjs`, `eslint.no-io.config.mjs` | IC-03 | IC-04 (generated-file ignore) |
+| `.github/workflows/ci.yml` (all jobs, proof-leg matrix and steps, timeouts, `all.needs`) | IC-02 | IC-01 (contract proof-leg timeout), IC-03, IC-04 (typecheck and manifest proof legs gain plants), IC-06 (unit-tests timeout), IC-07 (hygiene proof leg gains plants) |
+| root `Cargo.toml` (`[workspace]` members and `[workspace.dependencies]` exact pins), `Cargo.lock` | IC-02 | IC-08 (axum, tokio, serde, serde_json, tower, http-body-util pins) |
+| `eslint.config.mjs`, `eslint.no-io.config.mjs`, `eslint.data-driven.config.mjs` | IC-03 | IC-04 (exact-path ignore for the generated `elements.d.ts`, F-45) |
 | `scripts/check-hygiene.mjs` | IC-07 | IC-02 (`cargo-pins` hook) |
 | `gates/plants/rust/plant.json` | IC-02 | — |
 | `gates/plants/typecheck/plant.json` | IC-03 | IC-04 |
@@ -347,7 +351,7 @@ The canonical `rust` gate command is used identically in `ci.yml`, `gates/plants
 cargo fmt --all --check && cargo clippy --workspace --all-targets --frozen -- -D warnings && cargo test --workspace --frozen
 ```
 
-It is preceded by two separate steps, in both the gate job and the proof leg when `matrix.gate == 'rust'`: `rustup show` (installs the pinned toolchain) and `cargo fetch --locked`. The gate step itself therefore downloads nothing (NFR-001).
+It is preceded by two separate steps, in both the gate job and the proof leg when `matrix.gate == 'rust'`: `rustup toolchain install` (with no arguments it installs the toolchain pinned in `rust-toolchain.toml`; since rustup 1.28, `rustup show` only reports and installs nothing) and `cargo fetch --locked`. The gate step itself therefore downloads nothing (NFR-001).
 
 | Gate | Change | New plants |
 |---|---|---|
@@ -355,14 +359,14 @@ It is preceded by two separate steps, in both the gate job and the proof leg whe
 | `typecheck` | `svelte-check` through the `mission-shell` typecheck script | Svelte type error; a non-existent element property; a renamed intent handler |
 | `eslint` | Svelte parser and config | Svelte lint violation |
 | `no-io` | scope includes `packages/mission-shell/src/**/*.{ts,svelte}` | `fetch` in a `.svelte` script block (pattern = the rule message) |
-| `unit-tests` | includes `mission-shell` tests (binding, coverage, fixture client) | registration order (mount before import); intent-path break; a `CLIENT_OPERATIONS` entry deleted with its method |
+| `unit-tests` | the root `test` script changes from mission-ui only to every workspace package's `test` (so it includes the `mission-shell` binding, coverage and fixture-client tests); `ciCommand` stays `pnpm test` | registration order (mount before import); intent-path break; a `CLIENT_OPERATIONS` entry deleted with its method |
 | `manifest` | typings staleness check | stale typings |
 | `contract` | examples/fixtures/routes staleness, the examples-vs-YAML oracle, change-sequence validation | stale JSON; invalid change item |
 | `hygiene` | `cargo-pins`; workflow pin, permissions and credential checks on every workflow | a caret range in a Cargo.toml; an unpinned action in a non-ci workflow |
 
-That is 17 new plants. SC-002's six named proofs are a subset: Rust format, Rust lint, Rust tests, the Svelte check, the typings, and no-io over the shell.
+That is 16 new plants (rust 3, typecheck 3, eslint 1, no-io 1, unit-tests 3, manifest 1, contract 2, hygiene 2). SC-002's six named proofs are a subset: Rust format, Rust lint, Rust tests, the Svelte check, the typings, and no-io over the shell.
 
-**Proof-leg timeouts (F-42)**: every plant is a full gate run, so the WP measures each affected proof leg on CI and sets its matrix timeout to (1 + number of plants) × the measured gate time + 2 minutes. The starting values are contract 6→10 and unit-tests 11→16, with `rust` computed from its first measured run. The measurements are recorded in the WP.
+**Proof-leg timeouts (F-42)**: NFR-002's 8-minute cap applies to gate jobs; proof legs are governed by this formula instead (spec NFR-002). Every plant is a full gate run, so the WP measures each affected proof leg on CI and sets its matrix timeout to (1 + number of plants) × the measured gate time + 2 minutes. The starting values are contract 6→10 and unit-tests 11→16, with `rust` computed from its first measured run. The measurements are recorded in the WP.
 
 ## PR shape
 

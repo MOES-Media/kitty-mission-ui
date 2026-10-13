@@ -71,7 +71,7 @@ Dispositions follow the procedure's contract: accepted, changed, or deferred_wit
 | F-39 | R3 | low | Drift alert delivery: scheduled workflows in public repositories are disabled after 60 days of inactivity, and a summary alone notifies nobody. | CONFIRMED | accepted in part: the workflow fails (red) on drift or unreachable, so GitHub notifies, and the README documents the 60-day rule. Opening an issue automatically is deferred_with_rationale (it needs `issues: write`; revisit if missed alerts occur). |
 | F-40 | R6 | high | The `rust` gate step downloads the toolchain and crates inside the gate step, which breaks NFR-001's every-step rule. | CONFIRMED | accepted: separate steps `rustup show` and `cargo fetch --locked` come first (also in the proof leg for `matrix.gate == 'rust'`); the gate is `cargo fmt --all --check && cargo clippy --workspace --all-targets --frozen -- -D warnings && cargo test --workspace --frozen` (Gates table). |
 | F-41 | R6 | medium | `contract-drift.yml` would need the credentialed install. | CONFIRMED | changed: `drift.mjs` imports only Node built-ins (through the extracted shared function, F-23). The workflow runs `node scripts/contract/drift.mjs` with no install and no secrets, and the WP verifies the import graph. |
-| F-42 | R6 | medium | Proof-leg timeouts are tight (contract took 5:00 of 6). | CONFIRMED | accepted: matrix timeouts are raised from measured runs (contract 6→10, unit-tests 11→16; rust set to (1 + 4 plants) × the measured gate time + 2). The measurements are recorded in the WP (Gates). |
+| F-42 | R6 | medium | Proof-leg timeouts are tight (contract took 5:00 of 6). | CONFIRMED | accepted: matrix timeouts are raised from measured runs (contract 6→10, unit-tests 11→16; rust set to (1 + 3 plants) × the measured gate time + 2). The measurements are recorded in the WP (Gates). |
 | F-43 | R6 | medium | There is no shared-file ownership table. | CONFIRMED | accepted: table added to the plan. |
 | F-44 | R6 | low | `packages/mission-shell/tsconfig.json` is not listed (it must extend `tsconfig.base.json`). | CONFIRMED | accepted. |
 | F-45 | R6 | low | The generated `elements.d.ts` falls under the typed-ESLint, no-io and data-driven scopes. | CONFIRMED | accepted: an exact-path ignore with a recorded exception, like E-05 for `types.generated.ts`, recorded in the PR (IC-04). |
@@ -82,5 +82,41 @@ Dispositions follow the procedure's contract: accepted, changed, or deferred_wit
 Raw findings after merging duplicates: 48. Confirmed 47, refuted 1. All 47 confirmed findings are dispositioned: accepted 41, changed 5 (F-04, F-26, F-30, F-32, F-41), deferred_with_rationale 1 (F-29). F-39 is accepted in part, and its deferred half is recorded in its row.
 
 ## Fix round 1 and verification
+
+All dispositions were applied in commit ba4aa2b. The orchestrator spot-checked the result:
+
+- one canonical `rust` gate string in the plan, research and quickstart;
+- the connection-state strings match the spec;
+- no `mission-ui/contract` import path remains;
+- `@wc-toolkit` appears only as a rejected alternative;
+- the ownership table is present;
+- the byte-for-byte claim is gone;
+- hygiene reports 0 findings.
+
+## Round 2: fresh sweep
+
+A fresh `reviewer-renata` instance re-read the changed files across all six lenses. It found 41 of 47 dispositions intact; R2-01 to R2-15 cover the rest and what the fixes introduced.
+
+| Id | Lens | Sev | Finding | Verified | Disposition |
+|---|---|---|---|---|---|
+| R2-01 | R5 | high | The F-01 fix is still vacuous. Before registration, `loadingMore={false}` becomes the attribute `loadingmore`, which Lit does not observe (it declares `attribute: 'loading-more'`), so the property keeps its default `false`. `status` is an observed attribute and upgrades into the property. Both assertions pass either way. | CONFIRMED (`sk-missions-screen.ts:228`) | accepted: the harness passes `loadingMore={true}`, a non-default value that only arrives through the property. The test asserts the property is `true` **and** that the element carries no attribute named after any prop the harness passed (lower-cased), unless that prop reflects. Mounting before registration fails both assertions (R-06, IC-06). |
+| R2-02 | R6 | medium | Since rustup 1.28, `rustup show` no longer installs the toolchain, so the download happens inside the gate step. | CONFIRMED (rustup 1.29.0 here) | accepted: the separate step is `rustup toolchain install`, which reads `rust-toolchain.toml` (R-02, plan Gates, quickstart). |
+| R2-03 | R1 | medium | Spec NFR-001's network allowlist does not name the toolchain install. | CONFIRMED | accepted: NFR-001 now names the pinned toolchain install as a dependency-installation step in its own step. |
+| R2-04 | R1 | medium | NFR-002's 8-minute cap contradicts the raised proof-leg timeouts. | CONFIRMED | accepted: NFR-002 covers gate jobs. Proof-leg timeouts follow the measured formula stated in the spec. |
+| R2-05 | R2 | medium | `mission-lifecycle` with `cursor: null` contradicts the contract: mission-scoped streams carry `id:` for lifecycle events too. | CONFIRMED (`paths/events.yaml`) | accepted: `Change.cursor` is a string on mission-scoped streams for `status-transition` and `mission-lifecycle`, and null on unscoped streams and on every `log-truncated` (data-model, client-port, stub-http). |
+| R2-06 | R2 | medium | The selection headers can make a read return a refusal or an event example as a `200`. | CONFIRMED | accepted: a selection is accepted only when its schema equals the route's success schema (served `200`) or one of the route's declared refusal schemas (served with that response's contract status). `routes.json` gains `refusals: { <status>: <schema> }`. Event examples cannot be selected on reads. Any other selection is a `400` with a stub-local code (stub-http, data-model). |
+| R2-07 | R4 | medium | `drift.mjs` reimplements `remote.mjs` and the tree compare in `verify-remote.mjs`. | CONFIRMED | accepted: drift reuses `remote.mjs` (`git fetch --depth 1`, built-ins only, `CONTRACT_REMOTE_URL` override for tests) and the extracted tree compare. There is no HTTP listing (R-08, IC-07). |
+| R2-08 | R3 | medium | The loopback test is still fakeable, because the binary prints its own announcement. | CONFIRMED | accepted: the announcement must come from `listener.local_addr()` (a review check), and the test also connects on the first non-loopback local address and expects a refusal (skipped, with the reason logged, when there is none) (R-07, IC-08). |
+| R2-09 | R6 | low | The plan says 17 new plants; its table lists 16. | CONFIRMED | accepted: the count is corrected. |
+| R2-10 | R6 | low | Squad row F-42 says 4 rust plants; the plan has 3. | CONFIRMED | accepted: the F-42 row is corrected below. |
+| R2-11 | R6 | low | Ownership-table gaps: `Cargo.toml` `[workspace.dependencies]`, the `ci.yml` requesters, `eslint.data-driven.config.mjs`. | CONFIRMED | accepted: the table and the structure are completed. |
+| R2-12 | R6 | low | The root `test` script only runs mission-ui. | CONFIRMED | accepted: the root `test` runs every workspace package's `test`, and `ciCommand` stays `pnpm test` (IC-06 owns it). |
+| R2-13 | R2 | low | There are 77 examples; `_index.yaml` is not an example. | CONFIRMED | accepted: the count is 77, and `_index.yaml` is excluded explicitly, as `loadExamples` already does. |
+| R2-14 | R6 | low | The stub-crate decision record has no rationale naming the human ruling. | CONFIRMED | accepted: the evidence is the operator's confirmation of the engineering alignment ("Confirmed, write the plan", 2026-10-13, plan interrogation), cited in F-24 and in the plan's Structure Decision. |
+| R2-15 | R6 | low | The drift workflow runs on the runner's floating Node version. | CONFIRMED | accepted: a SHA-pinned `actions/setup-node` step with 22.22.2 (no credentials). |
+
+Raw 15, confirmed 15, refuted 0.
+
+## Fix round 2 and verification
 
 (pending)

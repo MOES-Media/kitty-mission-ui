@@ -24,7 +24,7 @@ Each entry gives the Decision, the Rationale, and the Alternatives considered.
 ## R-02 — `Gate: rust` without a cache
 
 - **Decision**: one gate job, `rust`, on ubuntu-24.04 (rustup is preinstalled).
-  - **Step 1**: `rustup show`. It installs the toolchain pinned in `rust-toolchain.toml`.
+  - **Step 1**: `rustup toolchain install`. With no arguments it installs the toolchain pinned in `rust-toolchain.toml`. (Since rustup 1.28, `rustup show` only reports and installs nothing, so it cannot be this step; R2-02.)
   - **Step 2**: `cargo fetch --locked`. It downloads the locked crates.
   - **Step 3**, the gate step: exactly `cargo fmt --all --check && cargo clippy --workspace --all-targets --frozen -- -D warnings && cargo test --workspace --frozen`. Because of `--frozen`, the gate step itself contacts no network (NFR-001).
   - The proof leg runs the same two preparation steps when `matrix.gate == 'rust'`.
@@ -83,8 +83,10 @@ Each entry gives the Decision, the Rationale, and the Alternatives considered.
   - Data is passed as Svelte props on the custom element.
   - Intents are bound with `on<event-name>` attributes, or with the typed `intents` action (R-05).
   - The test runs in Vitest browser mode (Chromium).
-  - **What the test must assert (F-01)**: Svelte 5.57.2's `set_custom_element_data` sets *objects and arrays* as properties even on an unregistered element; only primitives fall back to `setAttribute`. A list-only assertion therefore cannot detect a mount-before-registration defect. The test asserts that a **boolean `false`** (for example `loadingMore`) and the `status` string arrive as properties with the passed values. Unregistered, the boolean becomes the attribute `"false"`, which Lit's boolean converter reads as `true`.
-  - **The registration-order plant** moves the side-effect import after mount, and the test must fail.
+  - **What the test must assert (F-01)**: Svelte 5.57.2's `set_custom_element_data` sets *objects and arrays* as properties even on an unregistered element; only primitives fall back to `setAttribute`. A list-only assertion therefore cannot detect a mount-before-registration defect. The primitive must also be chosen so that the attribute path cannot reach the property: `sk-missions-screen` declares `loadingMore` with `attribute: 'loading-more'`, but an unregistered element receives `setAttribute('loadingMore', …)`, which HTML lower-cases to `loadingmore`, an attribute Lit never observes. A `false` value would therefore pass either way (the property default is `false`), and `status` is an observed attribute that upgrades into the property (R2-01). So the harness passes **`loadingMore={true}`**, and the test asserts both:
+    - the property `loadingMore` is `true`;
+    - the element carries no attribute named after any prop the harness passed (lower-cased), unless that prop reflects.
+  - **The registration-order plant** moves the side-effect import after mount. Svelte then sets the unobserved attribute `loadingmore`, the property stays `false`, and a stray attribute exists, so both assertions fail.
   - **SC-001 (F-11)**: the test enumerates every event the hosted screen declares in `custom-elements.json`. It triggers one through real UI (a row click), dispatches the others from the element, and requires each to reach its handler with its detail. An intent-path plant breaks one binding.
 - **Rationale**: FR-001 to FR-003 and the operator ruling `01M4V5KZP24BZS81CX5RD21NMG` (a permanent check).
 - **Alternatives**: a Svelte Storybook, rejected as a second Storybook framework for a single harness.
@@ -92,7 +94,7 @@ Each entry gives the Decision, the Rationale, and the Alternatives considered.
 ## R-07 — The stub's security posture
 
 - **Decision**: the stub applies the same request rules as the upstream service (spec-kitty #5529's service README), so there is no charter exemption (F-32).
-  - It binds `127.0.0.1` only. The test runs the real binary and asserts the announced address (F-31).
+  - It binds `127.0.0.1` only. The announcement is printed from the bound listener's `local_addr()`, never from configuration (a review check). The test runs the real binary, asserts the announced address, and also connects on the first non-loopback local address expecting a refusal, skipped with a logged reason when the machine has none (F-31, R2-08).
   - Host must be exactly `127.0.0.1:<port>` or `localhost:<port>`; anything else gets 403.
   - Origin, when present, must equal the stub's own origin; anything else gets 403.
   - Any `Forwarded` or `X-Forwarded-*` header gets 403.
@@ -107,13 +109,14 @@ Each entry gives the Decision, the Rationale, and the Alternatives considered.
 ## R-08 — Upstream drift alert
 
 - **Decision**:
-  - The compare-with-pin logic (hash every file under `contracts/mission-status` and `contracts/_shared`, then compare with `PIN.json`) is extracted into `scripts/contract/common.mjs` as one function, importing only Node built-ins. `verify-remote.mjs` and the new `drift.mjs` both use it (F-23).
-  - `drift.mjs` fetches upstream `main` with Node's built-in `fetch`. The fetcher is injectable, and `drift.test.mjs` uses local trees for the four outcomes.
+  - Drift reuses what exists (R2-07). `scripts/contract/remote.mjs` already fetches upstream with `git fetch --depth 1` using only Node built-ins, and honours `CONTRACT_REMOTE_URL` for tests. `verify-remote.mjs` already computes "contract paths changed since the pin" from tree ids. That tree compare is extracted into `scripts/contract/common.mjs` as one function, `verify-remote.mjs` is refactored onto it, and the new `drift.mjs` calls `remote.mjs` plus that function against upstream `main` (F-23). There is no second network path and no HTTP directory listing (which would also hit GitHub API rate limits).
+  - `drift.test.mjs` points `CONTRACT_REMOTE_URL` at local git repositories built in a temporary directory, for the four outcomes: no drift, drift, unreachable (a URL that does not exist), and other error.
   - Exit codes: 0 in sync, 1 drift (files listed), 2 upstream unreachable, 3 any other error.
   - `.github/workflows/contract-drift.yml` runs it on a daily `schedule` and on `workflow_dispatch`:
     - the job name does not start with "Gate:";
     - `permissions: contents: read`;
     - `actions/checkout` is SHA-pinned with `persist-credentials: false`;
+    - the SHA-pinned `actions/setup-node` step already used in `ci.yml` pins Node 22.22.2 (it needs no credentials; R2-15);
     - there is **no dependency install and no secrets**: it runs `node scripts/contract/drift.mjs` directly (F-41);
     - no upstream data is interpolated into `run:`;
     - the summary is written through `$GITHUB_STEP_SUMMARY` from a file;
