@@ -74,7 +74,8 @@
               "no-io",
               "hygiene",
               "contract",
-              "data-driven"
+              "data-driven",
+              "rust"
             ]
           },
           "plantedExit": {
