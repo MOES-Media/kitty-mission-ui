@@ -64,6 +64,7 @@
       ],
       "predicted_surfaces": [
         "api",
+        "app-shell",
         "artifact-rendering",
         "legacy-cleanup",
         "workspace"
@@ -229,8 +230,8 @@
       "parallel_group": 3
     }
   ],
-  "computed_at": "2026-10-13T20:24:07.361677+00:00",
+  "computed_at": "2026-10-13T20:41:35.182617+00:00",
   "computed_from": "dependency_graph+ownership",
   "planning_artifact_wps": [],
-  "planning_commit_sha": "35cbf88e60b85914a6d92f82bc54fa7d64d876eb"
+  "planning_commit_sha": "cfbf59c8a5f6fca52e999cd3f5c0db22638cb89a"
 }
