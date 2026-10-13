@@ -116,7 +116,7 @@ Write into the hand-off, not into `kitty-specs/`:
 - the exceptions recorded (the generated-typings lint ignore);
 - every out-of-map edit made in the mission, collected from the hand-offs;
 - the decisions taken in WP04 T021 (the intent-binding path);
-- **the F-29 follow-up**: the orchestrator files an issue proposing a pnpm `minimumReleaseAge` policy with an `@spec-kitty` exclusion. List it as an open item for the orchestrator; do not file it.
+- **the F-29 follow-up**: already filed by the orchestrator as #28 (pnpm `minimumReleaseAge` with an `@spec-kitty` exclusion). Link it from the hand-off as "Follow-up: #28"; do not file anything.
 
 ### T053 Scope and acceptance check
 
@@ -132,7 +132,7 @@ No new tests; this WP runs and measures. `gate-proof local` (full) runs here.
 - **Docs:** the README "Host workspace" section, the mission-shell README and the CHANGELOG entry are written; hygiene and terminology are green.
 - **Gates:** every gate and full gate-proof are green; 16 new plants are counted with equality; coverage passes.
 - **SC-005:** the `packages/mission-ui` diff is empty, recorded.
-- **Evidence:** the hand-off has the evidence tables (supply chain, exceptions, out-of-map edits, decisions) and the requirement-to-proof table. The F-29 follow-up is listed for the orchestrator to file.
+- **Evidence:** the hand-off has the evidence tables (supply chain, exceptions, out-of-map edits, decisions) and the requirement-to-proof table. The F-29 follow-up (#28) is linked; the orchestrator to file.
 
 ## Risks
 

@@ -1,0 +1,243 @@
+work_packages:
+  - id: WP01
+    title: "Rust workspace, toolchain pin and Gate: rust"
+    dependencies: []
+    owned_files:
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - "rust-toolchain.toml"
+      - "crates/kitty-core/**"
+      - "apps/desktop/src-tauri/**"
+      - "apps/dashboard/Cargo.toml"
+      - "apps/dashboard/src/**"
+      - ".gitignore"
+      - ".github/workflows/ci.yml"
+      - "gates/plants/rust/**"
+    requirement_refs:
+      - FR-005
+      - FR-006
+      - NFR-001
+      - NFR-002
+      - NFR-003
+      - C-004
+      - C-006
+      - SC-002
+    plan_concern_refs:
+      - IC-02
+    subtasks:
+      - T001
+      - T002
+      - T003
+      - T004
+      - T005
+      - T006
+    prompt_file: "tasks/WP01-rust-workspace-and-rust-gate.md"
+  - id: WP02
+    title: "mission-shell package and Svelte tooling in the gates"
+    dependencies: []
+    owned_files:
+      - "packages/mission-shell/package.json"
+      - "packages/mission-shell/tsconfig.json"
+      - "packages/mission-shell/svelte.config.js"
+      - "packages/mission-shell/vitest.config.ts"
+      - "packages/mission-shell/src/index.ts"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "eslint.config.mjs"
+      - "eslint.no-io.config.mjs"
+      - "eslint.data-driven.config.mjs"
+      - "gates/no-io.selftest.ts"
+      - "gates/fixtures/no-io/**"
+      - "gates/plants/typecheck/**"
+      - "gates/plants/eslint/**"
+      - "gates/plants/no-io/**"
+      - "scripts/terminology.mjs"
+      - "scripts/terminology.test.mjs"
+    requirement_refs:
+      - FR-005
+      - FR-006
+      - FR-007
+      - C-001
+      - NFR-003
+      - SC-002
+    plan_concern_refs:
+      - IC-03
+    subtasks:
+      - T007
+      - T008
+      - T009
+      - T010
+      - T011
+      - T012
+      - T013
+    prompt_file: "tasks/WP02-mission-shell-package-and-svelte-gates.md"
+  - id: WP03
+    title: "Shared examples, fixtures, routes and change-sequence files"
+    dependencies: []
+    owned_files:
+      - "scripts/contract/generate.mjs"
+      - "scripts/contract/check.mjs"
+      - "scripts/contract/registry.mjs"
+      - "scripts/contract/fixtures-json.test.mjs"
+      - "scripts/contract/routes-json.test.mjs"
+      - "scripts/contract/changes-json.test.mjs"
+      - "scripts/contract/check.test.mjs"
+      - "contracts/fixtures/**"
+      - "gates/plants/contract/**"
+    requirement_refs:
+      - FR-010
+      - FR-011
+      - C-003
+      - NFR-004
+      - SC-003
+    plan_concern_refs:
+      - IC-01
+    subtasks:
+      - T014
+      - T015
+      - T016
+      - T017
+      - T018
+      - T019
+    prompt_file: "tasks/WP03-shared-fixture-and-change-files.md"
+  - id: WP04
+    title: "Svelte element typings generated from custom-elements.json"
+    dependencies: [WP02]
+    owned_files:
+      - "scripts/typings.mjs"
+      - "scripts/typings.test.mjs"
+      - "packages/mission-shell/src/generated/**"
+      - "gates/plants/manifest/**"
+    requirement_refs:
+      - FR-004
+      - FR-006
+      - SC-002
+    plan_concern_refs:
+      - IC-04
+    subtasks:
+      - T020
+      - T021
+      - T022
+      - T023
+      - T024
+    prompt_file: "tasks/WP04-element-typings-from-manifest.md"
+  - id: WP05
+    title: "MissionStatusClient port and fixture adapter"
+    dependencies: [WP02, WP03]
+    owned_files:
+      - "packages/mission-shell/src/client/**"
+      - "packages/mission-shell/test/port-coverage.test.ts"
+      - "packages/mission-shell/test/fixture-client.test.ts"
+    requirement_refs:
+      - FR-008
+      - FR-009
+      - FR-011
+      - NFR-004
+      - C-001
+      - SC-003
+    plan_concern_refs:
+      - IC-05
+    subtasks:
+      - T025
+      - T026
+      - T027
+      - T028
+      - T029
+    prompt_file: "tasks/WP05-client-port-and-fixture-adapter.md"
+  - id: WP06
+    title: "Permanent Svelte–Lit binding check and unit-tests gate wiring"
+    dependencies: [WP04, WP05]
+    owned_files:
+      - "packages/mission-shell/src/harness/**"
+      - "packages/mission-shell/test/binding.test.ts"
+      - "gates/plants/unit-tests/**"
+    requirement_refs:
+      - FR-001
+      - FR-002
+      - FR-003
+      - C-002
+      - SC-001
+      - SC-002
+    plan_concern_refs:
+      - IC-06
+    subtasks:
+      - T030
+      - T031
+      - T032
+      - T033
+      - T034
+      - T035
+    prompt_file: "tasks/WP06-permanent-binding-check.md"
+  - id: WP07
+    title: "kitty-stub: loopback HTTP and SSE stub over the shared fixtures"
+    dependencies: [WP01, WP03]
+    owned_files:
+      - "crates/kitty-stub/**"
+    requirement_refs:
+      - FR-010
+      - FR-011
+      - NFR-003
+      - NFR-004
+      - SC-003
+    plan_concern_refs:
+      - IC-08
+    subtasks:
+      - T036
+      - T037
+      - T038
+      - T039
+      - T040
+      - T041
+      - T042
+    prompt_file: "tasks/WP07-kitty-stub-crate.md"
+  - id: WP08
+    title: "Workflow and Cargo hygiene, and the scheduled contract drift alert"
+    dependencies: [WP01, WP02]
+    owned_files:
+      - "scripts/check-hygiene.mjs"
+      - "scripts/hygiene/**"
+      - "gates/plants/hygiene/**"
+      - "scripts/contract/common.mjs"
+      - "scripts/contract/drift.mjs"
+      - "scripts/contract/drift.test.mjs"
+      - ".github/workflows/contract-drift.yml"
+    requirement_refs:
+      - FR-012
+      - NFR-001
+      - NFR-003
+      - C-003
+      - C-004
+      - SC-002
+    plan_concern_refs:
+      - IC-07
+    subtasks:
+      - T043
+      - T044
+      - T045
+      - T046
+      - T047
+      - T048
+    prompt_file: "tasks/WP08-hygiene-and-drift-alert.md"
+  - id: WP09
+    title: "Documentation, proof-leg timings and wrap-up evidence"
+    dependencies: [WP06, WP07, WP08]
+    owned_files:
+      - "README.md"
+      - "CHANGELOG.md"
+      - "packages/mission-shell/README.md"
+    requirement_refs:
+      - NFR-002
+      - NFR-005
+      - C-005
+      - SC-002
+      - SC-004
+      - SC-005
+    plan_concern_refs:
+      - IC-09
+    subtasks:
+      - T049
+      - T050
+      - T051
+      - T052
+      - T053
+    prompt_file: "tasks/WP09-docs-timings-and-wrap-up.md"
