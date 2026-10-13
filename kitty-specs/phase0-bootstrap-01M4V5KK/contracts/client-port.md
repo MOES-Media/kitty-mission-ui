@@ -20,11 +20,12 @@ type Ok<Op extends ReadOp> = operations[Op]['responses'][200]['content']['applic
 
 /** Every refusal the contract declares for the operation. Refusals are `application/problem+json`
  *  (successes are `application/json`), so the refusal body is read from that media type (R3-01).
- *  `status` is a number: a schema shared by several statuses (ArtifactRefusal, StreamRefusal) carries
- *  its own `status` field, which is the authority (R3-02). */
+ *  `status` is a number: a schema shared by several statuses (for example ArtifactRefusal) carries
+ *  its own `status` field, which is the authority (R3-02). The `default` Problem response is excluded,
+ *  as in `routes.json` (A2, C2). */
 type Refusal<Op extends ReadOp> = {
-  [S in keyof operations[Op]['responses']]: operations[Op]['responses'][S] extends { content: { 'application/problem+json': infer B } } ? { status: number; body: B } : never
-}[keyof operations[Op]['responses']];
+  [S in Exclude<keyof operations[Op]['responses'], 'default'>]: operations[Op]['responses'][S] extends { content: { 'application/problem+json': infer B } } ? { status: number; body: B } : never
+}[Exclude<keyof operations[Op]['responses'], 'default'>];
 
 export type Result<Op extends ReadOp> =
   | { ok: true; value: Ok<Op> }
@@ -33,6 +34,9 @@ export type Result<Op extends ReadOp> =
 
 export type ConnectionState =
   | 'connected' | 'reconnecting' | 'degraded: service-missing' | 'degraded: contract-mismatch';
+
+/** The four states as a runtime list; a type test asserts it equals `ConnectionState` exactly (B8, C14). */
+export const CONNECTION_STATES = ['connected', 'reconnecting', 'degraded: service-missing', 'degraded: contract-mismatch'] as const;
 
 export type Change =
   | { kind: 'status-transition'; cursor: string | null; data: Schemas['StatusTransitionEvent'] }

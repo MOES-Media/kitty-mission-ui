@@ -54,7 +54,8 @@ Each entry gives the Decision, the Rationale, and the Alternatives considered.
 ## R-04 — No-io and lint over Svelte
 
 - **Decision**:
-  - Add `eslint-plugin-svelte` and `svelte-eslint-parser` to `eslint.config.mjs` and `eslint.no-io.config.mjs`.
+  - Add `eslint-plugin-svelte` and `svelte-eslint-parser` to `eslint.config.mjs`, `eslint.no-io.config.mjs` and `eslint.data-driven.config.mjs` (the data-driven rules also cover `.svelte`, B3, with a plant, C1).
+  - Extend Stylelint's token-only rules to `.svelte` `<style>` blocks with the `postcss-html` custom syntax and a stylelint plant (B2).
   - Extend the no-io file globs to `packages/*/src/**/*.svelte`, and apply the existing banned-identifier rules inside `<script>` blocks.
   - The no-io plant's `expectFailPattern` matches the no-io rule's message, not the file name, so a parser failure cannot satisfy it (F-19).
   - The terminology scan adds `.svelte` sources and `crates/**/*.rs` (F-48).
@@ -130,7 +131,7 @@ Each entry gives the Decision, the Rationale, and the Alternatives considered.
 
 ## Supply-chain controls (DIRECTIVE_051)
 
-New npm packages: `svelte`, `@sveltejs/vite-plugin-svelte`, `svelte-check`, `eslint-plugin-svelte`, `svelte-eslint-parser`. There is no typings-generator dependency (F-30).
+New npm packages: `svelte`, `@sveltejs/vite-plugin-svelte`, `svelte-check`, `eslint-plugin-svelte`, `svelte-eslint-parser`, `postcss-html`. There is no typings-generator dependency (F-30).
 
 New crates: `axum`, `tokio`, `serde`, `serde_json`, plus the test-only `tower` and `http-body-util`. Tool, not dependency: `cargo-audit`, used once on a developer machine.
 

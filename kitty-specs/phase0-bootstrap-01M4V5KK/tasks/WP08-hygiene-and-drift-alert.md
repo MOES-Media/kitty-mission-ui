@@ -95,7 +95,7 @@ Implementation command (orchestrator-run): `spec-kitty agent action implement WP
 **Steps** (red first in `scripts/hygiene/hygiene.test.mjs`):
 1. In `rules.mjs`, split `checkWorkflow` into two functions:
    - `checkWorkflowSecurity`: action SHA pins, image digests, **workflow-level** `permissions` that include `contents: read` (the existing rule, now applied to every workflow, B12), **job-level** `permissions` present and least-privilege (`contents: read`) on every job, checkout `persist-credentials: false`, no `continue-on-error`, `upload-artifact` `retention-days: 1`;
-   - `checkGateStructure`: job ids, proof matrix, plants, `all.needs`, timeouts, **and the main-only trigger rule** (only `pull_request` and `push` to `main`). That rule is a ci.yml gate-structure rule, so `contract-drift.yml` (`schedule` plus `workflow_dispatch`) is never judged by it (A10).
+   - `checkGateStructure`: job ids, proof matrix, plants, `all.needs` (there is no timeout rule in `checkWorkflow` today; none is added, C8), **and the main-only trigger rule** (only `pull_request` and `push` to `main`). That rule is a ci.yml gate-structure rule, so `contract-drift.yml` (`schedule` plus `workflow_dispatch`) is never judged by it (A10).
    `checkWorkflow` stays as the composition of the two, so `ci.yml` behaviour is unchanged.
 2. In `check-hygiene.mjs`, run `checkWorkflowSecurity` on **every** workflow file. `checkGateStructure` stays `ci.yml`-only. `checkWorkflowTriggers` and `checkGateJobNames` are unchanged.
 3. Tests:
@@ -147,7 +147,7 @@ Create `.github/workflows/contract-drift.yml`:
 
 Append to `gates/plants/hygiene/plant.json` (`ciCommand` equal to the hygiene gate step):
 1. **Caret Cargo requirement**: an `edits` overlay on `crates/kitty-core/Cargo.toml`, anchored on its existing `[dependencies]` header when there is one (insert `plant-caret-pin = "0.1"` below it) and otherwise appending a new `[dependencies]` table, so the planted file never has a duplicate table (A17). Check the file WP01 committed before choosing the anchor. The parse-only hygiene check does not build. `expectFailPattern`: `plant-caret-pin`.
-2. **Unpinned action in a non-ci workflow**: an `edits` overlay on `.github/workflows/contract-drift.yml` replacing the checkout SHA with `@v4` plus a `# plant-unpinned-action` comment. `expectFailPattern`: the rule's message, or `contract-drift.yml` combined with the pin rule id. It must be specific to that rule.
+2. **Unpinned action in a non-ci workflow**: an `edits` overlay on `.github/workflows/contract-drift.yml` replacing the checkout SHA with `@v4` plus a `# plant-unpinned-action` comment. `expectFailPattern` (C4, one substring): `is not pinned to a 40-hex SHA` (the `action-pin` message in `scripts/hygiene/rules.mjs`; printed only on that violation, never by a clean run or a test name).
 
 Run `node scripts/gate-proof.mjs local --only hygiene`, and record each plant red and the clean leg green, with timing.
 
@@ -171,7 +171,7 @@ Node tests under `scripts/hygiene` and `scripts/contract` (all offline), plus tw
 
 ## Risks
 
-- **Changing `ci.yml` behaviour:** splitting `checkWorkflow` must not change it; the snapshot test guards that.
+- **Changing `ci.yml` behaviour:** splitting `checkWorkflow` must not change it; the existing ci.yml mutate tests (`scripts/hygiene/hygiene.test.mjs`) guard that.
 - **"Unreachable" versus "error":** detect the git fetch failure class explicitly. Do not map every error to 2.
 
 ## Reviewer guidance
@@ -190,7 +190,7 @@ Shared-file owners (from `plan.md`, "Shared-file ownership"):
 | File | Owning WP |
 |---|---|
 | `.github/workflows/ci.yml`, root `Cargo.toml`, `Cargo.lock`, `rust-toolchain.toml`, `.gitignore`, `gates/plants/rust/**` | WP01 |
-| root `package.json`, `pnpm-lock.yaml`, `eslint.config.mjs`, `eslint.no-io.config.mjs`, `eslint.data-driven.config.mjs`, `gates/plants/typecheck/**`, `gates/plants/eslint/**`, `gates/plants/no-io/**`, `gates/plants/stylelint/**`, `stylelint.config.mjs`, `gates/data-driven.selftest.ts` | WP02 |
+| root `package.json`, `pnpm-lock.yaml`, `eslint.config.mjs`, `eslint.no-io.config.mjs`, `eslint.data-driven.config.mjs`, `gates/plants/typecheck/**`, `gates/plants/eslint/**`, `gates/plants/no-io/**`, `gates/plants/data-driven/**`, `gates/plants/stylelint/**`, `stylelint.config.mjs`, `gates/data-driven.selftest.ts` | WP02 |
 | `scripts/contract/{generate,check,registry}.mjs` and their tests, `contracts/fixtures/**`, `gates/plants/contract/**` | WP03 |
 | `gates/plants/manifest/**`, `scripts/typings.mjs` | WP04 |
 | `gates/plants/unit-tests/**` | WP06 |
@@ -205,6 +205,7 @@ Shared-file owners (from `plan.md`, "Shared-file ownership"):
   ```
 - If WP01 is not in this lane's history yet, the Rust gate is not applicable; say so.
 - `pnpm visual` and `node scripts/gate-proof.mjs local` are run only where this prompt's "Test strategy" says so.
+- **Gate-proof clean-output rule (C5):** `scripts/gate-proof/lib.mjs` fails a leg when any plant's `expectFailPattern` appears in the **clean** run's output, and it matches a plant with one `output.includes` substring (C4). So every plant token must be a single substring that is printed only when that plant's violation fires: never a test name, an identifier that clean tests print, or a file name a parse error would also print.
 - If a script name differs on the build base, use the name the base provides and say so.
 
 **Red-first rule.** For every behaviour, plant and gate case:

@@ -82,7 +82,7 @@ Implementation command (orchestrator-run): `spec-kitty agent action implement WP
 
 ### T049 Proof-leg timings and timeouts (F-42, NFR-002)
 
-1. Work packages never push, so measure locally with `node scripts/gate-proof.mjs local` per affected gate, labelled **local proxy** (spec NFR-002 verification, A3). Record for each affected proof leg (rust, typecheck, eslint, no-io, unit-tests, manifest, contract, hygiene):
+1. Work packages never push, so measure locally with `node scripts/gate-proof.mjs local` per affected gate, labelled **local proxy** (spec NFR-002 verification, A3). Record for each affected proof leg (rust, typecheck, eslint, stylelint, no-io, data-driven, unit-tests, manifest, contract, hygiene; C3):
    - the clean gate time;
    - the total number of plants in the leg, existing and new (A24);
    - the measured leg time.
@@ -109,7 +109,7 @@ Implementation command (orchestrator-run): `spec-kitty agent action implement WP
 ### T051 Full gate run, coverage and the SC-005 probe
 
 1. Run every gate on the lane tip, plus the canonical Rust gate with its install steps.
-2. Run `node scripts/gate-proof.mjs coverage` and the full `node scripts/gate-proof.mjs local`. Record every leg, and count the new plants: **17** (rust 3, typecheck 3, eslint 1, stylelint 1, no-io 1, unit-tests 3, manifest 1, contract 2, hygiene 2). The count is asserted against the plant files, with equality.
+2. Run `node scripts/gate-proof.mjs coverage` and the full `node scripts/gate-proof.mjs local`. Record every leg, and count the new plants: **18** (rust 3, typecheck 3, eslint 1, stylelint 1, no-io 1, data-driven 1, unit-tests 3, manifest 1, contract 2, hygiene 2). The count is asserted against the plant files, with equality.
 3. Run `git diff --exit-code "$(git merge-base HEAD main)" -- packages/mission-ui` (the merge-base with `main`, B22), and record the empty diff (SC-005, C-002).
 4. Run `pnpm hygiene` and record that `cargo-pins` passes over WP07's manifests: WP07 and WP08 ran in parallel lanes, so this is the first combined run (A18).
 5. **NFR-001 step audit (A12):** for every job in `ci.yml` `all.needs` (each gate job, `proof-leg`, `proof`), list every step with its network use: none, dependency install from a lockfile (pnpm install, `rustup toolchain install`, `cargo fetch --locked`), or other. Any "other" step, or a gate step (`id: gate`) with network use, is a finding. Record the table in the hand-off.
@@ -123,7 +123,7 @@ Write into the hand-off, not into `kitty-specs/`:
 - every out-of-map edit made in the mission, collected from the hand-offs;
 - the decisions taken in WP04 T021 (the intent-binding path);
 - **orchestrator items at the PR stage** (A3, A11): (a) verify every gate job ≤ 8 minutes and set the final proof-leg timeouts from the PR's first CI run (NFR-002); (b) confirm `Gate: visual` is green on that run, because no WP runs `pnpm visual` (NFR-005, SC-005);
-- **SC-004 (A14)**: deferred to the #18 and #19 plan reviews. List the checklist they will apply: zero changes to `MissionStatusClient`, `Result`, `Refusal`, `ConnectionState`, `Change`, `SubscriptionScope` and `CLIENT_OPERATIONS`; zero changes to the workspace members and gate wiring; zero changes to `contracts/fixtures/*` shapes. Record it as "deferred, not failed";
+- **SC-004 (A14)**: deferred to the #18 and #19 plan reviews. List the checklist they will apply: zero changes to `MissionStatusClient`, `Result`, `Refusal`, `ConnectionState`, `Change`, `SubscriptionScope`, `CLIENT_OPERATIONS` and `CONNECTION_STATES` (C14); zero changes to the workspace members and gate wiring; zero changes to `contracts/fixtures/*` shapes. Record it as "deferred, not failed";
 - **the F-29 follow-up**: already filed by the orchestrator as #28 (pnpm `minimumReleaseAge` with an `@spec-kitty` exclusion). Link it from the hand-off as "Follow-up: #28"; do not file anything.
 
 ### T053 Scope and acceptance check
@@ -138,7 +138,7 @@ No new tests; this WP runs and measures. `gate-proof local` (full) runs here.
 
 - **Timeouts:** every affected proof leg is measured, and its timeout set by the formula. Every gate job is ≤ 8 minutes, or reported BLOCKED.
 - **Docs:** the README "Host workspace" section, the mission-shell README and the CHANGELOG entry are written; hygiene and terminology are green.
-- **Gates:** every gate and full gate-proof are green; 17 new plants are counted with equality; coverage passes.
+- **Gates:** every gate and full gate-proof are green; 18 new plants are counted with equality; coverage passes.
 - **SC-005:** the `packages/mission-ui` diff is empty, recorded.
 - **Evidence:** the hand-off has the evidence tables (supply chain, exceptions with sunset criteria and approval request, out-of-map edits, decisions), the NFR-001 step audit, the C-005 no-workaround evidence, the SC-004 deferral checklist, the orchestrator PR-stage items (CI timings, visual) and the requirement-to-proof table. The F-29 follow-up (#28) is linked.
 
@@ -162,7 +162,7 @@ Shared-file owners (from `plan.md`, "Shared-file ownership"):
 | File | Owning WP |
 |---|---|
 | `.github/workflows/ci.yml`, root `Cargo.toml`, `Cargo.lock`, `rust-toolchain.toml`, `.gitignore`, `gates/plants/rust/**` | WP01 |
-| root `package.json`, `pnpm-lock.yaml`, `eslint.config.mjs`, `eslint.no-io.config.mjs`, `eslint.data-driven.config.mjs`, `gates/plants/typecheck/**`, `gates/plants/eslint/**`, `gates/plants/no-io/**`, `gates/plants/stylelint/**`, `stylelint.config.mjs`, `gates/data-driven.selftest.ts` | WP02 |
+| root `package.json`, `pnpm-lock.yaml`, `eslint.config.mjs`, `eslint.no-io.config.mjs`, `eslint.data-driven.config.mjs`, `gates/plants/typecheck/**`, `gates/plants/eslint/**`, `gates/plants/no-io/**`, `gates/plants/data-driven/**`, `gates/plants/stylelint/**`, `stylelint.config.mjs`, `gates/data-driven.selftest.ts` | WP02 |
 | `scripts/contract/{generate,check,registry}.mjs` and their tests, `contracts/fixtures/**`, `gates/plants/contract/**` | WP03 |
 | `gates/plants/manifest/**`, `scripts/typings.mjs` | WP04 |
 | `gates/plants/unit-tests/**` | WP06 |
@@ -177,6 +177,7 @@ Shared-file owners (from `plan.md`, "Shared-file ownership"):
   ```
 
 - `pnpm visual` and `node scripts/gate-proof.mjs local` are run only where this prompt's "Test strategy" says so.
+- **Gate-proof clean-output rule (C5):** `scripts/gate-proof/lib.mjs` fails a leg when any plant's `expectFailPattern` appears in the **clean** run's output, and it matches a plant with one `output.includes` substring (C4). So every plant token must be a single substring that is printed only when that plant's violation fires: never a test name, an identifier that clean tests print, or a file name a parse error would also print.
 - If a script name differs on the build base, use the name the base provides and say so.
 
 **Red-first rule.** For every behaviour, plant and gate case:

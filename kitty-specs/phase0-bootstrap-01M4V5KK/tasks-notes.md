@@ -60,7 +60,7 @@ WP08's cargo-pins test lives in `scripts/hygiene/`, which `test:scripts` already
 
 | Obligation | WP |
 |---|---|
-| 17 plants: rust 3, typecheck 3 (1 + 2), eslint 1, stylelint 1, no-io 1, unit-tests 3, manifest 1, contract 2, hygiene 2 | WP01, WP02, WP04, WP06, WP03, WP08; counted by WP09 |
+| 18 plants: rust 3, typecheck 3 (1 + 2), eslint 1, stylelint 1, no-io 1, data-driven 1, unit-tests 3, manifest 1, contract 2, hygiene 2 | WP01, WP02, WP04, WP06, WP03, WP08; counted by WP09 |
 | R2-01 binding: a non-default primitive plus no stray attributes | WP06 T031 |
 | F-11: every declared intent | WP06 T032 |
 | Supply-chain evidence S-1 to S-5, F-29 transitive dates, F-34, F-35 | WP02 T008, WP07 T036; consolidated by WP09 T052 |

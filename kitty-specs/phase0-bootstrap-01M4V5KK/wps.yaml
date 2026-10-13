@@ -184,6 +184,8 @@ work_packages:
     requirement_refs:
       - FR-010
       - FR-011
+      - NFR-001
+      - NFR-002
       - NFR-003
       - NFR-004
       - SC-003

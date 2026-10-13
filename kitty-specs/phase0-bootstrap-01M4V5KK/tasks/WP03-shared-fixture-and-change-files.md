@@ -105,7 +105,7 @@ Implementation command (orchestrator-run): `spec-kitty agent action implement WP
    - `kind`: `"stream"` for `streamEvents`, otherwise `"read"`.
    - `responseSchema`: the `$ref` schema name of the `200` `application/json` response, or `null` for `streamEvents` (its 200 is `text/event-stream`).
    - `refusals`: from every **numbered** response (`400`, `404`, `409`, …) whose content is `application/problem+json` (shared `$ref` responses resolved through `_shared/responses`), a map `{ <schemaName>: [<status>, …] }` with statuses as numbers, sorted numerically. The `default` Problem response is **not** a selectable refusal and never contributes (data-model RouteEntry; A2). Numbered responses whose `$ref` resolves to the shared `Problem` response count like any other (B4): `getMission`, `getWorkPackage` and `streamEvents` each get `Problem: [404]`. This applies to `streamEvents` too: its numbered problem+json responses give `{ Problem: [404], StreamRefusal: [400, 409] }` (A5, B4). Document the rule in a code comment.
-   - `defaultExample`: from a reviewed `DEFAULT_EXAMPLES` map in `generate.mjs` (`operationId → "<Schema>.<name>"`), one entry per read. Choose the richest success example, for example `Project.populated`. For `streamEvents` the value is `null`. The generator fails if a map entry names an example that does not exist or whose schema is not the route's `responseSchema`.
+   - `defaultExample`: from a reviewed `DEFAULT_EXAMPLES` map in `generate.mjs` (`operationId → "<Schema>.<name>"`), one entry per read. Choose the richest success example, for example `Project.example`. For `streamEvents` the value is `null`. The generator fails if a map entry names an example that does not exist or whose schema is not the route's `responseSchema`.
 2. Emit `contracts/fixtures/mission-status.routes.json`: a JSON array sorted by `operationId`, 2-space indent, trailing newline.
 3. Tests:
    - the set of operationIds equals the set parsed independently from the YAML in the test (10, equality);
@@ -155,8 +155,8 @@ Implementation command (orchestrator-run): `spec-kitty agent action implement WP
 **Steps**:
 1. `check.mjs`: regenerate `examples.json`, `fixtures.json` and `routes.json` in memory and fail if any differs byte-for-byte from the committed file, naming the file. Run the T017 validation. Everything stays offline.
 2. `gates/plants/contract/plant.json`: add two plants:
-   - **stale JSON**: an `edits` overlay changing one value in `mission-status.examples.json`. `expectFailPattern`: `mission-status.examples.json` stale; use the exact message your checker prints.
-   - **invalid change item**: an `edits` overlay adding a `scopedId` to the `log-truncated` item in `changes.json`. `expectFailPattern`: the invariant message.
+   - **stale JSON**: an `edits` overlay changing one value in `mission-status.examples.json`. `expectFailPattern`: the checker's exact failure message, which must be failure-only (C5), for example `contract: stale generated file contracts/fixtures/mission-status.examples.json`; no test name in `check.test.mjs` may contain it (`node --test` prints test names in the clean run).
+   - **invalid change item**: an `edits` overlay adding a `scopedId` to the `log-truncated` item in `changes.json`. `expectFailPattern`: the invariant's exact failure message, for example `contract: changes.json log-truncated item carries scopedId`; failure-only, never part of a test name (C5).
 3. Re-run `pnpm contract:generate` and confirm `git diff --exit-code -- packages/mission-ui` is empty (C-002).
 
 ### T019 Exit checks and timing
@@ -199,7 +199,7 @@ Shared-file owners (from `plan.md`, "Shared-file ownership"):
 | File | Owning WP |
 |---|---|
 | `.github/workflows/ci.yml`, root `Cargo.toml`, `Cargo.lock`, `rust-toolchain.toml`, `.gitignore`, `gates/plants/rust/**` | WP01 |
-| root `package.json`, `pnpm-lock.yaml`, `eslint.config.mjs`, `eslint.no-io.config.mjs`, `eslint.data-driven.config.mjs`, `gates/plants/typecheck/**`, `gates/plants/eslint/**`, `gates/plants/no-io/**`, `gates/plants/stylelint/**`, `stylelint.config.mjs`, `gates/data-driven.selftest.ts` | WP02 |
+| root `package.json`, `pnpm-lock.yaml`, `eslint.config.mjs`, `eslint.no-io.config.mjs`, `eslint.data-driven.config.mjs`, `gates/plants/typecheck/**`, `gates/plants/eslint/**`, `gates/plants/no-io/**`, `gates/plants/data-driven/**`, `gates/plants/stylelint/**`, `stylelint.config.mjs`, `gates/data-driven.selftest.ts` | WP02 |
 | `scripts/contract/{generate,check,registry}.mjs` and their tests, `contracts/fixtures/**`, `gates/plants/contract/**` | WP03 |
 | `gates/plants/manifest/**`, `scripts/typings.mjs` | WP04 |
 | `gates/plants/unit-tests/**` | WP06 |
@@ -214,6 +214,7 @@ Shared-file owners (from `plan.md`, "Shared-file ownership"):
   ```
 - If WP01 is not in this lane's history yet, the Rust gate is not applicable; say so.
 - `pnpm visual` and `node scripts/gate-proof.mjs local` are run only where this prompt's "Test strategy" says so.
+- **Gate-proof clean-output rule (C5):** `scripts/gate-proof/lib.mjs` fails a leg when any plant's `expectFailPattern` appears in the **clean** run's output, and it matches a plant with one `output.includes` substring (C4). So every plant token must be a single substring that is printed only when that plant's violation fires: never a test name, an identifier that clean tests print, or a file name a parse error would also print.
 - If a script name differs on the build base, use the name the base provides and say so.
 
 **Red-first rule.** For every behaviour, plant and gate case:

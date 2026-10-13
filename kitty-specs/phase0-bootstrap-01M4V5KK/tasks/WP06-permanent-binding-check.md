@@ -128,7 +128,7 @@ Verify:
 Append to `gates/plants/unit-tests/plant.json`:
 1. **Registration order**: an `edits` overlay on `BindingHarness.svelte` that removes the top-level `import '@moes-media/mission-ui';` and instead imports it in `onMount` after the element is in the DOM. `loadingMore` then stays `false`, and a `loadingmore` attribute appears. `expectFailPattern`: a unique string in the T031 assertion message, for example `binding: loadingMore not set as property`.
 2. **Intent-path break**: an `edits` overlay removing one intent binding (for example `sk-search`) from the harness. `expectFailPattern`: `binding: intent sk-search not delivered`.
-3. **Port entry deleted** (F-03, coverage plant from WP05's test): an `edits` overlay on `packages/mission-shell/src/client/port.ts` and `fixture.ts` (WP05's files, overlaid only inside the plant) that removes `getDriftReport` from `CLIENT_OPERATIONS`, the interface and the adapter. The type-level guard stays satisfied, but the coverage test fails naming `getDriftReport`. `expectFailPattern`: `getDriftReport`.
+3. **Port entry deleted** (F-03, coverage plant from WP05's test): an `edits` overlay on `packages/mission-shell/src/client/port.ts` and `fixture.ts` (WP05's files, overlaid only inside the plant) that removes `getDriftReport` from `CLIENT_OPERATIONS`, the interface and the adapter. The type-level guard stays satisfied, but the coverage test fails naming `getDriftReport`. `expectFailPattern`: `coverage: missing operation getDriftReport` (C5: the bare identifier `getDriftReport` can appear in clean test output, which gate-proof rejects).
    The overlay edits WP05-owned files only inside the proof run; nothing is committed to them.
 
 Run `node scripts/gate-proof.mjs local --only unit-tests` and record each pattern red and the clean leg green, with timings. The unit-tests proof leg timeout was set to 16 by WP01; record the measured duration.
@@ -175,7 +175,7 @@ Shared-file owners (from `plan.md`, "Shared-file ownership"):
 | File | Owning WP |
 |---|---|
 | `.github/workflows/ci.yml`, root `Cargo.toml`, `Cargo.lock`, `rust-toolchain.toml`, `.gitignore`, `gates/plants/rust/**` | WP01 |
-| root `package.json`, `pnpm-lock.yaml`, `eslint.config.mjs`, `eslint.no-io.config.mjs`, `eslint.data-driven.config.mjs`, `gates/plants/typecheck/**`, `gates/plants/eslint/**`, `gates/plants/no-io/**`, `gates/plants/stylelint/**`, `stylelint.config.mjs`, `gates/data-driven.selftest.ts` | WP02 |
+| root `package.json`, `pnpm-lock.yaml`, `eslint.config.mjs`, `eslint.no-io.config.mjs`, `eslint.data-driven.config.mjs`, `gates/plants/typecheck/**`, `gates/plants/eslint/**`, `gates/plants/no-io/**`, `gates/plants/data-driven/**`, `gates/plants/stylelint/**`, `stylelint.config.mjs`, `gates/data-driven.selftest.ts` | WP02 |
 | `scripts/contract/{generate,check,registry}.mjs` and their tests, `contracts/fixtures/**`, `gates/plants/contract/**` | WP03 |
 | `gates/plants/manifest/**`, `scripts/typings.mjs` | WP04 |
 | `gates/plants/unit-tests/**` | WP06 |
@@ -190,6 +190,7 @@ Shared-file owners (from `plan.md`, "Shared-file ownership"):
   ```
 - If WP01 is not in this lane's history yet, the Rust gate is not applicable; say so.
 - `pnpm visual` and `node scripts/gate-proof.mjs local` are run only where this prompt's "Test strategy" says so.
+- **Gate-proof clean-output rule (C5):** `scripts/gate-proof/lib.mjs` fails a leg when any plant's `expectFailPattern` appears in the **clean** run's output, and it matches a plant with one `output.includes` substring (C4). So every plant token must be a single substring that is printed only when that plant's violation fires: never a test name, an identifier that clean tests print, or a file name a parse error would also print.
 - If a script name differs on the build base, use the name the base provides and say so.
 
 **Red-first rule.** For every behaviour, plant and gate case:

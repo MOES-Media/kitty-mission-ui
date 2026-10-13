@@ -132,7 +132,7 @@ Implementation command (orchestrator-run): `spec-kitty agent action implement WP
    - `"manifest:check": "node scripts/check-manifest.mjs && node scripts/typings.mjs --check"`;
    - append `scripts/typings.test.mjs` to `test:scripts`.
    Record both in the hand-off.
-2. `gates/plants/manifest/plant.json`: add a plant whose `edits` overlay changes one property name inside `packages/mission-shell/src/generated/elements.d.ts`. `expectFailPattern`: `elements.d.ts is stale`.
+2. `gates/plants/manifest/plant.json` is currently a single object (C9): convert it to an array keeping the existing plant byte-for-byte unchanged, as WP02 T011 does for typecheck, then add a plant whose `edits` overlay changes one property name inside `packages/mission-shell/src/generated/elements.d.ts`. `expectFailPattern`: `elements.d.ts is stale`.
 3. Generate the committed `elements.d.ts` (and `intents.ts` if used) with `node scripts/typings.mjs`.
 
 ### T023 Two typecheck plants (FR-004, SC-002)
@@ -185,7 +185,7 @@ Shared-file owners (from `plan.md`, "Shared-file ownership"):
 | File | Owning WP |
 |---|---|
 | `.github/workflows/ci.yml`, root `Cargo.toml`, `Cargo.lock`, `rust-toolchain.toml`, `.gitignore`, `gates/plants/rust/**` | WP01 |
-| root `package.json`, `pnpm-lock.yaml`, `eslint.config.mjs`, `eslint.no-io.config.mjs`, `eslint.data-driven.config.mjs`, `gates/plants/typecheck/**`, `gates/plants/eslint/**`, `gates/plants/no-io/**`, `gates/plants/stylelint/**`, `stylelint.config.mjs`, `gates/data-driven.selftest.ts` | WP02 |
+| root `package.json`, `pnpm-lock.yaml`, `eslint.config.mjs`, `eslint.no-io.config.mjs`, `eslint.data-driven.config.mjs`, `gates/plants/typecheck/**`, `gates/plants/eslint/**`, `gates/plants/no-io/**`, `gates/plants/data-driven/**`, `gates/plants/stylelint/**`, `stylelint.config.mjs`, `gates/data-driven.selftest.ts` | WP02 |
 | `scripts/contract/{generate,check,registry}.mjs` and their tests, `contracts/fixtures/**`, `gates/plants/contract/**` | WP03 |
 | `gates/plants/manifest/**`, `scripts/typings.mjs` | WP04 |
 | `gates/plants/unit-tests/**` | WP06 |
@@ -200,6 +200,7 @@ Shared-file owners (from `plan.md`, "Shared-file ownership"):
   ```
 - If WP01 is not in this lane's history yet, the Rust gate is not applicable; say so.
 - `pnpm visual` and `node scripts/gate-proof.mjs local` are run only where this prompt's "Test strategy" says so.
+- **Gate-proof clean-output rule (C5):** `scripts/gate-proof/lib.mjs` fails a leg when any plant's `expectFailPattern` appears in the **clean** run's output, and it matches a plant with one `output.includes` substring (C4). So every plant token must be a single substring that is printed only when that plant's violation fires: never a test name, an identifier that clean tests print, or a file name a parse error would also print.
 - If a script name differs on the build base, use the name the base provides and say so.
 
 **Red-first rule.** For every behaviour, plant and gate case:

@@ -9,7 +9,7 @@
 This plan lays the ground for the host missions (#18 to #21). It has three parts:
 
 1. **Binding.** A new `packages/mission-shell` (Svelte 5) hosts a real mission-ui screen. A permanent browser test proves three things: object and primitive data arrive as properties, registration happens before mount, and every declared intent reaches the shell. A repository-owned generator turns `custom-elements.json` into element typings, so `svelte-check` catches a renamed property or event.
-2. **Workspace and CI.** A Cargo workspace (`crates/kitty-core`, `crates/kitty-stub`, placeholder `apps/desktop/src-tauri` and `apps/dashboard`) joins the repository, with one new gate (`rust`). The existing gates (`typecheck`, `eslint`, `no-io`, `unit-tests`, `manifest`, `contract`, `hygiene`) are extended to Svelte, Rust pins, all workflow files and the shell, and every new rule gets a planted-defect proof.
+2. **Workspace and CI.** A Cargo workspace (`crates/kitty-core`, `crates/kitty-stub`, placeholder `apps/desktop/src-tauri` and `apps/dashboard`) joins the repository, with one new gate (`rust`). The existing gates (`typecheck`, `eslint`, `stylelint`, `no-io`, `data-driven`, `unit-tests`, `manifest`, `contract`, `hygiene`) are extended to Svelte, Rust pins, all workflow files and the shell, and every new rule gets a planted-defect proof.
 3. **Data.** A transport-free client port lives in `mission-shell`, with an in-memory fixture adapter. A Rust stub serves the same data over HTTP and SSE, applying the same loopback, Host, Origin and forwarding-header rules as the upstream service. Both read one generated, contract-checked JSON set (all vendored examples, the valid fixtures and the routes) plus a hand-authored scripted change sequence (ruling `01M4V6BWK8JXK4B8TV09MP50AB`). A scheduled workflow, with no secrets and not a gate, reports upstream contract drift.
 
 ## Technical Context
@@ -21,7 +21,7 @@ This plan lays the ground for the host missions (#18 to #21). It has three parts
 - Node 22.22.2 and pnpm 11.18.0 are unchanged.
 
 **Primary Dependencies**:
-- npm: `svelte`, `@sveltejs/vite-plugin-svelte` (the line whose peer range the pinned vite 7.3.6 satisfies), `svelte-check`, `eslint-plugin-svelte`, `svelte-eslint-parser`. There is no typings-generator dependency: `scripts/typings.mjs` is our own (R-05).
+- npm: `svelte`, `@sveltejs/vite-plugin-svelte` (the line whose peer range the pinned vite 7.3.6 satisfies), `svelte-check`, `eslint-plugin-svelte`, `svelte-eslint-parser`, `postcss-html` (Stylelint custom syntax for `.svelte`, B2). There is no typings-generator dependency: `scripts/typings.mjs` is our own (R-05).
 - Cargo: `axum`, `tokio`, `serde`, `serde_json` (with `preserve_order`) for the stub and core; `tower` and `http-body-util` for tests only.
 - Existing and reused: Vitest 4.1.11 with `@vitest/browser-playwright`, Playwright 1.62.1, openapi-typescript, `yaml` and Ajv (in the contract scripts).
 
@@ -227,13 +227,14 @@ stylelint.config.mjs               # EXTENDED: postcss-html custom syntax for **
 - **Relevant requirements**: FR-005, FR-006, FR-007, C-001.
 - **Affected surfaces**:
   - `packages/mission-shell/{package.json, tsconfig.json, svelte.config.js, vitest.config.ts, src/index.ts}`;
-  - `eslint.config.mjs`, `eslint.no-io.config.mjs`;
+  - `eslint.config.mjs`, `eslint.no-io.config.mjs`, `eslint.data-driven.config.mjs` (B3), `stylelint.config.mjs` and the root `lint:styles` glob (B2);
+  - `gates/no-io.selftest.ts`, `gates/data-driven.selftest.ts` and their fixtures;
   - `scripts/terminology.mjs`;
-  - `gates/plants/{typecheck,eslint,no-io}/`.
+  - `gates/plants/{typecheck,eslint,stylelint,no-io,data-driven}/`.
 - **Sequencing/depends-on**: none.
 - **Risks**:
   - The no-io rules must apply inside `.svelte` `<script>` blocks. The plant's `expectFailPattern` matches the no-io rule message, not the file name, so a parse error cannot satisfy it (F-19).
-  - The data-driven scope (`packages/*/src`) also catches the shell, so the harness must not hard-code lane or phase words.
+  - The data-driven gate is extended to `.svelte` (B3) and proven by a plant (C1), so the shell, including `BindingHarness.svelte`, must not hard-code lane or phase words.
 
 ### IC-04 — Element typings from `custom-elements.json`
 
@@ -329,7 +330,7 @@ Each shared file has exactly one owning IC. Other ICs request their changes thro
 |---|---|---|
 | root `package.json` (scripts, devDependencies, `test:scripts` list) | IC-03 | IC-01, IC-04, IC-05, IC-06 (root `test` script), IC-07 (`contract:drift`) |
 | `pnpm-lock.yaml` | IC-03 | IC-04 (none expected after F-30) |
-| `.github/workflows/ci.yml` (all jobs, proof-leg matrix and steps, timeouts, `all.needs`) | IC-02 | IC-01 (contract proof-leg timeout), IC-03, IC-04 (typecheck and manifest proof legs gain plants), IC-06 (unit-tests timeout), IC-07 (hygiene proof leg gains plants) |
+| `.github/workflows/ci.yml` (all jobs, proof-leg matrix and steps, timeouts, `all.needs`) | IC-02 | IC-01 (contract proof-leg timeout), IC-03 (typecheck, eslint, stylelint, no-io and data-driven proof legs gain plants), IC-04 (typecheck and manifest proof legs gain plants), IC-06 (unit-tests timeout), IC-07 (hygiene proof leg gains plants) |
 | root `Cargo.toml` (`[workspace]` members and `[workspace.dependencies]` exact pins), `Cargo.lock` | IC-02 | IC-08 (axum, tokio, serde, serde_json, tower, http-body-util pins) |
 | `eslint.config.mjs`, `eslint.no-io.config.mjs`, `eslint.data-driven.config.mjs`, `stylelint.config.mjs`, `gates/data-driven.selftest.ts`, `gates/plants/stylelint/**` | IC-03 | none (the exact-path ignore for the generated `elements.d.ts` is pre-added by IC-03, F-45) |
 | `scripts/check-hygiene.mjs`, `scripts/hygiene/**` (including `cargo-pins.mjs`) | IC-07 | — |
@@ -341,7 +342,7 @@ Each shared file has exactly one owning IC. Other ICs request their changes thro
 | `gates/plants/contract/plant.json` | IC-01 | — |
 | `gates/plants/hygiene/plant.json` | IC-07 | — |
 | `packages/mission-shell/src/index.ts`, `packages/mission-shell/tsconfig.json`, `packages/mission-shell/vitest.config.ts` | IC-03 | IC-05 (`index.ts`: export the port and the fixture client, A9; tsconfig/vitest JSON-import settings if needed) |
-| `.gitignore` | IC-02 | IC-03 |
+| `.gitignore` | IC-02 | none (WP01 adds `target/`, `apps/*/src-tauri/gen` and the shell's build output up front; C16) |
 | `README.md`, `CHANGELOG.md` | IC-09 | all |
 
 ## Gates
@@ -363,15 +364,15 @@ It is preceded by two separate steps, in both the gate job and the proof leg whe
 | `eslint` | Svelte parser and config | Svelte lint violation |
 | `stylelint` | `lint:styles` also globs `packages/*/src/**/*.svelte` with the `postcss-html` custom syntax, so the token-only rules reach `.svelte` style blocks (B2) | a raw colour literal in a `.svelte` `<style>` block |
 | `no-io` | scope includes `packages/mission-shell/src/**/*.{ts,svelte}` | `fetch` in a `.svelte` script block (pattern = the rule message) |
-| `data-driven` | the config's rule blocks also cover `**/*.svelte` with the Svelte parser; self-test cases (B3) | none (self-test cases instead) |
+| `data-driven` | the config's rule blocks also cover `**/*.svelte` with the Svelte parser; self-test cases (B3) | a `.svelte` file under `packages/mission-shell/src` hard-coding a lane word (C1) |
 | `unit-tests` | the root `test` script changes from mission-ui only to every workspace package's `test`, run one package at a time (`pnpm -r --workspace-concurrency=1 test`, R3-08) (so it includes the `mission-shell` binding, coverage and fixture-client tests); `ciCommand` stays `pnpm test` | registration order (mount before import); intent-path break; a `CLIENT_OPERATIONS` entry deleted with its method |
 | `manifest` | typings staleness check | stale typings |
 | `contract` | examples/fixtures/routes staleness, the examples-vs-YAML oracle, change-sequence validation | stale JSON; invalid change item |
 | `hygiene` | `cargo-pins`; workflow pin, permissions and credential checks on every workflow | a caret range in a Cargo.toml; an unpinned action in a non-ci workflow |
 
-That is 17 new plants (rust 3, typecheck 3, eslint 1, stylelint 1, no-io 1, unit-tests 3, manifest 1, contract 2, hygiene 2). SC-002's six named proofs are a subset: Rust format, Rust lint, Rust tests, the Svelte check (the typecheck "Svelte type error" plant), the declaration typings (the typecheck "non-existent element property" plant, B21; the manifest stale-typings plant is secondary) and no-io over the shell.
+That is 18 new plants (rust 3, typecheck 3, eslint 1, stylelint 1, no-io 1, data-driven 1, unit-tests 3, manifest 1, contract 2, hygiene 2). SC-002's six named proofs are a subset: Rust format, Rust lint, Rust tests, the Svelte check (the typecheck "Svelte type error" plant), the declaration typings (the typecheck "non-existent element property" plant, B21; the manifest stale-typings plant is secondary) and no-io over the shell.
 
-**Proof-leg timeouts (F-42)**: NFR-002's 8-minute cap applies to gate jobs; proof legs are governed by this formula instead (spec NFR-002). Every plant is a full gate run, so each WP records local `gate-proof local` timings for the legs it touches (a proxy), and the matrix timeout is (1 + the total number of plants in that leg, existing and new) × the measured gate time + 2 minutes (A24). The orchestrator re-measures on the mission PR's first CI run and sets the final values there (spec NFR-002 verification, A3). The starting values are contract 6→10 and unit-tests 11→16, with `rust` computed from its first measured run. The measurements are recorded in the WP.
+**Proof-leg timeouts (F-42)**: NFR-002's 8-minute cap applies to gate jobs; proof legs are governed by this formula instead (spec NFR-002). Every plant is a full gate run, so each WP records local `gate-proof local` timings for the legs it touches (a proxy), and the matrix timeout is (1 + the total number of plants in that leg, existing and new) × the measured gate time + 2 minutes (A24). The orchestrator re-measures on the mission PR's first CI run and sets the final values there (spec NFR-002 verification, A3). The starting values are contract 6→10, unit-tests 11→16, stylelint 6→9 and data-driven 6→8 (C3), with `rust` computed from its first measured run. The measurements are recorded in the WP.
 
 ## PR shape
 
@@ -384,16 +385,16 @@ One PR from `feat/phase0-bootstrap-17` into `main`. Each WP is reviewed by a sep
 | FR-001, FR-002, FR-003 | IC-06 |
 | FR-004 | IC-04 |
 | FR-005 | IC-02, IC-03 |
-| FR-006 | IC-02, IC-03, IC-04, IC-07 |
+| FR-006 | IC-01, IC-02, IC-03, IC-04, IC-06, IC-07 |
 | FR-007 | IC-03 |
 | FR-008 | IC-05 |
 | FR-009 | IC-05, IC-06 (the coverage plant) |
 | FR-010 | IC-01, IC-08 |
 | FR-011 | IC-01, IC-05, IC-08 |
 | FR-012 | IC-07 |
-| NFR-001 | IC-02, IC-07 |
-| NFR-002 | IC-02, IC-07 |
-| NFR-003 | IC-02, IC-03 |
+| NFR-001 | IC-02, IC-07, IC-08 |
+| NFR-002 | IC-02, IC-07, IC-08, IC-09 |
+| NFR-003 | IC-02, IC-03, IC-07, IC-08 |
 | NFR-004 | IC-01, IC-05, IC-08 |
 | NFR-005 | all |
 | C-001 | IC-03, IC-05 |

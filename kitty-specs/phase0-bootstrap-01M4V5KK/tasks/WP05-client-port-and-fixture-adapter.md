@@ -134,13 +134,13 @@ A missing method or an extra key is a compile error. Add a type test (`@ts-expec
    - `cursor = scope?.missionId ? (item.scopedId ?? null) : null` (`changes.json` is the envelope `{ missionId, items: [{ event, scopedId?, data, delayMs }] }`, data-model ChangeItem; A4);
    - for `log-truncated`, `cursor` is always null.
    The function returns an unsubscribe that cancels pending timers.
-4. `connection.state` starts at `initialState ?? 'connected'`. A test-only `setConnectionState(state)` is exported from the fixture module, and `onChange` notifies listeners.
+4. `connection.state` starts at `initialState ?? 'connected'`. A test-only `setConnectionState(client, state)` is exported from the fixture module; it targets exactly the client instance passed (each `createFixtureClient()` call has its own state), and that client's `onChange` notifies its listeners (C18). A test with two clients asserts that setting one leaves the other unchanged.
 5. No I/O: imported JSON plus the injected scheduler only. Run `pnpm lint:no-io`.
 
 ### T028 Port coverage test (FR-009)
 
 In `test/port-coverage.test.ts`:
-- `Object.values(CLIENT_OPERATIONS)` as a sorted array equals the operationIds of `routes.json` (equality, 10 entries). On a mismatch, the message names each missing or extra operationId.
+- `Object.values(CLIENT_OPERATIONS)` as a sorted array equals the operationIds of `routes.json` (equality, 10 entries). On a mismatch, the assertion message is exactly `coverage: missing operation <id>` (or `coverage: extra operation <id>`) per operationId, so the WP06 coverage plant can match a failure-only token (C5). Test names must not contain that phrase.
 - The keys of the object `createFixtureClient()` returns (minus `connection`) equal `Object.keys(CLIENT_OPERATIONS)` (equality).
 - A negative control builds a copy of the routes with one extra synthetic operation and asserts the comparison helper reports exactly that name.
 - WP06 adds the gate plant that deletes an entry together with its method. Leave the comparison in a reusable helper.
@@ -200,7 +200,7 @@ Shared-file owners (from `plan.md`, "Shared-file ownership"):
 | File | Owning WP |
 |---|---|
 | `.github/workflows/ci.yml`, root `Cargo.toml`, `Cargo.lock`, `rust-toolchain.toml`, `.gitignore`, `gates/plants/rust/**` | WP01 |
-| root `package.json`, `pnpm-lock.yaml`, `eslint.config.mjs`, `eslint.no-io.config.mjs`, `eslint.data-driven.config.mjs`, `gates/plants/typecheck/**`, `gates/plants/eslint/**`, `gates/plants/no-io/**`, `gates/plants/stylelint/**`, `stylelint.config.mjs`, `gates/data-driven.selftest.ts` | WP02 |
+| root `package.json`, `pnpm-lock.yaml`, `eslint.config.mjs`, `eslint.no-io.config.mjs`, `eslint.data-driven.config.mjs`, `gates/plants/typecheck/**`, `gates/plants/eslint/**`, `gates/plants/no-io/**`, `gates/plants/data-driven/**`, `gates/plants/stylelint/**`, `stylelint.config.mjs`, `gates/data-driven.selftest.ts` | WP02 |
 | `scripts/contract/{generate,check,registry}.mjs` and their tests, `contracts/fixtures/**`, `gates/plants/contract/**` | WP03 |
 | `gates/plants/manifest/**`, `scripts/typings.mjs` | WP04 |
 | `gates/plants/unit-tests/**` | WP06 |
@@ -215,6 +215,7 @@ Shared-file owners (from `plan.md`, "Shared-file ownership"):
   ```
 - If WP01 is not in this lane's history yet, the Rust gate is not applicable; say so.
 - `pnpm visual` and `node scripts/gate-proof.mjs local` are run only where this prompt's "Test strategy" says so.
+- **Gate-proof clean-output rule (C5):** `scripts/gate-proof/lib.mjs` fails a leg when any plant's `expectFailPattern` appears in the **clean** run's output, and it matches a plant with one `output.includes` substring (C4). So every plant token must be a single substring that is printed only when that plant's violation fires: never a test name, an identifier that clean tests print, or a file name a parse error would also print.
 - If a script name differs on the build base, use the name the base provides and say so.
 
 **Red-first rule.** For every behaviour, plant and gate case:
