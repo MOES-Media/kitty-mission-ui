@@ -42,10 +42,13 @@
         "eslint.config.mjs",
         "eslint.data-driven.config.mjs",
         "eslint.no-io.config.mjs",
+        "gates/data-driven.selftest.ts",
+        "gates/fixtures/data-driven/**",
         "gates/fixtures/no-io/**",
         "gates/no-io.selftest.ts",
         "gates/plants/eslint/**",
         "gates/plants/no-io/**",
+        "gates/plants/stylelint/**",
         "gates/plants/typecheck/**",
         "package.json",
         "packages/mission-shell/package.json",
@@ -55,7 +58,8 @@
         "packages/mission-shell/vitest.config.ts",
         "pnpm-lock.yaml",
         "scripts/terminology.mjs",
-        "scripts/terminology.test.mjs"
+        "scripts/terminology.test.mjs",
+        "stylelint.config.mjs"
       ],
       "predicted_surfaces": [
         "api",
@@ -224,8 +228,8 @@
       "parallel_group": 3
     }
   ],
-  "computed_at": "2026-10-13T19:50:35.490201+00:00",
+  "computed_at": "2026-10-13T20:03:57.224705+00:00",
   "computed_from": "dependency_graph+ownership",
   "planning_artifact_wps": [],
-  "planning_commit_sha": "19009120dccf48d414cb87817dcc809d95a9323c"
+  "planning_commit_sha": "342c7d2e3977e43dba04fa857eb6b86ea4e57265"
 }

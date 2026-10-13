@@ -106,6 +106,7 @@ Implementation command (orchestrator-run): `spec-kitty agent action implement WP
 2. Type tests: a `// @ts-expect-error` block (checked by `svelte-check` or `tsc`) proving that:
    - `getArtifactContent` without `query.path` is an error;
    - `'degraded:service-missing'` (no space) is not a `ConnectionState`;
+   - **exact union (B8):** `export const CONNECTION_STATES = ['connected', 'reconnecting', 'degraded: service-missing', 'degraded: contract-mismatch'] as const` in the port, and a two-way type-equality test `Expect<Equal<ConnectionState, (typeof CONNECTION_STATES)[number]>>` (a small `Equal` helper in the test file), so a widened union with a fifth value fails. Negative twin: an `@ts-expect-error` line asserting `Equal<ConnectionState | 'extra', (typeof CONNECTION_STATES)[number]>` is not `true`. Also assert `CONNECTION_STATES.length === 4` at runtime;
    - `Refusal<'getArtifactContent'>` is not `never` (`getArtifactContent` declares problem+json refusals; check which reads declare any before choosing the subject);
    - a `Result<'getProject'>` value `{ ok: false, unavailable: 'service-missing' }` compiles, and `{ ok: false, unavailable: 'offline' }` is an error (A1);
    - a value `{ ok: false, status: 404, refusal: … }` (status at the top level) is an error, so the shape cannot drift from the contract (A1).
@@ -199,7 +200,7 @@ Shared-file owners (from `plan.md`, "Shared-file ownership"):
 | File | Owning WP |
 |---|---|
 | `.github/workflows/ci.yml`, root `Cargo.toml`, `Cargo.lock`, `rust-toolchain.toml`, `.gitignore`, `gates/plants/rust/**` | WP01 |
-| root `package.json`, `pnpm-lock.yaml`, `eslint.config.mjs`, `eslint.no-io.config.mjs`, `eslint.data-driven.config.mjs`, `gates/plants/typecheck/**`, `gates/plants/eslint/**`, `gates/plants/no-io/**` | WP02 |
+| root `package.json`, `pnpm-lock.yaml`, `eslint.config.mjs`, `eslint.no-io.config.mjs`, `eslint.data-driven.config.mjs`, `gates/plants/typecheck/**`, `gates/plants/eslint/**`, `gates/plants/no-io/**`, `gates/plants/stylelint/**`, `stylelint.config.mjs`, `gates/data-driven.selftest.ts` | WP02 |
 | `scripts/contract/{generate,check,registry}.mjs` and their tests, `contracts/fixtures/**`, `gates/plants/contract/**` | WP03 |
 | `gates/plants/manifest/**`, `scripts/typings.mjs` | WP04 |
 | `gates/plants/unit-tests/**` | WP06 |

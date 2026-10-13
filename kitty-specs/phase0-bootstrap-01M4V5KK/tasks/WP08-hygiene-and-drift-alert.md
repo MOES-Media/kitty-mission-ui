@@ -94,7 +94,7 @@ Implementation command (orchestrator-run): `spec-kitty agent action implement WP
 
 **Steps** (red first in `scripts/hygiene/hygiene.test.mjs`):
 1. In `rules.mjs`, split `checkWorkflow` into two functions:
-   - `checkWorkflowSecurity`: action SHA pins, image digests, **job-level** `permissions` present and least-privilege (`contents: read`) on every job, checkout `persist-credentials: false`, no `continue-on-error`, `upload-artifact` `retention-days: 1`;
+   - `checkWorkflowSecurity`: action SHA pins, image digests, **workflow-level** `permissions` that include `contents: read` (the existing rule, now applied to every workflow, B12), **job-level** `permissions` present and least-privilege (`contents: read`) on every job, checkout `persist-credentials: false`, no `continue-on-error`, `upload-artifact` `retention-days: 1`;
    - `checkGateStructure`: job ids, proof matrix, plants, `all.needs`, timeouts, **and the main-only trigger rule** (only `pull_request` and `push` to `main`). That rule is a ci.yml gate-structure rule, so `contract-drift.yml` (`schedule` plus `workflow_dispatch`) is never judged by it (A10).
    `checkWorkflow` stays as the composition of the two, so `ci.yml` behaviour is unchanged.
 2. In `check-hygiene.mjs`, run `checkWorkflowSecurity` on **every** workflow file. `checkGateStructure` stays `ci.yml`-only. `checkWorkflowTriggers` and `checkGateJobNames` are unchanged.
@@ -103,7 +103,7 @@ Implementation command (orchestrator-run): `spec-kitty agent action implement WP
    - one without `permissions` is reported;
    - one with `persist-credentials` missing is reported;
    - each has a positive control (the corrected file is clean);
-   - `ci.yml` findings are unchanged: snapshot the finding list before and after, with equality.
+   - **mutate-style negatives on a non-ci document (B12):** starting from a clean non-ci workflow, remove the workflow-level `permissions` → reported; change a job's permissions to `contents: write` → reported; each with the clean original as positive control. (A before/after snapshot of `ci.yml` findings is not a test: `ci.yml` is clean, so it would compare `[]` with `[]`; the existing mutate tests in `hygiene.test.mjs` keep protecting `ci.yml` and must still pass unchanged.)
 4. If WP01 sent a change request about the install action on the `rust` job, handle it here and record the outcome.
 
 ### T044 The Cargo exact-pin check (F-09, NFR-003)
@@ -163,7 +163,7 @@ Node tests under `scripts/hygiene` and `scripts/contract` (all offline), plus tw
 
 ## Definition of Done
 
-- **Workflow security:** the checks (pins, permissions, credentials, continue-on-error, retention) run on every workflow file; `ci.yml` findings are unchanged (snapshot equality); tests have positive controls.
+- **Workflow security:** the checks (pins, permissions, credentials, continue-on-error, retention) run on every workflow file; the existing `ci.yml` mutate tests pass unchanged, and the new non-ci mutate-style negatives (including workflow-level permissions) have positive controls (B12).
 - **Cargo pins:** non-exact Cargo requirements are reported (six negative and three positive cases).
 - **Drift:** `drift.mjs` reuses `remote.mjs` `contractFiles()` and the new `common.mjs` per-file compare; exit codes are 0, 1, 2 and 3; its import graph is built-in-only; four offline tests cover the outcomes.
 - **Workflow:** `contract-drift.yml` is scheduled plus dispatch, has read-only permissions, uses no install and no secrets, runs on pinned Node 22.22.2, and fails red on drift or unreachable.
@@ -190,7 +190,7 @@ Shared-file owners (from `plan.md`, "Shared-file ownership"):
 | File | Owning WP |
 |---|---|
 | `.github/workflows/ci.yml`, root `Cargo.toml`, `Cargo.lock`, `rust-toolchain.toml`, `.gitignore`, `gates/plants/rust/**` | WP01 |
-| root `package.json`, `pnpm-lock.yaml`, `eslint.config.mjs`, `eslint.no-io.config.mjs`, `eslint.data-driven.config.mjs`, `gates/plants/typecheck/**`, `gates/plants/eslint/**`, `gates/plants/no-io/**` | WP02 |
+| root `package.json`, `pnpm-lock.yaml`, `eslint.config.mjs`, `eslint.no-io.config.mjs`, `eslint.data-driven.config.mjs`, `gates/plants/typecheck/**`, `gates/plants/eslint/**`, `gates/plants/no-io/**`, `gates/plants/stylelint/**`, `stylelint.config.mjs`, `gates/data-driven.selftest.ts` | WP02 |
 | `scripts/contract/{generate,check,registry}.mjs` and their tests, `contracts/fixtures/**`, `gates/plants/contract/**` | WP03 |
 | `gates/plants/manifest/**`, `scripts/typings.mjs` | WP04 |
 | `gates/plants/unit-tests/**` | WP06 |

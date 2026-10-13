@@ -109,8 +109,8 @@ Implementation command (orchestrator-run): `spec-kitty agent action implement WP
 ### T051 Full gate run, coverage and the SC-005 probe
 
 1. Run every gate on the lane tip, plus the canonical Rust gate with its install steps.
-2. Run `node scripts/gate-proof.mjs coverage` and the full `node scripts/gate-proof.mjs local`. Record every leg, and count the new plants: **16** (rust 3, typecheck 3, eslint 1, no-io 1, unit-tests 3, manifest 1, contract 2, hygiene 2). The count is asserted against the plant files, with equality.
-3. Run `git diff --exit-code <target-branch base before this mission> -- packages/mission-ui`, and record the empty diff (SC-005, C-002).
+2. Run `node scripts/gate-proof.mjs coverage` and the full `node scripts/gate-proof.mjs local`. Record every leg, and count the new plants: **17** (rust 3, typecheck 3, eslint 1, stylelint 1, no-io 1, unit-tests 3, manifest 1, contract 2, hygiene 2). The count is asserted against the plant files, with equality.
+3. Run `git diff --exit-code "$(git merge-base HEAD main)" -- packages/mission-ui` (the merge-base with `main`, B22), and record the empty diff (SC-005, C-002).
 4. Run `pnpm hygiene` and record that `cargo-pins` passes over WP07's manifests: WP07 and WP08 ran in parallel lanes, so this is the first combined run (A18).
 5. **NFR-001 step audit (A12):** for every job in `ci.yml` `all.needs` (each gate job, `proof-leg`, `proof`), list every step with its network use: none, dependency install from a lockfile (pnpm install, `rustup toolchain install`, `cargo fetch --locked`), or other. Any "other" step, or a gate step (`id: gate`) with network use, is a finding. Record the table in the hand-off.
 6. **C-005 evidence (A28):** record that `scripts/preflight.mjs` and `.github/actions/install` are unchanged by the mission (`git diff --exit-code <base> -- scripts/preflight.mjs .github/actions/install`), so no fork-PR workaround was added.
@@ -119,7 +119,7 @@ Implementation command (orchestrator-run): `spec-kitty agent action implement WP
 
 Write into the hand-off, not into `kitty-specs/`:
 - a supply-chain table across WP02 and WP07 (S-1 to S-5 per dependency, transitive publish dates, the `cargo audit` result);
-- the exceptions recorded, each with **scope, rationale, sunset criteria and an explicit operator-approval request**, as the charter's "Amendments and exceptions" requires (A15). The generated-typings lint ignore: scope = the exact path `packages/mission-shell/src/generated/**`; rationale = generated output, guarded by the staleness check; sunset = when the generator emits lint-clean output or the lint rule gains a generated-file allowance; approval = requested in the PR description;
+- the exceptions recorded, each with **scope, rationale, sunset criteria and an explicit operator-approval request**, as the charter's "Amendments and exceptions" requires (A15). The generated-typings lint ignore: scope = the exact path `packages/mission-shell/src/generated/elements.d.ts` (one file; the fallback `intents.ts`, if generated, is lint-clean and has no exception, B5); rationale = generated output, guarded by the staleness check; sunset = when the generator emits lint-clean output or the lint rule gains a generated-file allowance; approval = requested in the PR description;
 - every out-of-map edit made in the mission, collected from the hand-offs;
 - the decisions taken in WP04 T021 (the intent-binding path);
 - **orchestrator items at the PR stage** (A3, A11): (a) verify every gate job ≤ 8 minutes and set the final proof-leg timeouts from the PR's first CI run (NFR-002); (b) confirm `Gate: visual` is green on that run, because no WP runs `pnpm visual` (NFR-005, SC-005);
@@ -138,7 +138,7 @@ No new tests; this WP runs and measures. `gate-proof local` (full) runs here.
 
 - **Timeouts:** every affected proof leg is measured, and its timeout set by the formula. Every gate job is ≤ 8 minutes, or reported BLOCKED.
 - **Docs:** the README "Host workspace" section, the mission-shell README and the CHANGELOG entry are written; hygiene and terminology are green.
-- **Gates:** every gate and full gate-proof are green; 16 new plants are counted with equality; coverage passes.
+- **Gates:** every gate and full gate-proof are green; 17 new plants are counted with equality; coverage passes.
 - **SC-005:** the `packages/mission-ui` diff is empty, recorded.
 - **Evidence:** the hand-off has the evidence tables (supply chain, exceptions with sunset criteria and approval request, out-of-map edits, decisions), the NFR-001 step audit, the C-005 no-workaround evidence, the SC-004 deferral checklist, the orchestrator PR-stage items (CI timings, visual) and the requirement-to-proof table. The F-29 follow-up (#28) is linked.
 
@@ -149,7 +149,7 @@ No new tests; this WP runs and measures. `gate-proof local` (full) runs here.
 
 ## Reviewer guidance
 
-- **Requirement-to-proof table:** check each row points to a real test or plant.
+- **Requirement-to-proof table:** check each row points to a real test or plant. SC-002's six named proofs map to: rust format / clippy / failing-test plants (WP01), the typecheck "Svelte type error" plant (WP02), the typecheck "non-existent element property" plant as the declaration-typings proof (WP04, B21) and the no-io `.svelte` plant (WP02).
 - **Timeouts:** re-derive two of them from the recorded measurements.
 - **Out-of-map edit:** the `ci.yml` change must be timeouts only.
 
@@ -162,7 +162,7 @@ Shared-file owners (from `plan.md`, "Shared-file ownership"):
 | File | Owning WP |
 |---|---|
 | `.github/workflows/ci.yml`, root `Cargo.toml`, `Cargo.lock`, `rust-toolchain.toml`, `.gitignore`, `gates/plants/rust/**` | WP01 |
-| root `package.json`, `pnpm-lock.yaml`, `eslint.config.mjs`, `eslint.no-io.config.mjs`, `eslint.data-driven.config.mjs`, `gates/plants/typecheck/**`, `gates/plants/eslint/**`, `gates/plants/no-io/**` | WP02 |
+| root `package.json`, `pnpm-lock.yaml`, `eslint.config.mjs`, `eslint.no-io.config.mjs`, `eslint.data-driven.config.mjs`, `gates/plants/typecheck/**`, `gates/plants/eslint/**`, `gates/plants/no-io/**`, `gates/plants/stylelint/**`, `stylelint.config.mjs`, `gates/data-driven.selftest.ts` | WP02 |
 | `scripts/contract/{generate,check,registry}.mjs` and their tests, `contracts/fixtures/**`, `gates/plants/contract/**` | WP03 |
 | `gates/plants/manifest/**`, `scripts/typings.mjs` | WP04 |
 | `gates/plants/unit-tests/**` | WP06 |

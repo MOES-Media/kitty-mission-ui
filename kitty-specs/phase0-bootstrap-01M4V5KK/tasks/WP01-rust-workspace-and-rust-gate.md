@@ -171,7 +171,7 @@ Implementation command (orchestrator-run): `spec-kitty agent action implement WP
 2. Add `rust` to `all.needs`.
 3. Append `rust` to the `proof-leg` `matrix.gate` list (the list `gate-proof coverage` compares with the job ids; A25), add the matrix `include` entry `{ gate: rust, timeout: <computed>, image: '' }`, and in the proof leg add the same two install steps guarded by `if: matrix.gate == 'rust'`, before `Run the gate proof leg`. Use a starting timeout of 20. Measure the leg locally with `node scripts/gate-proof.mjs local --only rust` (the proxy; this WP never pushes) and set (1 + 3 plants) × the measured gate minutes + 2, rounded up, if that exceeds 20 (F-42, A24). Record the local measurement; the orchestrator re-measures on the PR's first CI run (A3).
 4. Set the starting matrix timeouts `contract: 10` and `unit-tests: 16` (F-42).
-5. The gate step itself must perform no network access: `--frozen` makes cargo fail instead of downloading. Prove it locally: after `cargo fetch --locked`, run the canonical command with `CARGO_NET_OFFLINE=true` and record that it passes. Then run it in a fresh `CARGO_HOME` (`CARGO_HOME=$(mktemp -d) cargo test --workspace --frozen`) without the fetch step, and record that it fails offline. (Once WP07 adds crates this fails; at this point, with no external crates, record whatever cargo prints.)
+5. The gate step itself must perform no network access: `--frozen` makes cargo fail instead of downloading. Prove it locally: after `cargo fetch --locked`, run the canonical command with `CARGO_NET_OFFLINE=true` and record that it passes. Then run it in a fresh `CARGO_HOME` (`CARGO_HOME=$(mktemp -d) cargo test --workspace --frozen`) without the fetch step, and record that it fails offline. (With no external crates yet this cannot fail; record whatever cargo prints. The falsifiable negative proof, with its positive control, is WP07's exit check 1, B7.)
 
 **Files**: `.github/workflows/ci.yml`. **Validation**: `pnpm hygiene` (the `checkWorkflow` rules) and `node scripts/gate-proof.mjs coverage` both pass.
 
@@ -233,7 +233,7 @@ Shared-file owners (from `plan.md`, "Shared-file ownership"):
 | File | Owning WP |
 |---|---|
 | `.github/workflows/ci.yml`, root `Cargo.toml`, `Cargo.lock`, `rust-toolchain.toml`, `.gitignore`, `gates/plants/rust/**` | WP01 |
-| root `package.json`, `pnpm-lock.yaml`, `eslint.config.mjs`, `eslint.no-io.config.mjs`, `eslint.data-driven.config.mjs`, `gates/plants/typecheck/**`, `gates/plants/eslint/**`, `gates/plants/no-io/**` | WP02 |
+| root `package.json`, `pnpm-lock.yaml`, `eslint.config.mjs`, `eslint.no-io.config.mjs`, `eslint.data-driven.config.mjs`, `gates/plants/typecheck/**`, `gates/plants/eslint/**`, `gates/plants/no-io/**`, `gates/plants/stylelint/**`, `stylelint.config.mjs`, `gates/data-driven.selftest.ts` | WP02 |
 | `scripts/contract/{generate,check,registry}.mjs` and their tests, `contracts/fixtures/**`, `gates/plants/contract/**` | WP03 |
 | `gates/plants/manifest/**`, `scripts/typings.mjs` | WP04 |
 | `gates/plants/unit-tests/**` | WP06 |

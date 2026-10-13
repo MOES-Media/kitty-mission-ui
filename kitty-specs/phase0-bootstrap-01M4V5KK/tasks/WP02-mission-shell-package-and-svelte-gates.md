@@ -47,6 +47,10 @@ owned_files:
 - gates/plants/typecheck/**
 - gates/plants/eslint/**
 - gates/plants/no-io/**
+- gates/plants/stylelint/**
+- stylelint.config.mjs
+- gates/data-driven.selftest.ts
+- gates/fixtures/data-driven/**
 - scripts/terminology.mjs
 - scripts/terminology.test.mjs
 role: implementer
@@ -124,6 +128,7 @@ Implementation command (orchestrator-run): `spec-kitty agent action implement WP
    - `svelte-check`;
    - `eslint-plugin-svelte`;
    - `svelte-eslint-parser`, listed explicitly because the config imports it (F-36).
+   - `postcss-html`, the Stylelint custom syntax for `.svelte` style blocks (B2).
    Do **not** add `@wc-toolkit/svelte-types` (F-30).
 2. Add `"contract:drift": "node scripts/contract/drift.mjs"` to the root scripts.
 3. `pnpm install`, and commit `pnpm-lock.yaml`.
@@ -134,12 +139,13 @@ Implementation command (orchestrator-run): `spec-kitty agent action implement WP
    - **S-4:** the lockfile diff summary, with the count of new transitive packages and their publish dates (F-29 deferral evidence).
    - **S-5:** the `pnpm audit --prod=false` result.
 
-### T009 ESLint parses Svelte (R-04)
+### T009 ESLint and Stylelint parse Svelte (R-04, B2)
 
 **Steps**:
 1. In `eslint.config.mjs`, add the `eslint-plugin-svelte` flat config for `packages/*/src/**/*.svelte`, using `svelte-eslint-parser` with the TypeScript parser for `<script lang="ts">`.
 2. Add exact-path ignores for `packages/mission-shell/src/generated/elements.d.ts` in `eslint.config.mjs`, `eslint.no-io.config.mjs` and `eslint.data-driven.config.mjs`. Add a comment naming the exception (the next free E-number in the repository's exception list; check `scripts/stylelint-exceptions.test.mjs` and the earlier missions' E-05 for how exceptions are recorded). Record the exception in the hand-off for the PR description with **scope** (the exact path), **rationale** (generated output, guarded by the staleness check), **sunset criteria** (removed when the generator emits lint-clean output or the lint configs gain a generated-file allowance) and an **operator-approval request**, as the charter's "Amendments and exceptions" requires (A15).
-3. Plant (eslint gate): add a plant to `gates/plants/eslint/plant.json`. A `source` overlay creates `packages/mission-shell/src/PlantEslint.svelte` with a script block containing `let plantEslintSvelte = 1; plantEslintSvelte = plantEslintSvelte;` (no-self-assign). `expectFailPattern`: `plantEslintSvelte`.
+3. **Stylelint over `.svelte` (B2, charter "token-only Stylelint rules")**: extend the root `lint:styles` glob with `packages/*/src/**/*.svelte`, and add an `overrides` entry in `stylelint.config.mjs` for `**/*.svelte` with `customSyntax: 'postcss-html'` (the syntax Stylelint documents for Svelte/HTML style blocks). Pin `postcss-html` exactly, with S-1 to S-5 evidence like the other new packages (T008). The existing token-only rules apply unchanged to `<style>` blocks; `.svelte` files without a `<style>` block must lint clean. Plant (stylelint gate): append to the existing `gates/plants/stylelint/plant.json` array an entry whose `source` overlay creates `packages/mission-shell/src/PlantStylelint.svelte` with `<style>.plant-stylelint-svelte { color: #ff0000; }</style>`; `ciCommand` `pnpm lint:styles` (byte-equal to the existing entries); `expectFailPattern`: `PlantStylelint.svelte` together with the color rule — copy the exact rule id the existing `plant-stylelint-color` entry triggers and use a pattern that only the rule violation prints (not a parse error). The stylelint proof leg already runs 13 plants: record its local leg time with this 14th (F-42).
+4. Plant (eslint gate): add a plant to `gates/plants/eslint/plant.json`. A `source` overlay creates `packages/mission-shell/src/PlantEslint.svelte` with a script block containing `let plantEslintSvelte = 1; plantEslintSvelte = plantEslintSvelte;` (no-self-assign). `expectFailPattern`: `plantEslintSvelte`.
 
 ### T010 No-io over the shell, including `.svelte` (FR-007, C-001, F-19)
 
@@ -150,7 +156,7 @@ Implementation command (orchestrator-run): `spec-kitty agent action implement WP
    - a `.svelte` file with no I/O is clean (positive control);
    - a `.ts` file in the shell using `EventSource` is reported.
 3. Plant (no-io gate): a `source` overlay creating `packages/mission-shell/src/PlantNoIo.svelte` with `<script lang="ts">fetch('x');</script>`. The `expectFailPattern` is the **no-io rule's message text** (copy it from `eslint.no-io.config.mjs`), not the file name. A parse error would also print the file name, which would make the plant vacuous (F-19).
-4. Confirm that `pnpm lint:data-driven` now also reaches the shell (it globs `packages/*/src`). Nothing in the shell may hard-code lane, phase or artifact-kind words.
+4. **Data-driven over `.svelte` (B3)**: `eslint.data-driven.config.mjs` lints only `**/*.ts` today, so `.svelte` files are not scanned. Add `**/*.svelte` to its rule blocks with `svelte-eslint-parser` (TypeScript parser for `<script lang="ts">`), applying the same selectors unchanged. Extend `gates/data-driven.selftest.ts` with fixtures under `gates/fixtures/data-driven/`: a `.svelte` file hard-coding a lane word is reported; a clean `.svelte` file is not (positive control). Nothing in the shell may hard-code lane, phase or artifact-kind words.
 
 ### T011 `svelte-check` in the typecheck gate
 
@@ -171,17 +177,17 @@ Implementation command (orchestrator-run): `spec-kitty agent action implement WP
 
 ### T013 Exit checks
 
-Run every gate in "Gates this work package must pass". Also run `node scripts/gate-proof.mjs local --only typecheck,eslint,no-io` (or one `--only` at a time if the tool takes one) and record that each new plant is red on its pattern and each clean leg is green. Record each leg's local wall-clock and its total plant count (A26); WP09 consolidates them.
+Run every gate in "Gates this work package must pass". Also run `node scripts/gate-proof.mjs local --only typecheck,eslint,no-io,stylelint` (or one `--only` at a time if the tool takes one) and record that each new plant is red on its pattern and each clean leg is green. Record each leg's local wall-clock and its total plant count (A26); WP09 consolidates them.
 
 ## Test strategy
 
-The no-io self-test cases, the terminology tests and the three new plants. `gate-proof local` runs for typecheck, eslint and no-io. `pnpm visual` does not run.
+The no-io and data-driven self-test cases, the terminology tests and the four new plants (typecheck, eslint, no-io, stylelint). `gate-proof local` runs for typecheck, eslint, no-io and stylelint. `pnpm visual` does not run.
 
 ## Definition of Done
 
-- **Package:** `@moes-media/mission-shell` exists with a `typecheck` (svelte-check) and a `test` script, and its tsconfig extends the base.
-- **Dependencies:** five npm dependencies pinned exactly, with supply-chain evidence (S-1 to S-5 and transitive publish dates). No `@wc-toolkit`. `allowBuilds` is unchanged.
-- **Svelte in the gates:** ESLint parses `.svelte`. The no-io gate covers `.svelte` and `.ts` in the shell (self-test cases plus a plant on the rule message). The typecheck and eslint gates have Svelte plants. The terminology scan covers `.svelte` and `.rs`.
+- **Package:** `@moes-media/mission-shell` exists with a `typecheck` (svelte-check) and a `test` script, and its tsconfig extends the base. For this source-only package, "builds" (FR-005, US2 AC1) means `pnpm --filter @moes-media/mission-shell typecheck` (svelte-check) exits 0 with 0 errors (B14).
+- **Dependencies:** six npm dependencies (including `postcss-html`) pinned exactly, with supply-chain evidence (S-1 to S-5 and transitive publish dates). No `@wc-toolkit`. `allowBuilds` is unchanged.
+- **Svelte in the gates:** ESLint parses `.svelte`. Stylelint's token-only rules cover `.svelte` style blocks (stylelint plant, B2). The data-driven gate covers `.svelte` (self-test cases, B3). The no-io gate covers `.svelte` and `.ts` in the shell (self-test cases plus a plant on the rule message). The typecheck and eslint gates have Svelte plants. The terminology scan covers `.svelte` and `.rs`.
 - **Pre-added for later WPs:** the `contract:drift` script and the generated-typings lint ignore, with the exception recorded.
 - **Unchanged:** nothing under `packages/mission-ui` changed. Every gate is green.
 
@@ -208,7 +214,7 @@ Shared-file owners (from `plan.md`, "Shared-file ownership"):
 | File | Owning WP |
 |---|---|
 | `.github/workflows/ci.yml`, root `Cargo.toml`, `Cargo.lock`, `rust-toolchain.toml`, `.gitignore`, `gates/plants/rust/**` | WP01 |
-| root `package.json`, `pnpm-lock.yaml`, `eslint.config.mjs`, `eslint.no-io.config.mjs`, `eslint.data-driven.config.mjs`, `gates/plants/typecheck/**`, `gates/plants/eslint/**`, `gates/plants/no-io/**` | WP02 |
+| root `package.json`, `pnpm-lock.yaml`, `eslint.config.mjs`, `eslint.no-io.config.mjs`, `eslint.data-driven.config.mjs`, `gates/plants/typecheck/**`, `gates/plants/eslint/**`, `gates/plants/no-io/**`, `gates/plants/stylelint/**`, `stylelint.config.mjs`, `gates/data-driven.selftest.ts` | WP02 |
 | `scripts/contract/{generate,check,registry}.mjs` and their tests, `contracts/fixtures/**`, `gates/plants/contract/**` | WP03 |
 | `gates/plants/manifest/**`, `scripts/typings.mjs` | WP04 |
 | `gates/plants/unit-tests/**` | WP06 |

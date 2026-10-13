@@ -51,6 +51,10 @@ work_packages:
       - "gates/plants/typecheck/**"
       - "gates/plants/eslint/**"
       - "gates/plants/no-io/**"
+      - "gates/plants/stylelint/**"
+      - "stylelint.config.mjs"
+      - "gates/data-driven.selftest.ts"
+      - "gates/fixtures/data-driven/**"
       - "scripts/terminology.mjs"
       - "scripts/terminology.test.mjs"
     requirement_refs:
@@ -161,6 +165,7 @@ work_packages:
       - SC-001
       - SC-002
       - FR-006
+      - FR-009
     plan_concern_refs:
       - IC-06
     subtasks:

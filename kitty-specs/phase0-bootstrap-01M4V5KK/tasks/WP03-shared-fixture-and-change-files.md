@@ -104,14 +104,14 @@ Implementation command (orchestrator-run): `spec-kitty agent action implement WP
 1. In `generate.mjs`, parse `openapi.yaml` `paths:` and each path file. For every operation emit `{ operationId, method, path, kind, responseSchema, defaultExample, refusals }`:
    - `kind`: `"stream"` for `streamEvents`, otherwise `"read"`.
    - `responseSchema`: the `$ref` schema name of the `200` `application/json` response, or `null` for `streamEvents` (its 200 is `text/event-stream`).
-   - `refusals`: from every **numbered** response (`400`, `404`, `409`, …) whose content is `application/problem+json` (shared `$ref` responses resolved through `_shared/responses`), a map `{ <schemaName>: [<status>, …] }` with statuses as numbers, sorted numerically. The `default` Problem response is **not** a selectable refusal and never contributes (data-model RouteEntry; A2). This applies to `streamEvents` too: its numbered problem+json responses give `StreamRefusal: [400, 409]` (A5). Document the rule in a code comment.
+   - `refusals`: from every **numbered** response (`400`, `404`, `409`, …) whose content is `application/problem+json` (shared `$ref` responses resolved through `_shared/responses`), a map `{ <schemaName>: [<status>, …] }` with statuses as numbers, sorted numerically. The `default` Problem response is **not** a selectable refusal and never contributes (data-model RouteEntry; A2). Numbered responses whose `$ref` resolves to the shared `Problem` response count like any other (B4): `getMission`, `getWorkPackage` and `streamEvents` each get `Problem: [404]`. This applies to `streamEvents` too: its numbered problem+json responses give `{ Problem: [404], StreamRefusal: [400, 409] }` (A5, B4). Document the rule in a code comment.
    - `defaultExample`: from a reviewed `DEFAULT_EXAMPLES` map in `generate.mjs` (`operationId → "<Schema>.<name>"`), one entry per read. Choose the richest success example, for example `Project.populated`. For `streamEvents` the value is `null`. The generator fails if a map entry names an example that does not exist or whose schema is not the route's `responseSchema`.
 2. Emit `contracts/fixtures/mission-status.routes.json`: a JSON array sorted by `operationId`, 2-space indent, trailing newline.
 3. Tests:
    - the set of operationIds equals the set parsed independently from the YAML in the test (10, equality);
    - every read has a `defaultExample` of its `responseSchema`, unless `DEFAULT_EXAMPLES` marks it `null` explicitly; a synthetic map with one explicit `null` is accepted and yields `defaultExample: null`, and a read missing from the map makes generation fail (positive and negative control; A29);
    - no route's `refusals` contains a `default` entry, and every status in every `refusals` list is a number; a synthetic path with only a `default` Problem response yields `refusals: {}` (A2);
-   - `streamEvents` lists `StreamRefusal` with `[400, 409]` (A5);
+   - the **full** `refusals` map of every route is asserted against a hand-written expected map in the test (B4), including `streamEvents` = `{ Problem: [404], StreamRefusal: [400, 409] }` and `Problem: [404]` on `getMission` and `getWorkPackage`;
    - every `refusals` schema's content type in the YAML is `application/problem+json`;
    - `getArtifactContent` lists `ArtifactRefusal` with its six statuses;
    - a synthetic paths fixture with a refusal under `application/json` is NOT put into `refusals` (positive and negative control).
@@ -199,7 +199,7 @@ Shared-file owners (from `plan.md`, "Shared-file ownership"):
 | File | Owning WP |
 |---|---|
 | `.github/workflows/ci.yml`, root `Cargo.toml`, `Cargo.lock`, `rust-toolchain.toml`, `.gitignore`, `gates/plants/rust/**` | WP01 |
-| root `package.json`, `pnpm-lock.yaml`, `eslint.config.mjs`, `eslint.no-io.config.mjs`, `eslint.data-driven.config.mjs`, `gates/plants/typecheck/**`, `gates/plants/eslint/**`, `gates/plants/no-io/**` | WP02 |
+| root `package.json`, `pnpm-lock.yaml`, `eslint.config.mjs`, `eslint.no-io.config.mjs`, `eslint.data-driven.config.mjs`, `gates/plants/typecheck/**`, `gates/plants/eslint/**`, `gates/plants/no-io/**`, `gates/plants/stylelint/**`, `stylelint.config.mjs`, `gates/data-driven.selftest.ts` | WP02 |
 | `scripts/contract/{generate,check,registry}.mjs` and their tests, `contracts/fixtures/**`, `gates/plants/contract/**` | WP03 |
 | `gates/plants/manifest/**`, `scripts/typings.mjs` | WP04 |
 | `gates/plants/unit-tests/**` | WP06 |

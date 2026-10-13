@@ -94,7 +94,7 @@ Implementation command (orchestrator-run): `spec-kitty agent action implement WP
 **Steps**:
 1. Choose each crate version: the newest at least 14 days old. Record each version's crates.io publish date and the date the crate was first published (S-2).
 2. Make the recorded out-of-map edits to the root `Cargo.toml` (`members` plus `[workspace.dependencies]` with `=x.y.z`) and to `Cargo.lock` (`cargo update -p <crate>` as needed, then `cargo fetch --locked`).
-3. In `crates/kitty-stub/Cargo.toml`, use `x = { workspace = true }` only, plus `publish = false` (inherited, but state it explicitly too), and declare the `[[bin]] name = "kitty-stub"`.
+3. In `crates/kitty-stub/Cargo.toml`, use `x = { workspace = true }` only, plus `publish = false` set directly in this crate's `[package]` (do not also write `publish.workspace = true`; one key only, B16), and declare the `[[bin]] name = "kitty-stub"`.
 4. Evidence for the hand-off:
    - **S-1:** crates.io only; no git, path or `[patch]` sources.
    - **S-3:** every crate in the resolved graph with a `build.rs` or proc-macro, enumerated with `cargo metadata --format-version 1 | <filter on targets kind custom-build/proc-macro>`, not predicted.
@@ -134,7 +134,7 @@ These rules mirror the upstream service (#5529 README). The `403` body is exactl
 ### T040 Events: SSE replay (FR-011, NFR-004, R2-05, R4-02)
 
 `GET /api/v1/events[?missionId=<id>]`:
-1. If `X-Kitty-Stub-Example` names an example, apply the read selection rule against the `streamEvents` route's `refusals` (`StreamRefusal: [400, 409]`): a `StreamRefusal` example whose own `status` is in the list is served with that status and `application/problem+json` instead of the stream; anything else gives `400 schema-mismatch` (R4-02, A5).
+1. If `X-Kitty-Stub-Example` names an example, apply the read selection rule against the `streamEvents` route's `refusals` (`{ Problem: [404], StreamRefusal: [400, 409] }`; no vendored `Problem` example exists, so in practice only `StreamRefusal` examples are selectable): a `StreamRefusal` example whose own `status` is in the list is served with that status and `application/problem+json` instead of the stream; anything else gives `400 schema-mismatch` (R4-02, A5).
 2. Otherwise respond `200 text/event-stream`. For each `changes.json` item, after `delayMs × time-scale` milliseconds, write:
    - `event: <event>`;
    - `id: <scopedId>`, **only** when the request is mission-scoped (has `missionId`) and the item has a `scopedId`;
@@ -151,6 +151,7 @@ Record exactly `{ method, path, headers }` of the most recent `/api/v1/*` reques
 
 - **`tests/routes.rs`** (router in-process with `tower::ServiceExt::oneshot`):
   - every read in `routes.json` (9) returns `200`, with a body JSON-value-equal to `examples.json[defaultExample].value`. `examples.json` is the oracle: the contract gate verified it against the YAML (F-04). The loop count is asserted.
+  - **every selectable example (B6):** loop over every `examples.json` entry whose schema is some read route's `responseSchema` or a key of its `refusals` (plus the `StreamRefusal` entries on `/api/v1/events`), select it with `X-Kitty-Stub-Example` on that route, and assert the served status (200, or the example's own `status` with `application/problem+json`) and a JSON-value-equal body. The test derives the selectable set from `routes.json` and `examples.json`, then asserts its size equals the documented figure (57 at the current pin, stub-http.md) and that the loop ran exactly that many times;
   - a selected refusal example returns its own status and `application/problem+json`;
   - an event example on a read gives `400`;
   - a disallowed status gives `400`;
@@ -179,6 +180,10 @@ Record exactly `{ method, path, headers }` of the most recent `/api/v1/*` reques
 
 Run the canonical Rust gate (with its install steps) and record the full `cargo test` output counts.
 
+**Exit checks (B7, B13):**
+1. NFR-001 negative proof, now that external crates exist: run `CARGO_HOME=$(mktemp -d) cargo test --workspace --frozen` **without** `cargo fetch --locked` and record that it fails because crates are not available offline. Positive control: in the same fresh `CARGO_HOME`, run `cargo fetch --locked`, then the same command, and record that it passes.
+2. Cold Rust gate time: from a clean `target/` (`cargo clean`), time the canonical gate locally and record it; it must be ≤ 8 minutes (NFR-002 proxy; the orchestrator re-measures on the PR's first CI run). Also time `node scripts/gate-proof.mjs local --only rust` and record the rust leg (F-42).
+
 ## Test strategy
 
 The four test files above and the canonical Rust gate. No plants are added here; the Rust plants live in WP01, and Cargo pin enforcement is WP08's hygiene plant.
@@ -191,12 +196,14 @@ The four test files above and the canonical Rust gate. No plants are added here;
 - **Reads:** follow the selection and refusal rules exactly (problem+json with its own status, 400 on mismatch, 501 on null).
 - **Events:** the SSE output equals `changes.json` (scoped and unscoped id rules) and is byte-identical across 10 runs. The heartbeat and time scale are injectable.
 - **Other:** `/__stub/last-request` works. No filesystem path comes from a request. The Rust gate is green, and nothing is left running.
+- **Every selectable example:** the exhaustive loop ran over the derived selectable set, whose size equals the documented 57 (B6).
+- **Offline proof and timing:** the fresh-`CARGO_HOME` offline failure and its post-fetch positive control are recorded, and the cold Rust gate time (≤ 8 minutes) and the rust proof-leg time are recorded (B7, B13).
 
 ## Risks
 
 - **axum path syntax:** `{param}` versus `:param` depends on the version. Generate routes from data.
 - **SSE body:** test with `http-body-util` collecting frames until the heartbeat. Avoid timing-dependent sleeps.
-- **Cold gate time:** adding axum and tokio raises it. Record the new measurement; it must stay ≤ 8 minutes.
+- **Cold gate time:** adding axum and tokio raises it. The measurement is a DoD item (exit check 2).
 
 ## Reviewer guidance
 
@@ -215,7 +222,7 @@ Shared-file owners (from `plan.md`, "Shared-file ownership"):
 | File | Owning WP |
 |---|---|
 | `.github/workflows/ci.yml`, root `Cargo.toml`, `Cargo.lock`, `rust-toolchain.toml`, `.gitignore`, `gates/plants/rust/**` | WP01 |
-| root `package.json`, `pnpm-lock.yaml`, `eslint.config.mjs`, `eslint.no-io.config.mjs`, `eslint.data-driven.config.mjs`, `gates/plants/typecheck/**`, `gates/plants/eslint/**`, `gates/plants/no-io/**` | WP02 |
+| root `package.json`, `pnpm-lock.yaml`, `eslint.config.mjs`, `eslint.no-io.config.mjs`, `eslint.data-driven.config.mjs`, `gates/plants/typecheck/**`, `gates/plants/eslint/**`, `gates/plants/no-io/**`, `gates/plants/stylelint/**`, `stylelint.config.mjs`, `gates/data-driven.selftest.ts` | WP02 |
 | `scripts/contract/{generate,check,registry}.mjs` and their tests, `contracts/fixtures/**`, `gates/plants/contract/**` | WP03 |
 | `gates/plants/manifest/**`, `scripts/typings.mjs` | WP04 |
 | `gates/plants/unit-tests/**` | WP06 |
