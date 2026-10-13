@@ -166,7 +166,6 @@ packages/
         └── fixture-client.test.ts # FR-008, FR-011, NFR-004
 scripts/contract/generate.mjs      # EXTENDED: emit examples/fixtures/routes JSON; DEFAULT_EXAMPLES map
 scripts/contract/check.mjs         # EXTENDED: staleness, examples-vs-YAML oracle, change-sequence validation
-scripts/contract/common.mjs        # EXTENDED: shared compare-with-pin function (builtin-only imports)
 scripts/contract/common.mjs        # EXTENDED: per-file compare against PIN.json (used by drift.mjs; R3-03)
 scripts/contract/drift.mjs         # NEW: upstream HEAD vs PIN.json (scheduled only; builtin-only imports)
 scripts/typings.mjs                # NEW: own generator + --check
@@ -283,7 +282,7 @@ eslint.config.mjs, eslint.no-io.config.mjs, eslint.data-driven.config.mjs  # EXT
 - **Purpose**: tell the operator when the upstream contract moves away from `PIN.json`, without touching merge gates, and check every workflow file's pins and permissions.
 - **Relevant requirements**: FR-012, NFR-001, NFR-002.
 - **Affected surfaces**:
-  - `scripts/contract/common.mjs` (a per-file compare: hash every file of a fetched tree with the existing hash helpers and compare with `PIN.json`'s per-file sha256, reporting added, removed and changed files; R3-03), `drift.mjs` and `drift.test.mjs`. `verify-remote.mjs`'s per-prefix tree-id compare stays as it is: it only reports the two path prefixes, which is not enough for FR-012. Drift reuses `remote.mjs` (`git fetch --depth 1`, built-ins only) and its `CONTRACT_REMOTE_URL` override, which the tests point at local repositories for the no-drift, drift, unreachable and error cases. There is no second network path and no HTTP directory listing (R2-07);
+  - `scripts/contract/common.mjs` (a per-file compare: take `remote.mjs` `fetchRef('HEAD').contractFiles()`, which already returns exactly the files under `UPSTREAM_PATHS` keyed like `PIN.json` `files`, hash each with `common.mjs` `sha256` and compare with `PIN.json`'s per-file sha256, reporting added, removed and changed files; R3-03), `drift.mjs` and `drift.test.mjs`. `verify-remote.mjs`'s per-prefix tree-id compare stays as it is: it only reports the two path prefixes, which is not enough for FR-012. Drift reuses `remote.mjs` (`git fetch --depth 1`, built-ins only) and its `CONTRACT_REMOTE_URL` override, which the tests point at local repositories for the no-drift, drift, unreachable and error cases. There is no second network path and no HTTP directory listing (R2-07);
   - `.github/workflows/contract-drift.yml`;
   - `scripts/check-hygiene.mjs` (action-pin, permissions and checkout-credential checks on every workflow; gate-structure checks stay `ci.yml`-only);
   - `gates/plants/hygiene/` (an unpinned action in a non-ci workflow);

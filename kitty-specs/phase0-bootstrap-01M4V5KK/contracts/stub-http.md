@@ -39,9 +39,14 @@ Which body is served:
 A selection (1 or 2) is accepted only when the entry's schema fits the route (R2-06):
 - equal to the route's `responseSchema`: served with `200`;
 - equal to one of the route's declared refusal schemas (`routes.json` `refusals`): served with the selected example's **own `status` field**, which the contract makes authoritative ("the status follows from the code"; one schema such as `ArtifactRefusal` covers several statuses). If that status is not in the schema's allowed set in `refusals`, the selection is a `400` `schema-mismatch` (R3-02);
-- anything else, including every event example (`StatusTransitionEvent`, `MissionLifecycleEvent`, `LogTruncatedEvent`) and refusals of other operations: `400` with `{"code":"schema-mismatch","schema":"<entry schema>","operationId":"<id>"}`.
+- anything else, including every event example (`StatusTransitionEvent`, `MissionLifecycleEvent`, `LogTruncatedEvent`): `400` with `{"code":"schema-mismatch","schema":"<entry schema>","operationId":"<id>"}`.
 
-So every vendored example that is a **complete response body** of some route (a success or a refusal) is reachable on that route, and the stub never serves a refusal or an event payload as a successful read. Component-level examples (25 of the 77 at the current pin, for example a single `MissionOverview` row) are not a complete response of any route; they stay in `examples.json` for the shell's fixture adapter and are not selectable on the stub (R3-06). When the default is `null`: `501` with `{"code":"no-example","operationId":"<id>"}`. This branch is tested with a synthetic routes file, because the current pin has no null.
+Where two operations share a refusal schema (`ArtifactRefusal` on `listArtifacts` and `getArtifactContent`), a refusal example whose status is allowed on the route is served even if its `code` belongs to the other operation. The body is still schema-valid, and the check is by schema and status, not by code.
+
+So every vendored example that is a **complete response** of some route is reachable on that route. That covers successes, refusals, and the five `StreamRefusal` examples, which `GET /api/v1/events` serves (as `application/problem+json` with their own status, instead of the stream) when `X-Kitty-Stub-Example` names one. The stub never serves a refusal or an event payload as a successful read. Of the 77 examples, 20 are not selectable:
+
+- 13 component-level examples, for example a single `MissionOverview` row. They stay in `examples.json` for the shell's fixture adapter.
+- 7 event examples. These are stream items: the stub emits events from `changes.json`, not as response bodies (R3-06). When the default is `null`: `501` with `{"code":"no-example","operationId":"<id>"}`. This branch is tested with a synthetic routes file, because the current pin has no null.
 
 These two headers and the `code` values (`no-fixture`, `no-example`, `schema-mismatch`) are stub-local, not part of the contract.
 

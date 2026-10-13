@@ -146,4 +146,47 @@ Raw 9, confirmed 9, refuted 0.
 
 ## Fix round 3 and verification
 
-(pending)
+All dispositions were applied in commit 631cca8. The orchestrator verified the result:
+
+- `application/problem+json` is used in client-port, stub-http and data-model;
+- a refusal uses its example's own `status`;
+- the per-file drift compare is present;
+- the SSE output is checked against `changes.json`;
+- `Params<Op>` is the generated `operations[Op]['parameters']`;
+- the root test runs with `--workspace-concurrency=1`;
+- the address lookup is std-only (UDP);
+- the plan's revision line names rounds 1 to 3;
+- the canonical `rust` gate string is byte-identical in plan, research and quickstart;
+- hygiene reports 0 findings.
+
+## Round 4: closing sweep (round-3 changes only)
+
+A fresh `reviewer-renata` instance re-checked only the round-3 changes, time-boxed and limited to medium and above plus at most three lows. R3-01, R3-02, R3-05, R3-07 and R3-08 were confirmed against the contract.
+
+| Id | Lens | Sev | Finding | Verified | Disposition |
+|---|---|---|---|---|---|
+| R4-01 | R1 | medium | `fixtures-files.md` still says `refusals` is "non-200 responses", which contradicts R3-01 and R3-02. | CONFIRMED | accepted: it now names `application/problem+json` responses grouped as schema → allowed statuses. |
+| R4-02 | R2 | medium | The 25 unselectable examples include 5 `StreamRefusal` examples, which are complete stream responses, so the reachability claim is false. | CONFIRMED | accepted: `/api/v1/events` serves a named `StreamRefusal` example (problem+json, its own status) instead of the stream. 20 examples remain unselectable (13 component, 7 event), and stub-http says so. |
+| R4-03 | R2 | low | Shared-schema refusals (`ArtifactRefusal` on two routes) pass the status-only check, so "refusals of other operations get 400" is inaccurate. | CONFIRMED | accepted: the rule is stated as a schema-and-status check, and the shared-schema case is documented (bodies stay schema-valid). |
+| R4-04 | R6 | low | `plan.md` listed `common.mjs` twice in the source tree. | CONFIRMED | accepted: merged into one line. |
+| R4-05 | R4 | low | The drift scope is unnamed, so an implementer could hash the whole upstream repository. | CONFIRMED | accepted: the plan and R-08 name `fetchRef('HEAD').contractFiles()` (scoped to `UPSTREAM_PATHS`, keyed like `PIN.json`) plus `common.mjs` `sha256`. |
+
+Raw 5, confirmed 5, refuted 0. All five are wording and scope corrections inside the round-3 surface; none changes the design. The orchestrator applied them and verified each by grep. The sweep converged: 48 → 15 → 9 → 5 findings, with no high severity in the last round. Per the procedure's timebox, the squad closes here.
+
+## Totals
+
+| Round | Raw | Confirmed | Refuted | High |
+|---|---|---|---|---|
+| 1 (four delegates) | 48 | 47 | 1 | 8 |
+| 2 (fresh sweep) | 15 | 15 | 0 | 1 |
+| 3 (fresh sweep) | 9 | 9 | 0 | 1 |
+| 4 (closing sweep) | 5 | 5 | 0 | 0 |
+| **All** | **77** | **76** | **1** | **10** |
+
+Every confirmed finding is dispositioned: accepted, changed, or deferred_with_rationale. The only deferral is F-29 (transitive freshness gating), with a follow-up issue to file. The decisions recorded during plan are `01M4V6BWK8JXK4B8TV09MP50AB` (stub data source) and `01M4V7AC1A0KJFNQ2JS347XEGS` (stub crate).
+
+## Carried to tasks
+
+- **Test obligations:** each plant in the plan's Gates table (16) is a WP deliverable. The binding test obligations are R2-01 (non-default primitive plus no stray attributes) and F-11 (every declared intent).
+- **WP evidence obligations:** supply-chain evidence (S-1 to S-5; F-29, F-34, F-35), the proof-leg timing measurements (F-42), and the SC-005 `git diff` probe (F-14).
+- **Follow-up issue:** pnpm `minimumReleaseAge` with an `@spec-kitty` exclusion (F-29).
