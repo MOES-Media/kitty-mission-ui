@@ -73,7 +73,7 @@
       "wp": null
     },
     "#22": {
-      "evidence_ref": "<link or commit>",
+      "evidence_ref": "Context-only: #22 is a later Phase 0 mission under epic #16 that consumes this mission's output; out of scope here (spec C-006).",
       "fr": null,
       "nfr": null,
       "repo": null,
@@ -81,7 +81,7 @@
       "scope": null,
       "source_file": "spec.md",
       "title": "<fill at WP-implementation time>",
-      "verdict": "unknown",
+      "verdict": "not-applicable",
       "wp": null
     },
     "#27": {
