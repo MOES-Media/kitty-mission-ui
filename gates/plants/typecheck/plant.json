@@ -1,11 +1,24 @@
-{
-  "gate": "typecheck",
-  "ciCommand": "pnpm typecheck",
-  "expectFailPattern": "plantTypecheck",
-  "overlays": [
-    {
-      "target": "packages/mission-ui/src/plant-typecheck.ts",
-      "source": "plant-typecheck.ts.plant"
-    }
-  ]
-}
+[
+  {
+    "gate": "typecheck",
+    "ciCommand": "pnpm typecheck",
+    "expectFailPattern": "plantTypecheck",
+    "overlays": [
+      {
+        "target": "packages/mission-ui/src/plant-typecheck.ts",
+        "source": "plant-typecheck.ts.plant"
+      }
+    ]
+  },
+  {
+    "gate": "typecheck",
+    "ciCommand": "pnpm typecheck",
+    "expectFailPattern": "plantSvelteType",
+    "overlays": [
+      {
+        "target": "packages/mission-shell/src/PlantTypecheck.svelte",
+        "source": "PlantTypecheck.svelte.plant"
+      }
+    ]
+  }
+]

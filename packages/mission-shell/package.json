@@ -9,7 +9,7 @@
     "@moes-media/mission-ui": "workspace:*"
   },
   "scripts": {
-    "typecheck": "svelte-check --tsconfig ./tsconfig.json --fail-on-warnings",
+    "typecheck": "svelte-check --tsconfig ./tsconfig.json --fail-on-warnings --output human-verbose",
     "test": "vitest run"
   }
 }
