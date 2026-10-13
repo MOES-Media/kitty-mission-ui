@@ -58,6 +58,8 @@ A closed union, exactly the spec's strings:
 
 `'connected' | 'reconnecting' | 'degraded: service-missing' | 'degraded: contract-mismatch'`
 
+The port also exports `CONNECTION_STATES`, the same four strings as a `const` tuple, and a type test proves the union and the tuple are equal both ways (B8, D10).
+
 The fixture adapter starts in `connected`, and tests can force any state. Real transition rules belong to `kitty-core` (#19).
 
 ## Change (TypeScript, `mission-shell`)

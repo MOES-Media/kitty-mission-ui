@@ -171,7 +171,7 @@ Browser-mode Vitest in the shell, plus type tests. `pnpm test` does not reach th
 
 ## Definition of Done
 
-- **Port:** `MissionStatusClient`, `Params`, `Ok`, `Result` (with the `unavailable` variant), `Refusal` (`{ status, body }`, problem+json), `ConnectionState` (the exact spec strings), `SubscriptionScope` and `Change` (the correct cursor rule) match `contracts/client-port.md` name for name, with type tests (A1, A22). This is the surface SC-004 holds #18 to #21 to.
+- **Port:** `MissionStatusClient`, `Params`, `Ok`, `Result` (with the `unavailable` variant), `Refusal` (`{ status, body }`, problem+json), `ConnectionState` (the exact spec strings), `SubscriptionScope`, `Change` (the correct cursor rule) and `CONNECTION_STATES` match `contracts/client-port.md` name for name, with type tests (A1, A22). This is the surface SC-004 holds #18 to #21 to.
 - **Package entry:** `src/index.ts` exports the port and `createFixtureClient` (recorded out-of-map edit, A9).
 - **Operation table:** `CLIENT_OPERATIONS` is tied to the interface by `satisfies`, with a type test.
 - **Fixture adapter:** deterministic, with an injectable scheduler; it serves default and selected examples and refusals with their own status.
@@ -215,7 +215,8 @@ Shared-file owners (from `plan.md`, "Shared-file ownership"):
   ```
 - If WP01 is not in this lane's history yet, the Rust gate is not applicable; say so.
 - `pnpm visual` and `node scripts/gate-proof.mjs local` are run only where this prompt's "Test strategy" says so.
-- **Gate-proof clean-output rule (C5):** `scripts/gate-proof/lib.mjs` fails a leg when any plant's `expectFailPattern` appears in the **clean** run's output, and it matches a plant with one `output.includes` substring (C4). So every plant token must be a single substring that is printed only when that plant's violation fires: never a test name, an identifier that clean tests print, or a file name a parse error would also print.
+- **Gate-proof clean-output rule (C5):** `scripts/gate-proof/lib.mjs` fails a leg when any plant's `expectFailPattern` appears in the **clean** run's output, and it matches a plant with one `output.includes` substring (C4). So every plant token must be a single substring that is printed only when that plant's violation fires: never a string the clean run prints (for example the name of an existing test, or an identifier clean tests print), and never a file name a parse error would also print. A planted test's own name is fine, because it only exists in the planted run (D8).
+- **Plant payload convention (D3):** a `source` overlay's payload lives at `gates/plants/<gate>/<Name>.<ext>.plant` (for example `PlantDataDriven.svelte.plant`), never with a lintable extension: `checkPlantFiles` in `scripts/hygiene/rules.mjs` rejects those. `source` names that `.plant` file; `target` names the real path it is copied to.
 - If a script name differs on the build base, use the name the base provides and say so.
 
 **Red-first rule.** For every behaviour, plant and gate case:

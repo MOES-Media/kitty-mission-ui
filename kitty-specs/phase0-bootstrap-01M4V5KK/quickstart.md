@@ -34,6 +34,6 @@ node scripts/typings.mjs && pnpm manifest:check
 node scripts/contract/drift.mjs   # 0 in sync, 1 drift (files listed), 2 unreachable, 3 other error
 
 # a quick local subset (CI runs every gate in plan.md's Gates section; the Rust line is the canonical gate string)
-pnpm typecheck && pnpm lint && pnpm lint:no-io && pnpm test && pnpm manifest:check && pnpm contract:check && pnpm hygiene
+pnpm typecheck && pnpm lint && pnpm lint:styles && pnpm lint:no-io && pnpm test:no-io && pnpm lint:data-driven && pnpm test:data-driven && pnpm test && pnpm manifest:check && pnpm contract:check && pnpm hygiene
 cargo fmt --all --check && cargo clippy --workspace --all-targets --frozen -- -D warnings && cargo test --workspace --frozen
 ```

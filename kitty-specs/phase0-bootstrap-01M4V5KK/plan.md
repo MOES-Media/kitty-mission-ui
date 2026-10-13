@@ -172,7 +172,7 @@ scripts/typings.mjs                # NEW: own generator + --check
 scripts/hygiene/cargo-pins.mjs     # NEW: exact-pin check over Cargo.toml files (run by hygiene; IC-07, A7)
 scripts/check-hygiene.mjs          # EXTENDED: action-pin/permissions/checkout-credential checks on every workflow
 scripts/terminology.mjs            # EXTENDED: .svelte sources and crates/**/*.rs
-gates/plants/{rust,typecheck,eslint,no-io,unit-tests,manifest,contract,hygiene}/  # NEW/EXTENDED plants
+gates/plants/{rust,typecheck,eslint,stylelint,no-io,data-driven,unit-tests,manifest,contract,hygiene}/  # NEW/EXTENDED plants
 .github/workflows/ci.yml           # EXTENDED: Gate: rust (+ fetch steps, proof-leg matrix + steps, all.needs), timeouts
 .github/workflows/contract-drift.yml  # NEW scheduled + workflow_dispatch, not a gate, no install, no secrets
 eslint.config.mjs, eslint.no-io.config.mjs, eslint.data-driven.config.mjs  # EXTENDED: Svelte parser, shell scope, target/ ignores, generated-file ignore (data-driven also over .svelte, B3)
@@ -282,7 +282,7 @@ stylelint.config.mjs               # EXTENDED: postcss-html custom syntax for **
 ### IC-07 — Scheduled upstream drift alert and workflow hygiene
 
 - **Purpose**: tell the operator when the upstream contract moves away from `PIN.json`, without touching merge gates, and check every workflow file's pins and permissions.
-- **Relevant requirements**: FR-012, NFR-001, NFR-002.
+- **Relevant requirements**: FR-012, NFR-001, NFR-002, NFR-003, C-004.
 - **Affected surfaces**:
   - `scripts/contract/common.mjs` (a per-file compare: take `remote.mjs` `fetchRef('HEAD').contractFiles()`, which already returns exactly the files under `UPSTREAM_PATHS` keyed like `PIN.json` `files`, hash each with `common.mjs` `sha256` and compare with `PIN.json`'s per-file sha256, reporting added, removed and changed files; R3-03), `drift.mjs` and `drift.test.mjs`. `verify-remote.mjs`'s per-prefix tree-id compare stays as it is: it only reports the two path prefixes, which is not enough for FR-012. Drift reuses `remote.mjs` (`git fetch --depth 1`, built-ins only) and its `CONTRACT_REMOTE_URL` override, which the tests point at local repositories for the no-drift, drift, unreachable and error cases. There is no second network path and no HTTP directory listing (R2-07);
   - `.github/workflows/contract-drift.yml`;
@@ -301,7 +301,7 @@ stylelint.config.mjs               # EXTENDED: postcss-html custom syntax for **
 ### IC-08 — Stub crate
 
 - **Purpose**: a loopback HTTP and SSE stub that serves every vendored example that is a complete response of a route (R3-06), every fixture, and plays the scripted sequence, with upstream-equivalent request rules.
-- **Relevant requirements**: FR-010, FR-011, NFR-004.
+- **Relevant requirements**: FR-010, FR-011, NFR-001, NFR-002, NFR-003, NFR-004.
 - **Affected surfaces**: `crates/kitty-stub/{Cargo.toml (publish = false), src/lib.rs, src/main.rs, tests/}`.
 - **Sequencing/depends-on**: IC-01, IC-02.
 - **Risks**:
@@ -317,7 +317,7 @@ stylelint.config.mjs               # EXTENDED: postcss-html custom syntax for **
 ### IC-09 — Documentation and wrap-up
 
 - **Purpose**: the README (prerequisites: rustup and the pinned toolchain, the stub, the shell, the drift workflow and its 60-day rule), the CHANGELOG, the issue-matrix rows, the PR's exception record, and the SC-005 probe.
-- **Relevant requirements**: SC-004, SC-005, NFR-005, spec edge case 5.
+- **Relevant requirements**: SC-004, SC-005, NFR-002, NFR-005, C-004, spec edge case 5.
 - **Affected surfaces**: `README.md`, `CHANGELOG.md`, `packages/mission-shell/README.md`.
 - **Sequencing/depends-on**: all.
 - **Risks**: the wrap-up runs `git diff --exit-code "$(git merge-base HEAD main)" -- packages/mission-ui` (one base everywhere: the merge-base with `main`, B22) and records the result. The reviewer repeats it (F-14).
@@ -332,7 +332,7 @@ Each shared file has exactly one owning IC. Other ICs request their changes thro
 | `pnpm-lock.yaml` | IC-03 | IC-04 (none expected after F-30) |
 | `.github/workflows/ci.yml` (all jobs, proof-leg matrix and steps, timeouts, `all.needs`) | IC-02 | IC-01 (contract proof-leg timeout), IC-03 (typecheck, eslint, stylelint, no-io and data-driven proof legs gain plants), IC-04 (typecheck and manifest proof legs gain plants), IC-06 (unit-tests timeout), IC-07 (hygiene proof leg gains plants) |
 | root `Cargo.toml` (`[workspace]` members and `[workspace.dependencies]` exact pins), `Cargo.lock` | IC-02 | IC-08 (axum, tokio, serde, serde_json, tower, http-body-util pins) |
-| `eslint.config.mjs`, `eslint.no-io.config.mjs`, `eslint.data-driven.config.mjs`, `stylelint.config.mjs`, `gates/data-driven.selftest.ts`, `gates/plants/stylelint/**` | IC-03 | none (the exact-path ignore for the generated `elements.d.ts` is pre-added by IC-03, F-45) |
+| `eslint.config.mjs`, `eslint.no-io.config.mjs`, `eslint.data-driven.config.mjs`, `stylelint.config.mjs`, `gates/data-driven.selftest.ts`, `gates/plants/stylelint/**`, `gates/plants/data-driven/plant.json` | IC-03 | none (the exact-path ignore for the generated `elements.d.ts` is pre-added by IC-03, F-45) |
 | `scripts/check-hygiene.mjs`, `scripts/hygiene/**` (including `cargo-pins.mjs`) | IC-07 | — |
 | `gates/plants/rust/plant.json` | IC-02 | — |
 | `gates/plants/typecheck/plant.json` | IC-03 | IC-04 |
@@ -342,7 +342,7 @@ Each shared file has exactly one owning IC. Other ICs request their changes thro
 | `gates/plants/contract/plant.json` | IC-01 | — |
 | `gates/plants/hygiene/plant.json` | IC-07 | — |
 | `packages/mission-shell/src/index.ts`, `packages/mission-shell/tsconfig.json`, `packages/mission-shell/vitest.config.ts` | IC-03 | IC-05 (`index.ts`: export the port and the fixture client, A9; tsconfig/vitest JSON-import settings if needed) |
-| `.gitignore` | IC-02 | none (WP01 adds `target/`, `apps/*/src-tauri/gen` and the shell's build output up front; C16) |
+| `.gitignore` | IC-02 | none (WP01 T006 adds `/target/` and `apps/desktop/src-tauri/gen/` up front; C16, D5) |
 | `README.md`, `CHANGELOG.md` | IC-09 | all |
 
 ## Gates
@@ -362,7 +362,7 @@ It is preceded by two separate steps, in both the gate job and the proof leg whe
 | `rust` (new) | the canonical command above | format; clippy; failing test (anchored edits or `tests/plant_*.rs`) |
 | `typecheck` | `svelte-check` through the `mission-shell` typecheck script | Svelte type error; a non-existent element property; a renamed intent handler |
 | `eslint` | Svelte parser and config | Svelte lint violation |
-| `stylelint` | `lint:styles` also globs `packages/*/src/**/*.svelte` with the `postcss-html` custom syntax, so the token-only rules reach `.svelte` style blocks (B2) | a raw colour literal in a `.svelte` `<style>` block |
+| `stylelint` | `lint:styles` also globs `packages/*/src/**/*.svelte` with the `postcss-html` custom syntax, so the token-only rules reach `.svelte` style blocks (B2) | a raw `color` declaration in a `.svelte` `<style>` block, caught by the layout-only `property-allowed-list` rule (D15) |
 | `no-io` | scope includes `packages/mission-shell/src/**/*.{ts,svelte}` | `fetch` in a `.svelte` script block (pattern = the rule message) |
 | `data-driven` | the config's rule blocks also cover `**/*.svelte` with the Svelte parser; self-test cases (B3) | a `.svelte` file under `packages/mission-shell/src` hard-coding a lane word (C1) |
 | `unit-tests` | the root `test` script changes from mission-ui only to every workspace package's `test`, run one package at a time (`pnpm -r --workspace-concurrency=1 test`, R3-08) (so it includes the `mission-shell` binding, coverage and fixture-client tests); `ciCommand` stays `pnpm test` | registration order (mount before import); intent-path break; a `CLIENT_OPERATIONS` entry deleted with its method |

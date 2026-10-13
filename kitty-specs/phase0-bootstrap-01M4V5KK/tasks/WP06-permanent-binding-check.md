@@ -100,9 +100,9 @@ Implementation command (orchestrator-run): `spec-kitty agent action implement WP
 
 ### T031 Data path: values, not text (FR-001, F-01, R2-01)
 
-In `test/binding.test.ts`, run in the browser: `page.viewport` first, then mount the harness with Svelte's `mount()`. Assertions:
+In `test/binding.test.ts`, run in the browser: `page.viewport` first, then mount the harness with Svelte's `mount()`. Assertions 2 and 3 go in their **own `it` block, which runs first**, so under the registration-order plant they fail before any row-count assertion can (D4). They carry the exact custom messages below, because the T034 plant tokens are these messages. Assertions:
 1. `el.missions` is an `Array` (`Array.isArray`) and `toEqual(fixtureItems)` (the fixture page's `items`). The screen renders exactly N rows for N items; locate them through their accessible names or the screen's public parts. Never use private class names.
-2. `el.loadingMore === true`, a **non-default primitive** that only arrives through the property.
+2. `el.loadingMore === true`, a **non-default primitive** that only arrives through the property. Exact message: `binding: loadingMore not set as property` (for example `expect(el.loadingMore, 'binding: loadingMore not set as property').toBe(true)`).
 3. **No stray attributes**: for every prop the harness passed, the attribute a wrong binding would create is absent: `missions` and `loadingmore` (the lower-cased prop names Svelte's `setAttribute` fallback would use) are absent, and so is the declared attribute `loading-more`. `status` **reflects** (`reflects: true` in `custom-elements.json`), so its `status` attribute is expected: the exception is mandatory, written explicitly in the test with a comment citing the manifest entry (B1). Positive control in the same test: `el.setAttribute('loadingmore', 'x')` makes `hasAttribute` true, proving the assertion can see attributes.
 4. `status` arrives as the property value given.
 
@@ -110,7 +110,7 @@ In `test/binding.test.ts`, run in the browser: `page.viewport` first, then mount
 
 1. Read the declared events of `sk-missions-screen` from `custom-elements.json` in the test. That is the independent source. Assert the count equals 4.
 2. Trigger `sk-open-mission` through real UI: click a row, or activate it with the keyboard. Assert `onIntent` received `('sk-open-mission', detail)` with `detail` `toEqual` the expected shape for that row.
-3. For each remaining declared event, dispatch it from the element: `el.dispatchEvent(new CustomEvent(name, { detail: <sample>, bubbles: true, composed: true }))`. Assert `onIntent` was called exactly once with that name and detail.
+3. For each remaining declared event, dispatch it from the element: `el.dispatchEvent(new CustomEvent(name, { detail: <sample>, bubbles: true, composed: true }))`. Assert `onIntent` was called exactly once with that name and detail, with the exact message `` `binding: intent ${name} not delivered` `` (the T034 intent-plant token for `sk-search`; D4).
 4. Loop guard: assert the loop ran exactly `declared.length - 1` times.
 5. Positive control for "no extra calls": after all events, the `onIntent` call count equals the declared count exactly.
 
@@ -126,7 +126,7 @@ Verify:
 ### T034 Three unit-tests plants (FR-003, SC-002)
 
 Append to `gates/plants/unit-tests/plant.json`:
-1. **Registration order**: an `edits` overlay on `BindingHarness.svelte` that removes the top-level `import '@moes-media/mission-ui';` and instead imports it in `onMount` after the element is in the DOM. `loadingMore` then stays `false`, and a `loadingmore` attribute appears. `expectFailPattern`: a unique string in the T031 assertion message, for example `binding: loadingMore not set as property`.
+1. **Registration order**: an `edits` overlay on `BindingHarness.svelte` that removes the top-level `import '@moes-media/mission-ui';` and instead imports it in `onMount` after the element is in the DOM. `loadingMore` then stays `false`, and a `loadingmore` attribute appears. `expectFailPattern`: `binding: loadingMore not set as property`, the exact T031 assertion message (D4).
 2. **Intent-path break**: an `edits` overlay removing one intent binding (for example `sk-search`) from the harness. `expectFailPattern`: `binding: intent sk-search not delivered`.
 3. **Port entry deleted** (F-03, coverage plant from WP05's test): an `edits` overlay on `packages/mission-shell/src/client/port.ts` and `fixture.ts` (WP05's files, overlaid only inside the plant) that removes `getDriftReport` from `CLIENT_OPERATIONS`, the interface and the adapter. The type-level guard stays satisfied, but the coverage test fails naming `getDriftReport`. `expectFailPattern`: `coverage: missing operation getDriftReport` (C5: the bare identifier `getDriftReport` can appear in clean test output, which gate-proof rejects).
    The overlay edits WP05-owned files only inside the proof run; nothing is committed to them.
@@ -190,7 +190,8 @@ Shared-file owners (from `plan.md`, "Shared-file ownership"):
   ```
 - If WP01 is not in this lane's history yet, the Rust gate is not applicable; say so.
 - `pnpm visual` and `node scripts/gate-proof.mjs local` are run only where this prompt's "Test strategy" says so.
-- **Gate-proof clean-output rule (C5):** `scripts/gate-proof/lib.mjs` fails a leg when any plant's `expectFailPattern` appears in the **clean** run's output, and it matches a plant with one `output.includes` substring (C4). So every plant token must be a single substring that is printed only when that plant's violation fires: never a test name, an identifier that clean tests print, or a file name a parse error would also print.
+- **Gate-proof clean-output rule (C5):** `scripts/gate-proof/lib.mjs` fails a leg when any plant's `expectFailPattern` appears in the **clean** run's output, and it matches a plant with one `output.includes` substring (C4). So every plant token must be a single substring that is printed only when that plant's violation fires: never a string the clean run prints (for example the name of an existing test, or an identifier clean tests print), and never a file name a parse error would also print. A planted test's own name is fine, because it only exists in the planted run (D8).
+- **Plant payload convention (D3):** a `source` overlay's payload lives at `gates/plants/<gate>/<Name>.<ext>.plant` (for example `PlantDataDriven.svelte.plant`), never with a lintable extension: `checkPlantFiles` in `scripts/hygiene/rules.mjs` rejects those. `source` names that `.plant` file; `target` names the real path it is copied to.
 - If a script name differs on the build base, use the name the base provides and say so.
 
 **Red-first rule.** For every behaviour, plant and gate case:

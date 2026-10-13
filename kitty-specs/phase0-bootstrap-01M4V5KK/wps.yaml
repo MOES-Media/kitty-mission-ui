@@ -51,6 +51,7 @@ work_packages:
       - "gates/plants/typecheck/**"
       - "gates/plants/eslint/**"
       - "gates/plants/no-io/**"
+      - "gates/plants/data-driven/**"
       - "gates/plants/stylelint/**"
       - "stylelint.config.mjs"
       - "gates/data-driven.selftest.ts"

@@ -109,7 +109,7 @@ Implementation command (orchestrator-run): `spec-kitty agent action implement WP
 ### T044 The Cargo exact-pin check (F-09, NFR-003)
 
 1. Write `scripts/hygiene/cargo-pins.mjs`. It parses the root `Cargo.toml` `[workspace.dependencies]` and every member `Cargo.toml` `[dependencies]`, `[dev-dependencies]` and `[build-dependencies]` with a small TOML-subset parser (no new dependency).
-2. It reports any version requirement that is not `=x.y.z`. Accepted forms are `name = "=1.2.3"` and `{ version = "=1.2.3", … }`; `{ workspace = true }` is allowed in members.
+2. It reports any version requirement that is not `=x.y.z`, and each report names the offending dependency and the manifest path (the T047 plant token `plant-caret-pin` relies on the dependency name being printed; D13). Accepted forms are `name = "=1.2.3"` and `{ version = "=1.2.3", … }`; `{ workspace = true }` is allowed in members.
 3. Call it from `check-hygiene.mjs`, guarded by "Cargo.toml exists".
 4. Tests in `scripts/hygiene/cargo-pins.test.mjs` cover these cases: a caret `"0.8"`, a `"^1"`, a `"~1.2"`, a `">=1"`, a `"*"` and a git dependency are reported; `"=1.2.3"`, an inline table with `=`, and `workspace = true` are clean. Every case is asserted with equality.
 
@@ -121,7 +121,7 @@ Implementation command (orchestrator-run): `spec-kitty agent action implement WP
    - exit codes: `0` in sync; `1` drift (files listed per category); `2` upstream unreachable (a git fetch or network failure, detected specifically); `3` any other error;
    - output: a Markdown summary to stdout, and also to `$GITHUB_STEP_SUMMARY` when set, written to the file and never interpolated into a shell command.
    - The import graph must be built-ins plus `common.mjs` and `remote.mjs` only. Verify with `node --input-type=module -e` and a scan of its imports, and record the graph. No `yaml`, no `openapi-typescript` (F-41).
-3. Tests in `drift.test.mjs` (picked up by the `test:contract` glob, so they must be offline). Build local git repositories in a temp directory and point `CONTRACT_REMOTE_URL` at them for four cases:
+3. Tests in `drift.test.mjs` (picked up by the `test:contract` glob, so they must be offline). They also run inside every contract clean run, so they must never print an existing contract plant token (`hash mismatch`, `pin provenance`, `violates contract`, `incoherent-planted`, `unknown relaxation`): capture child output in the test and assert on it rather than echo it (D9). Build local git repositories in a temp directory and point `CONTRACT_REMOTE_URL` at them for four cases:
    - identical (exit 0);
    - one file changed plus one added (exit 1, exact lists);
    - unreachable: `CONTRACT_REMOTE_URL` set to a **local path that does not exist** (for example `<tmpdir>/missing.git`), never a DNS or HTTPS URL, so the test stays offline inside `Gate: contract` (exit 2; A13);
@@ -205,7 +205,8 @@ Shared-file owners (from `plan.md`, "Shared-file ownership"):
   ```
 - If WP01 is not in this lane's history yet, the Rust gate is not applicable; say so.
 - `pnpm visual` and `node scripts/gate-proof.mjs local` are run only where this prompt's "Test strategy" says so.
-- **Gate-proof clean-output rule (C5):** `scripts/gate-proof/lib.mjs` fails a leg when any plant's `expectFailPattern` appears in the **clean** run's output, and it matches a plant with one `output.includes` substring (C4). So every plant token must be a single substring that is printed only when that plant's violation fires: never a test name, an identifier that clean tests print, or a file name a parse error would also print.
+- **Gate-proof clean-output rule (C5):** `scripts/gate-proof/lib.mjs` fails a leg when any plant's `expectFailPattern` appears in the **clean** run's output, and it matches a plant with one `output.includes` substring (C4). So every plant token must be a single substring that is printed only when that plant's violation fires: never a string the clean run prints (for example the name of an existing test, or an identifier clean tests print), and never a file name a parse error would also print. A planted test's own name is fine, because it only exists in the planted run (D8).
+- **Plant payload convention (D3):** a `source` overlay's payload lives at `gates/plants/<gate>/<Name>.<ext>.plant` (for example `PlantDataDriven.svelte.plant`), never with a lintable extension: `checkPlantFiles` in `scripts/hygiene/rules.mjs` rejects those. `source` names that `.plant` file; `target` names the real path it is copied to.
 - If a script name differs on the build base, use the name the base provides and say so.
 
 **Red-first rule.** For every behaviour, plant and gate case:

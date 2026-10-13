@@ -140,8 +140,8 @@ Implementation command (orchestrator-run): `spec-kitty agent action implement WP
 The **non-existent property** plant below is SC-002's designated "declaration typings" proof (B21); the manifest stale-typings plant (T022) is the secondary proof.
 
 Recorded out-of-map edit to `gates/plants/typecheck/plant.json` (WP02 converted it to an array). Append two plants:
-1. **Non-existent property**: a `source` overlay creating `packages/mission-shell/src/PlantProp.svelte`, which imports `@moes-media/mission-ui` and renders `<sk-missions-screen plantNoSuchProp={1}></sk-missions-screen>`. `expectFailPattern`: `plantNoSuchProp`.
-2. **Renamed intent handler**: a `source` overlay creating `packages/mission-shell/src/PlantIntent.svelte`, using a misspelled intent through whichever path T021 chose:
+1. **Non-existent property**: a `source` overlay creating `packages/mission-shell/src/PlantProp.svelte` (payload `gates/plants/typecheck/PlantProp.svelte.plant`, D3), which imports `@moes-media/mission-ui` and renders `<sk-missions-screen plantNoSuchProp={1}></sk-missions-screen>`. `expectFailPattern`: `plantNoSuchProp`.
+2. **Renamed intent handler**: a `source` overlay creating `packages/mission-shell/src/PlantIntent.svelte` (payload `gates/plants/typecheck/PlantIntent.svelte.plant`, D3), using a misspelled intent through whichever path T021 chose:
    - attribute path: `onsk-open-misson={…}`;
    - action path: `use:intents={{ 'sk-open-misson': … }}`.
    `expectFailPattern`: `open-misson`.
@@ -200,7 +200,8 @@ Shared-file owners (from `plan.md`, "Shared-file ownership"):
   ```
 - If WP01 is not in this lane's history yet, the Rust gate is not applicable; say so.
 - `pnpm visual` and `node scripts/gate-proof.mjs local` are run only where this prompt's "Test strategy" says so.
-- **Gate-proof clean-output rule (C5):** `scripts/gate-proof/lib.mjs` fails a leg when any plant's `expectFailPattern` appears in the **clean** run's output, and it matches a plant with one `output.includes` substring (C4). So every plant token must be a single substring that is printed only when that plant's violation fires: never a test name, an identifier that clean tests print, or a file name a parse error would also print.
+- **Gate-proof clean-output rule (C5):** `scripts/gate-proof/lib.mjs` fails a leg when any plant's `expectFailPattern` appears in the **clean** run's output, and it matches a plant with one `output.includes` substring (C4). So every plant token must be a single substring that is printed only when that plant's violation fires: never a string the clean run prints (for example the name of an existing test, or an identifier clean tests print), and never a file name a parse error would also print. A planted test's own name is fine, because it only exists in the planted run (D8).
+- **Plant payload convention (D3):** a `source` overlay's payload lives at `gates/plants/<gate>/<Name>.<ext>.plant` (for example `PlantDataDriven.svelte.plant`), never with a lintable extension: `checkPlantFiles` in `scripts/hygiene/rules.mjs` rejects those. `source` names that `.plant` file; `target` names the real path it is copied to.
 - If a script name differs on the build base, use the name the base provides and say so.
 
 **Red-first rule.** For every behaviour, plant and gate case:
