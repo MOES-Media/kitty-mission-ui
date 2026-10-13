@@ -11,6 +11,7 @@ requirement_refs:
 - FR-011
 - NFR-004
 - SC-003
+- SC-004
 planning_base_branch: feat/phase0-bootstrap-17
 merge_target_branch: feat/phase0-bootstrap-17
 branch_strategy: Planning artifacts for this mission were generated on feat/phase0-bootstrap-17. During /spec-kitty.implement this WP may branch from a dependency-specific base, but completed changes must merge back into feat/phase0-bootstrap-17 unless the human explicitly redirects the landing branch.
@@ -56,7 +57,7 @@ Do not spawn sub-agents or forks; do this work package yourself.
 
 ## Objective
 
-Implement the transport-free `MissionStatusClient` port and its in-memory fixture adapter, as specified in `contracts/client-port.md`. The port covers every read of the pinned contract, a change subscription and a closed four-value connection state (FR-008). A coverage test fails, naming the read, when the contract has a read the port lacks; the operation table is tied to the interface at the type level (FR-009). The fixture adapter replays `changes.json` deterministically (FR-011, NFR-004). No I/O (C-001).
+Implement the transport-free `MissionStatusClient` client interface (the spec's canonical term; called "the port" below; A21) and its in-memory fixture adapter, as specified in `contracts/client-port.md`. The port covers every read of the pinned contract, a change subscription and a closed four-value connection state (FR-008). A coverage test fails, naming the read, when the contract has a read the port lacks; the operation table is tied to the interface at the type level (FR-009). The fixture adapter replays `changes.json` deterministically (FR-011, NFR-004). No I/O (C-001).
 
 ## Context
 
@@ -89,17 +90,25 @@ Implementation command (orchestrator-run): `spec-kitty agent action implement WP
 1. Define, following `contracts/client-port.md`:
    - `ReadOp`, the union of the 9 read operationIds;
    - `Params<Op> = operations[Op]['parameters']`;
-   - `Success<Op>`, the `200` `application/json` body;
-   - `Refusal<Op>`, the union of `application/problem+json` bodies of the operation's non-200 responses;
-   - `Result<Op> = { ok: true; value: Success<Op> } | { ok: false; status: number; refusal: Refusal<Op> }`;
+   - `Ok<Op>`, the `200` `application/json` body (the contract's name; A22);
+   - `Refusal<Op>`, a union of `{ status: number; body: B }`, one member per `application/problem+json` response the operation declares, `B` being that response's body (the `default` Problem response is excluded, like `routes.json`; A2);
+   - `Result<Op>`, exactly as `contracts/client-port.md`:
+     ```ts
+     | { ok: true; value: Ok<Op> }
+     | { ok: false; refusal: Refusal<Op> }            // refusal.status is the example's own status (R3-02)
+     | { ok: false; unavailable: 'service-missing' | 'contract-mismatch' | 'transport' }
+     ```
+     The `unavailable` variant is not produced by the fixture adapter, but #19 to #21 need it, so it is part of the port now (SC-004, A1);
    - `ConnectionState` (the exact four strings);
    - `Change`, discriminated by `kind`, with `data` typed per kind from `components['schemas']` and `cursor: string | null`;
-   - `SubscribeScope = { missionId?: string; cursor?: string }`;
+   - `SubscriptionScope = { missionId?: string; cursor?: string }` (the contract's name; A22);
    - `MissionStatusClient` (9 read methods named like their operationIds, `subscribe(listener, scope?)` returning an unsubscribe function, and `connection: { readonly state; onChange(listener) }`).
 2. Type tests: a `// @ts-expect-error` block (checked by `svelte-check` or `tsc`) proving that:
    - `getArtifactContent` without `query.path` is an error;
    - `'degraded:service-missing'` (no space) is not a `ConnectionState`;
-   - `Refusal<'getProject'>` is not `never`.
+   - `Refusal<'getArtifactContent'>` is not `never` (`getArtifactContent` declares problem+json refusals; check which reads declare any before choosing the subject);
+   - a `Result<'getProject'>` value `{ ok: false, unavailable: 'service-missing' }` compiles, and `{ ok: false, unavailable: 'offline' }` is an error (A1);
+   - a value `{ ok: false, status: 404, refusal: … }` (status at the top level) is an error, so the shape cannot drift from the contract (A1).
    Each `@ts-expect-error` has a positive twin that compiles.
 
 ### T026 `CLIENT_OPERATIONS` tied to the interface (F-03)
@@ -118,10 +127,10 @@ A missing method or an extra key is a compile error. Add a type test (`@ts-expec
 1. `createFixtureClient(options?)`. The options are:
    - `{ examples?: Record<operationId, exampleKey>; fixtures?: …; scheduler?: Scheduler; initialState?: ConnectionState }`;
    - `Scheduler = { setTimeout(fn, ms): unknown; clearTimeout(h): void }`, defaulting to the global timers. Timers are not I/O, but check the no-io rule list.
-2. Reads resolve to `{ ok: true, value }`, using each route's `defaultExample` from `routes.json`, unless `options.examples` selects another example. A selected refusal example resolves to `{ ok: false, status: <example's own status>, refusal }` (R3-02). Selecting an example whose schema is neither the route's success schema nor one of its `refusals` schemas throws a clear error.
+2. Reads resolve to `{ ok: true, value }`, using each route's `defaultExample` from `routes.json`, unless `options.examples` selects another example. A selected refusal example resolves to `{ ok: false, refusal: { status: <the example's own status field>, body: <example value> } }` (R3-02, A1). Selecting an example whose schema is neither the route's success schema nor one of its `refusals` schemas throws a clear error.
 3. `subscribe(listener, scope)` replays `changes.json` items through the scheduler using `delayMs`, mapping each item to a `Change`:
    - `kind = event`;
-   - `cursor = scope?.missionId ? (item.scopedId ?? null) : null`;
+   - `cursor = scope?.missionId ? (item.scopedId ?? null) : null` (`changes.json` is the envelope `{ missionId, items: [{ event, scopedId?, data, delayMs }] }`, data-model ChangeItem; A4);
    - for `log-truncated`, `cursor` is always null.
    The function returns an unsubscribe that cancels pending timers.
 4. `connection.state` starts at `initialState ?? 'connected'`. A test-only `setConnectionState(state)` is exported from the fixture module, and `onChange` notifies listeners.
@@ -135,11 +144,19 @@ In `test/port-coverage.test.ts`:
 - A negative control builds a copy of the routes with one extra synthetic operation and asserts the comparison helper reports exactly that name.
 - WP06 adds the gate plant that deletes an entry together with its method. Leave the comparison in a reusable helper.
 
-### T029 Fixture-client behaviour tests
+### T029 Fixture-client behaviour tests, and the package entry (A9)
+
+**Package entry (recorded out-of-map edit, A9).** `packages/mission-shell/src/index.ts` is owned by WP02, which leaves it as `export {};`. This WP replaces that with the public exports #18 to #21 consume:
+```ts
+export * from './client/port';
+export { createFixtureClient } from './client/fixture';
+```
+(`setConnectionState` stays test-only and is not re-exported.) WP05 depends on WP02, so the edit is serialised after the owner. Commit it with a plain `git add packages/mission-shell/src/index.ts` and list it in the hand-off as an out-of-map edit. Add one test asserting that `import * as shell from '../src/index'` exposes `createFixtureClient` and `CLIENT_OPERATIONS` (positive control), and that `setConnectionState` is absent.
+
 
 In `test/fixture-client.test.ts`, using a fake scheduler with manual advance:
 - every read returns its default example: `toEqual` against `examples.json[defaultExample].value`, which is independent of the adapter's own lookup code path;
-- a selected refusal returns `ok: false` with the example's own status;
+- a selected refusal returns `{ ok: false, refusal: { status, body } }`, with `status` equal to the example's own `status` field read from `examples.json` (independent of the adapter);
 - a mismatched selection throws;
 - a scoped subscription yields exactly `changes.items.length` changes, with kinds and cursors following the R2-05 rule (`log-truncated` cursor null, others equal to `scopedId`);
 - an unscoped subscription yields all cursors null;
@@ -153,7 +170,8 @@ Browser-mode Vitest in the shell, plus type tests. `pnpm test` does not reach th
 
 ## Definition of Done
 
-- **Port:** `MissionStatusClient`, `Params`, `Result`, `Refusal` (problem+json), `ConnectionState` (the exact spec strings) and `Change` (the correct cursor rule) match `contracts/client-port.md`.
+- **Port:** `MissionStatusClient`, `Params`, `Ok`, `Result` (with the `unavailable` variant), `Refusal` (`{ status, body }`, problem+json), `ConnectionState` (the exact spec strings), `SubscriptionScope` and `Change` (the correct cursor rule) match `contracts/client-port.md` name for name, with type tests (A1, A22). This is the surface SC-004 holds #18 to #21 to.
+- **Package entry:** `src/index.ts` exports the port and `createFixtureClient` (recorded out-of-map edit, A9).
 - **Operation table:** `CLIENT_OPERATIONS` is tied to the interface by `satisfies`, with a type test.
 - **Fixture adapter:** deterministic, with an injectable scheduler; it serves default and selected examples and refusals with their own status.
 - **Tests:** coverage, behaviour and determinism tests are green, each with negative or positive controls. The shell test run is recorded.
@@ -169,11 +187,12 @@ Browser-mode Vitest in the shell, plus type tests. `pnpm test` does not reach th
 - **Type tests:** each `@ts-expect-error` has a positive twin.
 - **Coverage test:** it compares against `routes.json`, not against itself.
 - **Cursor rule:** it matches the contract.
+- **Contract shape:** `Result` and `Refusal` match `contracts/client-port.md` exactly, including `unavailable` (A1).
 - **Determinism:** the 10-run test serialises the full output.
 
 ## Owned files, gates, red-first, commit rule
 
-**Owned files** (the frontmatter `owned_files` is authoritative; stage only these). `owned_files` and `lanes.json` `write_scope` are tool-owned and never hand-edited. A shared file you do not own is changed ONLY where this prompt says so, as a **recorded out-of-map edit**: you commit it with a plain `git add <path>` and `git commit`, and list it in the hand-off with a one-line rationale. A change you need in a file you do not own, and that this prompt does not name, is a **change request** in the hand-off (file, change, reason), not an edit. Generated files (`custom-elements.json`, `types.generated.ts`, `fixtures.generated.ts`, `contracts/fixtures/*.json` except `mission-status.changes.json`, `packages/mission-shell/src/generated/elements.d.ts`) are never edited by hand: regenerate them.
+**Owned files** (the frontmatter `owned_files` is authoritative; stage only these). `owned_files` and `lanes.json` `write_scope` are tool-owned and never hand-edited. A shared file you do not own is changed ONLY where this prompt says so, as a **recorded out-of-map edit**: you commit it with a plain `git add <path>` and `git commit`, and list it in the hand-off with a one-line rationale. A change you need in a file you do not own, and that this prompt does not name, is a **change request** in the hand-off (file, change, reason), not an edit. Generated files (`custom-elements.json`, `types.generated.ts`, `fixtures.generated.ts`, `contracts/fixtures/*.json` except `mission-status.changes.json`, `packages/mission-shell/src/generated/elements.d.ts`, and `packages/mission-shell/src/generated/intents.ts` if WP04 generates it) are never edited by hand: regenerate them.
 
 Shared-file owners (from `plan.md`, "Shared-file ownership"):
 

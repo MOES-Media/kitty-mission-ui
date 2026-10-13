@@ -11,6 +11,8 @@ requirement_refs:
 - NFR-001
 - NFR-003
 - SC-002
+- FR-006
+- NFR-002
 planning_base_branch: feat/phase0-bootstrap-17
 merge_target_branch: feat/phase0-bootstrap-17
 branch_strategy: Planning artifacts for this mission were generated on feat/phase0-bootstrap-17. During /spec-kitty.implement this WP may branch from a dependency-specific base, but completed changes must merge back into feat/phase0-bootstrap-17 unless the human explicitly redirects the landing branch.
@@ -92,8 +94,8 @@ Implementation command (orchestrator-run): `spec-kitty agent action implement WP
 
 **Steps** (red first in `scripts/hygiene/hygiene.test.mjs`):
 1. In `rules.mjs`, split `checkWorkflow` into two functions:
-   - `checkWorkflowSecurity`: action SHA pins, image digests, `permissions` present and least-privilege, checkout `persist-credentials: false`, no `continue-on-error`, `upload-artifact` `retention-days: 1`;
-   - `checkGateStructure`: job ids, proof matrix, plants, `all.needs`, timeouts.
+   - `checkWorkflowSecurity`: action SHA pins, image digests, **job-level** `permissions` present and least-privilege (`contents: read`) on every job, checkout `persist-credentials: false`, no `continue-on-error`, `upload-artifact` `retention-days: 1`;
+   - `checkGateStructure`: job ids, proof matrix, plants, `all.needs`, timeouts, **and the main-only trigger rule** (only `pull_request` and `push` to `main`). That rule is a ci.yml gate-structure rule, so `contract-drift.yml` (`schedule` plus `workflow_dispatch`) is never judged by it (A10).
    `checkWorkflow` stays as the composition of the two, so `ci.yml` behaviour is unchanged.
 2. In `check-hygiene.mjs`, run `checkWorkflowSecurity` on **every** workflow file. `checkGateStructure` stays `ci.yml`-only. `checkWorkflowTriggers` and `checkGateJobNames` are unchanged.
 3. Tests:
@@ -122,7 +124,7 @@ Implementation command (orchestrator-run): `spec-kitty agent action implement WP
 3. Tests in `drift.test.mjs` (picked up by the `test:contract` glob, so they must be offline). Build local git repositories in a temp directory and point `CONTRACT_REMOTE_URL` at them for four cases:
    - identical (exit 0);
    - one file changed plus one added (exit 1, exact lists);
-   - a URL that does not exist (exit 2);
+   - unreachable: `CONTRACT_REMOTE_URL` set to a **local path that does not exist** (for example `<tmpdir>/missing.git`), never a DNS or HTTPS URL, so the test stays offline inside `Gate: contract` (exit 2; A13);
    - a malformed PIN (exit 3).
    Assert each exit code and output with equality.
 
@@ -130,7 +132,7 @@ Implementation command (orchestrator-run): `spec-kitty agent action implement WP
 
 Create `.github/workflows/contract-drift.yml`:
 - `on: schedule` (daily, for example `cron: '17 5 * * *'`) plus `workflow_dispatch`;
-- `permissions: contents: read`;
+- `permissions: contents: read` at workflow level **and** on the `drift` job (job-level permissions are what `checkWorkflowSecurity` requires; A10);
 - one job, `drift`, with `name: 'Contract drift'` (never "Gate:"), `runs-on: ubuntu-24.04` and `timeout-minutes: 5`;
 - steps:
   1. checkout, SHA-pinned, with `persist-credentials: false`;
@@ -144,7 +146,7 @@ Create `.github/workflows/contract-drift.yml`:
 ### T047 Two hygiene plants (SC-002)
 
 Append to `gates/plants/hygiene/plant.json` (`ciCommand` equal to the hygiene gate step):
-1. **Caret Cargo requirement**: an `edits` overlay on `crates/kitty-core/Cargo.toml` adding `[dependencies] plant-caret-pin = "0.1"`. The parse-only hygiene check does not build. `expectFailPattern`: `plant-caret-pin`.
+1. **Caret Cargo requirement**: an `edits` overlay on `crates/kitty-core/Cargo.toml`, anchored on its existing `[dependencies]` header when there is one (insert `plant-caret-pin = "0.1"` below it) and otherwise appending a new `[dependencies]` table, so the planted file never has a duplicate table (A17). Check the file WP01 committed before choosing the anchor. The parse-only hygiene check does not build. `expectFailPattern`: `plant-caret-pin`.
 2. **Unpinned action in a non-ci workflow**: an `edits` overlay on `.github/workflows/contract-drift.yml` replacing the checkout SHA with `@v4` plus a `# plant-unpinned-action` comment. `expectFailPattern`: the rule's message, or `contract-drift.yml` combined with the pin rule id. It must be specific to that rule.
 
 Run `node scripts/gate-proof.mjs local --only hygiene`, and record each plant red and the clean leg green, with timing.
@@ -181,7 +183,7 @@ Node tests under `scripts/hygiene` and `scripts/contract` (all offline), plus tw
 
 ## Owned files, gates, red-first, commit rule
 
-**Owned files** (the frontmatter `owned_files` is authoritative; stage only these). `owned_files` and `lanes.json` `write_scope` are tool-owned and never hand-edited. A shared file you do not own is changed ONLY where this prompt says so, as a **recorded out-of-map edit**: you commit it with a plain `git add <path>` and `git commit`, and list it in the hand-off with a one-line rationale. A change you need in a file you do not own, and that this prompt does not name, is a **change request** in the hand-off (file, change, reason), not an edit. Generated files (`custom-elements.json`, `types.generated.ts`, `fixtures.generated.ts`, `contracts/fixtures/*.json` except `mission-status.changes.json`, `packages/mission-shell/src/generated/elements.d.ts`) are never edited by hand: regenerate them.
+**Owned files** (the frontmatter `owned_files` is authoritative; stage only these). `owned_files` and `lanes.json` `write_scope` are tool-owned and never hand-edited. A shared file you do not own is changed ONLY where this prompt says so, as a **recorded out-of-map edit**: you commit it with a plain `git add <path>` and `git commit`, and list it in the hand-off with a one-line rationale. A change you need in a file you do not own, and that this prompt does not name, is a **change request** in the hand-off (file, change, reason), not an edit. Generated files (`custom-elements.json`, `types.generated.ts`, `fixtures.generated.ts`, `contracts/fixtures/*.json` except `mission-status.changes.json`, `packages/mission-shell/src/generated/elements.d.ts`, and `packages/mission-shell/src/generated/intents.ts` if WP04 generates it) are never edited by hand: regenerate them.
 
 Shared-file owners (from `plan.md`, "Shared-file ownership"):
 

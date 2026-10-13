@@ -11,6 +11,7 @@ requirement_refs:
 - FR-003
 - SC-001
 - SC-002
+- FR-006
 planning_base_branch: feat/phase0-bootstrap-17
 merge_target_branch: feat/phase0-bootstrap-17
 branch_strategy: Planning artifacts for this mission were generated on feat/phase0-bootstrap-17. During /spec-kitty.implement this WP may branch from a dependency-specific base, but completed changes must merge back into feat/phase0-bootstrap-17 unless the human explicitly redirects the landing branch.
@@ -94,7 +95,7 @@ Implementation command (orchestrator-run): `spec-kitty agent action implement WP
 3. Render `<sk-missions-screen {items} {status} {loadingMore} …intent bindings…></sk-missions-screen>`.
 4. Intent bindings: one handler per event that `sk-missions-screen` declares in `custom-elements.json` (`sk-open-mission`, `sk-search`, `sk-load-more`, `sk-filter-change`). Use the path WP04 chose. Each handler calls `onIntent('<event-name>', event.detail)`.
 5. The harness must not hard-code lane, phase or artifact words (data-driven gate) and performs no I/O.
-6. `items` come from WP05's fixture adapter or `contracts/fixtures/mission-status.fixtures.json`: a valid `MissionOverviewPage` fixture's `items`.
+6. `items` come from `contracts/fixtures/mission-status.fixtures.json` (a valid `MissionOverviewPage` fixture's `items`), read directly as the independent oracle (test-quality rule 3), not through WP05's fixture adapter (A27).
 
 ### T031 Data path: values, not text (FR-001, F-01, R2-01)
 
@@ -166,7 +167,7 @@ Browser-mode binding tests and three unit-tests plants. `gate-proof local --only
 
 ## Owned files, gates, red-first, commit rule
 
-**Owned files** (the frontmatter `owned_files` is authoritative; stage only these). `owned_files` and `lanes.json` `write_scope` are tool-owned and never hand-edited. A shared file you do not own is changed ONLY where this prompt says so, as a **recorded out-of-map edit**: you commit it with a plain `git add <path>` and `git commit`, and list it in the hand-off with a one-line rationale. A change you need in a file you do not own, and that this prompt does not name, is a **change request** in the hand-off (file, change, reason), not an edit. Generated files (`custom-elements.json`, `types.generated.ts`, `fixtures.generated.ts`, `contracts/fixtures/*.json` except `mission-status.changes.json`, `packages/mission-shell/src/generated/elements.d.ts`) are never edited by hand: regenerate them.
+**Owned files** (the frontmatter `owned_files` is authoritative; stage only these). `owned_files` and `lanes.json` `write_scope` are tool-owned and never hand-edited. A shared file you do not own is changed ONLY where this prompt says so, as a **recorded out-of-map edit**: you commit it with a plain `git add <path>` and `git commit`, and list it in the hand-off with a one-line rationale. A change you need in a file you do not own, and that this prompt does not name, is a **change request** in the hand-off (file, change, reason), not an edit. Generated files (`custom-elements.json`, `types.generated.ts`, `fixtures.generated.ts`, `contracts/fixtures/*.json` except `mission-status.changes.json`, `packages/mission-shell/src/generated/elements.d.ts`, and `packages/mission-shell/src/generated/intents.ts` if WP04 generates it) are never edited by hand: regenerate them.
 
 Shared-file owners (from `plan.md`, "Shared-file ownership"):
 

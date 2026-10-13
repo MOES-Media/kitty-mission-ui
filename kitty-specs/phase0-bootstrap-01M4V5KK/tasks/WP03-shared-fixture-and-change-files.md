@@ -8,6 +8,7 @@ requirement_refs:
 - FR-011
 - NFR-004
 - SC-003
+- FR-006
 planning_base_branch: feat/phase0-bootstrap-17
 merge_target_branch: feat/phase0-bootstrap-17
 branch_strategy: Planning artifacts for this mission were generated on feat/phase0-bootstrap-17. During /spec-kitty.implement this WP may branch from a dependency-specific base, but completed changes must merge back into feat/phase0-bootstrap-17 unless the human explicitly redirects the landing branch.
@@ -103,12 +104,14 @@ Implementation command (orchestrator-run): `spec-kitty agent action implement WP
 1. In `generate.mjs`, parse `openapi.yaml` `paths:` and each path file. For every operation emit `{ operationId, method, path, kind, responseSchema, defaultExample, refusals }`:
    - `kind`: `"stream"` for `streamEvents`, otherwise `"read"`.
    - `responseSchema`: the `$ref` schema name of the `200` `application/json` response, or `null` for `streamEvents` (its 200 is `text/event-stream`).
-   - `refusals`: from every response whose content is `application/problem+json` (including `default` and shared `$ref` responses resolved through `_shared/responses`), a map `{ <schemaName>: [<status>, …] }` with statuses sorted numerically. A `default` response contributes the schema with the status list taken from the schema's own allowed statuses where the contract states them, otherwise `["default"]`. Document the rule in a code comment.
+   - `refusals`: from every **numbered** response (`400`, `404`, `409`, …) whose content is `application/problem+json` (shared `$ref` responses resolved through `_shared/responses`), a map `{ <schemaName>: [<status>, …] }` with statuses as numbers, sorted numerically. The `default` Problem response is **not** a selectable refusal and never contributes (data-model RouteEntry; A2). This applies to `streamEvents` too: its numbered problem+json responses give `StreamRefusal: [400, 409]` (A5). Document the rule in a code comment.
    - `defaultExample`: from a reviewed `DEFAULT_EXAMPLES` map in `generate.mjs` (`operationId → "<Schema>.<name>"`), one entry per read. Choose the richest success example, for example `Project.populated`. For `streamEvents` the value is `null`. The generator fails if a map entry names an example that does not exist or whose schema is not the route's `responseSchema`.
 2. Emit `contracts/fixtures/mission-status.routes.json`: a JSON array sorted by `operationId`, 2-space indent, trailing newline.
 3. Tests:
    - the set of operationIds equals the set parsed independently from the YAML in the test (10, equality);
-   - every read has a non-null `defaultExample` of its `responseSchema`;
+   - every read has a `defaultExample` of its `responseSchema`, unless `DEFAULT_EXAMPLES` marks it `null` explicitly; a synthetic map with one explicit `null` is accepted and yields `defaultExample: null`, and a read missing from the map makes generation fail (positive and negative control; A29);
+   - no route's `refusals` contains a `default` entry, and every status in every `refusals` list is a number; a synthetic path with only a `default` Problem response yields `refusals: {}` (A2);
+   - `streamEvents` lists `StreamRefusal` with `[400, 409]` (A5);
    - every `refusals` schema's content type in the YAML is `application/problem+json`;
    - `getArtifactContent` lists `ArtifactRefusal` with its six statuses;
    - a synthetic paths fixture with a refusal under `application/json` is NOT put into `refusals` (positive and negative control).
@@ -176,7 +179,7 @@ Node `--test` files under `scripts/contract/` (picked up by the `test:contract` 
 
 ## Risks
 
-- **`default` responses:** they reference `_shared/responses/Problem.yaml`; resolve the `$ref` before reading the media type.
+- **`default` responses:** they reference `_shared/responses/Problem.yaml`. They are excluded from `refusals` (A2); resolve shared `$ref`s on numbered responses before reading the media type.
 - **Default example choice:** keep `DEFAULT_EXAMPLES` explicit and reviewed. Never take "the first file".
 - **Cursor format:** check the StreamCursorString pattern in `_shared` or `mission-status` schemas, rather than guessing it.
 
@@ -189,7 +192,7 @@ Node `--test` files under `scripts/contract/` (picked up by the `test:contract` 
 
 ## Owned files, gates, red-first, commit rule
 
-**Owned files** (the frontmatter `owned_files` is authoritative; stage only these). `owned_files` and `lanes.json` `write_scope` are tool-owned and never hand-edited. A shared file you do not own is changed ONLY where this prompt says so, as a **recorded out-of-map edit**: you commit it with a plain `git add <path>` and `git commit`, and list it in the hand-off with a one-line rationale. A change you need in a file you do not own, and that this prompt does not name, is a **change request** in the hand-off (file, change, reason), not an edit. Generated files (`custom-elements.json`, `types.generated.ts`, `fixtures.generated.ts`, `contracts/fixtures/*.json` except `mission-status.changes.json`, `packages/mission-shell/src/generated/elements.d.ts`) are never edited by hand: regenerate them.
+**Owned files** (the frontmatter `owned_files` is authoritative; stage only these). `owned_files` and `lanes.json` `write_scope` are tool-owned and never hand-edited. A shared file you do not own is changed ONLY where this prompt says so, as a **recorded out-of-map edit**: you commit it with a plain `git add <path>` and `git commit`, and list it in the hand-off with a one-line rationale. A change you need in a file you do not own, and that this prompt does not name, is a **change request** in the hand-off (file, change, reason), not an edit. Generated files (`custom-elements.json`, `types.generated.ts`, `fixtures.generated.ts`, `contracts/fixtures/*.json` except `mission-status.changes.json`, `packages/mission-shell/src/generated/elements.d.ts`, and `packages/mission-shell/src/generated/intents.ts` if WP04 generates it) are never edited by hand: regenerate them.
 
 Shared-file owners (from `plan.md`, "Shared-file ownership"):
 

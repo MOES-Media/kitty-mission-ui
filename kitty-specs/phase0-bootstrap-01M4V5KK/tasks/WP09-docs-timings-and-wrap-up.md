@@ -6,7 +6,10 @@ dependencies:
 - WP07
 - WP08
 requirement_refs:
+- C-002
+- C-004
 - C-005
+- NFR-001
 - NFR-002
 - NFR-005
 - SC-002
@@ -79,12 +82,12 @@ Implementation command (orchestrator-run): `spec-kitty agent action implement WP
 
 ### T049 Proof-leg timings and timeouts (F-42, NFR-002)
 
-1. From the CI run of this lane's tip (the orchestrator pushes nothing; use `node scripts/gate-proof.mjs local` per affected gate when CI is not available, and say so), record for each affected proof leg (rust, typecheck, eslint, no-io, unit-tests, manifest, contract, hygiene):
+1. Work packages never push, so measure locally with `node scripts/gate-proof.mjs local` per affected gate, labelled **local proxy** (spec NFR-002 verification, A3). Record for each affected proof leg (rust, typecheck, eslint, no-io, unit-tests, manifest, contract, hygiene):
    - the clean gate time;
-   - the number of plants;
+   - the total number of plants in the leg, existing and new (A24);
    - the measured leg time.
-2. Set each matrix `timeout` to (1 + plants) × the measured gate minutes + 2, rounded up. Never lower an existing value below its pre-mission value.
-3. Check that every **gate** job (not proof leg) of this mission finished in ≤ 8 minutes (NFR-002). A gate over 8 is a BLOCKED report, not a timeout raise.
+2. Set each matrix `timeout` to (1 + total plants in the leg) × the measured local gate minutes + 2, rounded up, as the starting value. Never lower an existing value below its pre-mission value.
+3. Check locally that every **gate** job (not proof leg) touched by this mission runs in ≤ 8 minutes (NFR-002 proxy). A gate over 8 locally is a BLOCKED report, not a timeout raise. The binding CI-runner check, and the final proof-leg timeouts from measured CI times, are orchestrator items at the PR stage (T052 hand-off list).
 4. Recorded out-of-map edit to `ci.yml` (timeouts only). `gate-proof coverage` and hygiene must still pass.
 
 ### T050 Documentation
@@ -108,14 +111,19 @@ Implementation command (orchestrator-run): `spec-kitty agent action implement WP
 1. Run every gate on the lane tip, plus the canonical Rust gate with its install steps.
 2. Run `node scripts/gate-proof.mjs coverage` and the full `node scripts/gate-proof.mjs local`. Record every leg, and count the new plants: **16** (rust 3, typecheck 3, eslint 1, no-io 1, unit-tests 3, manifest 1, contract 2, hygiene 2). The count is asserted against the plant files, with equality.
 3. Run `git diff --exit-code <target-branch base before this mission> -- packages/mission-ui`, and record the empty diff (SC-005, C-002).
+4. Run `pnpm hygiene` and record that `cargo-pins` passes over WP07's manifests: WP07 and WP08 ran in parallel lanes, so this is the first combined run (A18).
+5. **NFR-001 step audit (A12):** for every job in `ci.yml` `all.needs` (each gate job, `proof-leg`, `proof`), list every step with its network use: none, dependency install from a lockfile (pnpm install, `rustup toolchain install`, `cargo fetch --locked`), or other. Any "other" step, or a gate step (`id: gate`) with network use, is a finding. Record the table in the hand-off.
+6. **C-005 evidence (A28):** record that `scripts/preflight.mjs` and `.github/actions/install` are unchanged by the mission (`git diff --exit-code <base> -- scripts/preflight.mjs .github/actions/install`), so no fork-PR workaround was added.
 
 ### T052 Evidence consolidation for the PR (orchestrator input)
 
 Write into the hand-off, not into `kitty-specs/`:
 - a supply-chain table across WP02 and WP07 (S-1 to S-5 per dependency, transitive publish dates, the `cargo audit` result);
-- the exceptions recorded (the generated-typings lint ignore);
+- the exceptions recorded, each with **scope, rationale, sunset criteria and an explicit operator-approval request**, as the charter's "Amendments and exceptions" requires (A15). The generated-typings lint ignore: scope = the exact path `packages/mission-shell/src/generated/**`; rationale = generated output, guarded by the staleness check; sunset = when the generator emits lint-clean output or the lint rule gains a generated-file allowance; approval = requested in the PR description;
 - every out-of-map edit made in the mission, collected from the hand-offs;
 - the decisions taken in WP04 T021 (the intent-binding path);
+- **orchestrator items at the PR stage** (A3, A11): (a) verify every gate job ≤ 8 minutes and set the final proof-leg timeouts from the PR's first CI run (NFR-002); (b) confirm `Gate: visual` is green on that run, because no WP runs `pnpm visual` (NFR-005, SC-005);
+- **SC-004 (A14)**: deferred to the #18 and #19 plan reviews. List the checklist they will apply: zero changes to `MissionStatusClient`, `Result`, `Refusal`, `ConnectionState`, `Change`, `SubscriptionScope` and `CLIENT_OPERATIONS`; zero changes to the workspace members and gate wiring; zero changes to `contracts/fixtures/*` shapes. Record it as "deferred, not failed";
 - **the F-29 follow-up**: already filed by the orchestrator as #28 (pnpm `minimumReleaseAge` with an `@spec-kitty` exclusion). Link it from the hand-off as "Follow-up: #28"; do not file anything.
 
 ### T053 Scope and acceptance check
@@ -132,11 +140,11 @@ No new tests; this WP runs and measures. `gate-proof local` (full) runs here.
 - **Docs:** the README "Host workspace" section, the mission-shell README and the CHANGELOG entry are written; hygiene and terminology are green.
 - **Gates:** every gate and full gate-proof are green; 16 new plants are counted with equality; coverage passes.
 - **SC-005:** the `packages/mission-ui` diff is empty, recorded.
-- **Evidence:** the hand-off has the evidence tables (supply chain, exceptions, out-of-map edits, decisions) and the requirement-to-proof table. The F-29 follow-up (#28) is linked; the orchestrator to file.
+- **Evidence:** the hand-off has the evidence tables (supply chain, exceptions with sunset criteria and approval request, out-of-map edits, decisions), the NFR-001 step audit, the C-005 no-workaround evidence, the SC-004 deferral checklist, the orchestrator PR-stage items (CI timings, visual) and the requirement-to-proof table. The F-29 follow-up (#28) is linked.
 
 ## Risks
 
-- **No CI run:** CI may not run on a lane. Use `gate-proof local` timings, labelled as local.
+- **No CI run:** WPs never push. Use `gate-proof local` timings, labelled as local; the CI check is the orchestrator's at the PR stage (A3).
 - **Gate over budget:** a gate over 8 minutes is BLOCKED; do not raise its timeout.
 
 ## Reviewer guidance
@@ -147,7 +155,7 @@ No new tests; this WP runs and measures. `gate-proof local` (full) runs here.
 
 ## Owned files, gates, red-first, commit rule
 
-**Owned files** (the frontmatter `owned_files` is authoritative; stage only these). `owned_files` and `lanes.json` `write_scope` are tool-owned and never hand-edited. A shared file you do not own is changed ONLY where this prompt says so, as a **recorded out-of-map edit**: you commit it with a plain `git add <path>` and `git commit`, and list it in the hand-off with a one-line rationale. A change you need in a file you do not own, and that this prompt does not name, is a **change request** in the hand-off (file, change, reason), not an edit. Generated files (`custom-elements.json`, `types.generated.ts`, `fixtures.generated.ts`, `contracts/fixtures/*.json` except `mission-status.changes.json`, `packages/mission-shell/src/generated/elements.d.ts`) are never edited by hand: regenerate them.
+**Owned files** (the frontmatter `owned_files` is authoritative; stage only these). `owned_files` and `lanes.json` `write_scope` are tool-owned and never hand-edited. A shared file you do not own is changed ONLY where this prompt says so, as a **recorded out-of-map edit**: you commit it with a plain `git add <path>` and `git commit`, and list it in the hand-off with a one-line rationale. A change you need in a file you do not own, and that this prompt does not name, is a **change request** in the hand-off (file, change, reason), not an edit. Generated files (`custom-elements.json`, `types.generated.ts`, `fixtures.generated.ts`, `contracts/fixtures/*.json` except `mission-status.changes.json`, `packages/mission-shell/src/generated/elements.d.ts`, and `packages/mission-shell/src/generated/intents.ts` if WP04 generates it) are never edited by hand: regenerate them.
 
 Shared-file owners (from `plan.md`, "Shared-file ownership"):
 
