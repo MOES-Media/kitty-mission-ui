@@ -101,7 +101,7 @@ The operator wants to know when spec-kitty's upstream contract moves away from t
 - An intent's name contains hyphens (every `sk-*` intent): the binding must deliver it unchanged.
 - The stub is asked for a read with no vendored example: it must answer with a clear "no example" error, never with invented data.
 - The scripted sequence includes a log-truncated marker: subscribers must see it as its own kind, not as a status change.
-- A developer's machine lacks the Rust toolchain: the build must fail with a message naming the missing toolchain and the pinned version.
+- A developer's machine lacks the Rust toolchain: the README states the prerequisite (rustup) and the pinned version; with rustup present, the pinned toolchain is installed on first use.
 - Fork pull requests cannot read the private design-library registry, so they still fail preflight (C-005).
 - The upstream repository is unreachable during the scheduled drift run: the run reports "unreachable" and does not report "no drift".
 
@@ -129,7 +129,7 @@ The operator wants to know when spec-kitty's upstream contract moves away from t
 | ID | Title | Requirement | Category | Priority | Status |
 |----|-------|-------------|----------|----------|--------|
 | NFR-001 | Offline merge gates | The checks of 0 merge-required gates contact the upstream spec-kitty repository or any service. Dependency installation from committed lockfiles (the existing pnpm install, and the cargo fetch of locked crates) is the only network use, as today. Verified by inspecting every step of every job the aggregate gate depends on. | Reliability | High | Open |
-| NFR-002 | Gate time budget | Every new or extended CI job finishes within the repository's existing gate timeout range (at most 8 minutes, the `storybook-build` tier) on the standard runner without a build cache, and every new action is pinned to a full commit SHA. | Performance | High | Open |
+| NFR-002 | Gate time budget | Every new or extended CI job finishes within the repository's existing gate timeout range (at most 8 minutes, the `unit-tests` tier) on the standard runner without a build cache, and every new action is pinned to a full commit SHA. | Performance | High | Open |
 | NFR-003 | Exact pins | 100% of new toolchains and dependencies are pinned to an exact version (no ranges, no floating channels). | Maintainability | High | Open |
 | NFR-004 | Deterministic stub | The scripted change sequence is byte-identical across 10 consecutive runs. | Reliability | High | Open |
 | NFR-005 | Gates stay green | All existing gates (typecheck, ESLint, Stylelint, no-io, data-driven, contract, manifest, hygiene, terminology, Storybook build, unit and interaction tests, visual, gate-proof) pass with 0 findings on the mission's pull request. | Quality | High | Open |

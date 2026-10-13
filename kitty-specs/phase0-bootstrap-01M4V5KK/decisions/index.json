@@ -47,6 +47,30 @@
       "status": "resolved",
       "step_id": null,
       "summary_json": null
+    },
+    {
+      "created_at": "2026-10-13T18:10:12.138692Z",
+      "decision_id": "01M4V7AC1A0KJFNQ2JS347XEGS",
+      "final_answer": "Own crate crates/kitty-stub (operator confirmed the engineering alignment 2026-10-13: keeps kitty-core free of server dependencies the hosts never use)",
+      "input_key": "stub_crate_placement",
+      "mission_id": "01M4V5KK5JCKYWZ6F3WS5DAQZK",
+      "mission_slug": "phase0-bootstrap-01M4V5KK",
+      "opened_by": "cli",
+      "options": [
+        "Own crate crates/kitty-stub",
+        "Module/feature inside kitty-core",
+        "Other"
+      ],
+      "origin_flow": "plan",
+      "other_answer": false,
+      "question": "Should the Rust stub live in its own crate (crates/kitty-stub) or inside kitty-core as issue #17 and epic #16 worded it?",
+      "rationale": null,
+      "resolved_at": "2026-10-13T18:10:13.553809Z",
+      "resolved_by": null,
+      "slot_key": "plan.structure.stub-crate",
+      "status": "resolved",
+      "step_id": null,
+      "summary_json": null
     }
   ],
   "mission_id": "01M4V5KK5JCKYWZ6F3WS5DAQZK",
