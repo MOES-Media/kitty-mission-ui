@@ -23,6 +23,30 @@
       "status": "resolved",
       "step_id": null,
       "summary_json": null
+    },
+    {
+      "created_at": "2026-10-13T17:53:33.288862Z",
+      "decision_id": "01M4V6BWK8JXK4B8TV09MP50AB",
+      "final_answer": "Shared generated JSON (examples + overlays) for both",
+      "input_key": "stub_data_source",
+      "mission_id": "01M4V5KK5JCKYWZ6F3WS5DAQZK",
+      "mission_slug": "phase0-bootstrap-01M4V5KK",
+      "opened_by": "cli",
+      "options": [
+        "Shared generated JSON (examples + overlays) for both",
+        "Raw vendored examples in Rust, separate TS fixtures",
+        "Other"
+      ],
+      "origin_flow": "plan",
+      "other_answer": false,
+      "question": "What single data source should the Rust stub and the TypeScript fixture adapter share: (a) the existing contract-validated fixture set (vendored examples plus overlays), emitted by the existing generator as a language-neutral JSON file that both read, with the scripted change sequence authored as JSON beside it; or (b) the raw vendored per-schema examples read directly by the Rust stub, with a separate TypeScript fixture adapter?",
+      "rationale": null,
+      "resolved_at": "2026-10-13T17:53:55.039976Z",
+      "resolved_by": null,
+      "slot_key": "plan.data.stub-source",
+      "status": "resolved",
+      "step_id": null,
+      "summary_json": null
     }
   ],
   "mission_id": "01M4V5KK5JCKYWZ6F3WS5DAQZK",
