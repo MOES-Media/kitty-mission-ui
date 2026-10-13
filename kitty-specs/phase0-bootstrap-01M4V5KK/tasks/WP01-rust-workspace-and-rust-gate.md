@@ -87,7 +87,7 @@ Repository facts you will rely on:
 - Gate jobs have 5-minute timeouts, except `preflight` (1), `unit-tests` (8) and `visual` (28) (C17).
 - Only the pnpm store is cached ("nothing else is"). Do not add a cargo cache; that is a policy change outside this mission (R-02).
 
-This WP owns `ci.yml`. Other WPs' proof legs gain plants, so this WP sets starting matrix timeouts now only for the legs whose formula value already exceeds their current timeout (F-42; D14): contract 6→10, unit-tests 11→16, stylelint 6→9 and data-driven 6→8. The other legs that gain plants (typecheck 1→4, hygiene 3→5, no-io 3→4, eslint 6→7, manifest 1→2) stay at 6 because their gates are fast; WP09 T049 re-times every leg from measurements (WP02 adds a plant to each and widens both gates to `.svelte`; C3). WP09 re-measures and adjusts them.
+This WP owns `ci.yml`. Other WPs' proof legs gain plants, so this WP sets starting matrix timeouts now only for the legs whose formula value already exceeds their current timeout (F-42; D14): contract 6→10, unit-tests 11→16, stylelint 6→9 and data-driven 6→8. The other legs that gain plants (plant counts: typecheck 1→4, hygiene 3→5, no-io 3→4, eslint 6→7, manifest 1→2) keep their 6-minute timeout because their gates are fast; WP09 T049 re-times every leg from measurements (WP02 adds a plant to each and widens both gates to `.svelte`; C3). WP09 re-measures and adjusts them.
 
 ## Branch Strategy
 
@@ -183,7 +183,7 @@ Create `gates/plants/rust/plant.json` as an array of three plants. Each has `gat
 
 1. **Format**: an `edits` overlay on `crates/kitty-core/src/lib.rs` that inserts a line with broken spacing inside a function, carrying a unique token, for example `let plant_fmt_rust=1 ;` plus a use of it. `expectFailPattern`: `plant_fmt_rust` (rustfmt's diff prints the line).
 2. **Clippy**: an `edits` overlay adding `#[allow(dead_code)] fn plant_clippy() -> bool { let plant_clippy_rust = true; plant_clippy_rust == true }`, formatted by rustfmt so the comparison sits on its own line. The token is the variable on the linted line, so the `bool_comparison` snippet prints it (D1). `bool_comparison` is deny-by-warn under `-D warnings`. `expectFailPattern`: `plant_clippy_rust`. It must pass fmt, so format it correctly.
-3. **Test**: a `source` overlay creating `crates/kitty-core/tests/plant_test_rust.rs` with `#[test] fn plant_test_rust() { assert_eq!(1, 2, "plant_test_rust"); }`. Integration tests in `tests/` are auto-discovered. `expectFailPattern`: `plant_test_rust`. It must pass fmt and clippy.
+3. **Test**: a `source` overlay (payload `gates/plants/rust/plant_test_rust.rs.plant`; E4) creating `crates/kitty-core/tests/plant_test_rust.rs` with `#[test] fn plant_test_rust() { assert_eq!(1, 2, "plant_test_rust"); }`. Integration tests in `tests/` are auto-discovered. `expectFailPattern`: `plant_test_rust`. It must pass fmt and clippy.
 
 Run `node scripts/gate-proof.mjs local --only rust` and record that the clean run is green and each planted run is red with its pattern.
 

@@ -335,7 +335,7 @@ Each shared file has exactly one owning IC. Other ICs request their changes thro
 | `eslint.config.mjs`, `eslint.no-io.config.mjs`, `eslint.data-driven.config.mjs`, `stylelint.config.mjs`, `gates/data-driven.selftest.ts`, `gates/plants/stylelint/**`, `gates/plants/data-driven/plant.json` | IC-03 | none (the exact-path ignore for the generated `elements.d.ts` is pre-added by IC-03, F-45) |
 | `scripts/check-hygiene.mjs`, `scripts/hygiene/**` (including `cargo-pins.mjs`) | IC-07 | — |
 | `gates/plants/rust/plant.json` | IC-02 | — |
-| `gates/plants/typecheck/plant.json` | IC-03 | IC-04 |
+| `gates/plants/typecheck/plant.json` and the payloads `PlantProp.svelte.plant`, `PlantIntent.svelte.plant` | IC-03 | IC-04 |
 | `gates/plants/eslint/plant.json`, `gates/plants/no-io/plant.json` | IC-03 | — |
 | `gates/plants/unit-tests/plant.json` | IC-06 | IC-05 |
 | `gates/plants/manifest/plant.json` | IC-04 | — |

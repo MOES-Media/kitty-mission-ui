@@ -75,7 +75,7 @@ Do not spawn sub-agents or forks; do this work package yourself.
 
 ## Objective
 
-Create the `@moes-media/mission-shell` package and teach the existing gates about Svelte. `svelte-check` joins the typecheck gate. ESLint parses `.svelte` files. Stylelint's token-only rules cover `.svelte` style blocks (B2), and the data-driven gate covers `.svelte` with a plant (B3, C1). The no-io gate covers the shell, including `<script>` blocks (FR-007, C-001). The terminology scan includes `.svelte` and `.rs` files. Every new rule gets a planted defect (FR-006). All new npm dependencies are pinned exactly, with supply-chain evidence (NFR-003).
+Create the `@moes-media/mission-shell` package and teach the existing gates about Svelte. `svelte-check` joins the typecheck gate. ESLint parses `.svelte` files. Stylelint's rules (proved through the layout-only `property-allowed-list` rule; E2) cover `.svelte` style blocks (B2), and the data-driven gate covers `.svelte` with a plant (B3, C1). The no-io gate covers the shell, including `<script>` blocks (FR-007, C-001). The terminology scan includes `.svelte` and `.rs` files. Every new rule gets a planted defect (FR-006). All new npm dependencies are pinned exactly, with supply-chain evidence (NFR-003).
 
 ## Context
 
@@ -189,7 +189,7 @@ The no-io and data-driven self-test cases, the terminology tests and the five ne
 
 - **Package:** `@moes-media/mission-shell` exists with a `typecheck` (svelte-check) and a `test` script, and its tsconfig extends the base. For this source-only package, "builds" (FR-005, US2 AC1) means `pnpm --filter @moes-media/mission-shell typecheck` (svelte-check) exits 0 with 0 errors (B14).
 - **Dependencies:** six npm dependencies (including `postcss-html`) pinned exactly, with supply-chain evidence (S-1 to S-5 and transitive publish dates). No `@wc-toolkit`. `allowBuilds` is unchanged.
-- **Svelte in the gates:** ESLint parses `.svelte`. Stylelint's token-only rules cover `.svelte` style blocks (stylelint plant, B2). The data-driven gate covers `.svelte` (self-test cases, B3, and a plant on the S1 rule message, C1). The no-io gate covers `.svelte` and `.ts` in the shell (self-test cases plus a plant on the rule message). The typecheck and eslint gates have Svelte plants. The terminology scan covers `.svelte` and `.rs`.
+- **Svelte in the gates:** ESLint parses `.svelte`. Stylelint's rules cover `.svelte` style blocks; the plant proves the `.svelte` wiring through the layout-only `property-allowed-list` rule (B2, E2). The data-driven gate covers `.svelte` (self-test cases, B3, and a plant on the S1 rule message, C1). The no-io gate covers `.svelte` and `.ts` in the shell (self-test cases plus a plant on the rule message). The typecheck and eslint gates have Svelte plants. The terminology scan covers `.svelte` and `.rs`.
 - **Pre-added for later WPs:** the `contract:drift` script and the generated-typings lint ignore, with the exception recorded.
 - **Unchanged:** nothing under `packages/mission-ui` changed. Every gate is green.
 

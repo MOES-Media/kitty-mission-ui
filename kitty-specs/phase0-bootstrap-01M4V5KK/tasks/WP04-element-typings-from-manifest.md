@@ -72,9 +72,10 @@ This WP depends on WP02:
 - the lint ignore for `src/generated/elements.d.ts` is already in place;
 - WP02 owns the root `package.json` and `gates/plants/typecheck/plant.json`.
 
-This WP makes two recorded out-of-map edits:
+This WP makes three recorded out-of-map edits (E1):
 1. the root `package.json`: `manifest:check` also runs `node scripts/typings.mjs --check`, and `scripts/typings.test.mjs` is appended to `test:scripts`;
-2. `gates/plants/typecheck/plant.json`: two plants are appended.
+2. `gates/plants/typecheck/plant.json`: two plants are appended;
+3. two new payload files in `gates/plants/typecheck/` (WP02-owned): `PlantProp.svelte.plant` and `PlantIntent.svelte.plant`. Stage them with the other recorded edits.
 
 ## Branch Strategy
 
