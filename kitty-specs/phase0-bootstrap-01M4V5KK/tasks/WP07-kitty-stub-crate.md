@@ -10,6 +10,8 @@ requirement_refs:
 - NFR-003
 - NFR-004
 - SC-003
+- NFR-001
+- NFR-002
 planning_base_branch: feat/phase0-bootstrap-17
 merge_target_branch: feat/phase0-bootstrap-17
 branch_strategy: Planning artifacts for this mission were generated on feat/phase0-bootstrap-17. During /spec-kitty.implement this WP may branch from a dependency-specific base, but completed changes must merge back into feat/phase0-bootstrap-17 unless the human explicitly redirects the landing branch.
@@ -151,7 +153,7 @@ Record exactly `{ method, path, headers }` of the most recent `/api/v1/*` reques
 
 - **`tests/routes.rs`** (router in-process with `tower::ServiceExt::oneshot`):
   - every read in `routes.json` (9) returns `200`, with a body JSON-value-equal to `examples.json[defaultExample].value`. `examples.json` is the oracle: the contract gate verified it against the YAML (F-04). The loop count is asserted.
-  - **every selectable example (B6):** loop over every `examples.json` entry whose schema is some read route's `responseSchema` or a key of its `refusals` (plus the `StreamRefusal` entries on `/api/v1/events`), select it with `X-Kitty-Stub-Example` on that route, and assert the served status (200, or the example's own `status` with `application/problem+json`) and a JSON-value-equal body. The test derives the selectable set from `routes.json` and `examples.json`, then asserts its size equals the documented figure (57 at the current pin, stub-http.md) and that the loop ran exactly that many times;
+  - **every selectable example (B6):** loop over every `examples.json` entry whose schema is some read route's `responseSchema` or a key of its `refusals` (plus the `StreamRefusal` entries on `/api/v1/events`), select it with `X-Kitty-Stub-Example` on a route where its schema fits **and**, for a refusal, its own `status` is in that route's allowed list for the schema (C6: `ArtifactRefusal` and `PageCursorRefusal` sit on two routes with different allowed statuses, so choosing by schema alone sends, for example, `artifact-not-text` (415) to `listArtifacts` and gets `400`); each example is asserted exactly once, and assert the served status (200, or the example's own `status` with `application/problem+json`) and a JSON-value-equal body. The test derives the selectable set from `routes.json` and `examples.json`, then asserts its size equals the documented figure (57 at the current pin, stub-http.md) and that the loop ran exactly that many times;
   - a selected refusal example returns its own status and `application/problem+json`;
   - an event example on a read gives `400`;
   - a disallowed status gives `400`;
@@ -222,7 +224,7 @@ Shared-file owners (from `plan.md`, "Shared-file ownership"):
 | File | Owning WP |
 |---|---|
 | `.github/workflows/ci.yml`, root `Cargo.toml`, `Cargo.lock`, `rust-toolchain.toml`, `.gitignore`, `gates/plants/rust/**` | WP01 |
-| root `package.json`, `pnpm-lock.yaml`, `eslint.config.mjs`, `eslint.no-io.config.mjs`, `eslint.data-driven.config.mjs`, `gates/plants/typecheck/**`, `gates/plants/eslint/**`, `gates/plants/no-io/**`, `gates/plants/stylelint/**`, `stylelint.config.mjs`, `gates/data-driven.selftest.ts` | WP02 |
+| root `package.json`, `pnpm-lock.yaml`, `eslint.config.mjs`, `eslint.no-io.config.mjs`, `eslint.data-driven.config.mjs`, `gates/plants/typecheck/**`, `gates/plants/eslint/**`, `gates/plants/no-io/**`, `gates/plants/data-driven/**`, `gates/plants/stylelint/**`, `stylelint.config.mjs`, `gates/data-driven.selftest.ts` | WP02 |
 | `scripts/contract/{generate,check,registry}.mjs` and their tests, `contracts/fixtures/**`, `gates/plants/contract/**` | WP03 |
 | `gates/plants/manifest/**`, `scripts/typings.mjs` | WP04 |
 | `gates/plants/unit-tests/**` | WP06 |
@@ -237,6 +239,7 @@ Shared-file owners (from `plan.md`, "Shared-file ownership"):
   ```
 
 - `pnpm visual` and `node scripts/gate-proof.mjs local` are run only where this prompt's "Test strategy" says so.
+- **Gate-proof clean-output rule (C5):** `scripts/gate-proof/lib.mjs` fails a leg when any plant's `expectFailPattern` appears in the **clean** run's output, and it matches a plant with one `output.includes` substring (C4). So every plant token must be a single substring that is printed only when that plant's violation fires: never a test name, an identifier that clean tests print, or a file name a parse error would also print.
 - If a script name differs on the build base, use the name the base provides and say so.
 
 **Red-first rule.** For every behaviour, plant and gate case:
