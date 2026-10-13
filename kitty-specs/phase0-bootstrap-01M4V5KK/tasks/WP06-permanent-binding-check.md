@@ -12,6 +12,7 @@ requirement_refs:
 - SC-001
 - SC-002
 - FR-006
+- FR-009
 planning_base_branch: feat/phase0-bootstrap-17
 merge_target_branch: feat/phase0-bootstrap-17
 branch_strategy: Planning artifacts for this mission were generated on feat/phase0-bootstrap-17. During /spec-kitty.implement this WP may branch from a dependency-specific base, but completed changes must merge back into feat/phase0-bootstrap-17 unless the human explicitly redirects the landing branch.
@@ -90,19 +91,19 @@ Implementation command (orchestrator-run): `spec-kitty agent action implement WP
 ### T030 The harness (`src/harness/BindingHarness.svelte`)
 
 **Steps**:
-1. Write a Svelte 5 component (runes) that takes props `items`, `status`, `loadingMore`, `onIntent: (name: string, detail: unknown) => void` and `register: boolean` (default `true`).
+1. Write a Svelte 5 component (runes) that takes props `missions`, `status`, `loadingMore` and `onIntent: (name: string, detail: unknown) => void`. There is no `register` prop: registration is the module-top side-effect import in step 2, which no prop can toggle (B9).
 2. Registration: `import '@moes-media/mission-ui';` (the side-effect import) must run **before** the element mounts. Put it at module top level. WP06 T034's registration-order plant moves it after mount.
-3. Render `<sk-missions-screen {items} {status} {loadingMore} …intent bindings…></sk-missions-screen>`.
+3. Render `<sk-missions-screen {missions} {status} {loadingMore} …intent bindings…></sk-missions-screen>`. The element's data property is `missions` (`MissionOverviewView[]`, no attribute); it has no `items` property (B1). The harness is mounted with `missions={page.items}`.
 4. Intent bindings: one handler per event that `sk-missions-screen` declares in `custom-elements.json` (`sk-open-mission`, `sk-search`, `sk-load-more`, `sk-filter-change`). Use the path WP04 chose. Each handler calls `onIntent('<event-name>', event.detail)`.
 5. The harness must not hard-code lane, phase or artifact words (data-driven gate) and performs no I/O.
-6. `items` come from `contracts/fixtures/mission-status.fixtures.json` (a valid `MissionOverviewPage` fixture's `items`), read directly as the independent oracle (test-quality rule 3), not through WP05's fixture adapter (A27).
+6. `missions` comes from `contracts/fixtures/mission-status.fixtures.json` (a valid `MissionOverviewPage` fixture's `items`), read directly as the independent oracle (test-quality rule 3), not through WP05's fixture adapter (A27).
 
 ### T031 Data path: values, not text (FR-001, F-01, R2-01)
 
 In `test/binding.test.ts`, run in the browser: `page.viewport` first, then mount the harness with Svelte's `mount()`. Assertions:
-1. `el.items` is an `Array` (`Array.isArray`) and `toEqual(fixtureItems)`. The screen renders exactly N rows for N items; locate them through their accessible names or the screen's public parts. Never use private class names.
+1. `el.missions` is an `Array` (`Array.isArray`) and `toEqual(fixtureItems)` (the fixture page's `items`). The screen renders exactly N rows for N items; locate them through their accessible names or the screen's public parts. Never use private class names.
 2. `el.loadingMore === true`, a **non-default primitive** that only arrives through the property.
-3. **No stray attributes**: for every prop the harness passed (`items`, `status`, `loadingMore`), `el.hasAttribute(name.toLowerCase())` is false, unless that property reflects (check the element source and list any reflected one as an explicit exception in the test). Positive control in the same test: `el.setAttribute('loadingmore', 'x')` makes `hasAttribute` true, proving the assertion can see attributes.
+3. **No stray attributes**: for every prop the harness passed, the attribute a wrong binding would create is absent: `missions` and `loadingmore` (the lower-cased prop names Svelte's `setAttribute` fallback would use) are absent, and so is the declared attribute `loading-more`. `status` **reflects** (`reflects: true` in `custom-elements.json`), so its `status` attribute is expected: the exception is mandatory, written explicitly in the test with a comment citing the manifest entry (B1). Positive control in the same test: `el.setAttribute('loadingmore', 'x')` makes `hasAttribute` true, proving the assertion can see attributes.
 4. `status` arrives as the property value given.
 
 ### T032 Intent path: every declared intent (FR-002, SC-001, F-11)
@@ -135,7 +136,7 @@ Run `node scripts/gate-proof.mjs local --only unit-tests` and record each patter
 ### T035 Exit checks and the SC-005 probe
 
 1. Run every gate.
-2. Run `git diff --exit-code <lane base> -- packages/mission-ui` and record the empty output (C-002, SC-005).
+2. Run `git diff --exit-code "$(git merge-base HEAD main)" -- packages/mission-ui` (the merge-base with `main`, B22) and record the empty output (C-002, SC-005).
 3. Revert checks:
    - temporarily delete the side-effect import, and see T031 fail;
    - temporarily remove one handler, and see T032 fail.
@@ -156,7 +157,7 @@ Browser-mode binding tests and three unit-tests plants. `gate-proof local --only
 ## Risks
 
 - **Row selection:** use public, accessible names, not shadow-DOM internals.
-- **Reflected properties:** if `status` reflects, exclude it from the stray-attribute check explicitly, with a comment and the element source line.
+- **Reflected properties:** `status` reflects (manifest `reflects: true`), so it is excluded from the stray-attribute check explicitly, with a comment and the manifest reference. This exception is mandatory (B1).
 - **Plant ordering:** the registration-order plant must keep the module compiling.
 
 ## Reviewer guidance
@@ -174,7 +175,7 @@ Shared-file owners (from `plan.md`, "Shared-file ownership"):
 | File | Owning WP |
 |---|---|
 | `.github/workflows/ci.yml`, root `Cargo.toml`, `Cargo.lock`, `rust-toolchain.toml`, `.gitignore`, `gates/plants/rust/**` | WP01 |
-| root `package.json`, `pnpm-lock.yaml`, `eslint.config.mjs`, `eslint.no-io.config.mjs`, `eslint.data-driven.config.mjs`, `gates/plants/typecheck/**`, `gates/plants/eslint/**`, `gates/plants/no-io/**` | WP02 |
+| root `package.json`, `pnpm-lock.yaml`, `eslint.config.mjs`, `eslint.no-io.config.mjs`, `eslint.data-driven.config.mjs`, `gates/plants/typecheck/**`, `gates/plants/eslint/**`, `gates/plants/no-io/**`, `gates/plants/stylelint/**`, `stylelint.config.mjs`, `gates/data-driven.selftest.ts` | WP02 |
 | `scripts/contract/{generate,check,registry}.mjs` and their tests, `contracts/fixtures/**`, `gates/plants/contract/**` | WP03 |
 | `gates/plants/manifest/**`, `scripts/typings.mjs` | WP04 |
 | `gates/plants/unit-tests/**` | WP06 |
