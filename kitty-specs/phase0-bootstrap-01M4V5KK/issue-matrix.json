@@ -108,6 +108,18 @@
       "verdict": "not-applicable",
       "wp": null
     },
+    "#5529": {
+      "evidence_ref": "Context-only: spec-kitty/spec-kitty#5529 is upstream work this mission builds against via the pinned contract and stub; owes it no work.",
+      "fr": null,
+      "nfr": null,
+      "repo": null,
+      "sc": null,
+      "scope": null,
+      "source_file": null,
+      "title": null,
+      "verdict": "not-applicable",
+      "wp": null
+    },
     "#5533": {
       "evidence_ref": "<link or commit>",
       "fr": null,
