@@ -12,7 +12,7 @@ kitty-stub --fixtures <dir> [--port <n>] [--heartbeat-ms <ms>] [--time-scale <f>
 | `--heartbeat-ms` | `30000` | interval between `: heartbeat` comments |
 | `--time-scale` | `1.0` | multiplier for every item's `delayMs`; tests use `0` |
 
-The stub binds `127.0.0.1:<port>` only. The first line on stdout is `listening <addr>`, printed from the bound listener's `local_addr()` (never from configuration), so tests and later missions can read the bound port. The loopback test runs the real binary, asserts the announced address is `127.0.0.1`, and connects on a non-loopback local address expecting a refusal. That address is found with `std` only (a UDP socket "connect" to a documentation-range address reveals the default-route local IP without sending traffic); the test is skipped, with the reason logged, when it is loopback or unavailable. No crate is added (R2-08, R3-07). (The upstream service does not announce its port, epic #16; the stub deliberately does.) The stub loads every file in `<dir>` once at start-up.
+The stub binds `127.0.0.1:<port>` only. The first line on stdout is `listening <addr>`, printed from the bound listener's `local_addr()` (never from configuration), so tests and later missions can read the bound port. The loopback test runs the real binary, asserts the announced address is `127.0.0.1`, and connects on a non-loopback local address expecting a refusal. That address is found with `std` only (a UDP socket "connect" to a documentation-range address reveals the default-route local IP without sending traffic); the test is skipped, with the reason logged, when it is loopback or unavailable. No crate is added (R2-08, R3-07). (The upstream service does not announce its port, epic #16; the stub deliberately does.) The stub loads the four named files from `<dir>` (`routes.json`, `examples.json`, `fixtures.json`, `changes.json`, each with its `mission-status.` prefix) once at start-up (B17).
 
 ## Request rules (all routes, mirroring the upstream service)
 
@@ -35,6 +35,7 @@ Which body is served (the fixture header takes precedence over the example heade
 1. With header `X-Kitty-Stub-Fixture: <fixture name>`: that `fixtures.json` value. An unknown name gets `404` with `{"code":"no-fixture"}`.
 2. Otherwise, with header `X-Kitty-Stub-Example: <Schema>.<name>`: that `examples.json` value. An unknown name gets `404` with `{"code":"no-example"}`.
 3. Otherwise: the route's `defaultExample`.
+3a. If that `defaultExample` is `null`: `501` with `{"code":"no-example","operationId":"<id>"}`. This branch is tested with a synthetic routes file, because the current pin has no null (B17).
 
 A selection (1 or 2) is accepted only when the entry's schema fits the route (R2-06):
 - equal to the route's `responseSchema`: served with `200`;
@@ -43,10 +44,10 @@ A selection (1 or 2) is accepted only when the entry's schema fits the route (R2
 
 Where two operations share a refusal schema (`ArtifactRefusal` on `listArtifacts` and `getArtifactContent`), a refusal example whose status is allowed on the route is served even if its `code` belongs to the other operation. The body is still schema-valid, and the check is by schema and status, not by code.
 
-So every vendored example that is a **complete response** of some route is reachable on that route. That covers successes, refusals, and the five `StreamRefusal` examples, which `GET /api/v1/events` serves (as `application/problem+json` with their own status, instead of the stream) when `X-Kitty-Stub-Example` names one. The events route applies the same rule as reads: the example's schema must be in the route's `refusals` (`StreamRefusal: [400, 409]`) and its own `status` in that list, otherwise `400` `schema-mismatch` (A5). The stub never serves a refusal or an event payload as a successful read. Of the 77 examples, 20 are not selectable:
+So every vendored example that is a **complete response** of some route is reachable on that route. That covers successes, refusals, and the five `StreamRefusal` examples, which `GET /api/v1/events` serves (as `application/problem+json` with their own status, instead of the stream) when `X-Kitty-Stub-Example` names one. The events route applies the same rule as reads: the example's schema must be in the route's `refusals` (`StreamRefusal: [400, 409]`) and its own `status` in that list, otherwise `400` `schema-mismatch` (A5). The stub never serves a refusal or an event payload as a successful read. Of the 77 examples, 57 are selectable (the figure WP07's exhaustive test asserts, B6) and 20 are not selectable:
 
 - 13 component-level examples, for example a single `MissionOverview` row. They stay in `examples.json` for the shell's fixture adapter.
-- 7 event examples. These are stream items: the stub emits events from `changes.json`, not as response bodies (R3-06). When the default is `null`: `501` with `{"code":"no-example","operationId":"<id>"}`. This branch is tested with a synthetic routes file, because the current pin has no null.
+- 7 event examples. These are stream items: the stub emits events from `changes.json`, not as response bodies (R3-06).
 
 These two headers and the `code` values (`no-fixture`, `no-example`, `schema-mismatch`) are stub-local, not part of the contract.
 

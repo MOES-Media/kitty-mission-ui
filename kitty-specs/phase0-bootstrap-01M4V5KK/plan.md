@@ -59,7 +59,7 @@ This plan lays the ground for the host missions (#18 to #21). It has three parts
 | Hosts read spec-kitty only through published contracts | PASS | The stub, examples and fixtures derive only from the pinned vendored contract. |
 | Host servers bind 127.0.0.1 only and enforce their own Host and Origin checks | PASS | The stub has no exemption. It binds `127.0.0.1` (proved against the real binary), accepts only Host `127.0.0.1:<port>` or `localhost:<port>`, accepts Origin only when absent or same-origin, and refuses `Forwarded` and `X-Forwarded-*` with 403, mirroring the upstream service. It also has `publish = false` (R-07). |
 | Quality gates: typecheck, ESLint, Stylelint, … `svelte-check`, `cargo fmt`, `clippy -D warnings`, `cargo test` | PASS | Each one is wired into an existing or new gate with a plant (see Gates). |
-| Elements over CSS; layout-only CSS with tokens | PASS (n/a) | No visual CSS in this mission. The harness renders an existing screen. |
+| Elements over CSS; layout-only CSS with tokens | PASS | No visual CSS in this mission (the harness renders an existing screen), but the token-only Stylelint rules are extended to `.svelte` style blocks so #18's shell CSS is judged like screen CSS (B2, IC-03). |
 | Review: separate reviewer per WP; squad after plan; operator merges | PASS | This squad is recorded in `reviews/plan.squad.md`. A pre-merge squad follows prior-mission practice (F-47). |
 | Risk boundaries: no secrets, paths or usernames in tracked files | PASS | `target/` and `apps/*/src-tauri/gen` are gitignored, and the hygiene gate scans the new files. The drift workflow uses no secrets. |
 | Exact version pins | PASS | NFR-003: npm (existing rule), Cargo (new `cargo-pins` hygiene check), toolchain (`rust-toolchain.toml`). |
@@ -175,7 +175,8 @@ scripts/terminology.mjs            # EXTENDED: .svelte sources and crates/**/*.r
 gates/plants/{rust,typecheck,eslint,no-io,unit-tests,manifest,contract,hygiene}/  # NEW/EXTENDED plants
 .github/workflows/ci.yml           # EXTENDED: Gate: rust (+ fetch steps, proof-leg matrix + steps, all.needs), timeouts
 .github/workflows/contract-drift.yml  # NEW scheduled + workflow_dispatch, not a gate, no install, no secrets
-eslint.config.mjs, eslint.no-io.config.mjs, eslint.data-driven.config.mjs  # EXTENDED: Svelte parser, shell scope, target/ ignores, generated-file ignore
+eslint.config.mjs, eslint.no-io.config.mjs, eslint.data-driven.config.mjs  # EXTENDED: Svelte parser, shell scope, target/ ignores, generated-file ignore (data-driven also over .svelte, B3)
+stylelint.config.mjs               # EXTENDED: postcss-html custom syntax for **/*.svelte (B2)
 .gitignore                         # EXTENDED: target/, apps/*/src-tauri/gen
 ```
 
@@ -318,7 +319,7 @@ eslint.config.mjs, eslint.no-io.config.mjs, eslint.data-driven.config.mjs  # EXT
 - **Relevant requirements**: SC-004, SC-005, NFR-005, spec edge case 5.
 - **Affected surfaces**: `README.md`, `CHANGELOG.md`, `packages/mission-shell/README.md`.
 - **Sequencing/depends-on**: all.
-- **Risks**: the wrap-up runs `git diff --exit-code origin/main -- packages/mission-ui` and records the result. The reviewer repeats it (F-14).
+- **Risks**: the wrap-up runs `git diff --exit-code "$(git merge-base HEAD main)" -- packages/mission-ui` (one base everywhere: the merge-base with `main`, B22) and records the result. The reviewer repeats it (F-14).
 
 ## Shared-file ownership
 
@@ -330,7 +331,7 @@ Each shared file has exactly one owning IC. Other ICs request their changes thro
 | `pnpm-lock.yaml` | IC-03 | IC-04 (none expected after F-30) |
 | `.github/workflows/ci.yml` (all jobs, proof-leg matrix and steps, timeouts, `all.needs`) | IC-02 | IC-01 (contract proof-leg timeout), IC-03, IC-04 (typecheck and manifest proof legs gain plants), IC-06 (unit-tests timeout), IC-07 (hygiene proof leg gains plants) |
 | root `Cargo.toml` (`[workspace]` members and `[workspace.dependencies]` exact pins), `Cargo.lock` | IC-02 | IC-08 (axum, tokio, serde, serde_json, tower, http-body-util pins) |
-| `eslint.config.mjs`, `eslint.no-io.config.mjs`, `eslint.data-driven.config.mjs` | IC-03 | IC-04 (exact-path ignore for the generated `elements.d.ts`, F-45) |
+| `eslint.config.mjs`, `eslint.no-io.config.mjs`, `eslint.data-driven.config.mjs`, `stylelint.config.mjs`, `gates/data-driven.selftest.ts`, `gates/plants/stylelint/**` | IC-03 | none (the exact-path ignore for the generated `elements.d.ts` is pre-added by IC-03, F-45) |
 | `scripts/check-hygiene.mjs`, `scripts/hygiene/**` (including `cargo-pins.mjs`) | IC-07 | — |
 | `gates/plants/rust/plant.json` | IC-02 | — |
 | `gates/plants/typecheck/plant.json` | IC-03 | IC-04 |
@@ -339,6 +340,7 @@ Each shared file has exactly one owning IC. Other ICs request their changes thro
 | `gates/plants/manifest/plant.json` | IC-04 | — |
 | `gates/plants/contract/plant.json` | IC-01 | — |
 | `gates/plants/hygiene/plant.json` | IC-07 | — |
+| `packages/mission-shell/src/index.ts`, `packages/mission-shell/tsconfig.json`, `packages/mission-shell/vitest.config.ts` | IC-03 | IC-05 (`index.ts`: export the port and the fixture client, A9; tsconfig/vitest JSON-import settings if needed) |
 | `.gitignore` | IC-02 | IC-03 |
 | `README.md`, `CHANGELOG.md` | IC-09 | all |
 
@@ -359,13 +361,15 @@ It is preceded by two separate steps, in both the gate job and the proof leg whe
 | `rust` (new) | the canonical command above | format; clippy; failing test (anchored edits or `tests/plant_*.rs`) |
 | `typecheck` | `svelte-check` through the `mission-shell` typecheck script | Svelte type error; a non-existent element property; a renamed intent handler |
 | `eslint` | Svelte parser and config | Svelte lint violation |
+| `stylelint` | `lint:styles` also globs `packages/*/src/**/*.svelte` with the `postcss-html` custom syntax, so the token-only rules reach `.svelte` style blocks (B2) | a raw colour literal in a `.svelte` `<style>` block |
 | `no-io` | scope includes `packages/mission-shell/src/**/*.{ts,svelte}` | `fetch` in a `.svelte` script block (pattern = the rule message) |
+| `data-driven` | the config's rule blocks also cover `**/*.svelte` with the Svelte parser; self-test cases (B3) | none (self-test cases instead) |
 | `unit-tests` | the root `test` script changes from mission-ui only to every workspace package's `test`, run one package at a time (`pnpm -r --workspace-concurrency=1 test`, R3-08) (so it includes the `mission-shell` binding, coverage and fixture-client tests); `ciCommand` stays `pnpm test` | registration order (mount before import); intent-path break; a `CLIENT_OPERATIONS` entry deleted with its method |
 | `manifest` | typings staleness check | stale typings |
 | `contract` | examples/fixtures/routes staleness, the examples-vs-YAML oracle, change-sequence validation | stale JSON; invalid change item |
 | `hygiene` | `cargo-pins`; workflow pin, permissions and credential checks on every workflow | a caret range in a Cargo.toml; an unpinned action in a non-ci workflow |
 
-That is 16 new plants (rust 3, typecheck 3, eslint 1, no-io 1, unit-tests 3, manifest 1, contract 2, hygiene 2). SC-002's six named proofs are a subset: Rust format, Rust lint, Rust tests, the Svelte check, the typings, and no-io over the shell.
+That is 17 new plants (rust 3, typecheck 3, eslint 1, stylelint 1, no-io 1, unit-tests 3, manifest 1, contract 2, hygiene 2). SC-002's six named proofs are a subset: Rust format, Rust lint, Rust tests, the Svelte check (the typecheck "Svelte type error" plant), the declaration typings (the typecheck "non-existent element property" plant, B21; the manifest stale-typings plant is secondary) and no-io over the shell.
 
 **Proof-leg timeouts (F-42)**: NFR-002's 8-minute cap applies to gate jobs; proof legs are governed by this formula instead (spec NFR-002). Every plant is a full gate run, so each WP records local `gate-proof local` timings for the legs it touches (a proxy), and the matrix timeout is (1 + the total number of plants in that leg, existing and new) × the measured gate time + 2 minutes (A24). The orchestrator re-measures on the mission PR's first CI run and sets the final values there (spec NFR-002 verification, A3). The starting values are contract 6→10 and unit-tests 11→16, with `rust` computed from its first measured run. The measurements are recorded in the WP.
 
@@ -382,7 +386,8 @@ One PR from `feat/phase0-bootstrap-17` into `main`. Each WP is reviewed by a sep
 | FR-005 | IC-02, IC-03 |
 | FR-006 | IC-02, IC-03, IC-04, IC-07 |
 | FR-007 | IC-03 |
-| FR-008, FR-009 | IC-05 |
+| FR-008 | IC-05 |
+| FR-009 | IC-05, IC-06 (the coverage plant) |
 | FR-010 | IC-01, IC-08 |
 | FR-011 | IC-01, IC-05, IC-08 |
 | FR-012 | IC-07 |

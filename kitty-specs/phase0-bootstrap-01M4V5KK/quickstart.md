@@ -9,7 +9,7 @@ Prerequisites:
 pnpm install
 rustup toolchain install                   # installs the toolchain pinned in rust-toolchain.toml
 cargo fetch --locked
-cargo build --workspace --frozen           # all crates, including the placeholders
+cargo build --workspace --locked           # all crates, including the placeholders (as WP01's DoD)
 
 # the shell: types, lint, binding check
 pnpm --filter @moes-media/mission-shell typecheck   # svelte-check
@@ -33,7 +33,7 @@ node scripts/typings.mjs && pnpm manifest:check
 # upstream drift (network; not a gate; no install needed)
 node scripts/contract/drift.mjs   # 0 in sync, 1 drift (files listed), 2 unreachable, 3 other error
 
-# the gate set, as CI runs it
+# a quick local subset (CI runs every gate in plan.md's Gates section; the Rust line is the canonical gate string)
 pnpm typecheck && pnpm lint && pnpm lint:no-io && pnpm test && pnpm manifest:check && pnpm contract:check && pnpm hygiene
 cargo fmt --all --check && cargo clippy --workspace --all-targets --frozen -- -D warnings && cargo test --workspace --frozen
 ```

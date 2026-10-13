@@ -48,8 +48,9 @@ Ownership follows `plan.md`, "Shared-file ownership". Sequencing replaces parall
 | root `Cargo.toml`, `Cargo.lock`, `crates/kitty-core/tests/workspace.rs` | WP01 | WP07 (members, `[workspace.dependencies]`, lock, expected member) | WP07 after WP01 |
 | `.github/workflows/ci.yml` | WP01 | WP09 (measured proof-leg timeouts) | WP09 last |
 | shell `tsconfig.json` / `vitest.config.ts` | WP02 | WP05 (JSON import settings, if needed) | WP05 after WP02 |
+| `packages/mission-shell/src/index.ts` | WP02 | WP05 (export the port and the fixture client, A9) | WP05 after WP02 |
 
-WP02 pre-adds two things so that WP08 and WP04 need no edits to files they do not own:
+WP02 pre-adds two things so that WP08 needs no edits to files it does not own, and WP04 needs only its two recorded edits above (root `package.json`, typecheck `plant.json`) (B11):
 - the `contract:drift` script;
 - the generated-typings lint ignore.
 
@@ -59,10 +60,10 @@ WP08's cargo-pins test lives in `scripts/hygiene/`, which `test:scripts` already
 
 | Obligation | WP |
 |---|---|
-| 16 plants: rust 3, typecheck 3 (1 + 2), eslint 1, no-io 1, unit-tests 3, manifest 1, contract 2, hygiene 2 | WP01, WP02, WP04, WP06, WP03, WP08; counted by WP09 |
+| 17 plants: rust 3, typecheck 3 (1 + 2), eslint 1, stylelint 1, no-io 1, unit-tests 3, manifest 1, contract 2, hygiene 2 | WP01, WP02, WP04, WP06, WP03, WP08; counted by WP09 |
 | R2-01 binding: a non-default primitive plus no stray attributes | WP06 T031 |
 | F-11: every declared intent | WP06 T032 |
 | Supply-chain evidence S-1 to S-5, F-29 transitive dates, F-34, F-35 | WP02 T008, WP07 T036; consolidated by WP09 T052 |
-| F-42 proof-leg timings | WP01 (starting values), WP03, WP06, WP08 (measurements), WP09 T049 |
+| F-42 proof-leg timings | WP01 (starting values), WP02, WP03, WP04, WP06, WP07, WP08 (measurements), WP09 T049 |
 | F-14 / SC-005 `git diff` probe | WP06 T035, WP09 T051 |
 | F-29 follow-up issue (pnpm `minimumReleaseAge` with an `@spec-kitty` exclusion) | filed by the orchestrator; listed by WP09 T052 |

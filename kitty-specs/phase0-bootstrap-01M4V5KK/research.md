@@ -41,7 +41,7 @@ Each entry gives the Decision, the Rationale, and the Alternatives considered.
 
 ## R-03 — The source of the route list
 
-- **Decision**: `generate.mjs` derives `routes.json` from the `paths:` of `openapi.yaml`, resolving each path file's operations to `{ operationId, method, path, responseSchema, kind, defaultExample }`.
+- **Decision**: `generate.mjs` derives `routes.json` from the `paths:` of `openapi.yaml`, resolving each path file's operations to `{ operationId, method, path, responseSchema, kind, defaultExample, refusals }`.
   - `defaultExample` comes from a reviewed `DEFAULT_EXAMPLES` map in the generator, keyed by operationId (`operationId → "<Schema>.<name>"`; A6).
   - A read with no map entry fails generation; the map may mark a read `null` explicitly.
 - **Rationale**:
