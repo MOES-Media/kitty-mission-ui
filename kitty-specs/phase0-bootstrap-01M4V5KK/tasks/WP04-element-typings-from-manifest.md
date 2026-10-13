@@ -106,7 +106,7 @@ Implementation command (orchestrator-run): `spec-kitty agent action implement WP
    - Property types come from the manifest's `type.text`.
    - Event detail types are imported **by name** from `@moes-media/mission-ui`, never emitted as text. If a manifest type names something `index.ts` does not export, fail with a message naming it.
    - Emit no `any`. Emit elements and members in deterministic sorted order.
-2. `--check` mode: regenerate in memory and exit 1 with `elements.d.ts is stale` if it differs from the file on disk.
+2. `--check` mode: regenerate **every** generated file in memory (`elements.d.ts`, and `intents.ts` when the T021 fallback is taken) and exit 1 with `<file> is stale` for each that differs from disk (A16). A test covers a stale `intents.ts` when it exists.
 3. Tests:
    - a fixture manifest with one element, one property and one event produces the expected text (exact equality);
    - `--check` on an altered file fails, and on the current file passes;
@@ -119,7 +119,7 @@ Implementation command (orchestrator-run): `spec-kitty agent action implement WP
 1. In a scratch Svelte file, use a declared event (`onsk-open-mission={handler}` with the wrong handler type) and a non-existent event (`onsk-open-misson`). Run `svelte-check` and record the exact output for both.
 2. **If** svelte-check reports both the wrong handler type and the unknown hyphenated attribute: the generated `SvelteHTMLElements` typing is enough. Record the evidence.
 3. **If not**, which is likely for unknown hyphenated attributes:
-   - Also generate `packages/mission-shell/src/generated/intents.ts`: a typed Svelte action `intents(node, handlers)`, where `handlers` is typed `Partial<{ '<event-name>': (e: CustomEvent<Detail>) => void }>` per element. Key it by tag through an overload or a generic over `keyof ElementEvents` with an `ElementEvents` map. It calls `addEventListener` for each key and removes the listeners on `destroy`.
+   - Also generate `packages/mission-shell/src/generated/intents.ts`: a typed Svelte action `intents(node, handlers)` (in docs, call it the "`intents` Svelte action (binding helper)" to avoid the spec's avoid-list term "action" for an intent; A21), where `handlers` is typed `Partial<{ '<event-name>': (e: CustomEvent<Detail>) => void }>` per element. Key it by tag through an overload or a generic over `keyof ElementEvents` with an `ElementEvents` map. It calls `addEventListener` for each key and removes the listeners on `destroy`.
    - Unknown keys and wrong handler types are type errors. WP06's harness binds intents through `use:intents={{ … }}`.
    - Record which path was taken. WP06 follows it.
    - `intents.ts` is generated, so it lives under `src/generated/**`, which this WP owns. It performs no I/O; `addEventListener` is DOM, not I/O, but check the no-io rule set does not ban it.
@@ -146,7 +146,7 @@ Each must be red under `pnpm typecheck` and green when removed.
 
 ### T024 Exit checks
 
-Run every gate, plus `node scripts/gate-proof.mjs local --only manifest` and `--only typecheck`, and record the results.
+Run every gate, plus `node scripts/gate-proof.mjs local --only manifest` and `--only typecheck`, and record the results, including each leg's local wall-clock and total plant count (A26).
 
 ## Test strategy
 
@@ -175,7 +175,7 @@ Node tests for the generator, the event-typing evidence (T021) and three plants 
 
 ## Owned files, gates, red-first, commit rule
 
-**Owned files** (the frontmatter `owned_files` is authoritative; stage only these). `owned_files` and `lanes.json` `write_scope` are tool-owned and never hand-edited. A shared file you do not own is changed ONLY where this prompt says so, as a **recorded out-of-map edit**: you commit it with a plain `git add <path>` and `git commit`, and list it in the hand-off with a one-line rationale. A change you need in a file you do not own, and that this prompt does not name, is a **change request** in the hand-off (file, change, reason), not an edit. Generated files (`custom-elements.json`, `types.generated.ts`, `fixtures.generated.ts`, `contracts/fixtures/*.json` except `mission-status.changes.json`, `packages/mission-shell/src/generated/elements.d.ts`) are never edited by hand: regenerate them.
+**Owned files** (the frontmatter `owned_files` is authoritative; stage only these). `owned_files` and `lanes.json` `write_scope` are tool-owned and never hand-edited. A shared file you do not own is changed ONLY where this prompt says so, as a **recorded out-of-map edit**: you commit it with a plain `git add <path>` and `git commit`, and list it in the hand-off with a one-line rationale. A change you need in a file you do not own, and that this prompt does not name, is a **change request** in the hand-off (file, change, reason), not an edit. Generated files (`custom-elements.json`, `types.generated.ts`, `fixtures.generated.ts`, `contracts/fixtures/*.json` except `mission-status.changes.json`, `packages/mission-shell/src/generated/elements.d.ts`, and `packages/mission-shell/src/generated/intents.ts` if WP04 generates it) are never edited by hand: regenerate them.
 
 Shared-file owners (from `plan.md`, "Shared-file ownership"):
 

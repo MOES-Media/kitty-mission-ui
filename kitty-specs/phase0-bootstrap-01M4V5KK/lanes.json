@@ -60,6 +60,7 @@
       "predicted_surfaces": [
         "api",
         "artifact-rendering",
+        "legacy-cleanup",
         "workspace"
       ],
       "depends_on_lanes": [],
@@ -223,8 +224,8 @@
       "parallel_group": 3
     }
   ],
-  "computed_at": "2026-10-13T19:38:32.935234+00:00",
+  "computed_at": "2026-10-13T19:50:35.490201+00:00",
   "computed_from": "dependency_graph+ownership",
   "planning_artifact_wps": [],
-  "planning_commit_sha": "8647e9b5d589040c46eebf81378394fba8d1de74"
+  "planning_commit_sha": "19009120dccf48d414cb87817dcc809d95a9323c"
 }

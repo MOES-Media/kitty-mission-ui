@@ -169,7 +169,7 @@ Implementation command (orchestrator-run): `spec-kitty agent action implement WP
       ```
    No pnpm install is needed in this job. Check whether `checkWorkflow` requires every gate job to run the install action. If it does, report it as a change request to WP08 (the hygiene owner) instead of adding a credentialed install to a job that does not need it.
 2. Add `rust` to `all.needs`.
-3. Add the matrix entry `{ gate: rust, timeout: <computed>, image: '' }` to `proof-leg`, and in the proof leg add the same two install steps guarded by `if: matrix.gate == 'rust'`, before `Run the gate proof leg`. Use a starting timeout of 20. Measure the first CI run and set (1 + 3 plants) × the measured gate minutes + 2 (F-42), recording the measurement.
+3. Append `rust` to the `proof-leg` `matrix.gate` list (the list `gate-proof coverage` compares with the job ids; A25), add the matrix `include` entry `{ gate: rust, timeout: <computed>, image: '' }`, and in the proof leg add the same two install steps guarded by `if: matrix.gate == 'rust'`, before `Run the gate proof leg`. Use a starting timeout of 20. Measure the leg locally with `node scripts/gate-proof.mjs local --only rust` (the proxy; this WP never pushes) and set (1 + 3 plants) × the measured gate minutes + 2, rounded up, if that exceeds 20 (F-42, A24). Record the local measurement; the orchestrator re-measures on the PR's first CI run (A3).
 4. Set the starting matrix timeouts `contract: 10` and `unit-tests: 16` (F-42).
 5. The gate step itself must perform no network access: `--frozen` makes cargo fail instead of downloading. Prove it locally: after `cargo fetch --locked`, run the canonical command with `CARGO_NET_OFFLINE=true` and record that it passes. Then run it in a fresh `CARGO_HOME` (`CARGO_HOME=$(mktemp -d) cargo test --workspace --frozen`) without the fetch step, and record that it fails offline. (Once WP07 adds crates this fails; at this point, with no external crates, record whatever cargo prints.)
 
@@ -191,7 +191,7 @@ Run `node scripts/gate-proof.mjs local --only rust` and record that the clean ru
 
 **Steps**:
 1. `.gitignore`: add `/target/` and `apps/desktop/src-tauri/gen/` (the hygiene gate scans every unignored file).
-2. Measure the cold Rust gate with `cargo clean`, then the canonical command. Record the wall-clock; it must be ≤ 8 minutes on the CI runner (NFR-002). Record the first CI run's gate duration and proof-leg duration in the hand-off; WP09 consolidates them.
+2. Measure the cold Rust gate with `cargo clean`, then the canonical command. Record the local wall-clock as the NFR-002 proxy (label it local). This WP cannot push, so the CI-runner measurement is the orchestrator's check on the mission PR's first CI run (spec NFR-002 verification, A3); WP09 consolidates the local numbers.
 3. Run every gate in "Gates this work package must pass", including the Rust gate.
 
 ## Test strategy
@@ -226,7 +226,7 @@ Run `node scripts/gate-proof.mjs local --only rust` and record that the clean ru
 
 ## Owned files, gates, red-first, commit rule
 
-**Owned files** (the frontmatter `owned_files` is authoritative; stage only these). `owned_files` and `lanes.json` `write_scope` are tool-owned and never hand-edited. A shared file you do not own is changed ONLY where this prompt says so, as a **recorded out-of-map edit**: you commit it with a plain `git add <path>` and `git commit`, and list it in the hand-off with a one-line rationale. A change you need in a file you do not own, and that this prompt does not name, is a **change request** in the hand-off (file, change, reason), not an edit. Generated files (`custom-elements.json`, `types.generated.ts`, `fixtures.generated.ts`, `contracts/fixtures/*.json` except `mission-status.changes.json`, `packages/mission-shell/src/generated/elements.d.ts`) are never edited by hand: regenerate them.
+**Owned files** (the frontmatter `owned_files` is authoritative; stage only these). `owned_files` and `lanes.json` `write_scope` are tool-owned and never hand-edited. A shared file you do not own is changed ONLY where this prompt says so, as a **recorded out-of-map edit**: you commit it with a plain `git add <path>` and `git commit`, and list it in the hand-off with a one-line rationale. A change you need in a file you do not own, and that this prompt does not name, is a **change request** in the hand-off (file, change, reason), not an edit. Generated files (`custom-elements.json`, `types.generated.ts`, `fixtures.generated.ts`, `contracts/fixtures/*.json` except `mission-status.changes.json`, `packages/mission-shell/src/generated/elements.d.ts`, and `packages/mission-shell/src/generated/intents.ts` if WP04 generates it) are never edited by hand: regenerate them.
 
 Shared-file owners (from `plan.md`, "Shared-file ownership"):
 

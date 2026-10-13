@@ -116,14 +116,14 @@ A tower or axum middleware layer in `lib.rs` applies to every route, including `
 - `Origin`, when present, must equal `http://127.0.0.1:<port>` or `http://localhost:<port>`, otherwise `403`;
 - any `Forwarded` or `X-Forwarded-*` header gives `403`.
 
-These rules mirror the upstream service (#5529 README). The `403` bodies are stub-local JSON `{"code":"forbidden","reason":"host|origin|forwarded"}`.
+These rules mirror the upstream service (#5529 README). The `403` body is exactly as `contracts/stub-http.md` says: `{"code":"<rule>"}` with `<rule>` one of `host`, `origin`, `forwarded` (A8). Tests assert the exact body.
 
 ### T039 Reads: defaults, selection and refusals (FR-010, R2-06, R3-01, R3-02, R4-03, F-38)
 
 **Steps**:
 1. Load `routes.json` and build axum routes from each `path` template. `/missions/{missionId}` becomes axum's path syntax, generated from the data and not hand-written per route. Only `GET` is routed; other methods give `405`, and unknown paths give `404`.
 2. With no selection header, serve `examples.json[defaultExample].value` with `200` and `content-type: application/json`.
-3. `X-Kitty-Stub-Example: <Schema>.<name>` selects from `examples.json`, and `X-Kitty-Stub-Fixture: <name>` selects from `fixtures.json`:
+3. `X-Kitty-Stub-Fixture: <name>` selects from `fixtures.json`, and `X-Kitty-Stub-Example: <Schema>.<name>` selects from `examples.json`. When both headers are present, the fixture header wins (stub-http.md; A23):
    - if the entry's schema equals the route's `responseSchema`, serve it with `200 application/json`;
    - if the entry's schema is a key of the route's `refusals` and the example's own `status` is in that schema's status list, serve it with that status and `application/problem+json`;
    - anything else (an event example, another schema, or a disallowed status) gives `400 {"code":"schema-mismatch","schema":"…","operationId":"…"}`;
@@ -134,7 +134,7 @@ These rules mirror the upstream service (#5529 README). The `403` bodies are stu
 ### T040 Events: SSE replay (FR-011, NFR-004, R2-05, R4-02)
 
 `GET /api/v1/events[?missionId=<id>]`:
-1. If `X-Kitty-Stub-Example` names a `StreamRefusal` example, serve that body with its own `status` and `application/problem+json` instead of the stream (R4-02).
+1. If `X-Kitty-Stub-Example` names an example, apply the read selection rule against the `streamEvents` route's `refusals` (`StreamRefusal: [400, 409]`): a `StreamRefusal` example whose own `status` is in the list is served with that status and `application/problem+json` instead of the stream; anything else gives `400 schema-mismatch` (R4-02, A5).
 2. Otherwise respond `200 text/event-stream`. For each `changes.json` item, after `delayMs × time-scale` milliseconds, write:
    - `event: <event>`;
    - `id: <scopedId>`, **only** when the request is mission-scoped (has `missionId`) and the item has a `scopedId`;
@@ -145,7 +145,7 @@ These rules mirror the upstream service (#5529 README). The `403` bodies are stu
 
 ### T041 `/__stub/last-request` (F-28)
 
-Record `{ method, path, query, headers }` of the most recent `/api/v1/*` request (a mutex in shared state; header names lower-cased, values as received). `GET /__stub/last-request` returns it as JSON, or `404` before any request. The guard applies to this route too. #21 uses it to assert what its proxy forwarded.
+Record exactly `{ method, path, headers }` of the most recent `/api/v1/*` request (`path` without the query string; no `query` field; stub-http.md, A23) (a mutex in shared state; header names lower-cased, values as received). `GET /__stub/last-request` returns it as JSON, or `404` before any request. The guard applies to this route too. #21 uses it to assert what its proxy forwarded.
 
 ### T042 Tests (independent oracles)
 
@@ -158,7 +158,10 @@ Record `{ method, path, query, headers }` of the most recent `/api/v1/*` request
   - unknown keys give `404`;
   - a synthetic `routes.json` with one null default gives `501` (F-12);
   - POST gives `405`, and an unknown path gives `404`;
-  - a `missionId` of `../../etc/passwd` still serves the default example and touches no file (F-38).
+  - `getArtifactContent` with an `ArtifactPath` query of `../../etc/passwd` (the parameter stub-http.md names) still serves fixture data or a 404 and touches no file; a `missionId` of `..%2F..` likewise (F-38, A23);
+  - with both selection headers present, the fixture header wins (A23);
+  - each `403` body equals `{"code":"host"}`, `{"code":"origin"}` or `{"code":"forwarded"}` exactly (A8);
+  - on `/api/v1/events`, a `StreamRefusal` example with an allowed status is served with that status, and an event example or a status outside `[400, 409]` gives `400` (A5);
 - **`tests/guard.rs`**:
   - a foreign Host, a foreign Origin, `Forwarded` and `X-Forwarded-Host` each give `403`, with a positive control: the correct Host passes;
   - the guard covers `/__stub/last-request`;
@@ -205,7 +208,7 @@ The four test files above and the canonical Rust gate. No plants are added here;
 
 ## Owned files, gates, red-first, commit rule
 
-**Owned files** (the frontmatter `owned_files` is authoritative; stage only these). `owned_files` and `lanes.json` `write_scope` are tool-owned and never hand-edited. A shared file you do not own is changed ONLY where this prompt says so, as a **recorded out-of-map edit**: you commit it with a plain `git add <path>` and `git commit`, and list it in the hand-off with a one-line rationale. A change you need in a file you do not own, and that this prompt does not name, is a **change request** in the hand-off (file, change, reason), not an edit. Generated files (`custom-elements.json`, `types.generated.ts`, `fixtures.generated.ts`, `contracts/fixtures/*.json` except `mission-status.changes.json`, `packages/mission-shell/src/generated/elements.d.ts`) are never edited by hand: regenerate them.
+**Owned files** (the frontmatter `owned_files` is authoritative; stage only these). `owned_files` and `lanes.json` `write_scope` are tool-owned and never hand-edited. A shared file you do not own is changed ONLY where this prompt says so, as a **recorded out-of-map edit**: you commit it with a plain `git add <path>` and `git commit`, and list it in the hand-off with a one-line rationale. A change you need in a file you do not own, and that this prompt does not name, is a **change request** in the hand-off (file, change, reason), not an edit. Generated files (`custom-elements.json`, `types.generated.ts`, `fixtures.generated.ts`, `contracts/fixtures/*.json` except `mission-status.changes.json`, `packages/mission-shell/src/generated/elements.d.ts`, and `packages/mission-shell/src/generated/intents.ts` if WP04 generates it) are never edited by hand: regenerate them.
 
 Shared-file owners (from `plan.md`, "Shared-file ownership"):
 

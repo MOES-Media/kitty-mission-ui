@@ -138,7 +138,7 @@ Implementation command (orchestrator-run): `spec-kitty agent action implement WP
 
 **Steps**:
 1. In `eslint.config.mjs`, add the `eslint-plugin-svelte` flat config for `packages/*/src/**/*.svelte`, using `svelte-eslint-parser` with the TypeScript parser for `<script lang="ts">`.
-2. Add exact-path ignores for `packages/mission-shell/src/generated/elements.d.ts` in `eslint.config.mjs`, `eslint.no-io.config.mjs` and `eslint.data-driven.config.mjs`. Add a comment naming the exception (the next free E-number in the repository's exception list; check `scripts/stylelint-exceptions.test.mjs` and the earlier missions' E-05 for how exceptions are recorded). Record the exception in the hand-off for the PR description.
+2. Add exact-path ignores for `packages/mission-shell/src/generated/elements.d.ts` in `eslint.config.mjs`, `eslint.no-io.config.mjs` and `eslint.data-driven.config.mjs`. Add a comment naming the exception (the next free E-number in the repository's exception list; check `scripts/stylelint-exceptions.test.mjs` and the earlier missions' E-05 for how exceptions are recorded). Record the exception in the hand-off for the PR description with **scope** (the exact path), **rationale** (generated output, guarded by the staleness check), **sunset criteria** (removed when the generator emits lint-clean output or the lint configs gain a generated-file allowance) and an **operator-approval request**, as the charter's "Amendments and exceptions" requires (A15).
 3. Plant (eslint gate): add a plant to `gates/plants/eslint/plant.json`. A `source` overlay creates `packages/mission-shell/src/PlantEslint.svelte` with a script block containing `let plantEslintSvelte = 1; plantEslintSvelte = plantEslintSvelte;` (no-self-assign). `expectFailPattern`: `plantEslintSvelte`.
 
 ### T010 No-io over the shell, including `.svelte` (FR-007, C-001, F-19)
@@ -171,7 +171,7 @@ Implementation command (orchestrator-run): `spec-kitty agent action implement WP
 
 ### T013 Exit checks
 
-Run every gate in "Gates this work package must pass". Also run `node scripts/gate-proof.mjs local --only typecheck,eslint,no-io` (or one `--only` at a time if the tool takes one) and record that each new plant is red on its pattern and each clean leg is green.
+Run every gate in "Gates this work package must pass". Also run `node scripts/gate-proof.mjs local --only typecheck,eslint,no-io` (or one `--only` at a time if the tool takes one) and record that each new plant is red on its pattern and each clean leg is green. Record each leg's local wall-clock and its total plant count (A26); WP09 consolidates them.
 
 ## Test strategy
 
@@ -201,7 +201,7 @@ The no-io self-test cases, the terminology tests and the three new plants. `gate
 
 ## Owned files, gates, red-first, commit rule
 
-**Owned files** (the frontmatter `owned_files` is authoritative; stage only these). `owned_files` and `lanes.json` `write_scope` are tool-owned and never hand-edited. A shared file you do not own is changed ONLY where this prompt says so, as a **recorded out-of-map edit**: you commit it with a plain `git add <path>` and `git commit`, and list it in the hand-off with a one-line rationale. A change you need in a file you do not own, and that this prompt does not name, is a **change request** in the hand-off (file, change, reason), not an edit. Generated files (`custom-elements.json`, `types.generated.ts`, `fixtures.generated.ts`, `contracts/fixtures/*.json` except `mission-status.changes.json`, `packages/mission-shell/src/generated/elements.d.ts`) are never edited by hand: regenerate them.
+**Owned files** (the frontmatter `owned_files` is authoritative; stage only these). `owned_files` and `lanes.json` `write_scope` are tool-owned and never hand-edited. A shared file you do not own is changed ONLY where this prompt says so, as a **recorded out-of-map edit**: you commit it with a plain `git add <path>` and `git commit`, and list it in the hand-off with a one-line rationale. A change you need in a file you do not own, and that this prompt does not name, is a **change request** in the hand-off (file, change, reason), not an edit. Generated files (`custom-elements.json`, `types.generated.ts`, `fixtures.generated.ts`, `contracts/fixtures/*.json` except `mission-status.changes.json`, `packages/mission-shell/src/generated/elements.d.ts`, and `packages/mission-shell/src/generated/intents.ts` if WP04 generates it) are never edited by hand: regenerate them.
 
 Shared-file owners (from `plan.md`, "Shared-file ownership"):
 
