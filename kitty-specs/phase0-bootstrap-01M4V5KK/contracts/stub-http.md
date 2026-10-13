@@ -31,7 +31,7 @@ Any request that breaks a rule gets `403`, with body `{"code":"<rule>"}`:
 
 `GET /api/v1/<path>` for each `kind: "read"` entry in `routes.json`, with path parameters matched by template. Path-parameter values are not checked against the data.
 
-Which body is served:
+Which body is served (the fixture header takes precedence over the example header when both are present; A23):
 1. With header `X-Kitty-Stub-Fixture: <fixture name>`: that `fixtures.json` value. An unknown name gets `404` with `{"code":"no-fixture"}`.
 2. Otherwise, with header `X-Kitty-Stub-Example: <Schema>.<name>`: that `examples.json` value. An unknown name gets `404` with `{"code":"no-example"}`.
 3. Otherwise: the route's `defaultExample`.
@@ -43,7 +43,7 @@ A selection (1 or 2) is accepted only when the entry's schema fits the route (R2
 
 Where two operations share a refusal schema (`ArtifactRefusal` on `listArtifacts` and `getArtifactContent`), a refusal example whose status is allowed on the route is served even if its `code` belongs to the other operation. The body is still schema-valid, and the check is by schema and status, not by code.
 
-So every vendored example that is a **complete response** of some route is reachable on that route. That covers successes, refusals, and the five `StreamRefusal` examples, which `GET /api/v1/events` serves (as `application/problem+json` with their own status, instead of the stream) when `X-Kitty-Stub-Example` names one. The stub never serves a refusal or an event payload as a successful read. Of the 77 examples, 20 are not selectable:
+So every vendored example that is a **complete response** of some route is reachable on that route. That covers successes, refusals, and the five `StreamRefusal` examples, which `GET /api/v1/events` serves (as `application/problem+json` with their own status, instead of the stream) when `X-Kitty-Stub-Example` names one. The events route applies the same rule as reads: the example's schema must be in the route's `refusals` (`StreamRefusal: [400, 409]`) and its own `status` in that list, otherwise `400` `schema-mismatch` (A5). The stub never serves a refusal or an event payload as a successful read. Of the 77 examples, 20 are not selectable:
 
 - 13 component-level examples, for example a single `MissionOverview` row. They stay in `examples.json` for the shell's fixture adapter.
 - 7 event examples. These are stream items: the stub emits events from `changes.json`, not as response bodies (R3-06). When the default is `null`: `501` with `{"code":"no-example","operationId":"<id>"}`. This branch is tested with a synthetic routes file, because the current pin has no null.
@@ -58,11 +58,11 @@ A path that matches no route gets `404`.
 
 `GET /api/v1/events[?missionId=<id>]` responds `200` with `content-type: text/event-stream`.
 
-Each item of `changes.json` is written after `delayMs × time-scale` milliseconds:
+`changes.json` is `{ "missionId": …, "items": [ … ] }` (data-model ChangeItem). Each item is written after `delayMs × time-scale` milliseconds:
 
 ```
 event: <event>
-id: <id>          # only when the item has an id AND the request is mission-scoped (never on log-truncated)
+id: <scopedId>    # only when the item has a scopedId AND the request is mission-scoped (never on log-truncated)
 data: <JSON of data, one line>
 
 ```
@@ -73,7 +73,7 @@ The test runs with `--time-scale 0 --heartbeat-ms 50` and captures up to the fir
 
 ## Test support
 
-`GET /__stub/last-request` returns `{"method","path","headers":{…}}` for the most recent `/api/v1` request, with header names lower-cased. This lets #21 assert what its proxy forwarded. The same request rules apply to this route.
+`GET /__stub/last-request` returns exactly `{"method","path","headers":{…}}` for the most recent `/api/v1` request, with header names lower-cased. `path` is the request path without the query string; there is no separate `query` field (A23). This lets #21 assert what its proxy forwarded. The same request rules apply to this route.
 
 ## Not provided (by design)
 

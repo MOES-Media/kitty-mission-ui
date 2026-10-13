@@ -30,7 +30,7 @@ This plan lays the ground for the host missions (#18 to #21). It has three parts
 **Testing**:
 - Vitest browser mode (Chromium) for the binding check and shell unit tests, the same set-up as `packages/mission-ui`.
 - `cargo test` for the stub and the workspace check. Route tests run the router in-process. The loopback test runs the real binary (`CARGO_BIN_EXE_kitty-stub`).
-- Node `--test` for the scripts: `test:contract` picks up `scripts/contract/*.test.mjs` by glob, and `typings.test.mjs` and `cargo-pins.test.mjs` are added to the `test:scripts` list.
+- Node `--test` for the scripts: `test:contract` picks up `scripts/contract/*.test.mjs` by glob, and `typings.test.mjs` is added to the `test:scripts` list; `cargo-pins.test.mjs` lives in `scripts/hygiene/`, which `test:scripts` already runs as a directory (A7).
 - The gate-proof plants prove every new rule.
 
 **Target Platform**:
@@ -104,7 +104,7 @@ flowchart LR
   - `Gate: contract` checks all three are current. It also checks `examples.json` against a fresh, independent parse of the YAML files, which gives the stub test an oracle that is not the file the stub serves (F-04).
   - The emitter escapes invisible and bidi characters exactly as the `.ts` emitter does (F-21).
 - **Routes.** `routes.json` is derived from the `paths:` of `openapi.yaml`.
-  - Each read names an explicit `defaultExample`, taken from a reviewed `DEFAULT_EXAMPLES` map in the generator (schema → example name).
+  - Each read names an explicit `defaultExample`, taken from a reviewed `DEFAULT_EXAMPLES` map in the generator, keyed by operationId (`operationId → "<Schema>.<name>"`; A6).
   - A schema without a map entry fails generation unless the map marks it `null`. Then the stub answers that route with the "no example" error.
 - **Change sequence.** `changes.json` is authored by hand and schema-validated by `Gate: contract`. It never changes at runtime, so replay is deterministic (NFR-004).
 - **Port.** `MissionStatusClient` is a TypeScript interface with:
@@ -169,7 +169,7 @@ scripts/contract/check.mjs         # EXTENDED: staleness, examples-vs-YAML oracl
 scripts/contract/common.mjs        # EXTENDED: per-file compare against PIN.json (used by drift.mjs; R3-03)
 scripts/contract/drift.mjs         # NEW: upstream HEAD vs PIN.json (scheduled only; builtin-only imports)
 scripts/typings.mjs                # NEW: own generator + --check
-scripts/cargo-pins.mjs             # NEW: exact-pin check over Cargo.toml files (run by hygiene)
+scripts/hygiene/cargo-pins.mjs     # NEW: exact-pin check over Cargo.toml files (run by hygiene; IC-07, A7)
 scripts/check-hygiene.mjs          # EXTENDED: action-pin/permissions/checkout-credential checks on every workflow
 scripts/terminology.mjs            # EXTENDED: .svelte sources and crates/**/*.rs
 gates/plants/{rust,typecheck,eslint,no-io,unit-tests,manifest,contract,hygiene}/  # NEW/EXTENDED plants
@@ -212,7 +212,7 @@ eslint.config.mjs, eslint.no-io.config.mjs, eslint.data-driven.config.mjs  # EXT
 - **Affected surfaces**:
   - `Cargo.toml`, `Cargo.lock`, `rust-toolchain.toml`;
   - `crates/kitty-core` (with `tests/workspace.rs`, which uses `cargo metadata --frozen --no-deps` to assert the four members), and the placeholder members in `apps/`;
-  - `scripts/cargo-pins.mjs` and its test;
+  - (the Cargo exact-pin check is IC-07's `scripts/hygiene/cargo-pins.mjs`, which judges this IC's manifests; A7);
   - `gates/plants/rust/`.
 - **Sequencing/depends-on**: none.
 - **Risks**:
@@ -285,9 +285,10 @@ eslint.config.mjs, eslint.no-io.config.mjs, eslint.data-driven.config.mjs  # EXT
   - `scripts/contract/common.mjs` (a per-file compare: take `remote.mjs` `fetchRef('HEAD').contractFiles()`, which already returns exactly the files under `UPSTREAM_PATHS` keyed like `PIN.json` `files`, hash each with `common.mjs` `sha256` and compare with `PIN.json`'s per-file sha256, reporting added, removed and changed files; R3-03), `drift.mjs` and `drift.test.mjs`. `verify-remote.mjs`'s per-prefix tree-id compare stays as it is: it only reports the two path prefixes, which is not enough for FR-012. Drift reuses `remote.mjs` (`git fetch --depth 1`, built-ins only) and its `CONTRACT_REMOTE_URL` override, which the tests point at local repositories for the no-drift, drift, unreachable and error cases. There is no second network path and no HTTP directory listing (R2-07);
   - `.github/workflows/contract-drift.yml`;
   - `scripts/check-hygiene.mjs` (action-pin, permissions and checkout-credential checks on every workflow; gate-structure checks stay `ci.yml`-only);
-  - `gates/plants/hygiene/` (an unpinned action in a non-ci workflow);
+  - `scripts/hygiene/cargo-pins.mjs` and `scripts/hygiene/cargo-pins.test.mjs` (the Cargo exact-pin check, NFR-003, F-09; A7);
+  - `gates/plants/hygiene/` (an unpinned action in a non-ci workflow; a caret range in a Cargo.toml);
   - `package.json` script `contract:drift`.
-- **Sequencing/depends-on**: none.
+- **Sequencing/depends-on**: IC-02 (the Cargo manifests the pin check reads) and IC-03 (the root `package.json` owner) (A20).
 - **Risks**:
   - `drift.mjs` must import only Node built-ins (through `remote.mjs` and `common.mjs`), so the workflow runs `node scripts/contract/drift.mjs` with no install and no secrets. The WP verifies the import graph (F-41).
   - The workflow pins Node 22.22.2 with the SHA-pinned `actions/setup-node` step already used in `ci.yml`, which needs no credentials (R2-15).
@@ -325,19 +326,19 @@ Each shared file has exactly one owning IC. Other ICs request their changes thro
 
 | File | Owner | Requested by |
 |---|---|---|
-| root `package.json` (scripts, devDependencies, `test:scripts` list) | IC-03 | IC-01, IC-02 (`cargo-pins`), IC-04, IC-05, IC-06 (root `test` script), IC-07 |
+| root `package.json` (scripts, devDependencies, `test:scripts` list) | IC-03 | IC-01, IC-04, IC-05, IC-06 (root `test` script), IC-07 (`contract:drift`) |
 | `pnpm-lock.yaml` | IC-03 | IC-04 (none expected after F-30) |
 | `.github/workflows/ci.yml` (all jobs, proof-leg matrix and steps, timeouts, `all.needs`) | IC-02 | IC-01 (contract proof-leg timeout), IC-03, IC-04 (typecheck and manifest proof legs gain plants), IC-06 (unit-tests timeout), IC-07 (hygiene proof leg gains plants) |
 | root `Cargo.toml` (`[workspace]` members and `[workspace.dependencies]` exact pins), `Cargo.lock` | IC-02 | IC-08 (axum, tokio, serde, serde_json, tower, http-body-util pins) |
 | `eslint.config.mjs`, `eslint.no-io.config.mjs`, `eslint.data-driven.config.mjs` | IC-03 | IC-04 (exact-path ignore for the generated `elements.d.ts`, F-45) |
-| `scripts/check-hygiene.mjs` | IC-07 | IC-02 (`cargo-pins` hook) |
+| `scripts/check-hygiene.mjs`, `scripts/hygiene/**` (including `cargo-pins.mjs`) | IC-07 | — |
 | `gates/plants/rust/plant.json` | IC-02 | — |
 | `gates/plants/typecheck/plant.json` | IC-03 | IC-04 |
 | `gates/plants/eslint/plant.json`, `gates/plants/no-io/plant.json` | IC-03 | — |
 | `gates/plants/unit-tests/plant.json` | IC-06 | IC-05 |
 | `gates/plants/manifest/plant.json` | IC-04 | — |
 | `gates/plants/contract/plant.json` | IC-01 | — |
-| `gates/plants/hygiene/plant.json` | IC-07 | IC-02 |
+| `gates/plants/hygiene/plant.json` | IC-07 | — |
 | `.gitignore` | IC-02 | IC-03 |
 | `README.md`, `CHANGELOG.md` | IC-09 | all |
 
@@ -366,7 +367,7 @@ It is preceded by two separate steps, in both the gate job and the proof leg whe
 
 That is 16 new plants (rust 3, typecheck 3, eslint 1, no-io 1, unit-tests 3, manifest 1, contract 2, hygiene 2). SC-002's six named proofs are a subset: Rust format, Rust lint, Rust tests, the Svelte check, the typings, and no-io over the shell.
 
-**Proof-leg timeouts (F-42)**: NFR-002's 8-minute cap applies to gate jobs; proof legs are governed by this formula instead (spec NFR-002). Every plant is a full gate run, so the WP measures each affected proof leg on CI and sets its matrix timeout to (1 + number of plants) × the measured gate time + 2 minutes. The starting values are contract 6→10 and unit-tests 11→16, with `rust` computed from its first measured run. The measurements are recorded in the WP.
+**Proof-leg timeouts (F-42)**: NFR-002's 8-minute cap applies to gate jobs; proof legs are governed by this formula instead (spec NFR-002). Every plant is a full gate run, so each WP records local `gate-proof local` timings for the legs it touches (a proxy), and the matrix timeout is (1 + the total number of plants in that leg, existing and new) × the measured gate time + 2 minutes (A24). The orchestrator re-measures on the mission PR's first CI run and sets the final values there (spec NFR-002 verification, A3). The starting values are contract 6→10 and unit-tests 11→16, with `rust` computed from its first measured run. The measurements are recorded in the WP.
 
 ## PR shape
 

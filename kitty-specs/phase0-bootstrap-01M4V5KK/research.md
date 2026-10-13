@@ -14,7 +14,7 @@ Each entry gives the Decision, the Rationale, and the Alternatives considered.
 - **Decision**: pin everything exactly.
   - **Rust toolchain**: pinned in `rust-toolchain.toml` to the newest stable release at least 14 days old when the WP starts, with the `rustfmt` and `clippy` components.
   - **npm**: additions pinned exactly in `package.json`. For each package, use the newest version that is at least 14 days old **and whose peer ranges the existing pins satisfy**. For example, `@sveltejs/vite-plugin-svelte` must come from the line whose `vite` peer range includes the pinned vite 7.3.6, not the newest line, which needs vite 8 (F-37).
-  - **Cargo**: dependencies declared once in `[workspace.dependencies]` with exact requirements (`=x.y.z`); members use `workspace = true`. The new `scripts/cargo-pins.mjs` check, run by the hygiene gate, rejects any Cargo requirement that is not `=x.y.z` (F-09).
+  - **Cargo**: dependencies declared once in `[workspace.dependencies]` with exact requirements (`=x.y.z`); members use `workspace = true`. The new `scripts/hygiene/cargo-pins.mjs` check (IC-07; A7), run by the hygiene gate, rejects any Cargo requirement that is not `=x.y.z` (F-09).
   - **Vitest**: stays at 4.1.11 (`checkVitestFamily`).
 - **Rationale**: NFR-003. `checkPackageJson` already rejects npm ranges. A Cargo requirement like `"0.8"` is a caret range, and `Cargo.lock` only fixes the resolution, not the declaration.
 - **Alternatives**:
@@ -33,7 +33,7 @@ Each entry gives the Decision, the Rationale, and the Alternatives considered.
 - **Rationale**:
   - The M1 dependency set (axum, tokio, serde) builds cold in about 1 to 2 minutes on a standard runner, and clippy and test share most artefacts.
   - The desktop placeholder has **no Tauri dependency** in M1. That avoids the webkit2gtk system packages and the long cold build, which arrive with #20 together with a cache-policy decision.
-  - The proof-leg timeout follows the plan's rule: (1 + plants) × the measured gate time + 2 minutes.
+  - The proof-leg timeout follows the plan's rule: (1 + the total plants in that leg) × the measured gate time + 2 minutes; local `gate-proof local` timings are the WP-time proxy, and the orchestrator sets final values from the PR's first CI run (A3, A24).
 - **Alternatives**:
   - A cargo cache, rejected as a policy change outside this mission.
   - Three separate gates, rejected: one toolchain is one concern, and several plants per gate follow the `no-io` precedent.
@@ -42,8 +42,8 @@ Each entry gives the Decision, the Rationale, and the Alternatives considered.
 ## R-03 — The source of the route list
 
 - **Decision**: `generate.mjs` derives `routes.json` from the `paths:` of `openapi.yaml`, resolving each path file's operations to `{ operationId, method, path, responseSchema, kind, defaultExample }`.
-  - `defaultExample` comes from a reviewed `DEFAULT_EXAMPLES` map in the generator, which pairs each response schema with an example name.
-  - A response schema with no map entry fails generation, unless the map marks it `null` explicitly.
+  - `defaultExample` comes from a reviewed `DEFAULT_EXAMPLES` map in the generator, keyed by operationId (`operationId → "<Schema>.<name>"`; A6).
+  - A read with no map entry fails generation; the map may mark a read `null` explicitly.
 - **Rationale**:
   - `scripts/contract/registry.mjs` is a **fixture** registry, not an operation list.
   - Several schemas have more than one example (WorkPackage ×10, OpsInvocation ×9, Project ×3), so "the vendored example" must be an explicit, reviewable choice (F-04).
@@ -110,7 +110,7 @@ Each entry gives the Decision, the Rationale, and the Alternatives considered.
 
 - **Decision**:
   - Drift reuses what exists (R2-07). `scripts/contract/remote.mjs` already fetches upstream with `git fetch --depth 1` using only Node built-ins, and honours `CONTRACT_REMOTE_URL` for tests. `verify-remote.mjs`'s existing compare works per path prefix (`rev-parse <commit>:<path>` for the two `UPSTREAM_PATHS` entries), so it can only name `contracts/mission-status` or `contracts/_shared`, not files (R3-03). The new `drift.mjs` therefore fetches upstream `main` with `remote.mjs`, takes `fetchRef('HEAD').contractFiles()` (exactly the files under `UPSTREAM_PATHS`, keyed relative to `contracts/` like `PIN.json` `files`, which `verify-remote.mjs` already uses for its byte compare) and hashes each with `common.mjs` `sha256`, the hash that builds `PIN.json`, and compares per file with `PIN.json`'s per-file sha256, listing added, removed and changed files. The per-file compare lives in `common.mjs` as one function; `verify-remote.mjs` keeps its own check (F-23). There is no second network path and no HTTP directory listing (which would also hit GitHub API rate limits).
-  - `drift.test.mjs` points `CONTRACT_REMOTE_URL` at local git repositories built in a temporary directory, for the four outcomes: no drift, drift, unreachable (a URL that does not exist), and other error.
+  - `drift.test.mjs` points `CONTRACT_REMOTE_URL` at local git repositories built in a temporary directory, for the four outcomes: no drift, drift, unreachable (a local path that does not exist, never a network URL, so the merge-gate test stays offline; A13), and other error.
   - Exit codes: 0 in sync, 1 drift (files listed), 2 upstream unreachable, 3 any other error.
   - `.github/workflows/contract-drift.yml` runs it on a daily `schedule` and on `workflow_dispatch`:
     - the job name does not start with "Gate:";

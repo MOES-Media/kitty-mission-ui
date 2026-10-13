@@ -21,8 +21,8 @@ There is no persistent storage. The entities are the shapes that cross module bo
 | `path` | string | the path template relative to the server URL (`/api/v1`), for example `/missions/{missionId}` |
 | `kind` | `"read"` or `"stream"` | `stream` only for `streamEvents` |
 | `responseSchema` | string or null | the schema name of the 200 response; `null` for `stream` |
-| `defaultExample` | ExampleEntry key or null | taken from the reviewed `DEFAULT_EXAMPLES` map in `generate.mjs`; `null` only where the map says so explicitly; generation fails on a read whose schema is missing from the map |
-| `refusals` | object `{ <schema name>: [<HTTP status>, …] }` | every `application/problem+json` response the operation declares in `openapi.yaml` (refusals are problem+json, not `application/json`; R3-01), grouped by schema with the set of statuses that schema may carry (one schema can cover several, for example `ArtifactRefusal`; R3-02); the `default` Problem response is not a selectable refusal; `{}` when none; `{}` for `stream` (R2-06) |
+| `defaultExample` | ExampleEntry key or null | taken from the reviewed `DEFAULT_EXAMPLES` map in `generate.mjs`, keyed by **operationId** (`operationId → "<Schema>.<name>"`; A6); `null` only where the map says so explicitly; generation fails on a read missing from the map, or on an entry naming an example that does not exist or is not of the route's `responseSchema`; `null` for `stream` |
+| `refusals` | object `{ <schema name>: [<HTTP status>, …] }` | every `application/problem+json` response the operation declares in `openapi.yaml` (refusals are problem+json, not `application/json`; R3-01), grouped by schema with the numeric statuses that schema may carry on this operation (one schema can cover several, for example `ArtifactRefusal`; R3-02); only numbered responses count: the `default` Problem response is not a selectable refusal (A2); `{}` when none. The `stream` route lists its numbered problem+json responses too (`StreamRefusal: [400, 409]`), which the stub's events route validates against (A5) |
 
 **Invariant**: the set of `operationId`s equals the contract's set, and each route's `refusals` equals the operation's declared `application/problem+json` responses, grouped by schema. This is checked by the contract gate (staleness) and by the coverage test (FR-009).
 
@@ -38,16 +38,18 @@ There is no persistent storage. The entities are the shapes that cross module bo
 
 ## ChangeItem (authored, `contracts/fixtures/mission-status.changes.json`)
 
+The file is an envelope `{ "missionId": <the one mission id of the sequence>, "items": [ChangeItem, …] }` (A4).
+
 | Field | Type | Rule |
 |---|---|---|
 | `event` | `"status-transition"`, `"mission-lifecycle"` or `"log-truncated"` | the three SSE event names in the contract |
-| `id` | StreamCursorString or absent | the cursor the item carries on a **mission-scoped** stream: present on `status-transition` and `mission-lifecycle` items, never on `log-truncated` (contract rule). On an unscoped stream no item is sent with an `id:` line, whatever this field says (R2-05) |
+| `scopedId` | StreamCursorString or absent | the cursor (`id:` line) the item carries on a **mission-scoped** stream: present on `status-transition` and `mission-lifecycle` items, never on `log-truncated` (contract rule). On an unscoped stream no item is sent with an `id:` line, whatever this field says (R2-05) |
 | `data` | object | validates against `StatusTransitionEvent`, `MissionLifecycleEvent` or `LogTruncatedEvent` |
 | `delayMs` | integer ≥ 0 | pause before this item; scaled by the consumer's time scale (0 in tests) |
 
 **Invariants**:
 - At least one item of each event kind (FR-011).
-- One mission id across the sequence, and cursors strictly increasing among the items that carry an `id`.
+- One mission id across the sequence (the envelope's `missionId`), and `scopedId` offsets strictly increasing among the items that carry one.
 - The file is static, so replay is deterministic (NFR-004).
 
 ## ConnectionState (TypeScript, `mission-shell`)
