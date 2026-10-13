@@ -22,9 +22,9 @@ There is no persistent storage. The entities are the shapes that cross module bo
 | `kind` | `"read"` or `"stream"` | `stream` only for `streamEvents` |
 | `responseSchema` | string or null | the schema name of the 200 response; `null` for `stream` |
 | `defaultExample` | ExampleEntry key or null | taken from the reviewed `DEFAULT_EXAMPLES` map in `generate.mjs`; `null` only where the map says so explicitly; generation fails on a read whose schema is missing from the map |
-| `refusals` | object `{ <HTTP status>: <schema name> }` | every non-200 JSON response the operation declares in `openapi.yaml`, with its status; `{}` when none; `{}` for `stream` (R2-06) |
+| `refusals` | object `{ <schema name>: [<HTTP status>, …] }` | every `application/problem+json` response the operation declares in `openapi.yaml` (refusals are problem+json, not `application/json`; R3-01), grouped by schema with the set of statuses that schema may carry (one schema can cover several, for example `ArtifactRefusal`; R3-02); the `default` Problem response is not a selectable refusal; `{}` when none; `{}` for `stream` (R2-06) |
 
-**Invariant**: the set of `operationId`s equals the contract's set, and each route's `refusals` equals the operation's declared non-200 responses. This is checked by the contract gate (staleness) and by the coverage test (FR-009).
+**Invariant**: the set of `operationId`s equals the contract's set, and each route's `refusals` equals the operation's declared `application/problem+json` responses, grouped by schema. This is checked by the contract gate (staleness) and by the coverage test (FR-009).
 
 ## FixtureEntry (generated, `contracts/fixtures/mission-status.fixtures.json`)
 

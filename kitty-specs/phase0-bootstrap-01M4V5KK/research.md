@@ -94,7 +94,7 @@ Each entry gives the Decision, the Rationale, and the Alternatives considered.
 ## R-07 — The stub's security posture
 
 - **Decision**: the stub applies the same request rules as the upstream service (spec-kitty #5529's service README), so there is no charter exemption (F-32).
-  - It binds `127.0.0.1` only. The announcement is printed from the bound listener's `local_addr()`, never from configuration (a review check). The test runs the real binary, asserts the announced address, and also connects on the first non-loopback local address expecting a refusal, skipped with a logged reason when the machine has none (F-31, R2-08).
+  - It binds `127.0.0.1` only. The announcement is printed from the bound listener's `local_addr()`, never from configuration (a review check). The test runs the real binary, asserts the announced address, and also connects on a non-loopback local address expecting a refusal. The address is found with `std` only (a UDP socket "connect" to a documentation-range address reveals the default-route local IP without sending traffic); the test is skipped with a logged reason when that address is loopback or unavailable, and no crate is added (F-31, R2-08, R3-07).
   - Host must be exactly `127.0.0.1:<port>` or `localhost:<port>`; anything else gets 403.
   - Origin, when present, must equal the stub's own origin; anything else gets 403.
   - Any `Forwarded` or `X-Forwarded-*` header gets 403.
@@ -109,7 +109,7 @@ Each entry gives the Decision, the Rationale, and the Alternatives considered.
 ## R-08 — Upstream drift alert
 
 - **Decision**:
-  - Drift reuses what exists (R2-07). `scripts/contract/remote.mjs` already fetches upstream with `git fetch --depth 1` using only Node built-ins, and honours `CONTRACT_REMOTE_URL` for tests. `verify-remote.mjs` already computes "contract paths changed since the pin" from tree ids. That tree compare is extracted into `scripts/contract/common.mjs` as one function, `verify-remote.mjs` is refactored onto it, and the new `drift.mjs` calls `remote.mjs` plus that function against upstream `main` (F-23). There is no second network path and no HTTP directory listing (which would also hit GitHub API rate limits).
+  - Drift reuses what exists (R2-07). `scripts/contract/remote.mjs` already fetches upstream with `git fetch --depth 1` using only Node built-ins, and honours `CONTRACT_REMOTE_URL` for tests. `verify-remote.mjs`'s existing compare works per path prefix (`rev-parse <commit>:<path>` for the two `UPSTREAM_PATHS` entries), so it can only name `contracts/mission-status` or `contracts/_shared`, not files (R3-03). The new `drift.mjs` therefore fetches upstream `main` with `remote.mjs`, hashes every file of the fetched tree with the `common.mjs` hash helpers (the same ones that build `PIN.json`), and compares per file with `PIN.json`'s per-file sha256, listing added, removed and changed files. The per-file compare lives in `common.mjs` as one function; `verify-remote.mjs` keeps its own check (F-23). There is no second network path and no HTTP directory listing (which would also hit GitHub API rate limits).
   - `drift.test.mjs` points `CONTRACT_REMOTE_URL` at local git repositories built in a temporary directory, for the four outcomes: no drift, drift, unreachable (a URL that does not exist), and other error.
   - Exit codes: 0 in sync, 1 drift (files listed), 2 upstream unreachable, 3 any other error.
   - `.github/workflows/contract-drift.yml` runs it on a daily `schedule` and on `workflow_dispatch`:

@@ -2,7 +2,7 @@
 
 **Branch**: `feat/phase0-bootstrap-17` | **Date**: 2026-10-13 | **Spec**: [spec.md](spec.md)
 **Input**: Mission specification from `kitty-specs/phase0-bootstrap-01M4V5KK/spec.md`; issue #17; epic #16.
-**Revision**: fix round 1 of the plan-phase squad applied (`reviews/plan.squad.md`, F-01 to F-48).
+**Revision**: fix rounds 1 to 3 of the plan-phase squad applied (`reviews/plan.squad.md`, F-01 to F-48, R2-01 to R2-15, R3-01 to R3-09).
 
 ## Summary
 
@@ -65,7 +65,7 @@ This plan lays the ground for the host missions (#18 to #21). It has three parts
 | Exact version pins | PASS | NFR-003: npm (existing rule), Cargo (new `cargo-pins` hygiene check), toolchain (`rust-toolchain.toml`). |
 | Exceptions are documented in the PR | PASS | One recorded exception: the exact-path lint ignore for the generated `elements.d.ts`, in the style of E-05 (F-45). |
 
-Re-checked after Phase 1 design and after fix round 1: no new conflicts.
+Re-checked after Phase 1 design and after fix rounds 1 to 3: no new conflicts.
 
 ## Architecture
 
@@ -167,7 +167,7 @@ packages/
 scripts/contract/generate.mjs      # EXTENDED: emit examples/fixtures/routes JSON; DEFAULT_EXAMPLES map
 scripts/contract/check.mjs         # EXTENDED: staleness, examples-vs-YAML oracle, change-sequence validation
 scripts/contract/common.mjs        # EXTENDED: shared compare-with-pin function (builtin-only imports)
-scripts/contract/verify-remote.mjs # REFACTORED to use the shared compare function
+scripts/contract/common.mjs        # EXTENDED: per-file compare against PIN.json (used by drift.mjs; R3-03)
 scripts/contract/drift.mjs         # NEW: upstream HEAD vs PIN.json (scheduled only; builtin-only imports)
 scripts/typings.mjs                # NEW: own generator + --check
 scripts/cargo-pins.mjs             # NEW: exact-pin check over Cargo.toml files (run by hygiene)
@@ -271,7 +271,7 @@ eslint.config.mjs, eslint.no-io.config.mjs, eslint.data-driven.config.mjs  # EXT
 - **Relevant requirements**: FR-001, FR-002, FR-003, SC-001.
 - **Affected surfaces**:
   - `packages/mission-shell/src/harness/BindingHarness.svelte` and `test/binding.test.ts`;
-  - the root `package.json` `test` script (it runs every workspace package's `test`; `ciCommand` stays `pnpm test`), requested from IC-03 (R2-12);
+  - the root `package.json` `test` script, which becomes `pnpm -r --workspace-concurrency=1 test`: every workspace package's `test`, one package at a time, so timing ceilings never share the browser (R3-08); `ciCommand` stays `pnpm test`; requested from IC-03 (R2-12);
   - `gates/plants/unit-tests/` (the registration-order plant; the intent-path plant).
 - **Sequencing/depends-on**: IC-03, IC-04, IC-05.
 - **Risks**:
@@ -283,7 +283,7 @@ eslint.config.mjs, eslint.no-io.config.mjs, eslint.data-driven.config.mjs  # EXT
 - **Purpose**: tell the operator when the upstream contract moves away from `PIN.json`, without touching merge gates, and check every workflow file's pins and permissions.
 - **Relevant requirements**: FR-012, NFR-001, NFR-002.
 - **Affected surfaces**:
-  - `scripts/contract/common.mjs` (the tree compare that `verify-remote.mjs` already performs, extracted as one function), `verify-remote.mjs` (refactored onto it), `drift.mjs` and `drift.test.mjs`. Drift reuses `remote.mjs` (`git fetch --depth 1`, built-ins only) and its `CONTRACT_REMOTE_URL` override, which the tests point at local repositories for the no-drift, drift, unreachable and error cases. There is no second network path and no HTTP directory listing (R2-07);
+  - `scripts/contract/common.mjs` (a per-file compare: hash every file of a fetched tree with the existing hash helpers and compare with `PIN.json`'s per-file sha256, reporting added, removed and changed files; R3-03), `drift.mjs` and `drift.test.mjs`. `verify-remote.mjs`'s per-prefix tree-id compare stays as it is: it only reports the two path prefixes, which is not enough for FR-012. Drift reuses `remote.mjs` (`git fetch --depth 1`, built-ins only) and its `CONTRACT_REMOTE_URL` override, which the tests point at local repositories for the no-drift, drift, unreachable and error cases. There is no second network path and no HTTP directory listing (R2-07);
   - `.github/workflows/contract-drift.yml`;
   - `scripts/check-hygiene.mjs` (action-pin, permissions and checkout-credential checks on every workflow; gate-structure checks stay `ci.yml`-only);
   - `gates/plants/hygiene/` (an unpinned action in a non-ci workflow);
@@ -298,16 +298,17 @@ eslint.config.mjs, eslint.no-io.config.mjs, eslint.data-driven.config.mjs  # EXT
 
 ### IC-08 — Stub crate
 
-- **Purpose**: a loopback HTTP and SSE stub that serves every vendored example and fixture and plays the scripted sequence, with upstream-equivalent request rules.
+- **Purpose**: a loopback HTTP and SSE stub that serves every vendored example that is a complete response of a route (R3-06), every fixture, and plays the scripted sequence, with upstream-equivalent request rules.
 - **Relevant requirements**: FR-010, FR-011, NFR-004.
 - **Affected surfaces**: `crates/kitty-stub/{Cargo.toml (publish = false), src/lib.rs, src/main.rs, tests/}`.
 - **Sequencing/depends-on**: IC-01, IC-02.
 - **Risks**:
   - The SSE framing must match the contract (`event:`, `id:`, `data:`, blank line). On a mission-scoped stream, `status-transition` and `mission-lifecycle` items carry `id:`; unscoped streams carry no `id:`, and `log-truncated` never does (R2-05).
-  - Selection headers are accepted only for the route's success schema (served `200`) or one of its declared refusal schemas (served with that response's contract status, from `routes.json` `refusals`). Event examples cannot be selected on reads, and any other selection is a `400` with a stub-local code (R2-06).
+  - Selection headers are accepted only for the route's success schema (served `200`, `application/json`) or one of its declared refusal schemas (served as `application/problem+json` with the example's own `status`, which must be in that schema's allowed set in `routes.json` `refusals`). Event examples and component-level examples cannot be selected on reads, and any other selection is a `400` with a stub-local code (R2-06, R3-01, R3-02, R3-06).
   - The heartbeat interval and time scale are injectable for tests.
+  - The SSE test checks the parsed stream against `changes.json` (event names, `id:` lines, `data`, in order; scoped and unscoped), not only against itself, and keeps the 10-run byte-identity check on top (R3-04).
   - No request value is ever used to build a filesystem path; a test sends a `../` traversal.
-  - The loopback test runs the real binary. The announcement must be printed from `listener.local_addr()` (a review check), and the test also connects on the first non-loopback local address and expects a refusal; it is skipped, with the reason logged, when the machine has no such address (R2-08).
+  - The loopback test runs the real binary. The announcement must be printed from `listener.local_addr()` (a review check), and the test also connects on a non-loopback local address and expects a refusal. The address is found with `std` only: a UDP socket "connect" to a documentation-range address (no packet is sent) reveals the default-route local IP; the test is skipped, with the reason logged, when that address is loopback or unavailable. No new crate (R2-08, R3-07).
   - The 501 "no example" branch is tested with a synthetic routes file.
   - The comparison oracle is `examples.json`, which the contract gate verified against the YAML. Equality is JSON-value equality.
 
@@ -359,7 +360,7 @@ It is preceded by two separate steps, in both the gate job and the proof leg whe
 | `typecheck` | `svelte-check` through the `mission-shell` typecheck script | Svelte type error; a non-existent element property; a renamed intent handler |
 | `eslint` | Svelte parser and config | Svelte lint violation |
 | `no-io` | scope includes `packages/mission-shell/src/**/*.{ts,svelte}` | `fetch` in a `.svelte` script block (pattern = the rule message) |
-| `unit-tests` | the root `test` script changes from mission-ui only to every workspace package's `test` (so it includes the `mission-shell` binding, coverage and fixture-client tests); `ciCommand` stays `pnpm test` | registration order (mount before import); intent-path break; a `CLIENT_OPERATIONS` entry deleted with its method |
+| `unit-tests` | the root `test` script changes from mission-ui only to every workspace package's `test`, run one package at a time (`pnpm -r --workspace-concurrency=1 test`, R3-08) (so it includes the `mission-shell` binding, coverage and fixture-client tests); `ciCommand` stays `pnpm test` | registration order (mount before import); intent-path break; a `CLIENT_OPERATIONS` entry deleted with its method |
 | `manifest` | typings staleness check | stale typings |
 | `contract` | examples/fixtures/routes staleness, the examples-vs-YAML oracle, change-sequence validation | stale JSON; invalid change item |
 | `hygiene` | `cargo-pins`; workflow pin, permissions and credential checks on every workflow | a caret range in a Cargo.toml; an unpinned action in a non-ci workflow |

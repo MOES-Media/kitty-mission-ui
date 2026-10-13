@@ -11,17 +11,20 @@ type Schemas = components['schemas'];
 type ReadOp = 'getProject' | 'listMissions' | 'getMission' | 'getWorkPackage' | 'getWorkPackageDetail'
             | 'listArtifacts' | 'getArtifactContent' | 'getDriftReport' | 'listOpsInvocations';
 
-/** Path and query parameters of an operation, exactly as the contract declares them. */
-type Params<Op extends ReadOp> =
-  (operations[Op]['parameters'] extends { path: infer P } ? P : {}) &
-  (operations[Op]['parameters'] extends { query?: infer Q } ? { query?: Q } : {});
+/** Path and query parameters of an operation, exactly as the contract declares them: the generated
+ *  `operations[Op]['parameters']` used as is, so a required query (getArtifactContent's `query.path`)
+ *  stays required and an optional one stays optional (R3-05). */
+type Params<Op extends ReadOp> = operations[Op]['parameters'];
 
 type Ok<Op extends ReadOp> = operations[Op]['responses'][200]['content']['application/json'];
 
-/** Every non-200 JSON response the contract declares for the operation (its refusal schemas). */
-type Refusal<Op extends ReadOp> = Exclude<
-  { [S in keyof operations[Op]['responses']]: operations[Op]['responses'][S] extends { content: { 'application/json': infer B } } ? { status: S; body: B } : never }[keyof operations[Op]['responses']],
-  { status: 200 }>;
+/** Every refusal the contract declares for the operation. Refusals are `application/problem+json`
+ *  (successes are `application/json`), so the refusal body is read from that media type (R3-01).
+ *  `status` is a number: a schema shared by several statuses (ArtifactRefusal, StreamRefusal) carries
+ *  its own `status` field, which is the authority (R3-02). */
+type Refusal<Op extends ReadOp> = {
+  [S in keyof operations[Op]['responses']]: operations[Op]['responses'][S] extends { content: { 'application/problem+json': infer B } } ? { status: number; body: B } : never
+}[keyof operations[Op]['responses']];
 
 export type Result<Op extends ReadOp> =
   | { ok: true; value: Ok<Op> }

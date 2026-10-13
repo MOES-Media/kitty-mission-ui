@@ -12,7 +12,7 @@ kitty-stub --fixtures <dir> [--port <n>] [--heartbeat-ms <ms>] [--time-scale <f>
 | `--heartbeat-ms` | `30000` | interval between `: heartbeat` comments |
 | `--time-scale` | `1.0` | multiplier for every item's `delayMs`; tests use `0` |
 
-The stub binds `127.0.0.1:<port>` only. The first line on stdout is `listening <addr>`, printed from the bound listener's `local_addr()` (never from configuration), so tests and later missions can read the bound port. The loopback test runs the real binary, asserts the announced address is `127.0.0.1`, and connects on the first non-loopback local address expecting a refusal (skipped, with the reason logged, when the machine has none) (R2-08). (The upstream service does not announce its port, epic #16; the stub deliberately does.) The stub loads every file in `<dir>` once at start-up.
+The stub binds `127.0.0.1:<port>` only. The first line on stdout is `listening <addr>`, printed from the bound listener's `local_addr()` (never from configuration), so tests and later missions can read the bound port. The loopback test runs the real binary, asserts the announced address is `127.0.0.1`, and connects on a non-loopback local address expecting a refusal. That address is found with `std` only (a UDP socket "connect" to a documentation-range address reveals the default-route local IP without sending traffic); the test is skipped, with the reason logged, when it is loopback or unavailable. No crate is added (R2-08, R3-07). (The upstream service does not announce its port, epic #16; the stub deliberately does.) The stub loads every file in `<dir>` once at start-up.
 
 ## Request rules (all routes, mirroring the upstream service)
 
@@ -38,14 +38,14 @@ Which body is served:
 
 A selection (1 or 2) is accepted only when the entry's schema fits the route (R2-06):
 - equal to the route's `responseSchema`: served with `200`;
-- equal to one of the route's declared refusal schemas (`routes.json` `refusals`): served with that response's contract status (for example a `WorkPackageDetailRefusal` with the status the contract declares for it);
+- equal to one of the route's declared refusal schemas (`routes.json` `refusals`): served with the selected example's **own `status` field**, which the contract makes authoritative ("the status follows from the code"; one schema such as `ArtifactRefusal` covers several statuses). If that status is not in the schema's allowed set in `refusals`, the selection is a `400` `schema-mismatch` (R3-02);
 - anything else, including every event example (`StatusTransitionEvent`, `MissionLifecycleEvent`, `LogTruncatedEvent`) and refusals of other operations: `400` with `{"code":"schema-mismatch","schema":"<entry schema>","operationId":"<id>"}`.
 
-So every vendored example remains reachable on a route whose contract response it belongs to, and the stub never serves a refusal or an event payload as a successful read. When the default is `null`: `501` with `{"code":"no-example","operationId":"<id>"}`. This branch is tested with a synthetic routes file, because the current pin has no null.
+So every vendored example that is a **complete response body** of some route (a success or a refusal) is reachable on that route, and the stub never serves a refusal or an event payload as a successful read. Component-level examples (25 of the 77 at the current pin, for example a single `MissionOverview` row) are not a complete response of any route; they stay in `examples.json` for the shell's fixture adapter and are not selectable on the stub (R3-06). When the default is `null`: `501` with `{"code":"no-example","operationId":"<id>"}`. This branch is tested with a synthetic routes file, because the current pin has no null.
 
 These two headers and the `code` values (`no-fixture`, `no-example`, `schema-mismatch`) are stub-local, not part of the contract.
 
-A served entry has `content-type: application/json` and the status given above. The body is **JSON-value-equal** to the selected entry. `serde_json` with `preserve_order` keeps the file's key order for readability, but byte layout and key order are not contractual. The tests compare parsed values against `examples.json`, which the contract gate has verified against the YAML. That makes the oracle independent of what the stub serves.
+A served success has `content-type: application/json`; a served refusal has `content-type: application/problem+json`, matching the contract (R3-01). Both use the status given above. The body is **JSON-value-equal** to the selected entry. `serde_json` with `preserve_order` keeps the file's key order for readability, but byte layout and key order are not contractual. The tests compare parsed values against `examples.json`, which the contract gate has verified against the YAML. That makes the oracle independent of what the stub serves.
 
 A path that matches no route gets `404`.
 
@@ -64,7 +64,7 @@ data: <JSON of data, one line>
 
 After the last item, the stream stays open and sends `: heartbeat` every `--heartbeat-ms` until the client disconnects.
 
-The output is deterministic (NFR-004). The test runs with `--time-scale 0 --heartbeat-ms 50`, captures up to the first heartbeat, and compares the bytes across 10 runs.
+The test runs with `--time-scale 0 --heartbeat-ms 50` and captures up to the first heartbeat. It parses the captured stream and asserts that the event names, the `id:` lines and the `data` equal the items of `changes.json` in order, once for a mission-scoped request and once for an unscoped one (no `id:` lines) (R3-04). Determinism (NFR-004) is checked on top: the captured bytes are identical across 10 runs.
 
 ## Test support
 

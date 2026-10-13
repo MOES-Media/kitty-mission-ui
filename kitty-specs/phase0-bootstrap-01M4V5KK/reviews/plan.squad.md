@@ -55,7 +55,7 @@ Dispositions follow the procedure's contract: accepted, changed, or deferred_wit
 | F-23 | R2 | low | `drift.mjs` duplicates `verify-remote.mjs`, and exit 2 conflates errors with "unreachable". | CONFIRMED | accepted: extract one shared compare-with-pin function; exit codes 0 in sync, 1 drift, 2 unreachable, 3 other error (R-08). |
 | F-24 | R2 | medium | No decision records that the stub is its own crate, and #16 and #17 say kitty-core. | CONFIRMED | accepted: decision `01M4V7AC1A0KJFNQ2JS347XEGS` recorded (operator alignment). |
 | F-25 | R4 | medium | Port gaps (`includePrompt`, other query params, a resume cursor, an undefined `Result`) would force port changes in #19 to #21 (SC-004). | CONFIRMED | accepted: every method takes the operation's full path and query parameters from the generated `operations` types; `subscribe` takes `{ missionId?, cursor? }`; `Result` is defined concretely (client-port.md). |
-| F-26 | R2 | medium | The stub cannot serve every example (#17 wording). | CONFIRMED | changed: resolved by F-04 (every example is selectable). |
+| F-26 | R2 | medium | The stub cannot serve every example (#17 wording). | CONFIRMED | changed: resolved by F-04 (every example selectable). Narrowed by R3-06 to every example that is a complete response of a route. |
 | F-27 | R3, R2, R6 | high | Hygiene does not check SHA pins, permissions or checkout credentials outside `ci.yml`, so the plan's IC-07 claim is false. | CONFIRMED (`check-hygiene.mjs:95-110`) | accepted: hygiene runs the action-pin, permissions and checkout-credentials checks on every workflow file (the gate-structure checks stay `ci.yml`-only), with a hygiene plant (IC-07). |
 | F-28 | R4 | medium | #21's header assertions need to observe what the stub received. | CONFIRMED | accepted: the stub-local endpoint `GET /__stub/last-request` returns the method, path and headers of the last `/api/v1` request (stub-http.md). |
 | F-29 | R3 | medium | Freshness is checked only for direct dependencies; transitive ones are not age-gated. | CONFIRMED | deferred_with_rationale: a repository-wide pnpm `minimumReleaseAge` would block the private `@spec-kitty/*` release-candidate updates and is a policy change. The WP records the transitive lockfile additions with publish dates as evidence, and a follow-up issue proposes `minimumReleaseAge` with an `@spec-kitty` exclusion. Cargo has no age gate; the WP records publish dates of new `Cargo.lock` entries. |
@@ -118,5 +118,32 @@ A fresh `reviewer-renata` instance re-read the changed files across all six lens
 Raw 15, confirmed 15, refuted 0.
 
 ## Fix round 2 and verification
+
+All dispositions were applied in commit a1d1227. The orchestrator spot-checked the result:
+
+- `rustup toolchain install` is the install step, in both the plan and research;
+- `loadingMore={true}` and the no-stray-attribute assertion are present;
+- the plan counts 16 plants and breaks them down per gate;
+- hygiene reports 0 findings.
+
+## Round 3: final sweep
+
+A fresh `architect-alphonso` instance swept all six lenses. All 15 round-2 dispositions are reflected, but R2-06 and R2-07 introduced new defects (R3-01 to R3-03).
+
+| Id | Lens | Sev | Finding | Verified | Disposition |
+|---|---|---|---|---|---|
+| R3-01 | R2 | high | Every contract refusal is `application/problem+json`. `Refusal<Op>` keyed on `application/json` resolves to `never`, the stub would serve refusals with the wrong media type, and `refusals` comes out empty on every route. | CONFIRMED (the vendored contract has 16 `application/problem+json` uses; successes are `application/json`) | accepted: `refusals` and `Refusal<Op>` derive from the `application/problem+json` responses, and the stub serves a refusal with that content type (data-model, client-port, stub-http). |
+| R3-02 | R2 | medium | One refusal schema covers several statuses (`ArtifactRefusal` six, `StreamRefusal` two), so "that response's status" is ambiguous. | CONFIRMED (`ArtifactRefusal.yaml`: "the status follows from the code") | accepted: a served refusal uses the selected example's own `status` field. `refusals` maps each schema to its set of allowed statuses, and the stub rejects an example whose status is not in that set (stub-http, data-model). |
+| R3-03 | R4 | medium | The reused tree compare reports at most two directory names, not files (FR-012 needs files). | CONFIRMED (`verify-remote.mjs` compares `rev-parse <commit>:<path>` per `UPSTREAM_PATHS` entry) | accepted: drift fetches with `remote.mjs`, hashes every fetched file with the `common.mjs` hash helpers, and compares per file with `PIN.json`'s per-file sha256, listing added, removed and changed files (R-08, IC-07). |
+| R3-04 | R5 | medium | The stub's SSE output is checked only against itself, so a stub that streams nothing passes. | CONFIRMED | accepted: the test parses the captured stream and asserts that the event names, `id:` lines and `data` equal `changes.json` in order, for a scoped and an unscoped request. The 10-run byte-identity check is kept on top (stub-http, IC-08). |
+| R3-05 | R2 | medium | `Params<Op>` makes the required `query.path` of `getArtifactContent` optional. | CONFIRMED | accepted: `Params<Op>` is the generated `operations[Op]['parameters']` (path and query) as is, so contract optionality is kept (client-port). |
+| R3-06 | R1 | low | 25 of the 77 examples are component-level (not a complete response body of any route), so "every example selectable" (F-26) over-claims. | CONFIRMED | accepted: the F-26 claim is narrowed to "every example that is a complete response of a route". Component examples stay in `examples.json` for the shell's fixture adapter. FR-010 ("answers every read with its vendored example") is unaffected (stub-http). |
+| R3-07 | R3, R6 | low | The non-loopback connection test needs interface enumeration, which `std` lacks, and no crate is listed. | CONFIRMED | accepted: std-only. A UDP socket "connect" to a documentation-range address reveals the default-route local IP without sending traffic; the test is skipped, with the reason logged, when that address is loopback or unavailable. No new crate (R-07). |
+| R3-08 | R6 | low | `pnpm -r test` runs packages concurrently, against the repository's rule that timing ceilings never share the browser. | CONFIRMED | accepted: the root `test` is `pnpm -r --workspace-concurrency=1 test` (plan Gates, IC-06). |
+| R3-09 | R6 | low | The plan's revision marker and this record's round-2 verification were stale. | CONFIRMED | accepted: both updated (this section; plan revision line). |
+
+Raw 9, confirmed 9, refuted 0.
+
+## Fix round 3 and verification
 
 (pending)
