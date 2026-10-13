@@ -96,6 +96,18 @@
       "verdict": "not-applicable",
       "wp": null
     },
+    "#28": {
+      "evidence_ref": "Follow-up: #28 is the deferred F-29 supply-chain follow-up filed by the orchestrator; tracked separately.",
+      "fr": null,
+      "nfr": null,
+      "repo": null,
+      "sc": null,
+      "scope": null,
+      "source_file": null,
+      "title": null,
+      "verdict": "not-applicable",
+      "wp": null
+    },
     "#5533": {
       "evidence_ref": "<link or commit>",
       "fr": null,
