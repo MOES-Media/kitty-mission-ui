@@ -42,5 +42,16 @@
         "source": "plant-ops-doctor-sweep.ts.plant"
       }
     ]
+  },
+  {
+    "gate": "data-driven",
+    "ciCommand": "pnpm lint:data-driven && pnpm test:data-driven",
+    "expectFailPattern": "data-driven: S1 phase name or lane value as a literal",
+    "overlays": [
+      {
+        "target": "packages/mission-shell/src/PlantDataDriven.svelte",
+        "source": "PlantDataDriven.svelte.plant"
+      }
+    ]
   }
 ]
