@@ -7,11 +7,13 @@ import { readdirSync, statSync } from 'node:fs';
 import { userInfo } from 'node:os';
 import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { isDeepStrictEqual } from 'node:util';
+import { parse as parseYaml } from 'yaml';
 import { scanText } from '../hygiene/rules.mjs';
 import {
   LAYOUT, ROOT, changelogTopVersionOf, infoVersionOf, listFiles, readPin, readText, vendoredDigest, vendoredHashes,
 } from './common.mjs';
-import { generateFixturesSource, generateTypesSource, importTs, loadBulk } from './generate.mjs';
+import { FIXTURE_FILES, generateFixturesSource, generateJsonSources, generateTypesSource, importTs, loadBulk } from './generate.mjs';
 import { FIXTURES, RELAXATIONS, errorAllowed, relaxationSchemas } from './registry.mjs';
 import { OPS_ACTORS, SYNTHETIC_ACTORS } from './overlays.mjs';
 import { compile, loadSchema, relaxedSchema, stripHost, validateWith } from './validate.mjs';
@@ -31,6 +33,9 @@ export const TOKENS = {
   provisional: 'provisional',
   guard: 'guard',
   pinProvenance: 'pin provenance',
+  jsonStale: 'stale generated file',
+  jsonOracle: 'json oracle',
+  changeSequence: 'change sequence',
 };
 
 /**
@@ -570,6 +575,139 @@ function checkProvisional(root) {
   return { problems: out, files: files.length };
 }
 
+// ---- contracts/fixtures/ (WP03) ---------------------------------------------------------------------------------
+/** Staleness: each generated JSON file must equal a fresh in-memory generation byte for byte; a file is named on failure. */
+async function checkJsonFresh(root) {
+  let fresh;
+  try {
+    fresh = await generateJsonSources(root);
+  } catch (err) {
+    return [problem(TOKENS.jsonStale, `the contracts/fixtures JSON could not be regenerated: ${err.message}`)];
+  }
+  const out = [];
+  for (const [rel, text] of Object.entries(fresh)) {
+    let committed;
+    try {
+      committed = readText(root, rel);
+    } catch {
+      out.push(problem(TOKENS.jsonStale, `${rel} is missing; run pnpm contract:generate`));
+      continue;
+    }
+    if (committed !== text) out.push(problem(TOKENS.jsonStale, `${rel} differs from a fresh generation; run pnpm contract:generate`));
+  }
+  return out;
+}
+
+const readJson = (root, rel) => JSON.parse(readText(root, rel));
+
+/**
+ * The oracle of the committed JSON, read independently of the generator (F-04): examples.json holds exactly the vendored
+ * example files (no `_index.yaml`), each deep-equal to a YAML parse done here; fixtures.json holds exactly the registry's
+ * valid fixtures; every route's default example exists in examples.json with the route's response schema. Returns the
+ * problems and the counts.
+ */
+export function jsonOracleProblems(root = ROOT) {
+  const out = [];
+  let examples;
+  let routes;
+  let fixtures;
+  try {
+    examples = readJson(root, FIXTURE_FILES.examples);
+    routes = readJson(root, FIXTURE_FILES.routes);
+    fixtures = readJson(root, FIXTURE_FILES.fixtures);
+  } catch (err) {
+    return { problems: [problem(TOKENS.jsonOracle, `the contracts/fixtures JSON cannot be read: ${err.message}`)], examples: 0, routes: 0, fixtures: 0 };
+  }
+  // fixtures.json: exactly the registry's valid entries (host and relaxed ones stay TypeScript-only)
+  const valid = Object.keys(FIXTURES).filter((n) => FIXTURES[n].kind === 'valid');
+  const notValid = Object.keys(fixtures).filter((n) => !valid.includes(n));
+  const absent = valid.filter((n) => !Object.hasOwn(fixtures, n));
+  if (notValid.length) out.push(problem(TOKENS.jsonOracle, `fixtures.json holds entries that are not valid registry fixtures: ${notValid.join(', ')}`));
+  if (absent.length) out.push(problem(TOKENS.jsonOracle, `fixtures.json lacks valid registry fixtures: ${absent.join(', ')}`));
+  const dir = join(root, LAYOUT.examples);
+  const files = readdirSync(dir).filter((f) => f.endsWith('.yaml') && f !== '_index.yaml');
+  const keys = files.map((f) => f.slice(0, -'.yaml'.length));
+  const extra = Object.keys(examples).filter((k) => !keys.includes(k));
+  const missing = keys.filter((k) => !Object.hasOwn(examples, k));
+  if (extra.length) out.push(problem(TOKENS.jsonOracle, `examples.json holds entries without a vendored file: ${extra.join(', ')}`));
+  if (missing.length) out.push(problem(TOKENS.jsonOracle, `examples.json lacks vendored examples: ${missing.join(', ')}`));
+  for (const key of keys.filter((k) => Object.hasOwn(examples, k))) {
+    const entry = examples[key];
+    const yamlValue = parseYaml(readText(root, `${LAYOUT.examples}/${key}.yaml`));
+    if (entry?.schema !== key.split('.')[0] || !isDeepStrictEqual(entry?.value, yamlValue)) out.push(problem(TOKENS.jsonOracle, `examples.json entry ${key} differs from its vendored YAML`));
+  }
+  for (const r of routes) {
+    if (r.defaultExample === null) continue;
+    if (examples[r.defaultExample]?.schema !== r.responseSchema) out.push(problem(TOKENS.jsonOracle, `routes.json ${r.operationId} default example ${r.defaultExample} is not an example of ${r.responseSchema}`));
+  }
+  return { problems: out, examples: Object.keys(examples).length, routes: routes.length, fixtures: Object.keys(fixtures).length };
+}
+
+const CHANGE_SCHEMAS = { 'status-transition': 'StatusTransitionEvent', 'mission-lifecycle': 'MissionLifecycleEvent', 'log-truncated': 'LogTruncatedEvent' };
+const CHANGE_FIELDS = ['event', 'scopedId', 'data', 'delayMs'];
+
+/**
+ * The invariants of the authored change sequence (data-model ChangeItem; FR-011, NFR-004, R2-05), returned as problems:
+ * the `{ missionId, items }` envelope; each item's data valid against its event schema; every event kind present; one
+ * mission id; a scopedId on every status-transition and mission-lifecycle item, matching the vendored StreamCursorString
+ * pattern, equal to the text of its data's streamCursor, with strictly increasing offsets; no scopedId on log-truncated.
+ */
+export async function changesProblems(doc, root = ROOT) {
+  const out = [];
+  const fail = (message) => out.push(problem(TOKENS.changeSequence, `changes.json ${message}`));
+  if (!doc || typeof doc !== 'object' || typeof doc.missionId !== 'string' || !Array.isArray(doc.items) || doc.items.length === 0) {
+    fail('must be an object { missionId, items } with a mission id and a non-empty items list');
+    return out;
+  }
+  const extraEnvelope = Object.keys(doc).filter((k) => k !== 'missionId' && k !== 'items');
+  if (extraEnvelope.length) fail(`envelope has unexpected field ${extraEnvelope.join(', ')}`);
+  const cursorPattern = new RegExp(parseYaml(readText(root, `${LAYOUT.schemas}/StreamCursorString.yaml`)).pattern);
+  let lastOffset = -1;
+  for (const [i, item] of doc.items.entries()) {
+    const where = `item ${i}`;
+    const unexpected = Object.keys(item).filter((k) => !CHANGE_FIELDS.includes(k));
+    if (unexpected.length) fail(`${where} has unexpected field ${unexpected.join(', ')}`);
+    if (!Number.isInteger(item.delayMs) || item.delayMs < 0) fail(`${where} delayMs must be an integer of 0 or more`);
+    const schema = CHANGE_SCHEMAS[item.event];
+    if (!schema) {
+      fail(`${where} has unknown event ${item.event}`);
+      continue;
+    }
+    const r = validateWith(await validators(root, schema), item.data);
+    if (!r.valid) fail(`${where} (${item.event}) violates ${schema}: ${summarise(r.errors)}`);
+    if (item.data?.missionId !== doc.missionId) fail(`${where} names mission ${item.data?.missionId}, not the envelope's ${doc.missionId}`);
+    if (item.event === 'log-truncated') {
+      if ('scopedId' in item) fail(`log-truncated item carries scopedId (${where})`);
+      continue;
+    }
+    if (typeof item.scopedId !== 'string') {
+      fail(`${where} (${item.event}) lacks a scopedId`);
+      continue;
+    }
+    if (!cursorPattern.test(item.scopedId)) {
+      fail(`${where} scopedId ${item.scopedId} is not a StreamCursorString`);
+      continue;
+    }
+    const c = item.data?.streamCursor;
+    if (!c || item.scopedId !== `${c.offset}:${c.invariant}`) fail(`${where} scopedId differs from its data streamCursor`);
+    const offset = Number(item.scopedId.split(':')[0]);
+    if (offset <= lastOffset) fail(`${where} scopedId offset ${offset} does not increase on ${lastOffset}`);
+    lastOffset = offset;
+  }
+  for (const kind of Object.keys(CHANGE_SCHEMAS)) if (!doc.items.some((it) => it.event === kind)) fail(`has no ${kind} item`);
+  return out;
+}
+
+async function checkChanges(root) {
+  let doc;
+  try {
+    doc = readJson(root, FIXTURE_FILES.changes);
+  } catch (err) {
+    return { problems: [problem(TOKENS.changeSequence, `changes.json cannot be read: ${err.message}`)], items: 0 };
+  }
+  return { problems: await changesProblems(doc, root), items: Array.isArray(doc?.items) ? doc.items.length : 0 };
+}
+
 // ---- driver -----------------------------------------------------------------------------------------------------
 /**
  * Run C1 to C8 over `root`. `requireMain` is the PR-readiness form of C8 (the `--require-main` flag). `deps` lets the tests inject changed inputs: `buildFixtures` (a changed overlay),
@@ -592,9 +730,17 @@ export async function runChecks({ root = ROOT, deps = {}, requireMain = false } 
   problems.push(...c6.problems);
   const c7 = checkProvisional(root);
   problems.push(...c7.problems);
+  problems.push(...(await checkJsonFresh(root)));
+  const oracle = jsonOracleProblems(root);
+  problems.push(...oracle.problems);
+  const changes = await checkChanges(root);
+  problems.push(...changes.problems);
   return {
     problems,
-    summary: { vendoredFiles: c1.files, anchorFiles: c1.anchors, fixtures: fx.count, bulkPages: Object.keys(bulk.pages).length, bulkDocuments: Object.keys(bulk.documents).length, coherenceRecords: c5.records, hygieneFiles: c6.scanned, c7Files: c7.files },
+    summary: {
+      vendoredFiles: c1.files, anchorFiles: c1.anchors, fixtures: fx.count, bulkPages: Object.keys(bulk.pages).length, bulkDocuments: Object.keys(bulk.documents).length, coherenceRecords: c5.records, hygieneFiles: c6.scanned, c7Files: c7.files,
+      jsonExamples: oracle.examples, jsonRoutes: oracle.routes, jsonFixtures: oracle.fixtures, changeItems: changes.items,
+    },
   };
 }
 
@@ -603,7 +749,7 @@ async function main() {
   for (const p of problems) process.stdout.write(`contract: ${p.token}: ${p.message}\n`);
   if (problems.length === 0) {
     const s = summary;
-    process.stdout.write(`contract gate: ok (${s.vendoredFiles} vendored files, ${s.anchorFiles} anchor files, ${s.fixtures} fixtures, ${s.bulkPages} bulk pages, ${s.bulkDocuments} bulk documents, ${s.coherenceRecords} records checked for coherence, ${s.hygieneFiles} files in the hygiene scope, ${s.c7Files} files in the provisional scan)\n`);
+    process.stdout.write(`contract gate: ok (${s.vendoredFiles} vendored files, ${s.anchorFiles} anchor files, ${s.fixtures} fixtures, ${s.bulkPages} bulk pages, ${s.bulkDocuments} bulk documents, ${s.coherenceRecords} records checked for coherence, ${s.hygieneFiles} files in the hygiene scope, ${s.c7Files} files in the provisional scan, ${s.jsonExamples} JSON examples, ${s.jsonFixtures} JSON fixtures, ${s.jsonRoutes} routes, ${s.changeItems} change items)\n`);
     return 0;
   }
   process.stdout.write(`contract gate: ${problems.length} problem(s)\n`);
