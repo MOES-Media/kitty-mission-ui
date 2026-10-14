@@ -17,7 +17,7 @@
     "lint:data-driven": "eslint -c eslint.data-driven.config.mjs packages/*/src",
     "test:data-driven": "vitest run --config gates/vitest.config.ts gates/data-driven.selftest.ts",
     "manifest:generate": "pnpm --filter @moes-media/mission-ui manifest:generate",
-    "manifest:check": "node scripts/check-manifest.mjs",
+    "manifest:check": "node scripts/check-manifest.mjs && node scripts/typings.mjs --check",
     "hygiene": "node scripts/check-hygiene.mjs",
     "test": "pnpm --filter @moes-media/mission-ui test",
     "storybook": "pnpm --filter @moes-media/storybook-app storybook",
@@ -34,7 +34,7 @@
     "contract:update": "node scripts/contract/update.mjs",
     "contract:verify-remote": "node scripts/contract/verify-remote.mjs",
     "test:contract": "node --test scripts/contract/*.test.mjs",
-    "test:scripts": "node --test scripts/hygiene scripts/gate-proof scripts/preflight.test.mjs scripts/manifest-screen.test.mjs scripts/settle.test.mjs scripts/stylelint-exceptions.test.mjs scripts/terminology.test.mjs scripts/bundle-budget.test.mjs scripts/artifact-story-catalogue.test.mjs scripts/perf-split.test.mjs scripts/wp-story-catalogue.test.mjs scripts/drift-story-catalogue.test.mjs scripts/ops-story-catalogue.test.mjs scripts/visual-tags.test.mjs",
+    "test:scripts": "node --test scripts/hygiene scripts/gate-proof scripts/preflight.test.mjs scripts/manifest-screen.test.mjs scripts/settle.test.mjs scripts/stylelint-exceptions.test.mjs scripts/terminology.test.mjs scripts/bundle-budget.test.mjs scripts/artifact-story-catalogue.test.mjs scripts/perf-split.test.mjs scripts/wp-story-catalogue.test.mjs scripts/drift-story-catalogue.test.mjs scripts/ops-story-catalogue.test.mjs scripts/visual-tags.test.mjs scripts/typings.test.mjs",
     "test:terminology": "node scripts/terminology.mjs && node --test scripts/terminology.test.mjs scripts/drift-story-catalogue.test.mjs",
     "contract:drift": "node scripts/contract/drift.mjs"
   },
