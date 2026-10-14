@@ -3,6 +3,8 @@
 import js from '@eslint/js';
 import tseslint from 'typescript-eslint';
 import lit from 'eslint-plugin-lit';
+import svelte from 'eslint-plugin-svelte';
+import svelteParser from 'svelte-eslint-parser';
 import skLocal, { elementSyntaxRestrictions } from './eslint-rules/index.mjs';
 import { MARKDOWN_IT_HOME, markdownImportRestrictions } from './eslint-rules/markdown-renderer.mjs';
 
@@ -51,6 +53,20 @@ export const opsPartsRestrictions = [
   },
 ];
 
+// Svelte sources of the shell (R-04): the plugin's recommended blocks, scoped to package sources, parsed by svelte-eslint-parser
+// with the TypeScript parser for `<script lang="ts">`. The `*.svelte.ts` script-module block is left out: those files already
+// match the TypeScript globs above.
+export const SVELTE_SOURCES = 'packages/*/src/**/*.svelte';
+const svelteRecommended = svelte.configs.recommended
+  .filter((block) => block.name !== 'svelte:base:setup-for-svelte-script')
+  .map((block) => (block.name === 'svelte:base:setup-plugin' ? block : { ...block, files: [SVELTE_SOURCES] }));
+
+// Exception E-46 (phase0-bootstrap, F-45): scripts/typings.mjs (WP04) emits this declaration file from the manifest and the
+// manifest gate regenerates and byte-compares it, so it is ignored by exact path in this config, eslint.no-io.config.mjs and
+// eslint.data-driven.config.mjs, and nothing else is. Sunset: the generator emits lint-clean output, or the lint configs gain
+// a generated-file allowance.
+export const GENERATED_SHELL_TYPINGS = 'packages/mission-shell/src/generated/elements.d.ts';
+
 export default tseslint.config(
   {
     // Plants are non-source overlays; nothing lintable lives there. No other broad ignores.
@@ -62,6 +78,7 @@ export default tseslint.config(
       // Exception E-05: openapi-typescript emits `unknown & unknown`, which the type rules reject; gate contract C2
       // regenerates and byte-compares this one file, so it is ignored by exact path and nothing else.
       'packages/mission-ui/src/contract/types.generated.ts',
+      GENERATED_SHELL_TYPINGS,
     ],
   },
   js.configs.recommended,
@@ -85,6 +102,11 @@ export default tseslint.config(
         structuredClone: 'readonly',
       },
     },
+  },
+  ...svelteRecommended,
+  {
+    files: [SVELTE_SOURCES],
+    languageOptions: { parser: svelteParser, parserOptions: { parser: tseslint.parser, extraFileExtensions: ['.svelte'] } },
   },
   {
     // Script files that can hold templates get the same structural rules (untyped).

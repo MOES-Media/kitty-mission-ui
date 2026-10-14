@@ -38,5 +38,37 @@
         ]
       }
     ]
+  },
+  {
+    "gate": "hygiene",
+    "ciCommand": "pnpm hygiene && pnpm test:scripts && pnpm test:terminology",
+    "expectFailPattern": "plant-caret-pin",
+    "overlays": [
+      {
+        "target": "crates/kitty-core/Cargo.toml",
+        "edits": [
+          {
+            "find": "\n[dependencies]\n",
+            "replace": "\n[dependencies]\nplant-caret-pin = \"0.1\"\n"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "gate": "hygiene",
+    "ciCommand": "pnpm hygiene && pnpm test:scripts && pnpm test:terminology",
+    "expectFailPattern": "is not pinned to a 40-hex SHA",
+    "overlays": [
+      {
+        "target": ".github/workflows/contract-drift.yml",
+        "edits": [
+          {
+            "find": "uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1",
+            "replace": "uses: actions/checkout@v4 # plant-unpinned-action"
+          }
+        ]
+      }
+    ]
   }
 ]

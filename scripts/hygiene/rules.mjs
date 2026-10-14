@@ -415,23 +415,17 @@ export function checkGateJobNames(file, doc) {
     .map(([id]) => finding('gate-name', file, 0, `job ${id} uses the reserved 'Gate:' name outside ci.yml`));
 }
 
-/** Full ci.yml rules. Gate ids come from job ids and matrix.gate values, never display names. */
-export function checkWorkflow(file, doc, plantDirs) {
+/**
+ * Security rules for EVERY workflow file (F-27, B12): action SHA pins, image digests, workflow-level and job-level
+ * `permissions` with `contents: read`, checkout `persist-credentials: false`, no `continue-on-error`, `upload-artifact`
+ * `retention-days: 1`, no secret in a `VITE_`/`STORYBOOK_` env, and a named sanitiser on trace uploads.
+ */
+export function checkWorkflowSecurity(file, doc) {
   const out = [];
   const add = (rule, message) => out.push(finding(rule, file, 0, message));
-  const on = doc?.on ?? {};
-  const keys = Object.keys(typeof on === 'object' && !Array.isArray(on) ? on : {});
-  out.push(...checkWorkflowTriggers(file, doc));
-  for (const k of keys) if (!['pull_request', 'push'].includes(k)) add('workflow-trigger', `trigger ${k} not allowed`);
-  for (const k of ['pull_request', 'push']) {
-    const branches = on[k]?.branches;
-    if (!Array.isArray(branches) || branches.length !== 1 || branches[0] !== 'main') {
-      add('workflow-trigger', `${k} must target main only`);
-    }
-  }
+  const jobs = doc?.jobs ?? {};
   const readOnly = (p) => p && typeof p === 'object' && p.contents === 'read';
-  if (!readOnly(doc.permissions)) add('workflow-permissions', 'workflow-level permissions must include contents: read');
-  const jobs = doc.jobs ?? {};
+  if (!readOnly(doc?.permissions)) add('workflow-permissions', 'workflow-level permissions must include contents: read');
   for (const [id, job] of Object.entries(jobs)) {
     if (!readOnly(job.permissions)) add('workflow-permissions', `job ${id} lacks permissions contents: read`);
     const images = [];
@@ -481,6 +475,29 @@ export function checkWorkflow(file, doc, plantDirs) {
       }
     }
   });
+  return out;
+}
+
+/**
+ * ci.yml gate structure only (A10): the main-only trigger rule (only `pull_request` and `push` to `main`), job ids,
+ * the proof matrix, the plant directories and the excluded `proof`/`proof-leg`/`all` jobs. Gate ids come from job ids
+ * and matrix.gate values, never display names. Another workflow (for example the scheduled drift alert) is never
+ * judged by it.
+ */
+export function checkGateStructure(file, doc, plantDirs) {
+  const out = [];
+  const add = (rule, message) => out.push(finding(rule, file, 0, message));
+  const on = doc?.on ?? {};
+  const keys = Object.keys(typeof on === 'object' && !Array.isArray(on) ? on : {});
+  out.push(...checkWorkflowTriggers(file, doc));
+  for (const k of keys) if (!['pull_request', 'push'].includes(k)) add('workflow-trigger', `trigger ${k} not allowed`);
+  for (const k of ['pull_request', 'push']) {
+    const branches = on[k]?.branches;
+    if (!Array.isArray(branches) || branches.length !== 1 || branches[0] !== 'main') {
+      add('workflow-trigger', `${k} must target main only`);
+    }
+  }
+  const jobs = doc?.jobs ?? {};
   const ids = Object.keys(jobs);
   const gateIds = ids.filter((id) => !GATE_EXCLUDED.has(id)).sort();
   for (const ex of GATE_EXCLUDED) if (!ids.includes(ex)) add('gate-coverage', `job ${ex} is missing`);
@@ -493,6 +510,13 @@ export function checkWorkflow(file, doc, plantDirs) {
   if (sorted(gateIds) !== sorted(matrixIds)) add('gate-coverage', 'gate job ids differ from the proof matrix gate list');
   if (sorted(matrixIds) !== sorted(plantDirs)) add('gate-coverage', 'proof matrix gate list differs from gates/plants directories');
   return out;
+}
+
+/** Full ci.yml rules: the gate structure plus the security rules every workflow gets. */
+export function checkWorkflow(file, doc, plantDirs) {
+  const structure = checkGateStructure(file, doc, plantDirs);
+  const triggers = structure.filter((f) => f.rule === 'workflow-trigger');
+  return [...triggers, ...checkWorkflowSecurity(file, doc), ...structure.filter((f) => f.rule !== 'workflow-trigger')];
 }
 
 const PNG_SIG = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];

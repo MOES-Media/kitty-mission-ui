@@ -1,0 +1,35 @@
+# Scheduled contract drift alert (FR-012, IC-07). Not a gate: it never runs on pull requests and is not a required
+# check. Once a day it fetches upstream spec-kitty `main` with Node built-ins (scripts/contract/drift.mjs reuses the
+# contract tooling's git fetch path) and compares the files below contracts/mission-status and contracts/_shared with
+# the sha256 hashes in contracts/spec-kitty/PIN.json. Drift (exit 1) or an unreachable upstream (exit 2) fails the
+# job red, so GitHub notifies. No install, no secrets, read-only token. The summary goes to the step summary file.
+#
+# GitHub disables scheduled workflows after 60 days without repository activity (F-39); re-enable it from the
+# Actions tab, or run it by hand with workflow_dispatch.
+
+name: Contract drift
+
+on:
+  schedule:
+    - cron: '17 5 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  drift:
+    name: 'Contract drift'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22.22.2
+      - name: Compare upstream contract files with PIN.json
+        run: node scripts/contract/drift.mjs

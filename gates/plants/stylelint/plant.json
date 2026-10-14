@@ -141,5 +141,16 @@
         "source": "plant-stylelint-ops-ellipsis-leak.ts.plant"
       }
     ]
+  },
+  {
+    "gate": "stylelint",
+    "ciCommand": "pnpm lint:styles",
+    "expectFailPattern": "property-allowed-list",
+    "overlays": [
+      {
+        "target": "packages/mission-shell/src/PlantStylelint.svelte",
+        "source": "PlantStylelint.svelte.plant"
+      }
+    ]
   }
 ]
