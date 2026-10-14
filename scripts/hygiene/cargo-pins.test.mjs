@@ -22,13 +22,15 @@ test('cargo pins: non-exact requirements are reported with the dependency name a
     ['serde = ">=1"', 'dependency serde: requirement ">=1" is not an exact =x.y.z pin'],
     ['serde = "*"', 'dependency serde: requirement "*" is not an exact =x.y.z pin'],
     ['serde = { git = "https://example.com/serde.git" }', 'dependency serde: a git dependency has no exact =x.y.z pin'],
+    // a bare full version is a caret requirement in Cargo, not an exact one
+    ['serde = "1.2.3"', 'dependency serde: requirement "1.2.3" is not an exact =x.y.z pin'],
   ];
   let ran = 0;
   for (const [line, message] of cases) {
     assert.deepEqual(report(MEMBER, member(line)), [`cargo-pin|${MEMBER}|6|${message}`], line);
     ran += 1;
   }
-  assert.equal(ran, 6);
+  assert.equal(ran, 7);
 });
 
 test('cargo pins: an exact string, an exact inline table and a workspace reference are clean', () => {
