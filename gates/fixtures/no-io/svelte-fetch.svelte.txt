@@ -1,0 +1,5 @@
+<script lang="ts">
+  export const load = (): Promise<Response> => fetch('/missions');
+</script>
+
+<p>loading</p>
