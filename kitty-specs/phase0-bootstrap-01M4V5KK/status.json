@@ -200,6 +200,9 @@
       "last_event_id": "01M4XHJSE7GVQNR3SPWCWGH2EM",
       "last_transition_at": "2026-10-14T15:48:02.631653+00:00",
       "model": "__resolved_model_absent__",
+      "notes": [
+        "Ready for review: commits 7f57ab5, 4ef12c5, 4c1d8e8, f9c7006 (lane-f). gate-proof local --only unit-tests: ok, clean exit 0, planted exit 1, all 7 plant tokens matched incl. 3 new (binding: loadingMore not set as property; binding: intent sk-search not delivered; coverage: missing operation getDriftReport), leg 439493 ms. Root pnpm test (-r --no-bail --workspace-concurrency=1) runs mission-ui unit+perf and shell (30 tests). typecheck/lint/lint:styles/no-io/manifest/hygiene/scripts/terminology/contract/data-driven/build-storybook green. SC-005 probe empty. Rust gate n/a (no Cargo.toml in lane). Out-of-map: root package.json test script (recorded; --no-bail approved CR)."
+      ],
       "provider": "__resolved_provider_absent__",
       "role": "implementer",
       "shell_pid": 73023,
