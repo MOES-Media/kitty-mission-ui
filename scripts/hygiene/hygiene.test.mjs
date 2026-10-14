@@ -630,7 +630,9 @@ test('the plant descriptor names the unique label and commits no token literal',
   const plantPath = resolve(dirname(SCRIPT), '..', 'gates/plants/hygiene/plant.json');
   const text = readFileSync(plantPath, 'utf8');
   const plants = JSON.parse(text);
-  assert.deepEqual(plants.map((p) => p.expectFailPattern), ['plant-hygiene-token', 'email-address', 'plant-hygiene-node-test']);
+  assert.deepEqual(plants.map((p) => p.expectFailPattern), [
+    'plant-hygiene-token', 'email-address', 'plant-hygiene-node-test', 'plant-caret-pin', ['is not pinned to a', '40-hex SHA'].join(' '),
+  ]);
   assert.equal(new Set(plants.map((p) => p.ciCommand)).size, 1);
   assert.deepEqual(rules('gates/plants/hygiene/plant.json', text), []);
   // the descriptor commits neither a token body nor an address: both are assembled when the generator runs
