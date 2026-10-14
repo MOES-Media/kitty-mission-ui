@@ -1,10 +1,15 @@
 //! FR-005: the Cargo workspace has exactly the expected members. Removing one from the root `members` list fails
-//! this test. WP07 adds `kitty-stub` to the expected set when it adds the crate.
+//! this test. WP07 added `kitty-stub` to the expected set when it added the crate.
 
 use std::collections::BTreeSet;
 use std::process::Command;
 
-const EXPECTED: [&str; 3] = ["kitty-core", "kitty-dashboard", "kitty-desktop"];
+const EXPECTED: [&str; 4] = [
+    "kitty-core",
+    "kitty-dashboard",
+    "kitty-desktop",
+    "kitty-stub",
+];
 
 /// `cargo metadata --no-deps` for the workspace that contains this crate, as raw JSON text.
 fn metadata() -> String {
