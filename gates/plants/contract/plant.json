@@ -78,5 +78,37 @@
         ]
       }
     ]
+  },
+  {
+    "gate": "contract",
+    "ciCommand": "pnpm contract:check && pnpm test:contract",
+    "expectFailPattern": "stale generated file: contracts/fixtures/mission-status.examples.json differs",
+    "overlays": [
+      {
+        "target": "contracts/fixtures/mission-status.examples.json",
+        "edits": [
+          {
+            "find": "\"code\": \"negative\"",
+            "replace": "\"code\": \"negative-planted\""
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "gate": "contract",
+    "ciCommand": "pnpm contract:check && pnpm test:contract",
+    "expectFailPattern": "change sequence: changes.json log-truncated item carries scopedId",
+    "overlays": [
+      {
+        "target": "contracts/fixtures/mission-status.changes.json",
+        "edits": [
+          {
+            "find": "\"event\": \"log-truncated\",",
+            "replace": "\"event\": \"log-truncated\",\n      \"scopedId\": \"0:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\","
+          }
+        ]
+      }
+    ]
   }
 ]
