@@ -2,11 +2,11 @@
  * The `MissionStatusClient` port (contracts/client-port.md, FR-008): every read of the pinned mission-status contract, a
  * change subscription and a closed four-value connection state. The port is transport-free and performs no I/O; adapters
  * implement it (the fixture adapter here, the desktop and HTTP adapters later). Contract types come from mission-ui's
- * generated file by deep import (mission-ui has no `exports` field, C-002).
+ * generated file by deep import (mission-ui has no `exports` field, C-002); the provisional stream schemas are reached
+ * through the aliases of ../contract/stream (contract gate C7).
  */
-import type { components, operations } from '@moes-media/mission-ui/src/contract/types.generated';
-
-type Schemas = components['schemas'];
+import type { operations } from '@moes-media/mission-ui/src/contract/types.generated';
+import type { LifecycleEvent, StatusChangeEvent, TruncationEvent } from '../contract/stream';
 
 /** The nine read operations of the contract. `streamEvents` is reached through `subscribe`. */
 export type ReadOp =
@@ -49,11 +49,11 @@ export const CONNECTION_STATES = ['connected', 'reconnecting', 'degraded: servic
 /** One change of the stream. `cursor` mirrors the SSE `id:`: a string for status-transition and mission-lifecycle on a
  *  mission-scoped subscription, null on an unscoped one, and always null for log-truncated (R2-05). */
 export type Change =
-  | { kind: 'status-transition'; cursor: string | null; data: Schemas['StatusTransitionEvent'] }
-  | { kind: 'mission-lifecycle'; cursor: string | null; data: Schemas['MissionLifecycleEvent'] }
-  | { kind: 'log-truncated'; cursor: null; data: Schemas['LogTruncatedEvent'] };
+  | { kind: 'status-transition'; cursor: string | null; data: StatusChangeEvent }
+  | { kind: 'mission-lifecycle'; cursor: string | null; data: LifecycleEvent }
+  | { kind: 'log-truncated'; cursor: null; data: TruncationEvent };
 
-/** A `cursor` is valid only together with `missionId` (the contract's streamCursor rule). */
+/** A `cursor` is valid only together with `missionId` (the contract's stream cursor rule). */
 export interface SubscriptionScope {
   missionId?: string;
   cursor?: string;
