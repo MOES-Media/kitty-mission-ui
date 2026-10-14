@@ -28,6 +28,7 @@ function project() {
   cpSync(join(ROOT, 'scripts'), join(root, 'scripts'), { recursive: true });
   cpSync(join(ROOT, LAYOUT.vendor), join(root, LAYOUT.vendor), { recursive: true });
   cpSync(join(ROOT, 'packages/mission-ui/src'), join(root, 'packages/mission-ui/src'), { recursive: true });
+  cpSync(join(ROOT, 'contracts/fixtures'), join(root, 'contracts/fixtures'), { recursive: true });
   symlinkSync(join(ROOT, 'node_modules'), join(root, 'node_modules'));
   return root;
 }
