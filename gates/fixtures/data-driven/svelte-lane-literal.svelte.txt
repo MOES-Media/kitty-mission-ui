@@ -1,0 +1,6 @@
+<script lang="ts">
+  let { lane }: { lane: string } = $props();
+  const finished = lane === 'done';
+</script>
+
+<p data-finished={finished}>{lane}</p>
