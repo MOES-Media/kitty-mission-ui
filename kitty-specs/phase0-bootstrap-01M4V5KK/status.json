@@ -132,6 +132,9 @@
       "last_event_id": "01M4VYTDGN50EH5DCC3KK0NGGH",
       "last_transition_at": "2026-10-14T01:00:55.189162+00:00",
       "model": "__resolved_model_absent__",
+      "notes": [
+        "Commits 4313e7e (generator, elements.d.ts, plants; recorded out-of-map: typecheck plant.json + PlantProp/PlantIntent payloads) and 31927bb (recorded out-of-map: root package.json manifest:check + test:scripts), both cat-file=commit. T021: svelte-check flags both wrong handler type and unknown onsk-open-misson (Object literal may only specify known properties) -> attribute path, no intents.ts; WP06 binds onsk-* attributes. elements.d.ts adds a /// reference to mission-ui/src/css-inline.d.ts (shell program otherwise fails on ?inline imports). Gates exit 0: typecheck, lint, lint:styles, lint:no-io, test:no-io 205, manifest:check, hygiene 0, test:scripts 605/0, test:terminology 13/0, contract:check, test:contract 182/0, lint:data-driven, test:data-driven 205, build-storybook. pnpm test: 4 full runs flaky under host load 11-14 (disjoint sets, mission-ui untouched); union of 24 failing files passes alone 510/510. gate-proof local: manifest red before wiring (planted exit 0), green after, 2 plants, 7.9s wall/5.6s leg; typecheck green, 4 plants, 33.4s wall/28.9s leg. Revert check: drop privacy filter -> 5 named failures. Rust gate N/A (no WP01 in lane)."
+      ],
       "provider": "__resolved_provider_absent__",
       "role": "implementer",
       "shell_pid": 4150498,
