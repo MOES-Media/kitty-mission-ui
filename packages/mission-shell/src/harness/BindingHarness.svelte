@@ -12,6 +12,7 @@
     SkSearchDetail,
     ViewState,
   } from '@moes-media/mission-ui';
+  import type { IntentEvent, OnIntent } from './intent';
 
   let {
     missions,
@@ -22,16 +23,16 @@
     missions: MissionOverviewView[];
     status: ViewState;
     loadingMore: boolean;
-    onIntent: (name: string, detail: unknown) => void;
+    onIntent: OnIntent;
   } = $props();
 
   // One handler per event the screen declares in custom-elements.json, bound through the `onsk-…` attribute path that
   // WP04 typed in src/generated/elements.d.ts. Each names its own event, so a handler bound to the wrong event is
   // caught, and forwards the detail unchanged.
-  const onOpenMission = (event: CustomEvent<SkOpenMissionDetail>): void => onIntent('sk-open-mission', event.detail);
-  const onSearch = (event: CustomEvent<SkSearchDetail>): void => onIntent('sk-search', event.detail);
-  const onLoadMore = (event: CustomEvent<SkLoadMoreDetail>): void => onIntent('sk-load-more', event.detail);
-  const onFilterChange = (event: CustomEvent<SkFilterChangeDetail>): void => onIntent('sk-filter-change', event.detail);
+  const onOpenMission = (event: IntentEvent<SkOpenMissionDetail>): void => onIntent('sk-open-mission', event.detail);
+  const onSearch = (event: IntentEvent<SkSearchDetail>): void => onIntent('sk-search', event.detail);
+  const onLoadMore = (event: IntentEvent<SkLoadMoreDetail>): void => onIntent('sk-load-more', event.detail);
+  const onFilterChange = (event: IntentEvent<SkFilterChangeDetail>): void => onIntent('sk-filter-change', event.detail);
 </script>
 
 <sk-missions-screen
