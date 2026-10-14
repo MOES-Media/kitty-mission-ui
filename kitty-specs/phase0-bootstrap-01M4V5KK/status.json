@@ -4,7 +4,7 @@
   "materialized_at": "2026-10-14T01:11:10.488003+00:00",
   "mission_number": "",
   "mission_slug": "phase0-bootstrap-01M4V5KK",
-  "mission_type": "",
+  "mission_type": "software-dev",
   "schema_version": 2,
   "summary": {
     "approved": 6,

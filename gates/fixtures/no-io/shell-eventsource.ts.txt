@@ -1,0 +1,1 @@
+export const subscribe = (): EventSource => new EventSource('/events');
