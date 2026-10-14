@@ -74,5 +74,16 @@
         "source": "plant-css-alias.ts.plant"
       }
     ]
+  },
+  {
+    "gate": "eslint",
+    "ciCommand": "pnpm lint",
+    "expectFailPattern": "plantEslintSvelte",
+    "overlays": [
+      {
+        "target": "packages/mission-shell/src/PlantEslint.svelte",
+        "source": "PlantEslint.svelte.plant"
+      }
+    ]
   }
 ]

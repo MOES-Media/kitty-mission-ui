@@ -1,0 +1,15 @@
+{
+  "name": "@moes-media/mission-shell",
+  "version": "0.0.0",
+  "private": true,
+  "license": "AGPL-3.0-or-later",
+  "type": "module",
+  "main": "src/index.ts",
+  "dependencies": {
+    "@moes-media/mission-ui": "workspace:*"
+  },
+  "scripts": {
+    "typecheck": "svelte-check --tsconfig ./tsconfig.json --fail-on-warnings --output human-verbose",
+    "test": "vitest run"
+  }
+}
