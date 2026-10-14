@@ -12,7 +12,7 @@ import { ALL_NEEDS_ENV, ALL_RUN, NON_GATE_JOBS, assemble, coverageProblems, inva
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const HOME_DIR = '/' + 'home' + '/';
 const AUTH = '_auth' + 'Token';
-const GATES = ['preflight', 'typecheck', 'eslint', 'stylelint', 'storybook-build', 'unit-tests', 'visual', 'manifest', 'no-io', 'hygiene', 'contract', 'data-driven'];
+const GATES = ['preflight', 'typecheck', 'eslint', 'stylelint', 'storybook-build', 'unit-tests', 'visual', 'manifest', 'no-io', 'hygiene', 'contract', 'data-driven', 'rust'];
 const ctx = { cwd: '/w/cwd', home: HOME_DIR + 'someone', repoRoot: '/w/main', user: '' };
 
 test('sanitiser replaces a home path, cwd and the repository root', () => {
@@ -89,7 +89,7 @@ test('assemble merges fragments into a schema-valid, hygiene-clean record', asyn
     assert.deepEqual(res.problems, []);
     const rec = JSON.parse(readFileSync(join(dir, 'out', 'proof-record.json'), 'utf8'));
     assert.equal(rec.verdict, 'pass');
-    assert.equal(rec.gates.length, 12);
+    assert.equal(rec.gates.length, 13);
     assert.match(readFileSync(join(dir, 'out', 'PROOF.md'), 'utf8'), /Verdict: \*\*pass\*\*/);
   } finally {
     rmSync(dir, { recursive: true, force: true });
