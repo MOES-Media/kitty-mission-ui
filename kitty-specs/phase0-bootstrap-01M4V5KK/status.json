@@ -1,7 +1,7 @@
 {
-  "event_count": 29,
-  "last_event_id": "01M4VXZ7R8B5M919N2RHFKB0HH",
-  "materialized_at": "2026-10-14T00:46:04.552969+00:00",
+  "event_count": 31,
+  "last_event_id": "01M4VXZSENG26PZ5VF6J2JGTCD",
+  "materialized_at": "2026-10-14T00:46:22.674296+00:00",
   "mission_number": "",
   "mission_slug": "phase0-bootstrap-01M4V5KK",
   "mission_type": "",
@@ -13,9 +13,9 @@
     "claimed": 0,
     "done": 0,
     "for_review": 0,
-    "in_progress": 0,
+    "in_progress": 1,
     "in_review": 0,
-    "planned": 5
+    "planned": 4
   },
   "work_packages": {
     "WP01": {
@@ -122,11 +122,15 @@
       }
     },
     "WP04": {
-      "actor": "finalize-tasks",
+      "actor": "claude",
+      "agent": "claude",
       "force_count": 0,
-      "lane": "planned",
-      "last_event_id": "01M4VCC473W38VK6ARJQY0D479",
-      "last_transition_at": "2026-10-13T19:38:32.547693+00:00"
+      "implementer_of_record": "claude",
+      "lane": "in_progress",
+      "last_event_id": "01M4VXZSENG26PZ5VF6J2JGTCD",
+      "last_transition_at": "2026-10-14T00:46:22.674296+00:00",
+      "shell_pid": 4150498,
+      "shell_pid_created_at": "1791938777.5"
     },
     "WP05": {
       "actor": "finalize-tasks",
