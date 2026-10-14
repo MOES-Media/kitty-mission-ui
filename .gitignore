@@ -47,3 +47,7 @@ proof-output/
 
 # spec-kitty runtime state (review locks carry absolute paths)
 .spec-kitty/
+
+# Cargo build output and Tauri-generated files (WP01; the hygiene gate scans every unignored file)
+/target/
+apps/desktop/src-tauri/gen/
