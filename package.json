@@ -19,7 +19,7 @@
     "manifest:generate": "pnpm --filter @moes-media/mission-ui manifest:generate",
     "manifest:check": "node scripts/check-manifest.mjs && node scripts/typings.mjs --check",
     "hygiene": "node scripts/check-hygiene.mjs",
-    "test": "pnpm --filter @moes-media/mission-ui test",
+    "test": "pnpm -r --workspace-concurrency=1 test",
     "storybook": "pnpm --filter @moes-media/storybook-app storybook",
     "storybook:build-only": "pnpm --filter @moes-media/storybook-app build",
     "build-storybook": "pnpm storybook:build-only && node scripts/check-hygiene.mjs --storybook-static",
