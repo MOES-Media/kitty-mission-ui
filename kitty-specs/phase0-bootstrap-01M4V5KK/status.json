@@ -123,7 +123,7 @@
     },
     "WP04": {
       "actor": "claude",
-      "agent": "claude",
+      "agent": null,
       "agent_profile": "reviewer-renata",
       "agent_profile_version": "1.0",
       "force_count": 1,
@@ -136,6 +136,7 @@
         "Commits 4313e7e (generator, elements.d.ts, plants; recorded out-of-map: typecheck plant.json + PlantProp/PlantIntent payloads) and 31927bb (recorded out-of-map: root package.json manifest:check + test:scripts), both cat-file=commit. T021: svelte-check flags both wrong handler type and unknown onsk-open-misson (Object literal may only specify known properties) -> attribute path, no intents.ts; WP06 binds onsk-* attributes. elements.d.ts adds a /// reference to mission-ui/src/css-inline.d.ts (shell program otherwise fails on ?inline imports). Gates exit 0: typecheck, lint, lint:styles, lint:no-io, test:no-io 205, manifest:check, hygiene 0, test:scripts 605/0, test:terminology 13/0, contract:check, test:contract 182/0, lint:data-driven, test:data-driven 205, build-storybook. pnpm test: 4 full runs flaky under host load 11-14 (disjoint sets, mission-ui untouched); union of 24 failing files passes alone 510/510. gate-proof local: manifest red before wiring (planted exit 0), green after, 2 plants, 7.9s wall/5.6s leg; typecheck green, 4 plants, 33.4s wall/28.9s leg. Revert check: drop privacy filter -> 5 named failures. Rust gate N/A (no WP01 in lane)."
       ],
       "provider": "__resolved_provider_absent__",
+      "review": null,
       "review_result": {
         "feedback_path": "/home/jeroennouws/dev/SK-missions/ui17/kitty-specs/phase0-bootstrap-01M4V5KK/tasks/WP04-element-typings-from-manifest/review-cycle-1.md",
         "reference": "review-cycle://phase0-bootstrap-01M4V5KK/WP04-element-typings-from-manifest/review-cycle-1.md",
@@ -143,14 +144,14 @@
         "verdict": "changes_requested"
       },
       "role": "reviewer",
-      "shell_pid": 29742,
-      "shell_pid_created_at": "1791939667.68",
+      "shell_pid": null,
+      "shell_pid_created_at": null,
       "subtasks": {
-        "T020": "done",
-        "T021": "done",
-        "T022": "done",
-        "T023": "done",
-        "T024": "done"
+        "T020": "planned",
+        "T021": "planned",
+        "T022": "planned",
+        "T023": "planned",
+        "T024": "planned"
       }
     },
     "WP05": {
