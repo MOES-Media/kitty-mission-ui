@@ -67,3 +67,9 @@ WP08's cargo-pins test lives in `scripts/hygiene/`, which `test:scripts` already
 | F-42 proof-leg timings | WP01 (starting values), WP02, WP03, WP04, WP06, WP07, WP08 (measurements), WP09 T049 |
 | F-14 / SC-005 `git diff` probe | WP06 T035, WP09 T051 |
 | F-29 follow-up issue (pnpm `minimumReleaseAge` with an `@spec-kitty` exclusion) | filed by the orchestrator; listed by WP09 T052 |
+
+## Implementation-time change requests
+
+| Change | WP | Why |
+|---|---|---|
+| Root `test` script becomes `pnpm -r --no-bail --workspace-concurrency=1 test` (recorded out-of-map edit, approved by the orchestrator; commit f9c7006) | WP06 | Without `--no-bail`, a mission-ui browser timeout on a loaded machine stopped `pnpm -r` before the shell suite ran, so the unit-tests plant tokens never appeared. A failure in any package still exits non-zero (`ERR_PNPM_RECURSIVE_FAIL`, verified on pnpm 11.18.0). |
