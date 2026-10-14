@@ -1,7 +1,7 @@
 {
-  "event_count": 46,
-  "last_event_id": "01M4VZ95CXP5S817JASY0FJVPZ",
-  "materialized_at": "2026-10-14T01:08:58.397780+00:00",
+  "event_count": 47,
+  "last_event_id": "01M4VZ9HGBXP522N8VGB7Z405E",
+  "materialized_at": "2026-10-14T01:09:10.795140+00:00",
   "mission_number": "",
   "mission_slug": "phase0-bootstrap-01M4V5KK",
   "mission_type": "",
@@ -12,9 +12,9 @@
     "canceled": 0,
     "claimed": 0,
     "done": 0,
-    "for_review": 1,
+    "for_review": 0,
     "in_progress": 0,
-    "in_review": 1,
+    "in_review": 2,
     "planned": 2
   },
   "work_packages": {
@@ -122,15 +122,15 @@
       }
     },
     "WP04": {
-      "actor": "user",
-      "agent": null,
-      "agent_profile": "node-norris",
+      "actor": "claude",
+      "agent": "claude",
+      "agent_profile": "reviewer-renata",
       "agent_profile_version": "1.0",
       "force_count": 1,
       "implementer_of_record": "claude",
-      "lane": "for_review",
-      "last_event_id": "01M4VZ95CXP5S817JASY0FJVPZ",
-      "last_transition_at": "2026-10-14T01:08:58.397780+00:00",
+      "lane": "in_review",
+      "last_event_id": "01M4VZ9HGBXP522N8VGB7Z405E",
+      "last_transition_at": "2026-10-14T01:09:10.795140+00:00",
       "model": "__resolved_model_absent__",
       "notes": [
         "Commits 4313e7e (generator, elements.d.ts, plants; recorded out-of-map: typecheck plant.json + PlantProp/PlantIntent payloads) and 31927bb (recorded out-of-map: root package.json manifest:check + test:scripts), both cat-file=commit. T021: svelte-check flags both wrong handler type and unknown onsk-open-misson (Object literal may only specify known properties) -> attribute path, no intents.ts; WP06 binds onsk-* attributes. elements.d.ts adds a /// reference to mission-ui/src/css-inline.d.ts (shell program otherwise fails on ?inline imports). Gates exit 0: typecheck, lint, lint:styles, lint:no-io, test:no-io 205, manifest:check, hygiene 0, test:scripts 605/0, test:terminology 13/0, contract:check, test:contract 182/0, lint:data-driven, test:data-driven 205, build-storybook. pnpm test: 4 full runs flaky under host load 11-14 (disjoint sets, mission-ui untouched); union of 24 failing files passes alone 510/510. gate-proof local: manifest red before wiring (planted exit 0), green after, 2 plants, 7.9s wall/5.6s leg; typecheck green, 4 plants, 33.4s wall/28.9s leg. Revert check: drop privacy filter -> 5 named failures. Rust gate N/A (no WP01 in lane).",
@@ -144,9 +144,9 @@
         "reviewer": "claude",
         "verdict": "changes_requested"
       },
-      "role": "implementer",
-      "shell_pid": null,
-      "shell_pid_created_at": null,
+      "role": "reviewer",
+      "shell_pid": 61241,
+      "shell_pid_created_at": "1791940148.95",
       "subtasks": {
         "T020": "done",
         "T021": "done",
