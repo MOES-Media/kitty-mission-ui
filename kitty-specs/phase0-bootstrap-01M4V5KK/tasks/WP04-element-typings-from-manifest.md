@@ -10,6 +10,9 @@ requirement_refs:
 planning_base_branch: feat/phase0-bootstrap-17
 merge_target_branch: feat/phase0-bootstrap-17
 branch_strategy: Planning artifacts for this mission were generated on feat/phase0-bootstrap-17. During /spec-kitty.implement this WP may branch from a dependency-specific base, but completed changes must merge back into feat/phase0-bootstrap-17 unless the human explicitly redirects the landing branch.
+base_branch: kitty/mission-phase0-bootstrap-01M4V5KK
+base_commit: 54cb9466babbf645ee35d396e21216ab16c11b22
+created_at: '2026-10-14T00:46:22.615389+00:00'
 subtasks:
 - T020
 - T021
