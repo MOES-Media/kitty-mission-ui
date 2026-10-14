@@ -59,7 +59,9 @@ beforeAll(async () => {
   expect(found.length).toBe(1);
   el = found[0] as SkMissionsScreen;
   await el.updateComplete;
-});
+  // A generous hook timeout: under the registration-order plant the screen module loads only after mount, inside this
+  // hook, and a loaded machine must still reach the loadingMore assertion rather than time out here.
+}, 60_000);
 
 afterAll(() => {
   if (harness) unmount(harness);
