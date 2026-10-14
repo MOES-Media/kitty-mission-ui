@@ -20,5 +20,27 @@
         "source": "PlantTypecheck.svelte.plant"
       }
     ]
+  },
+  {
+    "gate": "typecheck",
+    "ciCommand": "pnpm typecheck",
+    "expectFailPattern": "plantNoSuchProp",
+    "overlays": [
+      {
+        "target": "packages/mission-shell/src/PlantProp.svelte",
+        "source": "PlantProp.svelte.plant"
+      }
+    ]
+  },
+  {
+    "gate": "typecheck",
+    "ciCommand": "pnpm typecheck",
+    "expectFailPattern": "open-misson",
+    "overlays": [
+      {
+        "target": "packages/mission-shell/src/PlantIntent.svelte",
+        "source": "PlantIntent.svelte.plant"
+      }
+    ]
   }
 ]
