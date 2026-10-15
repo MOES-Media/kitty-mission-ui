@@ -1,0 +1,80 @@
+{
+  "entries": [
+    {
+      "created_at": "2026-10-15T18:27:54.108502Z",
+      "decision_id": "01M50D473W8G8W763Y116F3DE9",
+      "final_answer": null,
+      "input_key": "dashboard_project_picker",
+      "mission_id": "01M50D2JBWV6TYMCYCK6ADFWKF",
+      "mission_slug": "mission-shell-01M50D2J",
+      "opened_by": "cli",
+      "options": [
+        "A (recommended): no picker on the dashboard; it opens straight into its one project, the picker and folder dialog are never mounted, and a stray desktop-only intent is ignored without error",
+        "B: the dashboard shows the picker with its one project; Open project shows a notice explaining how to open another project (Kitty Desktop, or restart the dashboard on another project root)",
+        "C: as B, and the notice also offers the restart command to copy through the host copy capability",
+        "Other"
+      ],
+      "origin_flow": "specify",
+      "other_answer": false,
+      "question": "Kitty Dashboard serves exactly one project and cannot browse folders. What does the shell do there with the Projects picker and the desktop-only intents sk-request-open-project, sk-browse-folder and sk-confirm-open-project?",
+      "rationale": "Awaiting the operator: a product fork the issue, code and defaults do not settle. Specify subagent recorded options with a recommendation; the operator rules before plan.",
+      "resolved_at": "2026-10-15T18:28:04.536788Z",
+      "resolved_by": null,
+      "slot_key": "specify.dashboard.project-picker",
+      "status": "deferred",
+      "step_id": null,
+      "summary_json": null
+    },
+    {
+      "created_at": "2026-10-15T18:27:56.090233Z",
+      "decision_id": "01M50D491TSVP2DCY0HF9F940W",
+      "final_answer": null,
+      "input_key": "explicit_refresh_triggers",
+      "mission_id": "01M50D2JBWV6TYMCYCK6ADFWKF",
+      "mission_slug": "mission-shell-01M50D2J",
+      "opened_by": "cli",
+      "options": [
+        "A (recommended): navigation (entering or re-entering the view) plus the window becoming visible or focused again as signalled by the host, plus a shell-owned Refresh button in the top bar host-actions area on Artifact and Ops destinations",
+        "B: navigation plus host-signalled visibility or focus only; no new button",
+        "C: navigation plus the Refresh button only; no focus trigger",
+        "Other"
+      ],
+      "origin_flow": "specify",
+      "other_answer": false,
+      "question": "Artifact and Ops views are not covered by the change stream and refresh explicitly (Drift already has its own Rescan). What triggers that refresh?",
+      "rationale": "Awaiting the operator: a product fork the issue, code and defaults do not settle. Specify subagent recorded options with a recommendation; the operator rules before plan.",
+      "resolved_at": "2026-10-15T18:28:07.543161Z",
+      "resolved_by": null,
+      "slot_key": "specify.refresh.manual-control",
+      "status": "deferred",
+      "step_id": null,
+      "summary_json": null
+    },
+    {
+      "created_at": "2026-10-15T18:27:58.260689Z",
+      "decision_id": "01M50D4B5MVFZEQNG9XV20BK6K",
+      "final_answer": null,
+      "input_key": "shell_visual_verification",
+      "mission_id": "01M50D2JBWV6TYMCYCK6ADFWKF",
+      "mission_slug": "mission-shell-01M50D2J",
+      "opened_by": "cli",
+      "options": [
+        "A (recommended): Storybook stories for every connection-banner state and each layout composition, with approved baselines in the existing visual gate, flagged for design review because the banners are not in the prototype",
+        "B: interaction tests only (browser-mode tests against the fixture adapter); visual baselines deferred to the host missions",
+        "Other"
+      ],
+      "origin_flow": "specify",
+      "other_answer": false,
+      "question": "How is the shell's own new UI verified: the connection banners, the refresh control and the composed layouts?",
+      "rationale": "Awaiting the operator: a product fork the issue, code and defaults do not settle. Specify subagent recorded options with a recommendation; the operator rules before plan.",
+      "resolved_at": "2026-10-15T18:28:09.172137Z",
+      "resolved_by": null,
+      "slot_key": "specify.verification.visual-baselines",
+      "status": "deferred",
+      "step_id": null,
+      "summary_json": null
+    }
+  ],
+  "mission_id": "01M50D2JBWV6TYMCYCK6ADFWKF",
+  "version": 1
+}
