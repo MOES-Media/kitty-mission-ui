@@ -107,18 +107,20 @@ async fn run(args: Args, fixtures: Fixtures) -> Result<(), String> {
     let addr = listener
         .local_addr()
         .map_err(|e| format!("local_addr: {e}"))?;
-    let mut stdout = std::io::stdout().lock();
-    writeln!(stdout, "listening {addr}")
-        .and_then(|()| stdout.flush())
-        .map_err(|e| format!("stdout: {e}"))?;
-    drop(stdout);
     let options = Options {
         port: addr.port(),
         heartbeat: Duration::from_millis(args.heartbeat_ms),
         time_scale: args.time_scale,
     };
     let header_timeout = Duration::from_millis(args.header_timeout_ms);
-    let server = run_server(listener, app(fixtures, options), header_timeout);
+    // The router exists before the stub announces itself: nothing that can still fail runs after `listening`.
+    let router = app(fixtures, options);
+    let mut stdout = std::io::stdout().lock();
+    writeln!(stdout, "listening {addr}")
+        .and_then(|()| stdout.flush())
+        .map_err(|e| format!("stdout: {e}"))?;
+    drop(stdout);
+    let server = run_server(listener, router, header_timeout);
     // An open SSE stream never ends on its own, so a signal stops the server outright rather than draining:
     // returning drops the listener, and the runtime's shutdown closes every connection.
     tokio::select! {

@@ -133,6 +133,9 @@ impl Fixtures {
             serde_json::from_value(fixtures).map_err(|e| format!("fixtures: {e}"))?;
         let changes: Changes =
             serde_json::from_value(changes).map_err(|e| format!("changes: {e}"))?;
+        // Axum refuses to route two templates of the same shape (a duplicate path, or `{missionId}` against `{id}` at
+        // one position) by panicking when the router is built, so the conflict is caught here, at load.
+        let mut shapes: BTreeMap<String, &str> = BTreeMap::new();
         for route in &routes {
             if route.method != "GET" {
                 return Err(format!(
@@ -147,6 +150,12 @@ impl Fixtures {
                 ));
             }
             axum_path(&route.path)?;
+            if let Some(first) = shapes.insert(template_shape(&route.path), &route.path) {
+                return Err(format!(
+                    "{}: route template {} conflicts with {first}",
+                    route.operation_id, route.path
+                ));
+            }
             if let Some(key) = &route.default_example {
                 if !examples.contains_key(key) {
                     return Err(format!(
@@ -279,6 +288,21 @@ pub async fn run_server(
                 .await;
         });
     }
+}
+
+/// The template with every `{param}` segment reduced to `{}`: two templates with the same shape cannot both be routed.
+fn template_shape(template: &str) -> String {
+    template
+        .split('/')
+        .map(|segment| {
+            if segment.starts_with('{') && segment.ends_with('}') {
+                "{}"
+            } else {
+                segment
+            }
+        })
+        .collect::<Vec<_>>()
+        .join("/")
 }
 
 /// `/api/v1` plus the contract's template. Axum 0.8 uses the same `{param}` syntax, so each segment is checked to

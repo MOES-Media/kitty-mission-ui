@@ -323,3 +323,48 @@ fn separate_processes_stream_identical_bytes() {
         }
     }
 }
+
+/// SO-CORR-003: conflicting route templates are refused while the fixtures load: a non-zero exit, a message naming the
+/// templates, and no `listening` line (the router used to panic after the stub had already announced itself).
+#[test]
+fn conflicting_route_templates_exit_non_zero_without_listening() {
+    let source = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../contracts/fixtures");
+    let dir = std::env::temp_dir().join(format!("kitty-stub-conflict-{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    for name in ["routes", "examples", "fixtures", "changes"] {
+        let file = format!("mission-status.{name}.json");
+        std::fs::copy(source.join(&file), dir.join(&file)).unwrap();
+    }
+    let path = dir.join("mission-status.routes.json");
+    let mut routes: serde_json::Value =
+        serde_json::from_str(&std::fs::read_to_string(&path).unwrap()).unwrap();
+    let mut extra = routes
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|r| r["path"] == "/missions/{missionId}")
+        .unwrap()
+        .clone();
+    extra["operationId"] = serde_json::json!("conflicting");
+    extra["path"] = serde_json::json!("/missions/{id}");
+    routes.as_array_mut().unwrap().push(extra);
+    std::fs::write(&path, routes.to_string()).unwrap();
+
+    let out = Command::new(env!("CARGO_BIN_EXE_kitty-stub"))
+        .args(["--port", "0", "--fixtures"])
+        .arg(&dir)
+        .stdin(Stdio::null())
+        .output()
+        .expect("kitty-stub runs");
+    let _ = std::fs::remove_dir_all(&dir);
+    assert!(!out.status.success(), "{out:?}");
+    assert!(
+        !String::from_utf8_lossy(&out.stdout).contains("listening"),
+        "must not announce: {out:?}"
+    );
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(
+        stderr.contains("/missions/{id}") && stderr.contains("/missions/{missionId}"),
+        "{stderr}"
+    );
+}
