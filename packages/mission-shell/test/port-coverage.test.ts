@@ -21,6 +21,7 @@ import {
 import { operationCoverage } from '../src/client/coverage';
 import { createFixtureClient } from '../src/client/fixture';
 import * as shell from '../src/index';
+import * as testing from '../src/testing';
 
 /** Two-way type equality: true only when A and B are the same type. */
 type Equal<A, B> = (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B ? 1 : 2 ? true : false;
@@ -213,13 +214,26 @@ describe('port types', () => {
   });
 });
 
-describe('package entry', () => {
-  it('exposes the port and the fixture adapter, and keeps the test hook private', () => {
-    expect(typeof shell.createFixtureClient).toBe('function');
+describe('package entries', () => {
+  it('the main entry exposes the port only: no fixture adapter, no test hook (CODE-BOUNDARY-003)', () => {
+    expect(Object.keys(shell)).not.toContain('createFixtureClient');
+    expect(Object.keys(shell)).not.toContain('setConnectionState');
     expect(shell.CLIENT_OPERATIONS).toBe(CLIENT_OPERATIONS);
     expect(shell.CONNECTION_STATES).toBe(CONNECTION_STATES);
-    expect(Object.keys(shell)).not.toContain('setConnectionState');
     expect(shell.CHANGE_KINDS).toBe(CHANGE_KINDS);
-    expect([...Object.keys(shell)].sort()).toEqual(['CHANGE_KINDS', 'CLIENT_OPERATIONS', 'CONNECTION_STATES', 'createFixtureClient']);
+    expect([...Object.keys(shell)].sort()).toEqual(['CHANGE_KINDS', 'CLIENT_OPERATIONS', 'CONNECTION_STATES']);
+  });
+
+  it('the ./testing entry exposes the fixture adapter, and keeps the test hook private', () => {
+    expect(testing.createFixtureClient).toBe(createFixtureClient);
+    expect(Object.keys(testing)).not.toContain('setConnectionState');
+    expect([...Object.keys(testing)].sort()).toEqual(['createFixtureClient']);
+    // The option types travel with it (CODE-BOUNDARY-009): a typed options object built from the entry's own types.
+    const scheduler: testing.Scheduler = { setTimeout: () => 0, clearTimeout: () => undefined };
+    const options: testing.FixtureClientOptions = { scheduler, examples: { streamEvents: 'StreamRefusal.negative' } };
+    expectTypeOf<testing.RouteEntry>().toHaveProperty('operationId');
+    expectTypeOf<testing.ExampleTable>().not.toBeNever();
+    expectTypeOf<testing.ChangesEnvelope>().toHaveProperty('items');
+    expect(typeof testing.createFixtureClient(options).subscribe).toBe('function');
   });
 });

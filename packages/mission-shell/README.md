@@ -17,7 +17,7 @@ pnpm --filter @moes-media/mission-shell test        # Vitest browser mode (Chrom
 
 ## The port: `MissionStatusClient`
 
-`src/client/port.ts`, exported from the package entry. Its design is `kitty-specs/phase0-bootstrap-01M4V5KK/contracts/client-port.md`.
+`src/client/port.ts`, exported from the package entry (`@moes-media/mission-shell`). Its design is `kitty-specs/phase0-bootstrap-01M4V5KK/contracts/client-port.md`.
 
 - One method per read of the pinned contract: `getProject`, `listMissions`, `getMission`, `getWorkPackage`,
   `getWorkPackageDetail`, `listArtifacts`, `getArtifactContent`, `getDriftReport` and `listOpsInvocations`. Each takes the
@@ -48,6 +48,11 @@ needs no `exports` change.
 
 ## The fixture adapter: `createFixtureClient(options?)`
 
+Imported from its own entry, `@moes-media/mission-shell/testing` (`src/testing.ts`), together with its option types
+(`FixtureClientOptions`, `Scheduler`, `RouteEntry`, `ExampleTable`, `ChangesEnvelope`). The `exports` map of
+`package.json` names exactly two entries, `.` and `./testing`, so the production entry never pulls in the fixture JSON and
+no deep import reaches the package's internals.
+
 An in-memory `MissionStatusClient` over the shared files in `contracts/fixtures/` (imported as JSON, which is not I/O).
 Every read resolves to its route's default example; `subscribe` replays `mission-status.changes.json` in order.
 
@@ -59,8 +64,8 @@ Every read resolves to its route's default example; `subscribe` replays `mission
 | `initialState` | `connected` | the starting connection state |
 
 Reads return independent copies. Replay always starts at the first change (resuming from `scope.cursor` belongs to the
-real adapters) and is identical on every run. The test hook `setConnectionState` is internal to the package's tests and
-is not exported from the entry.
+real adapters) and is identical on every run. The test hook `setConnectionState` is internal to the package's tests (they
+import it from `src/client/fixture.ts` by relative path) and is exported from neither entry.
 
 ## Binding the screens
 

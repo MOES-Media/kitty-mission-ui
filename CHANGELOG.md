@@ -8,8 +8,8 @@ All user-visible changes to this repository. Per-package notes live in `packages
 
 - **Phase 0 bootstrap: a Svelte shell, a Rust workspace and a local Mission Status stub for the hosts** (`#17`).
   - `@moes-media/mission-shell` (Svelte 5.57.1, no I/O): the transport-free `MissionStatusClient` port with one method
-    per contract read, a change subscription and four connection states; an in-memory fixture adapter with an injectable
-    scheduler; element typings generated from `custom-elements.json` by `scripts/typings.mjs`; and a permanent binding
+    per contract read, a change subscription with a refusal channel and four connection states; an in-memory fixture
+    adapter with an injectable scheduler, on its own `@moes-media/mission-shell/testing` entry; element typings generated from `custom-elements.json` by `scripts/typings.mjs`; and a permanent binding
     check that mounts the real `sk-missions-screen` and proves data arrives as properties and every declared intent
     reaches the shell.
   - A Rust workspace pinned to Rust 1.98.1 (`rust-toolchain.toml`): `crates/kitty-core`, `crates/kitty-stub` and
