@@ -235,6 +235,42 @@ describe('subscriptions', () => {
     expect(seen.length).toBe(1);
   });
 
+  it('delivers in order under a synchronous scheduler: a change is heard before the next one is scheduled (SO-CORR-005)', () => {
+    const synchronous: Scheduler = {
+      setTimeout(fn) {
+        fn();
+        return 0;
+      },
+      clearTimeout() {},
+    };
+    const seen: Change[] = [];
+    createFixtureClient({ scheduler: synchronous }).subscribe((change) => seen.push(change), { missionId: changes.missionId });
+    expect(seen.map((change) => change.kind)).toEqual(changes.items.map((item) => item.event));
+    expect(seen.map((change) => change.cursor)).toEqual(
+      changes.items.map((item) => (item.event === 'log-truncated' ? null : ((item as { scopedId?: string }).scopedId ?? null))),
+    );
+  });
+
+  it('under a synchronous scheduler, a listener that unsubscribes on its first change hears nothing after it', () => {
+    // The first timer is held so subscribe can return the unsubscribe function; every later timer fires at once.
+    let held: (() => void) | null = null;
+    const scheduler: Scheduler = {
+      setTimeout(fn) {
+        if (held === null) held = fn;
+        else fn();
+        return 0;
+      },
+      clearTimeout() {},
+    };
+    const seen: Change[] = [];
+    const stop = createFixtureClient({ scheduler }).subscribe((change) => {
+      seen.push(change);
+      stop();
+    });
+    (held as (() => void) | null)?.();
+    expect(seen.length).toBe(1);
+  });
+
   it('replays deterministically: ten full runs serialise identically', () => {
     const runs: string[] = [];
     for (let run = 0; run < 10; run += 1) {

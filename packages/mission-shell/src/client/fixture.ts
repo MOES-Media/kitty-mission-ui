@@ -182,8 +182,13 @@ export function createFixtureClient(options: FixtureClientOptions = {}): Mission
         handle = scheduler.setTimeout(() => {
           if (!active) return;
           index += 1;
-          scheduleNext();
-          listener(toChange(item, scoped));
+          // Deliver first, schedule the next change after: a scheduler that runs its callback at once (a test's, say) would
+          // otherwise deliver the next change before this one. A listener that unsubscribes stops the replay.
+          try {
+            listener(toChange(item, scoped));
+          } finally {
+            if (active) scheduleNext();
+          }
         }, item.delayMs);
       };
       // A selected refusal wins, as the stub serves a selected example whatever the query; otherwise the cursor rule.
