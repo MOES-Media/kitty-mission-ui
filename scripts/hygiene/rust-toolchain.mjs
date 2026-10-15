@@ -7,7 +7,9 @@ import { join } from 'node:path';
 export const TOOLCHAIN_FILE = 'rust-toolchain.toml';
 const EXACT = /^\d+\.\d+\.\d+$/;
 
-const finding = (line, message) => ({ rule: 'rust-toolchain-pin', file: TOOLCHAIN_FILE, line, message });
+export const LEGACY_TOOLCHAIN_FILE = 'rust-toolchain';
+
+const finding = (line, message, file = TOOLCHAIN_FILE) => ({ rule: 'rust-toolchain-pin', file, line, message });
 
 /** Pure: the findings for the text of `rust-toolchain.toml`. Exactly one `[toolchain]` `channel`, an exact x.y.z. */
 export function checkRustToolchain(text) {
@@ -29,7 +31,11 @@ export function checkRustToolchain(text) {
 /** The findings for the workspace at `root`: a Rust workspace (root Cargo.toml) needs an exact toolchain pin. */
 export function checkRustToolchainPin(root) {
   if (!existsSync(join(root, 'Cargo.toml'))) return [];
+  // rustup reads the extensionless legacy file first, so it silently overrides the pinned `.toml`.
+  const legacy = existsSync(join(root, LEGACY_TOOLCHAIN_FILE))
+    ? [finding(0, 'a legacy rust-toolchain file overrides rust-toolchain.toml: delete it and pin the toolchain in rust-toolchain.toml only', LEGACY_TOOLCHAIN_FILE)]
+    : [];
   const path = join(root, TOOLCHAIN_FILE);
-  if (!existsSync(path)) return [finding(0, 'missing: a Cargo workspace must pin its toolchain to an exact x.y.z release')];
-  return checkRustToolchain(readFileSync(path, 'utf8'));
+  if (!existsSync(path)) return [...legacy, finding(0, 'missing: a Cargo workspace must pin its toolchain to an exact x.y.z release')];
+  return [...legacy, ...checkRustToolchain(readFileSync(path, 'utf8'))];
 }

@@ -13,7 +13,7 @@
 //  - In a .svelte file the rules see the <script> blocks and the template expressions ({fetch('x')} is reported), but a
 //    URL in a static markup attribute (<img src="https://...">) is plain markup and is not analysed.
 import tseslint from 'typescript-eslint';
-import svelteParser from 'svelte-eslint-parser';
+import { SVELTE_GLOB, svelteLanguageOptions } from './eslint-rules/svelte.mjs';
 
 const GLOBAL_OBJECTS = '(window|globalThis|self)';
 
@@ -176,8 +176,8 @@ export default [
   },
   {
     // Svelte sources (FR-007, C-001, R-04): the same rules, unchanged, inside <script> blocks and template expressions.
-    files: ['**/*.svelte'],
-    languageOptions: { parser: svelteParser, sourceType: 'module', parserOptions: { parser: tseslint.parser } },
+    files: [SVELTE_GLOB],
+    languageOptions: svelteLanguageOptions({ typed: false }),
     linterOptions: { noInlineConfig: true },
     rules: ioRules,
   },

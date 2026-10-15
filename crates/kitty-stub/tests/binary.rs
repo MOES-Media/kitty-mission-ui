@@ -323,3 +323,107 @@ fn separate_processes_stream_identical_bytes() {
         }
     }
 }
+
+/// SO-CORR-003: conflicting route templates are refused while the fixtures load: a non-zero exit, a message naming the
+/// templates, and no `listening` line (the router used to panic after the stub had already announced itself).
+#[test]
+fn conflicting_route_templates_exit_non_zero_without_listening() {
+    let source = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../contracts/fixtures");
+    let dir = std::env::temp_dir().join(format!("kitty-stub-conflict-{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    for name in ["routes", "examples", "fixtures", "changes"] {
+        let file = format!("mission-status.{name}.json");
+        std::fs::copy(source.join(&file), dir.join(&file)).unwrap();
+    }
+    let path = dir.join("mission-status.routes.json");
+    let mut routes: serde_json::Value =
+        serde_json::from_str(&std::fs::read_to_string(&path).unwrap()).unwrap();
+    let mut extra = routes
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|r| r["path"] == "/missions/{missionId}")
+        .unwrap()
+        .clone();
+    extra["operationId"] = serde_json::json!("conflicting");
+    extra["path"] = serde_json::json!("/missions/{id}");
+    routes.as_array_mut().unwrap().push(extra);
+    std::fs::write(&path, routes.to_string()).unwrap();
+
+    let out = Command::new(env!("CARGO_BIN_EXE_kitty-stub"))
+        .args(["--port", "0", "--fixtures"])
+        .arg(&dir)
+        .stdin(Stdio::null())
+        .output()
+        .expect("kitty-stub runs");
+    let _ = std::fs::remove_dir_all(&dir);
+    assert!(!out.status.success(), "{out:?}");
+    assert!(
+        !String::from_utf8_lossy(&out.stdout).contains("listening"),
+        "must not announce: {out:?}"
+    );
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(
+        stderr.contains("/missions/{id}") && stderr.contains("/missions/{missionId}"),
+        "{stderr}"
+    );
+}
+
+/// SO-CORR-004: a SIGTERM that arrives right after the `listening` line must still be a clean exit. The handlers used to
+/// be installed after the line was written, so a signal landing in that gap hit the default action (death by signal).
+/// A pre-started shell sits blocked on a pipe and runs its `kill` builtin the instant the line has been read, so the
+/// signal follows `listening` by microseconds, not by the cost of spawning a process. The race is a fraction of a
+/// percent per round, so 8 threads run 50 rounds each (a fresh process per round): about 400 rounds in under 2 s, and
+/// the parallel load widens the gap. Against the old ordering this failed on 3 of 4 runs.
+#[cfg(unix)]
+#[test]
+fn sigterm_right_after_listening_is_a_clean_exit() {
+    let fixtures = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../contracts/fixtures");
+    let round = |label: &str| {
+        let mut child = Command::new(env!("CARGO_BIN_EXE_kitty-stub"))
+            .args(["--port", "0", "--fixtures"])
+            .arg(&fixtures)
+            .stdout(Stdio::piped())
+            .stderr(Stdio::inherit())
+            .spawn()
+            .expect("kitty-stub starts");
+        let mut trigger = Command::new("sh")
+            .args(["-c", "read _; kill -TERM \"$0\"", &child.id().to_string()])
+            .stdin(Stdio::piped())
+            .spawn()
+            .expect("sh starts");
+        let mut line = String::new();
+        BufReader::new(child.stdout.take().unwrap())
+            .read_line(&mut line)
+            .expect("first stdout line");
+        assert!(line.starts_with("listening "), "{label}: {line:?}");
+        trigger.stdin.take().unwrap().write_all(b"go\n").unwrap();
+        let deadline = Instant::now() + Duration::from_secs(10);
+        let exit = loop {
+            if let Some(exit) = child.try_wait().unwrap() {
+                break exit;
+            }
+            if Instant::now() >= deadline {
+                let _ = child.kill();
+                let _ = child.wait();
+                panic!("{label}: the stub did not exit within 10 s of SIGTERM");
+            }
+            std::thread::sleep(Duration::from_millis(2));
+        };
+        let _ = trigger.wait();
+        assert!(exit.success(), "{label}: exit status {exit:?}");
+    };
+    let ran = std::sync::atomic::AtomicUsize::new(0);
+    std::thread::scope(|scope| {
+        for thread in 0..8 {
+            let (round, ran) = (&round, &ran);
+            scope.spawn(move || {
+                for n in 0..50 {
+                    round(&format!("thread {thread} round {n}"));
+                    ran.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                }
+            });
+        }
+    });
+    assert_eq!(ran.into_inner(), 400);
+}

@@ -10,10 +10,12 @@ import {
   CHANGE_KINDS,
   CLIENT_OPERATIONS,
   CONNECTION_STATES,
+  READ_OPS,
   type Change,
   type ConnectionState,
   type MissionStatusClient,
   type Params,
+  type ReadOp,
   type Refusal,
   type Result,
   type SubscriptionScope,
@@ -66,10 +68,23 @@ describe('operation table against the contract routes', () => {
   });
 });
 
+describe('read operations (SO-BND-006)', () => {
+  it('are the table minus subscribe, derived and not repeated', () => {
+    expect([...READ_OPS]).toEqual(Object.keys(CLIENT_OPERATIONS).filter((method) => method !== 'subscribe'));
+    expect(READ_OPS.length).toBe(9);
+    expect(READ_OPS.map((op) => CLIENT_OPERATIONS[op]).sort()).toEqual(
+      routes.map((route) => route.operationId).filter((id) => id !== 'streamEvents').sort(),
+    );
+    // The hand-written ReadOp union is exactly the table without subscribe: a read in one and not the other fails here.
+    const exact: Expect<Equal<Exclude<keyof typeof CLIENT_OPERATIONS, 'subscribe'>, ReadOp>> = true;
+    expect(exact).toBe(true);
+  });
+});
+
 describe('connection states', () => {
-  it('are exactly the four spec strings', () => {
-    expect(CONNECTION_STATES.length).toBe(4);
-    expect([...CONNECTION_STATES]).toEqual(['connected', 'reconnecting', 'degraded: service-missing', 'degraded: contract-mismatch']);
+  it('are exactly the five strings: connecting before first contact, then the four of the spec', () => {
+    expect(CONNECTION_STATES.length).toBe(5);
+    expect([...CONNECTION_STATES]).toEqual(['connecting', 'connected', 'reconnecting', 'degraded: service-missing', 'degraded: contract-mismatch']);
     const exact: Expect<Equal<ConnectionState, (typeof CONNECTION_STATES)[number]>> = true;
     // @ts-expect-error a widened union (a fifth value) is not equal to the runtime list
     const widened: Expect<Equal<ConnectionState | 'extra', (typeof CONNECTION_STATES)[number]>> = true;
@@ -85,16 +100,18 @@ describe('connection states', () => {
 });
 
 describe('change kinds', () => {
-  it('are exactly the three stream events and the refusal', () => {
-    expect([...CHANGE_KINDS]).toEqual(['status-transition', 'mission-lifecycle', 'log-truncated', 'refused']);
+  it('are exactly the three stream events, the refusal and the resync marker', () => {
+    expect([...CHANGE_KINDS]).toEqual(['status-transition', 'mission-lifecycle', 'log-truncated', 'refused', 'resync']);
     const exact: Expect<Equal<Change['kind'], (typeof CHANGE_KINDS)[number]>> = true;
     // @ts-expect-error the kinds without the refusal are not every kind of Change
     const withoutRefusal: Expect<Equal<Exclude<Change['kind'], 'refused'>, (typeof CHANGE_KINDS)[number]>> = true;
-    expect([exact, withoutRefusal]).toEqual([true, true]);
-    // Every event the authored change sequence uses is a kind; the refusal is the only kind that is not an event.
+    // @ts-expect-error the kinds without the resync marker are not every kind of Change
+    const withoutResync: Expect<Equal<Exclude<Change['kind'], 'resync'>, (typeof CHANGE_KINDS)[number]>> = true;
+    expect([exact, withoutRefusal, withoutResync]).toEqual([true, true, true]);
+    // Every event the authored change sequence uses is a kind; the refusal and the resync marker are the kinds that are not events.
     const events = new Set(changes.items.map((item) => item.event));
     expect([...events].filter((event) => !(CHANGE_KINDS as readonly string[]).includes(event))).toEqual([]);
-    expect(CHANGE_KINDS.filter((kind) => !events.has(kind))).toEqual(['refused']);
+    expect(CHANGE_KINDS.filter((kind) => !events.has(kind))).toEqual(['refused', 'resync']);
   });
 });
 
@@ -125,7 +142,7 @@ describe('stream refusals', () => {
     expect([refused.kind, withCursor.kind, untitled.kind]).toEqual(['refused', 'refused', 'refused']);
   });
 
-  it('make a switch over the change kinds that forgets the refusal a type error', () => {
+  it('make a switch over the change kinds that forgets the refusal or the resync a type error', () => {
     const complete = (change: Change): string => {
       switch (change.kind) {
         case 'status-transition':
@@ -134,6 +151,8 @@ describe('stream refusals', () => {
           return change.kind;
         case 'refused':
           return String(change.refusal.status);
+        case 'resync':
+          return change.reason;
         default: {
           const unhandled: never = change;
           return unhandled;
@@ -145,6 +164,7 @@ describe('stream refusals', () => {
         case 'status-transition':
         case 'mission-lifecycle':
         case 'log-truncated':
+        case 'resync':
           return change.kind;
         default: {
           // @ts-expect-error the refused kind is left over, so it is not never
@@ -153,8 +173,29 @@ describe('stream refusals', () => {
         }
       }
     };
+    const forgetsResync = (change: Change): string => {
+      switch (change.kind) {
+        case 'status-transition':
+        case 'mission-lifecycle':
+        case 'log-truncated':
+          return change.kind;
+        case 'refused':
+          return String(change.refusal.status);
+        default: {
+          // @ts-expect-error the resync kind is left over, so it is not never
+          const unhandled: never = change;
+          return unhandled;
+        }
+      }
+    };
     const change: Change = { kind: 'refused', cursor: null, refusal: { status: 404, body: { title: 'No such Mission', status: 404 } } };
-    expect([complete(change), forgetful(change)]).toEqual(['404', change]);
+    const resync: Change = { kind: 'resync', cursor: null, reason: 'reconnected' };
+    expect([complete(change), forgetful(change), complete(resync), forgetsResync(resync)]).toEqual(['404', change, 'reconnected', resync]);
+    // @ts-expect-error a resync never carries a cursor: it says "refetch everything", not "resume here"
+    const withCursor: Change = { kind: 'resync', cursor: '1:a', reason: 'reconnected' };
+    // @ts-expect-error the only reason is a reconnect
+    const otherReason: Change = { kind: 'resync', cursor: null, reason: 'because' };
+    expect([withCursor.kind, otherReason.kind]).toEqual(['resync', 'resync']);
   });
 });
 
@@ -221,7 +262,7 @@ describe('package entries', () => {
     expect(shell.CLIENT_OPERATIONS).toBe(CLIENT_OPERATIONS);
     expect(shell.CONNECTION_STATES).toBe(CONNECTION_STATES);
     expect(shell.CHANGE_KINDS).toBe(CHANGE_KINDS);
-    expect([...Object.keys(shell)].sort()).toEqual(['CHANGE_KINDS', 'CLIENT_OPERATIONS', 'CONNECTION_STATES']);
+    expect([...Object.keys(shell)].sort()).toEqual(['CHANGE_KINDS', 'CLIENT_OPERATIONS', 'CONNECTION_STATES', 'READ_OPS', 'toStreamCursorString']);
   });
 
   it('the ./testing entry exposes the fixture adapter, and keeps the test hook private', () => {
