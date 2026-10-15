@@ -26,6 +26,7 @@
   "purpose_context": "The mission screens exist but nothing hosts them yet. Spec-kitty is moving its read side into a separate service that is not released, so the hosts must be built against a stand-in first. This mission removes the three unknowns every later Phase 0 mission depends on: whether the Svelte shell can drive the Lit screens safely, whether Rust and Svelte code can live inside this repository's offline quality gates, and how the hosts receive data and live changes before the real service exists. Tracked as mission-ui issue 17 under epic 16.",
   "purpose_tldr": "Lay the foundation the Kitty Desktop and Kitty Dashboard hosts build on: proof that Svelte hosts the Lit screens, a mixed TypeScript and Rust workspace inside the existing gates, and a contract-shaped data port with a local stub.",
   "slug": "phase0-bootstrap-01M4V5KK",
+  "status_phase": "1",
   "target_branch": "feat/phase0-bootstrap-17",
   "topology": "coord",
   "vcs": "git",
