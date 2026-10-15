@@ -1,0 +1,102 @@
+{
+  "missionId": "01JZAB3C4D5E6F7G8H9JKMNPQR",
+  "items": [
+    {
+      "event": "mission-lifecycle",
+      "scopedId": "312:7f973fc1001de2b75b3814ce113dbd03b7ce4147c202d950a54372b55fc0f0c5",
+      "data": {
+        "missionId": "01JZAB3C4D5E6F7G8H9JKMNPQR",
+        "eventId": "01JZAB3C4D5E6F7G8H9JKMNQ41",
+        "eventType": "MissionCreated",
+        "at": "2026-09-26T07:00:00Z",
+        "streamCursor": {
+          "offset": 312,
+          "invariant": "7f973fc1001de2b75b3814ce113dbd03b7ce4147c202d950a54372b55fc0f0c5"
+        }
+      },
+      "delayMs": 0
+    },
+    {
+      "event": "status-transition",
+      "scopedId": "868:ca8f13dafb56d85059b0f886f5aba6cafc87b2e9853a09d580844b755b13cc1f",
+      "data": {
+        "missionId": "01JZAB3C4D5E6F7G8H9JKMNPQR",
+        "eventId": "01JZAB3C4D5E6F7G8H9JKMNQ42",
+        "wpId": "WP01",
+        "fromStatusLane": "planned",
+        "toStatusLane": "claimed",
+        "at": "2026-09-26T08:00:00Z",
+        "actor": {
+          "tool": "claude",
+          "role": "implementer",
+          "profile": "implementer-ivan"
+        },
+        "force": false,
+        "streamCursor": {
+          "offset": 868,
+          "invariant": "ca8f13dafb56d85059b0f886f5aba6cafc87b2e9853a09d580844b755b13cc1f"
+        }
+      },
+      "delayMs": 250
+    },
+    {
+      "event": "status-transition",
+      "scopedId": "1480:9241389d6c9afe6ea89163dde42509d063e789ab12141e800565d6595713bd8b",
+      "data": {
+        "missionId": "01JZAB3C4D5E6F7G8H9JKMNPQR",
+        "eventId": "01JZAB3C4D5E6F7G8H9JKMNQ43",
+        "wpId": "WP01",
+        "fromStatusLane": "claimed",
+        "toStatusLane": "in_progress",
+        "at": "2026-09-26T08:05:00Z",
+        "actor": {
+          "tool": "claude",
+          "role": "implementer",
+          "profile": "implementer-ivan"
+        },
+        "force": false,
+        "streamCursor": {
+          "offset": 1480,
+          "invariant": "9241389d6c9afe6ea89163dde42509d063e789ab12141e800565d6595713bd8b"
+        }
+      },
+      "delayMs": 250
+    },
+    {
+      "event": "log-truncated",
+      "data": {
+        "missionId": "01JZAB3C4D5E6F7G8H9JKMNPQR",
+        "reason": "size_shrink",
+        "detectedAtOffset": 1480,
+        "streamCursor": {
+          "offset": 0,
+          "invariant": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "delayMs": 250
+    },
+    {
+      "event": "status-transition",
+      "scopedId": "1912:df461c385bc79635233209420b89d6d09c0b677623f2394cdccd89a04d513303",
+      "data": {
+        "missionId": "01JZAB3C4D5E6F7G8H9JKMNPQR",
+        "eventId": "01JZAB3C4D5E6F7G8H9JKMNQ44",
+        "wpId": "WP01",
+        "fromStatusLane": "in_progress",
+        "toStatusLane": "for_review",
+        "at": "2026-09-26T09:30:00Z",
+        "actor": {
+          "tool": "claude",
+          "role": "implementer",
+          "profile": "implementer-ivan"
+        },
+        "force": false,
+        "streamCursor": {
+          "offset": 1912,
+          "invariant": "df461c385bc79635233209420b89d6d09c0b677623f2394cdccd89a04d513303"
+        }
+      },
+      "delayMs": 250
+    }
+  ]
+}

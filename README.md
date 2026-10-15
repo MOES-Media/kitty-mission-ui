@@ -217,6 +217,115 @@ confused with other screens' grants). Its 37 stories are under `Screens/Ops/` (f
 one visual baseline each; a node test (`scripts/ops-story-catalogue.test.mjs`) ties the stories to the specification's state
 matrix and pins which baselines may be byte-identical.
 
+## Host workspace
+
+The repository also holds the ground for the two hosts, Kitty Desktop and Kitty Dashboard (Phase 0, issue `#17`): a
+Svelte 5 shell over the screens, a Rust workspace, a local stub of the Mission Status service, one shared set of contract
+data, and a scheduled upstream drift alert. Real host behaviour arrives in `#18` to `#21`; the real service in `#22`.
+
+### Prerequisites
+
+On top of the [Setup](#setup) prerequisites (Node 22.22.2, pnpm 11.18.0 and the registry credential):
+
+- rustup. `rust-toolchain.toml` pins Rust **1.98.1** with the `rustfmt` and `clippy` components (minimal profile, never a
+  floating channel). rustup installs that toolchain on first use, or explicitly with `rustup toolchain install` (with no
+  arguments it reads `rust-toolchain.toml`).
+- Nothing else: the stub and the placeholders need no system libraries, and there is no Tauri dependency yet (`#20`).
+
+```bash
+pnpm install
+rustup toolchain install          # the toolchain pinned in rust-toolchain.toml
+cargo fetch --locked              # the crates locked in Cargo.lock (the only network step of the Rust gate)
+cargo build --workspace --locked
+```
+
+### Layout
+
+| Path | What it is |
+|---|---|
+| `packages/mission-shell` | `@moes-media/mission-shell`, the Svelte 5 shell: the `MissionStatusClient` port, its fixture adapter, the generated element typings and the permanent binding check. No I/O ([its README](packages/mission-shell/README.md)). |
+| `crates/kitty-core` | the shared Rust core, a skeleton for now (`#19`). Its `tests/workspace.rs` asserts the exact set of workspace members. |
+| `crates/kitty-stub` | `kitty-stub`, the loopback HTTP and SSE stand-in for the Mission Status service. `publish = false`. |
+| `apps/desktop/src-tauri` | the Kitty Desktop placeholder: a compile-only binary crate in Tauri's layout, so `#20` adds Tauri without moving files. |
+| `apps/dashboard` | the Kitty Dashboard placeholder: a compile-only binary crate (`#21`). |
+| `contracts/fixtures/` | the contract data that the shell's fixture adapter and the stub both read (below). |
+
+`Cargo.toml` at the root is the workspace (`crates/*`, `apps/desktop/src-tauri`, `apps/dashboard`). Every dependency is
+pinned exactly (`=x.y.z`) in `[workspace.dependencies]`, and `Cargo.lock` is committed. The hygiene gate's `cargo-pins`
+check rejects a range in any `Cargo.toml`. I/O is allowed only under `apps/*` and `crates/*`, never under `packages/*`.
+
+### Shared contract data
+
+`contracts/fixtures/` holds four JSON files, derived only from the pinned contract under `contracts/spec-kitty/`:
+
+| File | Source | Content |
+|---|---|---|
+| `mission-status.examples.json` | generated | every vendored example, keyed `<Schema>.<name>`, read straight from the YAML |
+| `mission-status.fixtures.json` | generated | the `valid` fixtures of `scripts/contract/registry.mjs` |
+| `mission-status.routes.json` | generated | one entry per contract operation: path, kind, success schema, default example and the allowed refusal statuses per schema |
+| `mission-status.changes.json` | hand-authored | the scripted change sequence: a status transition, a lifecycle event and a log-truncated marker, in a fixed order, on one Mission |
+
+Never edit the three generated files by hand: run `pnpm contract:generate`. `Gate: contract` fails when they are stale,
+checks `examples.json` against an independent parse of the YAML, and validates every item of `changes.json` against the
+contract.
+
+### Run the stub
+
+```bash
+cargo run -p kitty-stub -- --fixtures contracts/fixtures --port 0
+#   first line on stdout: listening 127.0.0.1:<port>
+curl -s http://127.0.0.1:<port>/api/v1/project
+curl -s -H 'X-Kitty-Stub-Example: Project.<name>' http://127.0.0.1:<port>/api/v1/project
+curl -sN http://127.0.0.1:<port>/api/v1/events      # the scripted sequence, then heartbeats
+curl -s http://127.0.0.1:<port>/__stub/last-request
+```
+
+- Options: `--port <n>` (0 picks a free port), `--heartbeat-ms <ms>` (default 30000) and `--time-scale <f>` (scales the
+  delays of the scripted sequence; 0 plays it at once). SIGINT or SIGTERM stops it.
+- It binds `127.0.0.1` only; no option changes the address.
+- **Host rule.** Like the real service, every route answers 403 with `{"code": ...}` when the `Host` header is not exactly
+  one `127.0.0.1:<port>` or `localhost:<port>` (`host`), when an `Origin` is present and not that same origin (`origin`),
+  or when any `Forwarded` or `X-Forwarded-*` header is present (`forwarded`).
+- **Selection headers.** A read serves its route's default example. `X-Kitty-Stub-Example: <Schema>.<name>` selects a
+  vendored example and `X-Kitty-Stub-Fixture: <name>` a valid fixture (the fixture header wins when both are sent). A
+  selection of the route's success schema is served `200 application/json`; one of the route's refusal schemas is served
+  as `application/problem+json` with the example's own `status`, which must be one the route allows. Anything else is a
+  400 `schema-mismatch`; an unknown name is a 404 (`no-example`, `no-fixture`), and a read with no default example is a
+  501 `no-example`. Only `GET` is served.
+- `GET /api/v1/events` replays `changes.json`, byte for byte the same on every run. A stream scoped with `missionId`
+  carries `id:` lines on status transitions and lifecycle events; an unscoped stream carries none, and a log-truncated
+  marker never does.
+
+### Upstream drift alert
+
+`.github/workflows/contract-drift.yml` runs once a day and on demand (`workflow_dispatch`). It is not a gate and never
+runs on pull requests. It runs `node scripts/contract/drift.mjs` (also `pnpm contract:drift`), which fetches upstream
+spec-kitty `main` with Node built-ins only, and compares each file below the pinned contract paths with its sha256 in
+`contracts/spec-kitty/PIN.json`, reporting added, removed and changed files. Exit codes: 0 in sync, 1 drift (the files
+are listed), 2 upstream unreachable (never reported as "no drift"), 3 any other error. Exit 1 to 3 turn the run red, so
+GitHub notifies. It needs no install and no secret and has a read-only token.
+
+GitHub disables scheduled workflows in a public repository after 60 days without repository activity. If the repository
+goes quiet, re-enable the workflow from the Actions tab (or run it by hand), or the alert silently stops.
+
+### The Rust gate
+
+`Gate: rust` runs `rustup toolchain install` and `cargo fetch --locked` as separate steps, then the gate step, which
+downloads nothing:
+
+```bash
+cargo fmt --all --check && cargo clippy --workspace --all-targets --frozen -- -D warnings && cargo test --workspace --frozen
+```
+
+There is no Cargo build cache in CI. Its three plants under `gates/plants/rust/` are an unformatted line
+(`plant_fmt_rust`), a clippy `bool_comparison` (`plant_clippy_rust`) and a failing test (`plant_test_rust`), each an
+anchored edit of, or a test file in, `crates/kitty-core`, so none can be skipped by the compiler.
+
+The existing gates reach the new code too: `typecheck` runs `svelte-check` over the shell, `eslint`, `stylelint`,
+`no-io` and `data-driven` read `.svelte` files, `manifest` checks the generated element typings, `contract` checks the
+shared JSON files, `unit-tests` runs every workspace package's tests, and `hygiene` checks Cargo pins and the action
+pins, permissions and checkout credentials of every workflow. Each extension has its own plant: 18 new plants in all.
+
 ## Gates
 
 One workflow, `.github/workflows/ci.yml`; the job ids are the gate ids and the check names are `Gate: <id>`. The list
@@ -226,7 +335,7 @@ packages, never only the changed files.
 | Gate (CI job) | Local command | What it checks |
 |---|---|---|
 | `Gate: preflight` | `pnpm preflight` | the registry credential is present and accepted (CI: `node scripts/preflight.mjs --ci`) |
-| `Gate: typecheck` | `pnpm typecheck` | strict TypeScript over every workspace package |
+| `Gate: typecheck` | `pnpm typecheck` | strict TypeScript over every workspace package; `svelte-check` over `packages/mission-shell`, against the generated element typings |
 | `Gate: eslint` | `pnpm lint` | elements-over-CSS template rules, Lit rules, no warnings allowed |
 | `Gate: stylelint` | `pnpm lint:styles` | layout-only CSS, `--sk-*` tokens, no colour, font or size literals; the operator-approved exceptions E-04 and E-08 to E-16 are scoped to named element files in `stylelint.config.mjs`, token values only (each sunsets on a spec-kitty-design issue) |
 | `Gate: no-io` | `pnpm lint:no-io` and `pnpm test:no-io` | no network, desktop-bridge or browser-storage I/O in `packages/*/src`; the self-test asserts one fixture per rule |
@@ -235,8 +344,9 @@ packages, never only the changed files.
 | `Gate: contract` | `pnpm contract:check` and `pnpm test:contract` | the vendored Mission Status contract equals its pin, the generated types and fixtures are fresh, every fixture is a valid and coherent contract document (closed shapes), no event-stream identifier in `packages/*/src` |
 | `Gate: data-driven` | `pnpm lint:data-driven` and `pnpm test:data-driven` | no phase name, status lane or other contract status word (`pending`, `complete`, `draft`, `discarded`) hard-coded in `packages/*/src` outside `src/defaults/`, `src/contract/`, stories, fixtures and `src/story-support/`; the selector list is `SELECTOR_ENTRIES` in `eslint.data-driven.config.mjs` (it reads the phase, lane, review, change-state, staleness, project health, artifact, Drift and Ops vocabularies from the vendored schemas), with a self-test over positive fixtures in `gates/fixtures/data-driven/` and inline `eslint-disable` comments ignored |
 | `Gate: storybook-build` | `pnpm build-storybook` | the static Storybook builds (330 stories), then the output is scanned for tokens |
-| `Gate: unit-tests` | `pnpm test` | Vitest browser-mode tests in two projects run one after the other, `unit` and then `perf` (the wall-clock ceiling tests, one file at a time; see below): one test per emitted event and payload, plus the host composition test (both screens rendered from contract-shaped data with no I/O) |
+| `Gate: unit-tests` | `pnpm test` | every workspace package's `test`, one package at a time and without stopping at the first failing package (`pnpm -r --no-bail --workspace-concurrency=1 test`; any failure still fails the gate). mission-ui: Vitest browser-mode tests in two projects run one after the other, `unit` and then `perf` (the wall-clock ceiling tests, one file at a time; see below): one test per emitted event and payload, plus the host composition test (both screens rendered from contract-shaped data with no I/O). mission-shell: the binding check, the port coverage test and the fixture-client tests |
 | `Gate: visual` | `pnpm visual` | screenshots of every story (330) against the committed baselines (330, one per story), inside the pinned Playwright container |
+| `Gate: rust` | the canonical Rust command (see [The Rust gate](#the-rust-gate)) | `cargo fmt`, `clippy -D warnings` and `cargo test` over the Rust workspace, offline (`--frozen`) after separate toolchain-install and fetch steps |
 | `Gate: proof (<gate>)` | `pnpm gate-proof` | one leg per gate: passes clean, fails with the plant (see below) |
 | `Gate: proof` | (CI only) | checks coverage, assembles and schema-validates the proof record |
 | `Gate: all` | (CI only) | fails unless every job above succeeded; skipped or cancelled counts as failed |
@@ -256,6 +366,11 @@ CI timeouts for the visual gate are derived from measured runs. The run on `main
 about 1096 s for the job (973 x 330/293) and about 2367 s for the proof leg (2102 x 330/293). The 28-minute job timeout
 leaves the job estimate at about 65% of the limit (1096 s of 1680 s), and the 60-minute proof leg timeout leaves its
 estimate at about 66% (2367 s of 3600 s). `unit-tests` (150 s, 396 s in the same run) keeps its job timeout of 8 minutes. Its proof leg rises from 10 to 11 minutes for the merged suite: the pull request run 38151797285 took 435 s, which is 72.5% of the old 600 s limit and 66% of the new 660 s (435 / 660).
+
+Proof-leg timeouts of the gates that issue `#17` extended start from the formula (1 + the plants in the leg) x the
+measured gate time + 2 minutes, rounded up, and never drop below their earlier value. The times are a local proxy
+(`gate-proof local`), so they are re-measured on the first CI run of a pull request that changes a leg. The local proxy
+raised only `contract`, from 10 to 12 minutes (7 plants, a 68 s gate run).
 
 ### Installs are frozen
 

@@ -1,0 +1,143 @@
+[
+  {
+    "operationId": "getArtifactContent",
+    "method": "GET",
+    "path": "/missions/{missionId}/artifacts/content",
+    "kind": "read",
+    "responseSchema": "ArtifactContent",
+    "defaultExample": "ArtifactContent.markdown",
+    "refusals": {
+      "ArtifactRefusal": [
+        400,
+        404,
+        413,
+        415,
+        422,
+        500
+      ]
+    }
+  },
+  {
+    "operationId": "getDriftReport",
+    "method": "GET",
+    "path": "/drift",
+    "kind": "read",
+    "responseSchema": "DriftReport",
+    "defaultExample": "DriftReport.populated",
+    "refusals": {
+      "DriftRefusal": [
+        404,
+        500
+      ]
+    }
+  },
+  {
+    "operationId": "getMission",
+    "method": "GET",
+    "path": "/missions/{missionId}",
+    "kind": "read",
+    "responseSchema": "MissionDetail",
+    "defaultExample": "MissionDetail.populated",
+    "refusals": {
+      "Problem": [
+        404
+      ]
+    }
+  },
+  {
+    "operationId": "getProject",
+    "method": "GET",
+    "path": "/project",
+    "kind": "read",
+    "responseSchema": "Project",
+    "defaultExample": "Project.example",
+    "refusals": {}
+  },
+  {
+    "operationId": "getWorkPackage",
+    "method": "GET",
+    "path": "/missions/{missionId}/work-packages/{wpId}",
+    "kind": "read",
+    "responseSchema": "WorkPackage",
+    "defaultExample": "WorkPackage.populated",
+    "refusals": {
+      "Problem": [
+        404
+      ]
+    }
+  },
+  {
+    "operationId": "getWorkPackageDetail",
+    "method": "GET",
+    "path": "/missions/{missionId}/work-packages/{wpId}/detail",
+    "kind": "read",
+    "responseSchema": "WorkPackageDetail",
+    "defaultExample": "WorkPackageDetail.populated",
+    "refusals": {
+      "WorkPackageDetailRefusal": [
+        404,
+        500
+      ]
+    }
+  },
+  {
+    "operationId": "listArtifacts",
+    "method": "GET",
+    "path": "/missions/{missionId}/artifacts",
+    "kind": "read",
+    "responseSchema": "ArtifactListing",
+    "defaultExample": "ArtifactListing.populated",
+    "refusals": {
+      "ArtifactRefusal": [
+        404,
+        500
+      ]
+    }
+  },
+  {
+    "operationId": "listMissions",
+    "method": "GET",
+    "path": "/missions",
+    "kind": "read",
+    "responseSchema": "MissionOverviewPage",
+    "defaultExample": "MissionOverviewPage.first",
+    "refusals": {
+      "PageCursorRefusal": [
+        400
+      ]
+    }
+  },
+  {
+    "operationId": "listOpsInvocations",
+    "method": "GET",
+    "path": "/ops/invocations",
+    "kind": "read",
+    "responseSchema": "OpsInvocationPage",
+    "defaultExample": "OpsInvocationPage.first",
+    "refusals": {
+      "OpsRefusal": [
+        500
+      ],
+      "PageCursorRefusal": [
+        400
+      ]
+    }
+  },
+  {
+    "operationId": "streamEvents",
+    "method": "GET",
+    "path": "/events",
+    "kind": "stream",
+    "responseSchema": null,
+    "defaultExample": null,
+    "refusals": {
+      "Problem": [
+        404
+      ],
+      "StreamRefusal": [
+        400,
+        409
+      ]
+    }
+  }
+]

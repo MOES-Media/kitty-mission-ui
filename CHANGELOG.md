@@ -6,6 +6,27 @@ All user-visible changes to this repository. Per-package notes live in `packages
 
 ### Added
 
+- **Phase 0 bootstrap: a Svelte shell, a Rust workspace and a local Mission Status stub for the hosts** (`#17`).
+  - `@moes-media/mission-shell` (Svelte 5.57.1, no I/O): the transport-free `MissionStatusClient` port with one method
+    per contract read, a change subscription and four connection states; an in-memory fixture adapter with an injectable
+    scheduler; element typings generated from `custom-elements.json` by `scripts/typings.mjs`; and a permanent binding
+    check that mounts the real `sk-missions-screen` and proves data arrives as properties and every declared intent
+    reaches the shell.
+  - A Rust workspace pinned to Rust 1.98.1 (`rust-toolchain.toml`): `crates/kitty-core`, `crates/kitty-stub` and
+    compile-only placeholders for Kitty Desktop (`apps/desktop/src-tauri`) and Kitty Dashboard (`apps/dashboard`), with
+    exact `=x.y.z` pins and a committed `Cargo.lock`, judged by a new `Gate: rust` (format, clippy with `-D warnings`,
+    tests; offline after separate install and fetch steps).
+  - `kitty-stub`: a loopback-only HTTP and SSE stand-in that serves every vendored example and fixture, applies the
+    service's Host, Origin and forwarding-header rules, and replays a scripted change sequence identically on every run.
+  - Shared contract data in `contracts/fixtures/`: generated examples, fixtures and routes, plus the hand-authored change
+    sequence, all checked by `Gate: contract`.
+  - The existing gates reach the new code: `svelte-check` in `typecheck`, Svelte files in `eslint`, `stylelint`,
+    `no-io` and `data-driven`, stale typings in `manifest`, and `unit-tests` running every workspace package. `hygiene`
+    gains a Cargo exact-pin check and checks the action pins, permissions and checkout credentials of every workflow.
+    18 new planted-defect proofs; the proof-leg timeouts are set from measured runs.
+  - A scheduled `Contract drift` workflow (daily and on demand, not a gate, no secrets) reports upstream contract files
+    that differ from `PIN.json`.
+  - mission-ui's screens, stories and baselines are unchanged.
 - **A Projects screen and a picker layout for the shell** (`#9`). `sk-projects-screen` lists a host's projects with their
   health, Mission count, branch and last activity, and reports which one to open; `sk-open-project-dialog` is an optional
   modal folder picker. The host passes contract-shaped `Project` data and performs the folder picking itself; the elements

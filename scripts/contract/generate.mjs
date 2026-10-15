@@ -1,9 +1,10 @@
-// pnpm contract:generate: regenerate types.generated.ts and fixtures.generated.ts from the vendored contract.
+// pnpm contract:generate: regenerate types.generated.ts and fixtures.generated.ts from the vendored contract, and the
+// language-neutral JSON files of contracts/fixtures/ (examples, valid fixtures, routes) that the stub and the shell read.
 // Exports the pure generators too: check.mjs regenerates in memory and byte-compares (C2, C3).
 import openapiTS, { astToString } from 'openapi-typescript';
 import { parse } from 'yaml';
-import { readFileSync, readdirSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { basename, dirname, join } from 'node:path';
 import { pathToFileURL, fileURLToPath } from 'node:url';
 import { LAYOUT, ROOT, readPin, sha256 } from './common.mjs';
 import { FIXTURES, SATISFIES_TARGETS } from './registry.mjs';
@@ -73,12 +74,132 @@ export async function generateFixturesSource(root = ROOT, deps = {}) {
   return out;
 }
 
+// ---- contracts/fixtures/: the JSON the stub (crates/kitty-stub) and the shell's fixture adapter read ----------------
+
+/** The four files of contracts/fixtures/. The generator writes the first three; changes.json is authored by hand. */
+export const FIXTURE_FILES = {
+  examples: 'contracts/fixtures/mission-status.examples.json',
+  fixtures: 'contracts/fixtures/mission-status.fixtures.json',
+  routes: 'contracts/fixtures/mission-status.routes.json',
+  changes: 'contracts/fixtures/mission-status.changes.json',
+};
+
+/**
+ * Formatted JSON (two-space indent, trailing newline) with the byte order mark and the bidi controls written as `\uXXXX`
+ * escapes, as the .ts emitter writes them (F-21): JSON.stringify writes them raw. Every such character sits inside a JSON
+ * string, where the escape is valid and parses back to the same character.
+ */
+export const jsonText = (value) =>
+  `${escapeBidi(JSON.stringify(value, null, 2)).replace(BYTE_ORDER_MARK, `${String.fromCharCode(92)}uFEFF`)}\n`;
+
+/** examples.json: every vendored example (no `_index`, no overlays), keyed `<Schema>.<name>`, keys sorted. */
+export function buildExamplesDoc(examples = loadExamples()) {
+  return Object.fromEntries(Object.keys(examples).sort().map((key) => [key, { schema: key.split('.')[0], value: examples[key] }]));
+}
+
+/** fixtures.json: the registry's `valid` fixtures only, from the same documents the .ts emitter writes; keys sorted. */
+export async function buildFixturesDoc(root = ROOT) {
+  const { buildFixtures } = await import('./overlays.mjs');
+  const docs = buildFixtures({ examples: loadExamples(root), bulk: await loadBulk(root) });
+  const names = Object.keys(FIXTURES).filter((name) => FIXTURES[name].kind === 'valid').sort();
+  return Object.fromEntries(names.map((name) => [name, { schema: FIXTURES[name].schema, value: docs[name] }]));
+}
+
+/**
+ * The reviewed default example of each read, keyed by operationId (R-03, A6): the richest success example of the route's
+ * response schema, never "the first file". `null` is allowed only as an explicit entry. A read without an entry, an entry
+ * naming an example that does not exist or is of another schema, and an entry for an unknown operation fail generation.
+ */
+export const DEFAULT_EXAMPLES = {
+  getArtifactContent: 'ArtifactContent.markdown',
+  getDriftReport: 'DriftReport.populated',
+  getMission: 'MissionDetail.populated',
+  getProject: 'Project.example',
+  getWorkPackage: 'WorkPackage.populated',
+  getWorkPackageDetail: 'WorkPackageDetail.populated',
+  listArtifacts: 'ArtifactListing.populated',
+  listMissions: 'MissionOverviewPage.first',
+  listOpsInvocations: 'OpsInvocationPage.first',
+};
+
+const HTTP_METHODS = ['get', 'put', 'post', 'delete', 'options', 'head', 'patch', 'trace'];
+const readYaml = (file) => parse(readFileSync(file, 'utf8'));
+const schemaNameOf = (ref, where) => {
+  if (typeof ref !== 'string') throw new Error(`${where}: the schema is not a $ref to a named schema file`);
+  return basename(ref).replace(/\.yaml$/, '');
+};
+/** A response object, its `$ref` (relative to the file that holds it) resolved to the shared or local response file. */
+const resolveResponse = (response, file) => (response && response.$ref ? readYaml(join(dirname(file), response.$ref)) : response);
+
+/**
+ * routes.json: one entry per operation of `openapi`'s paths, sorted by operationId.
+ * Refusal rule (data-model RouteEntry; R3-01, R3-02, A2, B4): a response is a selectable refusal when its key is a numbered
+ * HTTP status (three digits; never `default`, which is the catch-all Problem and selects nothing) and its content, after
+ * resolving a `$ref` to a shared or local response file, is `application/problem+json`. Refusals are grouped as schema
+ * name -> numeric statuses in ascending order; the shared Problem response counts like any other (Problem: [404]). A
+ * numbered response declared as `application/json` is not a refusal.
+ */
+export function buildRoutes({ openapi = join(ROOT, LAYOUT.openapi), examples = loadExamples(), defaultExamples = DEFAULT_EXAMPLES } = {}) {
+  const routes = [];
+  for (const [path, entry] of Object.entries(readYaml(openapi).paths ?? {})) {
+    const file = entry.$ref ? join(dirname(openapi), entry.$ref) : openapi;
+    const item = entry.$ref ? readYaml(file) : entry;
+    for (const method of HTTP_METHODS.filter((m) => item[m])) {
+      const op = item[method];
+      const where = `${method.toUpperCase()} ${path}`;
+      if (typeof op.operationId !== 'string') throw new Error(`${where} has no operationId`);
+      const ok = resolveResponse(op.responses?.['200'], file)?.content ?? {};
+      const kind = ok['text/event-stream'] ? 'stream' : 'read';
+      let responseSchema = null;
+      if (kind === 'read') {
+        if (!ok['application/json']) throw new Error(`${op.operationId}: the 200 response is neither application/json nor text/event-stream`);
+        responseSchema = schemaNameOf(ok['application/json'].schema?.$ref, `${op.operationId} 200`);
+      }
+      const refusals = {};
+      for (const [status, response] of Object.entries(op.responses ?? {})) {
+        if (!/^\d{3}$/.test(status) || status === '200') continue;
+        const media = resolveResponse(response, file)?.content?.['application/problem+json'];
+        if (!media) continue;
+        const schema = schemaNameOf(media.schema?.$ref, `${op.operationId} ${status}`);
+        (refusals[schema] ??= []).push(Number(status));
+      }
+      const sortedRefusals = Object.fromEntries(Object.keys(refusals).sort().map((k) => [k, refusals[k].sort((a, b) => a - b)]));
+      routes.push({ operationId: op.operationId, method: method.toUpperCase(), path, kind, responseSchema, defaultExample: defaultExampleOf(op.operationId, kind, responseSchema, examples, defaultExamples), refusals: sortedRefusals });
+    }
+  }
+  const known = new Set(routes.map((r) => r.operationId));
+  for (const id of Object.keys(defaultExamples)) if (!known.has(id)) throw new Error(`DEFAULT_EXAMPLES names ${id}, but the contract has no such operation`);
+  return routes.sort((a, b) => (a.operationId < b.operationId ? -1 : a.operationId > b.operationId ? 1 : 0));
+}
+
+function defaultExampleOf(operationId, kind, responseSchema, examples, defaultExamples) {
+  if (kind === 'stream') return null;
+  if (!Object.hasOwn(defaultExamples, operationId)) throw new Error(`the read ${operationId} has no entry in DEFAULT_EXAMPLES`);
+  const name = defaultExamples[operationId];
+  if (name === null) return null;
+  if (!Object.hasOwn(examples, name)) throw new Error(`DEFAULT_EXAMPLES.${operationId} names ${name}, which is not a vendored example`);
+  if (name.split('.')[0] !== responseSchema) throw new Error(`DEFAULT_EXAMPLES.${operationId} names ${name}, whose schema is not ${responseSchema}`);
+  return name;
+}
+
+/** The three generated JSON files, by repository-relative path. check.mjs byte-compares the committed files with these. */
+export async function generateJsonSources(root = ROOT) {
+  const examples = loadExamples(root);
+  return {
+    [FIXTURE_FILES.examples]: jsonText(buildExamplesDoc(examples)),
+    [FIXTURE_FILES.fixtures]: jsonText(await buildFixturesDoc(root)),
+    [FIXTURE_FILES.routes]: jsonText(buildRoutes({ openapi: join(root, LAYOUT.openapi), examples })),
+  };
+}
+
 export async function generateAll(root = ROOT) {
   writeFileSync(join(root, LAYOUT.types), await generateTypesSource(root));
   writeFileSync(join(root, LAYOUT.fixtures), await generateFixturesSource(root));
+  mkdirSync(join(root, dirname(FIXTURE_FILES.examples)), { recursive: true });
+  for (const [rel, text] of Object.entries(await generateJsonSources(root))) writeFileSync(join(root, rel), text);
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   await generateAll();
-  process.stdout.write('contract:generate: wrote types.generated.ts and fixtures.generated.ts\n');
+  process.stdout.write(`contract:generate: wrote types.generated.ts, fixtures.generated.ts, ${[FIXTURE_FILES.examples, FIXTURE_FILES.fixtures, FIXTURE_FILES.routes].map((f) => basename(f)).join(', ')}\n`);
 }

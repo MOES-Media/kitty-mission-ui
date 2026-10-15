@@ -1,0 +1,329 @@
+{
+  "event_count": 68,
+  "last_event_id": "01M4ZPDV4E2XSG7YEYRDQG2MP0",
+  "materialized_at": "2026-10-15T11:51:12.270755+00:00",
+  "mission_number": "4",
+  "mission_slug": "phase0-bootstrap-01M4V5KK",
+  "mission_type": "software-dev",
+  "schema_version": 2,
+  "summary": {
+    "approved": 0,
+    "blocked": 0,
+    "canceled": 0,
+    "claimed": 0,
+    "done": 9,
+    "for_review": 0,
+    "in_progress": 0,
+    "in_review": 0,
+    "planned": 0
+  },
+  "work_packages": {
+    "WP01": {
+      "actor": "merge",
+      "agent": "claude",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
+      "force_count": 0,
+      "implementer_of_record": "claude",
+      "lane": "done",
+      "last_event_id": "01M4ZPDMZGX269PJGH9AT6FX3V",
+      "last_transition_at": "2026-10-15T11:51:05.968874+00:00",
+      "model": "__resolved_model_absent__",
+      "notes": [
+        "Commits (cat-file: commit): 1b1b99e Rust workspace, toolchain 1.98.1 (released 2026-09-03), kitty-core + desktop/dashboard placeholders, Gate: rust job, all.needs, proof-leg rust timeout 20, starting timeouts contract 10/unit-tests 16/stylelint 9/data-driven 8, 3 plants, .gitignore; 7b5c9af out-of-map edits (orchestrator-authorized); 60452dd revert of the schema part. Out-of-map edit (orchestrator-authorized): scripts/gate-proof/gate-proof.test.mjs: rust added to GATES, 12 changed to 13, to match ci.yml coverage. The schema enum edit landed on the planning branch as cf5d9c1 and is reverted here. assemble with rust (13 fragments, verdict pass) was verified before the revert and passes once merged. Gates: rust canonical exit 0 (cold local 0.43 s; CARGO_NET_OFFLINE exit 0; fresh CARGO_HOME --frozen exit 0, no external crates); coverage ok; gate-proof local --only rust ok; plants red on plant_fmt_rust (rustfmt diff), plant_clippy_rust (bool_comparison), plant_test_rust (test FAILED); clean leg green, tokens absent from clean output. Membership test red on member removal (left 2 right 3) and on rename (set inequality); restored green. hygiene 0 findings; test:scripts 594/594 (with schema edit present); terminology, typecheck, lint, lint:styles, no-io, manifest, contract, data-driven, build-storybook exit 0. pnpm test failures are load-only (load avg up to 28 from 3 parallel lanes) and change each run, e.g. sk-drift-screen.a11y (NFR-011 forced colours), sk-artifact-screen.media (forced colors NFR-014, reduced motion), sk-work-package-board scroll region, wp-facts-parts staleness row. Re-run, each failing file passes: the last run gave 23 files, 235/235 pass. No deps, no Tauri, no cargo cache, packages/mission-ui unchanged. rustup self-updated locally from 1.29.0 to 1.29.1.",
+        "Review passed (reviewer-renata; recorded by orchestrator after issue-matrix gate was satisfied): exact pin 1.98.1; membership test fails on member removal; no Tauri/no cargo cache; CI job, canonical gate string, matrix rust (timeout 20), all.needs and four starting timeouts match plan; 3 plants red on own tokens, clean run token-free, gate-proof local --only rust ok; hygiene/coverage/typecheck/lint/terminology green; cold rust gate ~1s local; mission-ui and lane schema net-unchanged; gate-proof.test.mjs 35/35 against cf5d9c1 schema (3 lane failures resolve on merge of cf5d9c1)."
+      ],
+      "provider": "__resolved_provider_absent__",
+      "review_result": {
+        "feedback_path": "/home/jeroennouws/dev/SK-missions/ui17/kitty-specs/phase0-bootstrap-01M4V5KK/tasks/WP01-rust-workspace-and-rust-gate/review-cycle-1.md",
+        "reference": "review-cycle://phase0-bootstrap-01M4V5KK/WP01-rust-workspace-and-rust-gate/review-cycle-1.md",
+        "reviewer": "claude",
+        "verdict": "approved"
+      },
+      "role": "reviewer",
+      "shell_pid": 3496546,
+      "shell_pid_created_at": "1791925573.81",
+      "subtasks": {
+        "T001": "done",
+        "T002": "done",
+        "T003": "done",
+        "T004": "done",
+        "T005": "done",
+        "T006": "done"
+      }
+    },
+    "WP02": {
+      "actor": "merge",
+      "agent": "claude",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
+      "force_count": 0,
+      "implementer_of_record": "claude",
+      "lane": "done",
+      "last_event_id": "01M4ZPDNX977XDRTGZMAWF7M91",
+      "last_transition_at": "2026-10-15T11:51:06.921213+00:00",
+      "model": "__resolved_model_absent__",
+      "notes": [
+        "WP02 hand-off (frontend-freddy).\nCOMMITS (git cat-file -t = commit for each): 1b596ab skeleton+pins; 09149ef typecheck/eslint/no-io Svelte+plants; 995a783 data-driven .svelte+fixtures+plant; 1d58e41 stylelint .svelte+plant; bcc3047 terminology .svelte/.rs; bd8634e perf-split fix.\nBASELINE (unchanged base 2f75014): typecheck/lint/lint:styles/no-io/manifest/hygiene/contract/data-driven/build-storybook rc=0. pnpm test rc=1 twice with DIFFERENT failures (18 s browser timeouts, Vite dynamic-import fetch errors) at load avg 10-43 from parallel lanes: environment, not code.\nGATES (after): typecheck 0 (output names @moes-media/mission-shell, \"svelte-check found 0 errors and 0 warnings\"); lint 0; lint:styles 0; lint:no-io+test:no-io 0 (205 pass); manifest:check 0; hygiene+test:scripts+test:terminology 0 (hygiene 0 findings, 596+13 pass, 183 files scanned); contract:check+test:contract 0; lint:data-driven+test:data-driven 0 (205 pass); pnpm test 0 (2825+24 pass; one earlier run under load hung and was stopped by PID); build-storybook 0. Rust gate N/A (WP01 is not in lane-b). mission-ui: git diff --exit-code 2f75014 -- packages/mission-ui is empty.\nGATE-PROOF local (each leg ok, every plant red on its token, token absent from the clean run, worktree clean): typecheck 2 plants 20 s; eslint 7 plants 82 s; no-io 4 plants 35 s; stylelint 14 plants 39 s; data-driven 5 plants 23 s.\nPLANTS / RED LINES: typecheck \"PlantTypecheck.svelte:1:25 Error: Type 'string' is not assignable to type 'number'\" + source line (token plantSvelteType). eslint \"'plantEslintSvelte' is assigned a value but never used no-unused-vars\". no-io \"Unexpected use of 'fetch'. no-io: fetch is forbidden (network I/O)\". stylelint \"Unexpected property \\\"color\\\" property-allowed-list\" (rule id confirmed; without the override the file is a CssSyntaxError with no rule id). data-driven \"data-driven: S1 phase name or lane value as a literal\".\nREVERT CHECKS: no-io.selftest (Svelte block glob disabled -> 4 shell cases fail); data-driven.selftest (SOURCE_FILES without .svelte -> 4 fail); terminology.test (target not skipped -> test 6 fails); perf-split (the temp tree now holds a package with no test/).\nSUPPLY CHAIN (DIRECTIVE_051): S-1 all six from registry.npmjs.org, SLSA v1 provenance, published by GitHub Actions. Maintainers: svelte/vite-plugin = rich_harris, conduitry, svelte-admin (+dominik_g); svelte-check = dummdidumm, svelte-language-tools-deploy; eslint-plugin-svelte/svelte-eslint-parser = ota-meshi, baseballyama, conduitry, svelte-admin (+jounqin); postcss-html = ota-meshi, jeddy3, ai, gucong. S-2 (cutoff 2026-09-29), each chosen version with its publish date and first publish: svelte 5.57.1 (2026-09-18; first 2016-11-17); @sveltejs/vite-plugin-svelte 6.2.4 (2026-01-09, newest 6.x; peer vite ^6.3.0||^7.0.0; 7.x needs vite 8; first 2021-03-02); svelte-check 4.7.6 (2026-08-13; first 2020-05-27); eslint-plugin-svelte 3.23.0 (2026-08-13; 3.23.1 too new; first 2021-02-23); svelte-eslint-parser 1.8.1 (2026-08-15; 1.9.0 too new; first 2021-04-27); postcss-html 2.0.0 (2026-07-31; first 2017-05-23; peer postcss ^8.5.0 met by 8.5.28). Peers met: typescript 5.9.3, eslint 9.39.5. S-3 no preinstall/install/postinstall script in any of the 36 new packages; allowBuilds unchanged; pnpm reported no ignored builds. S-4 lockfile +382 lines, 36 new packages (6 direct + 30 transitive). Newest transitives: esrap 2.4.0 (2026-09-26), devalue 5.9.4 (2026-09-18), zimmerframe 1.1.5 (2026-09-01). Others: aria-query 5.3.1, axobject-query 4.1.0, chokidar 4.0.3, clsx 2.1.1, deepmerge 4.3.1, dom* (2022-2025), entities 4.5.0, esm-env 1.2.2, globals 16.5.0, htmlparser2 9.1.0, is-reference 3.0.3, js-tokens 9.0.1, lilconfig 2.1.0, locate-character 3.0.0, mri 1.2.0, postcss-load-config 3.1.4, postcss-scss 4.0.9, readdirp 4.1.2, sade 1.8.1, @sveltejs/acorn-typescript 1.0.13 (2026-08-13), @sveltejs/load-config 0.2.3 (2026-08-11), vite-plugin-svelte-inspector 5.0.2 (2026-01-06), vitefu 1.1.3 (2026-04-01), yaml 1.10.3 (2026-03-21); all 14 or more days old. S-5 pnpm audit --prod=false: 2 high, both PRE-EXISTING on base (braces 3.0.3 GHSA-vfj7-8cjw-p6xm, source-map-js 1.2.1 GHSA-68fv-2mgg-jv7q). None introduced. No @wc-toolkit.\nEXCEPTION E-46 (request for operator approval, for the PR): scope = exact path packages/mission-shell/src/generated/elements.d.ts, ignored in eslint.config.mjs, eslint.no-io.config.mjs and eslint.data-driven.config.mjs. Rationale: generated output (WP04 typings.mjs), guarded by the manifest staleness check. Sunset: when the generator emits lint-clean output or the lint configs gain a generated-file allowance. A self-test asserts the ignore covers only that exact path (sibling .d.ts and Shell.svelte are not ignored).\nPRE-ADDED for later WPs: root script contract:drift (node scripts/contract/drift.mjs).\nOUT-OF-MAP EDITS: (1) packages/mission-shell/src/Shell.svelte, a minimal layout root ({@render children}). Needed because svelte-check --fail-on-warnings fails on NO_SVELTE_INPUT when the tsconfig matches no .svelte file. Inside the package surface; no other WP owns this path. It also gives every gate a real .svelte file in the clean run. (2) scripts/perf-split.test.mjs: skip a package with no test/ (it threw ENOENT on the new package and made test:scripts red).\nDEVIATIONS: (a) the typecheck script adds --output human-verbose. Non-TTY svelte-check defaults to machine output, which prints neither the source line (no plantSvelteType token) nor \"svelte-check found 0 errors\". (b) the eslint plant fires no-unused-vars, because the svelte base config turns no-self-assign off; the payload and token are as specified. (c) the typecheck plant.json conversion keeps the existing object field-for-field; only its indentation shifts inside the array. (d) data-driven .svelte limitation, documented in the config: markup text and static attributes are Svelte nodes, not Literal or TemplateElement, so they are not scanned.",
+        "Review passed (reviewer-renata). Re-ran on lane-b HEAD 1bbccb6: typecheck 0 (svelte-check sees mission-shell, 0 errors/0 warnings; --filter typecheck 0), lint 0, lint:styles 0, no-io 0 (205), data-driven 0 (205), manifest 0, hygiene 0 findings, test:scripts 596/0, terminology 13/0, contract 182/0, pnpm test 0 (2825+24, load ~14), build-storybook 0. gate-proof local ok per leg: typecheck 19s, eslint 80s, no-io 20s, stylelint 34s, data-driven 32s. Revert checks reproduced (data-driven SOURCE_FILES -> 4 fail; terminology target skip -> test 6 fails), restored, tree clean. Pins exact and newest >=14d (npm view): svelte 5.57.1 2026-09-18, vite-plugin-svelte 6.2.4 peer vite ^6.3||^7 (vite 7.3.6), postcss-html 2.0.0 no install scripts; allowBuilds unchanged; audit 2 high pre-existing (braces, source-map-js). packages/mission-ui byte-unchanged. Out-of-map edits recorded and justified: Shell.svelte (minimal, no I/O, needed for svelte-check NO_SVELTE_INPUT), perf-split.test.mjs ENOENT fix. Deviations accepted: --output human-verbose, eslint plant fires no-unused-vars (svelte base disables no-self-assign; token unchanged). E-46: exact-path ignore in the three eslint configs only, scope/rationale/sunset recorded in configs and hand-off, self-test asserts sibling .d.ts not ignored; E-46 PENDING OPERATOR APPROVAL at PR."
+      ],
+      "provider": "__resolved_provider_absent__",
+      "review_result": {
+        "feedback_path": "/home/jeroennouws/dev/SK-missions/ui17/kitty-specs/phase0-bootstrap-01M4V5KK/tasks/WP02-mission-shell-package-and-svelte-gates/review-cycle-1.md",
+        "reference": "review-cycle://phase0-bootstrap-01M4V5KK/WP02-mission-shell-package-and-svelte-gates/review-cycle-1.md",
+        "reviewer": "claude",
+        "verdict": "approved"
+      },
+      "role": "reviewer",
+      "shell_pid": 4103047,
+      "shell_pid_created_at": "1791938074.75",
+      "subtasks": {
+        "T007": "done",
+        "T008": "done",
+        "T009": "done",
+        "T010": "done",
+        "T011": "done",
+        "T012": "done",
+        "T013": "done"
+      }
+    },
+    "WP03": {
+      "actor": "merge",
+      "agent": "claude",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
+      "force_count": 0,
+      "implementer_of_record": "claude",
+      "lane": "done",
+      "last_event_id": "01M4ZPDPT3GANPJ6D83K4JNYSC",
+      "last_transition_at": "2026-10-15T11:51:07.843206+00:00",
+      "model": "__resolved_model_absent__",
+      "notes": [
+        "Commit b5a6e22 (git cat-file -t: commit). Done: generate.mjs emits contracts/fixtures/mission-status.{examples,fixtures,routes}.json (2-space, trailing newline, BOM/bidi escaped); changes.json is hand-authored (5 items); check.mjs adds byte staleness per file (token 'stale generated file'), an independent YAML oracle ('json oracle') and change-sequence invariants ('change sequence'). Counts: 77 examples, 10 routes, 134 valid fixtures, 5 change items, 57 selectable examples (39 successes + 18 refusals), 20 numbered problem+json statuses. Refusals: getArtifactContent ArtifactRefusal [400,404,413,415,422,500]; streamEvents {Problem:[404],StreamRefusal:[400,409]}; getMission/getWorkPackage Problem:[404]. Gates exit 0: typecheck, lint, lint:styles, lint:no-io+test:no-io (199), manifest:check, hygiene (0 findings)+test:scripts (594)+test:terminology (11), contract:check+test:contract (222/222), lint:data-driven+test:data-driven (199), build-storybook. pnpm test: first run 2804/2804 tests passed, but one file import failed with 'Failed to fetch dynamically imported module'. Two reruns at load average 20-50 (parallel lanes) hit browser timeouts in mission-ui screens, and the last one hung and was stopped. This diff touches nothing under packages/ (mission-ui is byte-unchanged), so pnpm test needs a rerun when the machine is idle. Rust gate N/A because WP01 is not in this lane yet. Plants: gate-proof local --only contract ok, 7 plants red, no token in clean output, proof leg 175 s (about 2:55) under load. Red-first: all three new test files first failed with missing exports (DEFAULT_EXAMPLES/FIXTURE_FILES). Revert checks: refusal default-filter, JSON escape, log-truncated scopedId rule, staleness compare, each giving named failures. Out-of-map edits: cli.test.mjs and update.test.mjs copy contracts/fixtures into their temp projects (they run check.mjs/runChecks; otherwise the gate correctly reports the files missing). Note: changes.json item 5 offset 1912 > 1480 (strictly-increasing invariant applies across truncation); scopedId must also equal data.streamCursor text (extra contract rule, tested).",
+        "Review passed (reviewer-renata): contract:generate idempotent (2 runs, clean tree), packages/ diff empty vs lane base; independent Python YAML oracle: 77 examples (no _index) deep-equal, 10 routes with refusal maps recomputed from openapi.yaml incl Problem:[404] on getMission/getWorkPackage/streamEvents, StreamRefusal [400,409], ArtifactRefusal [400,404,413,415,422,500], default excluded; no raw BOM/bidi; fixtures.json 134 valid only; changes.json 5 items, one missionId, increasing offsets, no scopedId on log-truncated; contract:check+test:contract exit 0 (222/222), both plant tokens absent from clean output; gate-proof local --only contract ok (182652 ms); 2 revert checks red then restored; hygiene 0; out-of-map edits cli.test.mjs/update.test.mjs minimal (temp projects need contracts/fixtures); mission-ui browser tests not re-run as packages/ untouched."
+      ],
+      "provider": "__resolved_provider_absent__",
+      "review_result": {
+        "feedback_path": "/home/jeroennouws/dev/SK-missions/ui17/kitty-specs/phase0-bootstrap-01M4V5KK/tasks/WP03-shared-fixture-and-change-files/review-cycle-1.md",
+        "reference": "review-cycle://phase0-bootstrap-01M4V5KK/WP03-shared-fixture-and-change-files/review-cycle-1.md",
+        "reviewer": "claude",
+        "verdict": "approved"
+      },
+      "role": "reviewer",
+      "shell_pid": 3899499,
+      "shell_pid_created_at": "1791935853.97",
+      "subtasks": {
+        "T014": "done",
+        "T015": "done",
+        "T016": "done",
+        "T017": "done",
+        "T018": "done",
+        "T019": "done"
+      }
+    },
+    "WP04": {
+      "actor": "merge",
+      "agent": "claude",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
+      "force_count": 1,
+      "implementer_of_record": "claude",
+      "lane": "done",
+      "last_event_id": "01M4ZPDQJZMY4PNC0HGKSVYSJM",
+      "last_transition_at": "2026-10-15T11:51:08.639035+00:00",
+      "model": "__resolved_model_absent__",
+      "notes": [
+        "Commits 4313e7e (generator, elements.d.ts, plants; recorded out-of-map: typecheck plant.json + PlantProp/PlantIntent payloads) and 31927bb (recorded out-of-map: root package.json manifest:check + test:scripts), both cat-file=commit. T021: svelte-check flags both wrong handler type and unknown onsk-open-misson (Object literal may only specify known properties) -> attribute path, no intents.ts; WP06 binds onsk-* attributes. elements.d.ts adds a /// reference to mission-ui/src/css-inline.d.ts (shell program otherwise fails on ?inline imports). Gates exit 0: typecheck, lint, lint:styles, lint:no-io, test:no-io 205, manifest:check, hygiene 0, test:scripts 605/0, test:terminology 13/0, contract:check, test:contract 182/0, lint:data-driven, test:data-driven 205, build-storybook. pnpm test: 4 full runs flaky under host load 11-14 (disjoint sets, mission-ui untouched); union of 24 failing files passes alone 510/510. gate-proof local: manifest red before wiring (planted exit 0), green after, 2 plants, 7.9s wall/5.6s leg; typecheck green, 4 plants, 33.4s wall/28.9s leg. Revert check: drop privacy filter -> 5 named failures. Rust gate N/A (no WP01 in lane).",
+        "Cycle 2: review issue 1 fixed in da8157d — generator emits import '@moes-media/mission-ui/src/css-inline' instead of a triple-slash reference (import proven load-bearing: bad path gives 10 svelte-check errors); new red-first test asserts no /// line and lint-clean under all three ESLint configs with ignores off; elements.d.ts now lint-clean so E-46 can sunset (E-46 unchanged). Gates exit 0, test:scripts 606/0, gate-proof manifest + typecheck ok. (Moved by orchestrator after committing the review-cycle record the implementer could not touch.)",
+        "Cycle 2 approved: da8157d limited to generator/elements.d.ts/test/EXPECTED_FIXTURE (merge 870c2f7 only status files). eslint --no-ignore on elements.d.ts exit 0 under all 3 configs; new test red-first (fails with triple-slash restored, 3 fails); import load-bearing (removed -> svelte-check fails). typings --check current; typecheck/lint/manifest:check exit 0; test:scripts 606/606; gate-proof manifest+typecheck ok. E-46 unchanged, exact path; generated file now lint-clean so E-46 can sunset."
+      ],
+      "provider": "__resolved_provider_absent__",
+      "review": null,
+      "review_result": {
+        "feedback_path": "/home/jeroennouws/dev/SK-missions/ui17/kitty-specs/phase0-bootstrap-01M4V5KK/tasks/WP04-element-typings-from-manifest/review-cycle-2.md",
+        "reference": "review-cycle://phase0-bootstrap-01M4V5KK/WP04-element-typings-from-manifest/review-cycle-2.md",
+        "reviewer": "claude",
+        "verdict": "approved"
+      },
+      "role": "reviewer",
+      "shell_pid": 61241,
+      "shell_pid_created_at": "1791940148.95",
+      "subtasks": {
+        "T020": "done",
+        "T021": "done",
+        "T022": "done",
+        "T023": "done",
+        "T024": "done"
+      }
+    },
+    "WP05": {
+      "actor": "merge",
+      "agent": "claude",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
+      "force_count": 0,
+      "implementer_of_record": "claude",
+      "lane": "done",
+      "last_event_id": "01M4ZPDRAJWGEJNSHCSQ5BM5P7",
+      "last_transition_at": "2026-10-15T11:51:09.394974+00:00",
+      "model": "__resolved_model_absent__",
+      "notes": [
+        "Ready for review. Commits (lane-e): 8d379f6 port, CLIENT_OPERATIONS (satisfies), fixture adapter (injectable scheduler), coverage and behaviour tests, plus the recorded out-of-map edit src/index.ts (A9); 5030835 adds packages/mission-shell/src/contract/stream.ts, an orchestrator-authorized out-of-map edit. C7 rationale: the contract gate allows the provisional stream identifiers only under src/contract/, so stream.ts aliases StatusTransitionEvent, MissionLifecycleEvent and LogTruncatedEvent, and port.ts uses the aliases. The Change shape is unchanged. Gates exit 0: contract:check, test:contract 222/0, typecheck, lint, lint:styles, lint:no-io, test:no-io 205, lint:data-driven, test:data-driven 205, manifest:check, hygiene, test:scripts 596/0, test:terminology 13/0, shell tests 26/26. Red-first: failed on 'Failed to resolve import ../src/client/port'. Revert checks: dropping subscribe -> 'coverage: missing operation streamEvents'; log-truncated cursor rule -> named test fails; widening ConnectionState -> 3 svelte-check errors. No new dependencies. Not run: build-storybook, pnpm test (mission-ui), Rust gate.",
+        "Review passed: port matches client-port.md name for name (Params/Ok/Refusal problem+json excl default/Result incl unavailable/ConnectionState/CONNECTION_STATES/SubscriptionScope/Change/CLIENT_OPERATIONS satisfies). Mutations verified then restored: dropping getDriftReport -> 3 svelte-check errors + 'coverage: missing operation getDriftReport'; widened ConnectionState, removed unavailable, Partial Params -> typecheck fails; cursor rule broken -> log-truncated test fails; planted fetch -> lint:no-io fails. Gates green: contract:check ok, test:contract 222/222, svelte-check 0/0, lint, lint:no-io+test:no-io, data-driven, hygiene 0, shell 26/26, build-storybook ok, root pnpm test 2825+24 pass. Out-of-map edits src/index.ts (A9) and src/contract/stream.ts (orchestrator-authorized, sole home of C7 identifiers) recorded. Note: operationCoverage in src/client/coverage.ts has only test callers by design (WP06 plant reuse). Rust gate not run (no Rust touched)."
+      ],
+      "provider": "__resolved_provider_absent__",
+      "review_result": {
+        "feedback_path": "/home/jeroennouws/dev/SK-missions/ui17/kitty-specs/phase0-bootstrap-01M4V5KK/tasks/WP05-client-port-and-fixture-adapter/review-cycle-1.md",
+        "reference": "review-cycle://phase0-bootstrap-01M4V5KK/WP05-client-port-and-fixture-adapter/review-cycle-1.md",
+        "reviewer": "claude",
+        "verdict": "approved"
+      },
+      "role": "reviewer",
+      "shell_pid": 20209,
+      "shell_pid_created_at": "1791939489.44",
+      "subtasks": {
+        "T025": "done",
+        "T026": "done",
+        "T027": "done",
+        "T028": "done",
+        "T029": "done"
+      }
+    },
+    "WP06": {
+      "actor": "merge",
+      "agent": "claude",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
+      "force_count": 0,
+      "implementer_of_record": "claude",
+      "lane": "done",
+      "last_event_id": "01M4ZPDTE992M3ZXQHPT6MFV9Z",
+      "last_transition_at": "2026-10-15T11:51:11.561400+00:00",
+      "model": "__resolved_model_absent__",
+      "notes": [
+        "Ready for review: commits 7f57ab5, 4ef12c5, 4c1d8e8, f9c7006 (lane-f). gate-proof local --only unit-tests: ok, clean exit 0, planted exit 1, all 7 plant tokens matched incl. 3 new (binding: loadingMore not set as property; binding: intent sk-search not delivered; coverage: missing operation getDriftReport), leg 439493 ms. Root pnpm test (-r --no-bail --workspace-concurrency=1) runs mission-ui unit+perf and shell (30 tests). typecheck/lint/lint:styles/no-io/manifest/hygiene/scripts/terminology/contract/data-driven/build-storybook green. SC-005 probe empty. Rust gate n/a (no Cargo.toml in lane). Out-of-map: root package.json test script (recorded; --no-bail approved CR).",
+        "Independent review PASS. FR-001: missions bound as property (Array.isArray + toEqual fixture items, row count by accessible name), loadingMore===true as property, stray attrs missions/loadingmore/loading-more absent with positive control, status reflects exception cited. FR-002/SC-001: 4 declared events read from custom-elements.json, one via real click, three dispatched, loop count and toHaveBeenCalledTimes equality. FR-003/FR-009: reviewer applied all 3 new plants verbatim from plant.json: each red on its exact token (loadingMore property / intent sk-search / coverage missing getDriftReport), tokens absent from clean verbose output. Extra mutations (attribute binding, wrong handler) also red. SC-005: packages/mission-ui diff empty, no commits. Root test --no-bail recorded in f9c7006 and handoff; verified on pnpm 11.18.0 that a failing package still exits 1 while later packages run. 60s beforeAll only widens the hook under the dynamic-import plant; clean run 1.5s. Shell typecheck, lint, lint:no-io, test:no-io, hygiene, lint:data-driven green. Nit: intent samples typed Record<string, unknown> rather than satisfies Sk*Detail."
+      ],
+      "provider": "__resolved_provider_absent__",
+      "review_result": {
+        "feedback_path": "/home/jeroennouws/dev/SK-missions/ui17/kitty-specs/phase0-bootstrap-01M4V5KK/tasks/WP06-permanent-binding-check/review-cycle-1.md",
+        "reference": "review-cycle://phase0-bootstrap-01M4V5KK/WP06-permanent-binding-check/review-cycle-1.md",
+        "reviewer": "claude",
+        "verdict": "approved"
+      },
+      "role": "reviewer",
+      "shell_pid": 3278173,
+      "shell_pid_created_at": "1791992902.69",
+      "subtasks": {
+        "T030": "done",
+        "T031": "done",
+        "T032": "done",
+        "T033": "done",
+        "T034": "done",
+        "T035": "done"
+      }
+    },
+    "WP07": {
+      "actor": "merge",
+      "agent": "claude",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
+      "force_count": 0,
+      "implementer_of_record": "claude",
+      "lane": "done",
+      "last_event_id": "01M4ZPDS09GHEFHKY8JH6YDG9D",
+      "last_transition_at": "2026-10-15T11:51:10.089200+00:00",
+      "model": "__resolved_model_absent__",
+      "notes": [
+        "WP07 kitty-stub ready for review.\nCOMMITS: ad4d09c feat(kitty-stub): loopback HTTP and SSE stub over the shared fixtures (#17) [git cat-file -t: commit]. Commit body carries the full DIRECTIVE_051 evidence.\nGATES (lane root): rustup toolchain install; cargo fetch --locked; cargo fmt --all --check && cargo clippy --workspace --all-targets --frozen -- -D warnings && cargo test --workspace --frozen -> exit 0, 29 passed 0 failed (kitty-core 2, kitty-stub routes 13, events 4, guard 7, binary 3). pnpm typecheck 0; lint 0; lint:styles 0; lint:no-io 0 + test:no-io 0 (199 pass); manifest:check 0; hygiene 0 (0 findings); test:scripts exit 1 = 591/594, the 3 failures are gate-proof.test.mjs 'schema: /gates/7/gate must be equal to one of the allowed values' (rust gate enum lives on planning branch cf5d9c1; known, not WP07); test:terminology 0 (11 pass); contract:check 0 + test:contract 0 (222 pass); lint:data-driven 0 + test:data-driven 0 (199 pass); pnpm test 0 (2825 pass); build-storybook 0. node scripts/gate-proof.mjs local --only rust: exit 0, rust ok (planted exit 1, 23117 ms), wall 34.6 s.\nRED-FIRST: skeleton lib (500 everywhere) + main printing 'listening 0.0.0.0:0': routes 13/13 fail (e.g. routes.rs:49 left 500 right 200), guard 6/6 fail, events 3/4 fail (byte-identity test then hardened to assert 200 + parsed item count so it cannot pass vacuously), binary 3/3 fail ('announced 0.0.0.0:0'). Members test: workspace.rs:52 'member count left 4 right 3' before EXPECTED updated. Duplicate Host/Origin test added red (guard.rs: left 200 right 403) before hardening guard to exactly-one Host / at-most-one Origin.\nREVERT CHECKS (temporary, restored): routes - serve refusal with 200 -> a_refusal_example_carries_its_own_status_as_problem_json, a_disallowed_status..., a_fixture_is_selected_by_name, events_serve_an_allowed_stream_refusal... FAIL; guard - drop forwarded rule -> forwarded_and_x_forwarded_headers_are_403 FAIL; events - id line on unscoped frames -> an_unscoped_stream_carries_no_ids FAIL; binary - bind 0.0.0.0 with announcement faked to 127.0.0.1 -> refuses_connections_on_a_non_loopback_address FAIL 'must not accept on <lan-ip>:<port>'.\nMEASUREMENTS: exhaustive loop derived 57 selectable / 20 not (77) and ran 57 times, route chosen by schema+status. Non-loopback refusal exercised (default-route IP is a LAN address, not skipped). 10-run byte identity scoped + unscoped. NFR-001: fresh CARGO_HOME, cargo test --workspace --frozen without fetch -> exit 101 'no matching package named axum found'; same CARGO_HOME after cargo fetch --locked -> exit 0, 29 passed. Cold Rust gate after cargo clean: 12.7 s (<= 8 min). No kitty-stub process left running.\nOUT-OF-MAP EDITS: Cargo.toml (member + =x.y.z pins, per prompt); Cargo.lock (resolution; 7 young transitives held back with --precise to >=14-day versions); crates/kitty-core/tests/workspace.rs (expected set + kitty-stub).\nDEVIATIONS for review: (1) http-body-util is a normal dependency with feature 'channel' (not test-only): its Channel body streams SSE without adding a crate (http-body-util is already in axum's graph; channel only enables its tokio dep). (2) axum default-features off, features http1+tokio. (3) tower dev-only with 'util' (ServiceExt::oneshot). (4) HEAD is answered 405 explicitly (axum would route it to GET). (5) SIGINT/SIGTERM stop the server without draining, since open SSE streams never finish; binary test proves clean exit 0 with a stream open. (6) last-request records only requests that passed the guard; repeated headers joined with ', '.\nSUPPLY CHAIN: S-1 crates.io only; S-2 axum =0.8.9 (2026-04-14/first 2021-07-22), tokio =1.53.1 (2026-07-20/2016-07-01), serde =1.0.229 (2026-07-18/2014-12-05), serde_json =1.0.151 (2026-07-20/2015-08-07), http-body-util =0.1.5 (2026-08-12/2022-10-25), tower =0.5.3 (2026-01-12/2016-12-23); every transitive dated in the commit body, all <= 2026-09-30; S-3 from cargo metadata: custom-build httparse, libc, proc-macro2, quote, serde, serde_core, serde_json, zmij; proc-macro serde_derive, tokio-macros; S-4 --locked/--frozen; S-5 cargo-audit =0.22.2 installed --locked on dev machine, cargo audit: 1310 advisories, 53 crates, 0 vulnerabilities, 0 warnings.",
+        "Review passed: canonical Rust gate green (29 tests: stub 13 routes/4 events/7 guard/3 binary); 57 selectable examples asserted against examples.json; SSE parsed against changes.json (scoped ids, none on log-truncated/unscoped), 10-run byte identity; non-loopback refusal exercised (192.168.0.165, no skip); manual binary run: 200 / 403 {\"code\":\"host\"} on project and events, LAN connect refused, SIGTERM exit 0, nothing left running; exact =pins, publish=false, crates.io-only lock, S-3 list matches cargo metadata; two mutation reverts (SSE id, X-Forwarded guard) caught; fresh CARGO_HOME --frozen fails offline; hygiene 0. Deviations accepted: http-body-util normal dep for SSE channel, HEAD 405 (contract: non-GET 405), SIGTERM no drain."
+      ],
+      "provider": "__resolved_provider_absent__",
+      "review_result": {
+        "feedback_path": "/home/jeroennouws/dev/SK-missions/ui17/kitty-specs/phase0-bootstrap-01M4V5KK/tasks/WP07-kitty-stub-crate/review-cycle-1.md",
+        "reference": "review-cycle://phase0-bootstrap-01M4V5KK/WP07-kitty-stub-crate/review-cycle-1.md",
+        "reviewer": "claude",
+        "verdict": "approved"
+      },
+      "role": "reviewer",
+      "shell_pid": 4076416,
+      "shell_pid_created_at": "1791937638.9",
+      "subtasks": {
+        "T036": "done",
+        "T037": "done",
+        "T038": "done",
+        "T039": "done",
+        "T040": "done",
+        "T041": "done",
+        "T042": "done"
+      }
+    },
+    "WP08": {
+      "actor": "merge",
+      "agent": "claude",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
+      "force_count": 0,
+      "implementer_of_record": "claude",
+      "lane": "done",
+      "last_event_id": "01M4ZPDSQ2E5J79APPSDA4MEK8",
+      "last_transition_at": "2026-10-15T11:51:10.818766+00:00",
+      "model": "__resolved_model_absent__",
+      "notes": [
+        "WP08 evidence. Commits (git cat-file -t = commit): 07c6a7a hygiene split+cargo-pins; ffabbb3 drift.mjs+comparePinnedFiles; e549f10 contract-drift.yml+2 hygiene plants; b9ec7e9 bare-version cargo case. Gates: typecheck/lint/lint:styles/manifest:check 0; no-io 205/0; data-driven 205/0; contract:check+test:contract 190/0; test 2825+24/0 (first run 2 transient browser import failures, rerun green); build-storybook 0; rust chain 0; test:terminology 13/0; hygiene 0 findings; test:scripts 612/3 = PRE-EXISTING gate-proof.test.mjs #19 #21 #22 (schema enum lacks rust; fixed by cf5d9c1 on feat/phase0-bootstrap-17, not in lane history). With cf5d9c1 schema in a same-fs copy: test:scripts 615/0, gate-proof local --only hygiene ok (planted exit 1, 48116 ms, wall 50.7s); clean leg 29.0s; plant-caret-pin red alone (exit 1, cargo-pin finding naming dep); is not pinned to a 40-hex SHA red alone (exit 1); neither token in clean output. Red-first: missing exports/module; e2e extra.yml [] vs 3 findings. Revert checks: hygiene #50, cargo-pins #72, drift exitCodeFor #7. Import graph: node:child_process,crypto,fs,os,path,url + common.mjs, remote.mjs. Real drift run: exit 0, upstream HEAD 3b0dc02 vs pin 805e122, 200 files in sync. WP01 install CR: none needed. CR remote.mjs: fetchRef leaks its temp dir when git fetch throws.",
+        "Review passed (reviewer-renata): security rules (SHA pins, workflow+job contents:read, persist-credentials false, c-o-e, retention) on every workflow; gate structure + main-only trigger ci.yml-only; mutations (drop workflow perms, drop job perms, unwire checkWorkflowSecurity) each red in hygiene.test. cargo-pins: caret mutation red, real workspace clean. drift.mjs imports built-ins+common+remote only, exit 0/1/2/3 tested offline via local CONTRACT_REMOTE_URL; real run exit 0, 200 in sync. contract-drift.yml schedule+dispatch, pinned, read-only, no install/secrets/interpolation. Plants: caret-pin and 40-hex SHA each red, tokens absent from clean output; gate-proof --only hygiene ok (40s). With cf5d9c1: hygiene 0, test:scripts 615/0, test:contract 190/0, lint 0, Rust gate 0, mission-ui unchanged. Checklist 1-8 PASS. Note: lane carries kitty-specs status.json/events with absolute user paths from mission branch (sparse-hidden here; non-WP08, mission-level)."
+      ],
+      "provider": "__resolved_provider_absent__",
+      "review_result": {
+        "feedback_path": "/home/jeroennouws/dev/SK-missions/ui17/kitty-specs/phase0-bootstrap-01M4V5KK/tasks/WP08-hygiene-and-drift-alert/review-cycle-1.md",
+        "reference": "review-cycle://phase0-bootstrap-01M4V5KK/WP08-hygiene-and-drift-alert/review-cycle-1.md",
+        "reviewer": "claude",
+        "verdict": "approved"
+      },
+      "role": "reviewer",
+      "shell_pid": 59783,
+      "shell_pid_created_at": "1791940104.98",
+      "subtasks": {
+        "T043": "done",
+        "T044": "done",
+        "T045": "done",
+        "T046": "done",
+        "T047": "done",
+        "T048": "done"
+      }
+    },
+    "WP09": {
+      "actor": "merge",
+      "agent": "claude",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
+      "force_count": 0,
+      "implementer_of_record": "claude",
+      "lane": "done",
+      "last_event_id": "01M4ZPDV4E2XSG7YEYRDQG2MP0",
+      "last_transition_at": "2026-10-15T11:51:12.270755+00:00",
+      "model": "__resolved_model_absent__",
+      "notes": [
+        "Ready for review: commits 695f2c3 (docs), e242ad1 (ci.yml contract proof-leg timeout 10->12, recorded out-of-map), 99c5314 (README timeout note). 18 new plants counted with equality. Every affected proof leg is ok locally. SC-005 and C-005 diffs are empty. Gates are green except the known gate-proof.test.mjs schema-enum failures (3), which resolve with cf5d9c1; in a cf5d9c1-patched worktree, test:scripts passes 625/0 and the hygiene leg is ok. Visual leg and CI timings are deferred to the orchestrator. Full evidence is in the hand-off report.",
+        "Review passed: docs match crates/kitty-stub (options, 403 host/origin/forwarded, selection headers, 400/404/501), drift.mjs exit codes 0-3, and mission-shell src (port, four states, createFixtureClient options, binding rules). 18 new plants confirmed by value against 9c9d83c (rust 3, typecheck 3, eslint 1, stylelint 1, no-io 1, data-driven 1, unit-tests 3, manifest 1, contract 2, hygiene 2). ci.yml diff is timeouts only; contract (1+7)x68s+2=11.07->12 re-derived. hygiene 0 findings, terminology 13/13, SC-005 and C-005 diffs empty. Low nits: origin wording, drift 'Node built-ins only' (shells out to git), README 'earlier value' vs prompt 'pre-mission value'."
+      ],
+      "provider": "__resolved_provider_absent__",
+      "review_result": {
+        "feedback_path": "/home/jeroennouws/dev/SK-missions/ui17/kitty-specs/phase0-bootstrap-01M4V5KK/tasks/WP09-docs-timings-and-wrap-up/review-cycle-1.md",
+        "reference": "review-cycle://phase0-bootstrap-01M4V5KK/WP09-docs-timings-and-wrap-up/review-cycle-1.md",
+        "reviewer": "claude",
+        "verdict": "approved"
+      },
+      "role": "reviewer",
+      "shell_pid": 3651697,
+      "shell_pid_created_at": "1792064497.48",
+      "subtasks": {
+        "T049": "done",
+        "T050": "done",
+        "T051": "done",
+        "T052": "done",
+        "T053": "done"
+      }
+    }
+  }
+}
