@@ -112,6 +112,26 @@ async fn an_unscoped_stream_carries_no_ids() {
     assert!(!text.contains("\nid: ") && !text.starts_with("id: "));
 }
 
+/// CODE-CONTRACT-001: an empty `missionId` means unscoped (the fixture adapter in `packages/mission-shell` follows the
+/// same rule). `?missionId=` and a bare `?missionId` give exactly the unscoped bytes, with no `id:` line.
+#[tokio::test]
+async fn an_empty_mission_id_is_unscoped() {
+    let unscoped = capture("/api/v1/events").await.body;
+    for uri in [
+        "/api/v1/events?missionId=",
+        "/api/v1/events?missionId",
+        "/api/v1/events?missionId=&other=1",
+    ] {
+        let reply = capture(uri).await;
+        assert_eq!(reply.status, StatusCode::OK, "{uri}");
+        assert_eq!(reply.body, unscoped, "{uri} must be unscoped");
+    }
+    // Positive control: a non-empty missionId is scoped, so its bytes differ (they carry id: lines).
+    let scoped = capture("/api/v1/events?missionId=x").await.body;
+    assert_ne!(scoped, unscoped);
+    assert!(std::str::from_utf8(&scoped).unwrap().contains("\nid: "));
+}
+
 #[tokio::test]
 async fn the_stream_is_byte_identical_across_ten_runs() {
     for uri in ["/api/v1/events", "/api/v1/events?missionId=abc"] {

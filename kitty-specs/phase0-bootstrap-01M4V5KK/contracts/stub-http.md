@@ -60,7 +60,7 @@ A path that matches no route gets `404`.
 
 ## Events
 
-`GET /api/v1/events[?missionId=<id>]` responds `200` with `content-type: text/event-stream`.
+`GET /api/v1/events[?missionId=<id>]` responds `200` with `content-type: text/event-stream`. A request is mission-scoped only when its query carries a non-empty `missionId`; `?missionId=` and a bare `?missionId` are unscoped (CODE-CONTRACT-001; the shell's fixture adapter follows the same rule).
 
 `changes.json` is `{ "missionId": …, "items": [ … ] }` (data-model ChangeItem). Each item is written after `delayMs × time-scale` milliseconds:
 
