@@ -27,7 +27,7 @@ Any request that breaks a rule gets `403`, with body `{"code":"<rule>"}`:
 | Origin | `Origin`, when present, must equal `http://127.0.0.1:<port>` or `http://localhost:<port>` (`code: "origin"`) |
 | Forwarded | any `Forwarded` or `X-Forwarded-*` header (`code: "forwarded"`) |
 
-- A non-GET method gets `405`.
+- A non-GET method, HEAD included, gets `405` with `Allow: GET`.
 - No request value (path parameter, query or header) is ever used to build a filesystem path. A test sends `../` traversal in `ArtifactPath` and must get fixture data or a 404, never a file read.
 
 ## Reads

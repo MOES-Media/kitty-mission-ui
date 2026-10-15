@@ -296,7 +296,7 @@ curl -s http://127.0.0.1:<port>/__stub/last-request
   selection of the route's success schema is served `200 application/json`; one of the route's refusal schemas is served
   as `application/problem+json` with the example's own `status`, which must be one the route allows. Anything else is a
   400 `schema-mismatch`; an unknown name is a 404 (`no-example`, `no-fixture`), and a read with no default example is a
-  501 `no-example`. Only `GET` is served.
+  501 `no-example`. Only `GET` is served: any other method, HEAD included, is a 405 with `Allow: GET`.
 - `GET /api/v1/events` replays `changes.json`, byte for byte the same on every run. A stream scoped with `missionId`
   carries `id:` lines on status transitions and lifecycle events; an unscoped stream carries none, and a log-truncated
   marker never does.

@@ -243,10 +243,7 @@ pub fn app(fixtures: Fixtures, options: Options) -> Router {
         router = router.route(&path, route_handler(index));
     }
     router
-        .route(
-            LAST_REQUEST_PATH,
-            get(last_request).head(method_not_allowed),
-        )
+        .route(LAST_REQUEST_PATH, get_only(get(last_request)))
         .layer(middleware::from_fn_with_state(stub.clone(), record))
         .layer(middleware::from_fn_with_state(stub.clone(), guard))
         .with_state(stub)
@@ -301,14 +298,19 @@ fn axum_path(template: &str) -> Result<String, String> {
     }
 }
 
-/// GET only: axum answers other methods with 405, and HEAD (which axum would route to GET) is refused here too.
+/// GET only: every other method, HEAD included (axum would route it to GET), is a 405 that advertises `GET` alone.
 fn route_handler(index: usize) -> MethodRouter<Arc<Stub>> {
-    get(
+    get_only(get(
         move |State(stub): State<Arc<Stub>>, req: Request| async move {
             serve(&stub, index, req.headers(), req.uri().query())
         },
-    )
-    .head(method_not_allowed)
+    ))
+}
+
+/// Refuses HEAD and every unrouted method with [`method_not_allowed`]. Axum's own 405 would advertise `GET,HEAD`, but
+/// HEAD is refused (CODE-CONTRACT-003).
+fn get_only(router: MethodRouter<Arc<Stub>>) -> MethodRouter<Arc<Stub>> {
+    router.head(method_not_allowed).fallback(method_not_allowed)
 }
 
 async fn method_not_allowed() -> Response {
