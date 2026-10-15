@@ -4,8 +4,8 @@ import js from '@eslint/js';
 import tseslint from 'typescript-eslint';
 import lit from 'eslint-plugin-lit';
 import svelte from 'eslint-plugin-svelte';
-import svelteParser from 'svelte-eslint-parser';
 import skLocal, { elementSyntaxRestrictions } from './eslint-rules/index.mjs';
+import { SVELTE_SOURCES, svelteLanguageOptions } from './eslint-rules/svelte.mjs';
 import { MARKDOWN_IT_HOME, markdownImportRestrictions } from './eslint-rules/markdown-renderer.mjs';
 
 
@@ -56,7 +56,7 @@ export const opsPartsRestrictions = [
 // Svelte sources of the shell (R-04): the plugin's recommended blocks, scoped to package sources, parsed by svelte-eslint-parser
 // with the TypeScript parser for `<script lang="ts">`. The `*.svelte.ts` script-module block is left out: those files already
 // match the TypeScript globs above.
-export const SVELTE_SOURCES = 'packages/*/src/**/*.svelte';
+export { SVELTE_SOURCES };
 const svelteRecommended = svelte.configs.recommended
   .filter((block) => block.name !== 'svelte:base:setup-for-svelte-script')
   .map((block) => (block.name === 'svelte:base:setup-plugin' ? block : { ...block, files: [SVELTE_SOURCES] }));
@@ -114,15 +114,7 @@ export default tseslint.config(
     // misspelt or non-browser global is a type error. No hand-written globals list is kept.
     files: [SVELTE_SOURCES],
     extends: [tseslint.configs.recommendedTypeChecked],
-    languageOptions: {
-      parser: svelteParser,
-      parserOptions: {
-        parser: tseslint.parser,
-        projectService: true,
-        tsconfigRootDir: import.meta.dirname,
-        extraFileExtensions: ['.svelte'],
-      },
-    },
+    languageOptions: svelteLanguageOptions({ typed: true }),
     plugins: { sk: skLocal },
     rules: {
       'no-restricted-syntax': ['error', ...elementSyntaxRestrictions],
