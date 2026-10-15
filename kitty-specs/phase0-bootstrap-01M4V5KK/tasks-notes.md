@@ -73,3 +73,11 @@ WP08's cargo-pins test lives in `scripts/hygiene/`, which `test:scripts` already
 | Change | WP | Why |
 |---|---|---|
 | Root `test` script becomes `pnpm -r --no-bail --workspace-concurrency=1 test` (recorded out-of-map edit, approved by the orchestrator; commit f9c7006) | WP06 | Without `--no-bail`, a mission-ui browser timeout on a loaded machine stopped `pnpm -r` before the shell suite ran, so the unit-tests plant tokens never appeared. A failure in any package still exits non-zero (`ERR_PNPM_RECURSIVE_FAIL`, verified on pnpm 11.18.0). |
+
+## Out-of-map edits found unrecorded at the pre-merge squad (CODE-BOUNDARY-008)
+
+| File | WP | Commit | Why |
+|---|---|---|---|
+| `scripts/contract/cli.test.mjs` | WP03 | b5a6e22 | The test copies `contracts/fixtures` into its temporary project, so the contract CLI finds the new generated files. |
+| `scripts/contract/update.test.mjs` | WP03 | b5a6e22 | Same reason, for the update path. |
+| `scripts/perf-split.test.mjs` | WP02 | bd8634e | Skips workspace packages without a `test/` directory, so the new `mission-shell` package does not break the perf-split check before it has tests. |
