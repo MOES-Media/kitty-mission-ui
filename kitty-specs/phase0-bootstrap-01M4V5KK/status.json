@@ -303,6 +303,9 @@
       "last_event_id": "01M4ZNSMNJSAX1BSFGH3S5V0P0",
       "last_transition_at": "2026-10-15T11:40:10.290153+00:00",
       "model": "__resolved_model_absent__",
+      "notes": [
+        "Ready for review: commits 695f2c3 (docs), e242ad1 (ci.yml contract proof-leg timeout 10->12, recorded out-of-map), 99c5314 (README timeout note). 18 new plants counted with equality. Every affected proof leg is ok locally. SC-005 and C-005 diffs are empty. Gates are green except the known gate-proof.test.mjs schema-enum failures (3), which resolve with cf5d9c1; in a cf5d9c1-patched worktree, test:scripts passes 625/0 and the hygiene leg is ok. Visual leg and CI timings are deferred to the orchestrator. Full evidence is in the hand-off report."
+      ],
       "provider": "__resolved_provider_absent__",
       "role": "implementer",
       "shell_pid": 3312818,
