@@ -331,8 +331,9 @@ file in, `crates/kitty-core`, so none can be skipped by the compiler.
 
 The existing gates reach the new code too: `typecheck` runs `svelte-check` over the shell, `eslint`, `stylelint`,
 `no-io` and `data-driven` read `.svelte` files, `manifest` checks the generated element typings, `contract` checks the
-shared JSON files, `unit-tests` runs every workspace package's tests, and `hygiene` checks Cargo pins and the action
-pins, permissions and checkout credentials of every workflow. Each extension has its own plant: 18 new plants in all.
+shared JSON files, `unit-tests` runs every workspace package's tests, and `hygiene` checks Cargo pins, the exact
+toolchain pin (the `rust-toolchain.toml` `channel` is an `x.y.z` release, never `stable`) and the action pins,
+permissions and checkout credentials of every workflow. Each extension has its own plant: 19 new plants in all.
 
 ## Gates
 
@@ -348,7 +349,7 @@ packages, never only the changed files.
 | `Gate: stylelint` | `pnpm lint:styles` | layout-only CSS, `--sk-*` tokens, no colour, font or size literals; the operator-approved exceptions E-04 and E-08 to E-16 are scoped to named element files in `stylelint.config.mjs`, token values only (each sunsets on a spec-kitty-design issue) |
 | `Gate: no-io` | `pnpm lint:no-io` and `pnpm test:no-io` | no network, desktop-bridge or browser-storage I/O in `packages/*/src`; the self-test asserts one fixture per rule |
 | `Gate: manifest` | `pnpm manifest:check` | `custom-elements.json` equals a fresh regeneration and declares every property and event |
-| `Gate: hygiene` | `pnpm hygiene` and `pnpm test:scripts` | no token, no absolute user path (CLI state files included), no agent scratchpad path, no tooling-ledger id, no username of the running account, no e-mail address in the contract and fixture paths, pinned dependencies and actions, safe workflow triggers, baseline PNG checks; then the `node:test` suites of the gate scripts (hygiene, gate-proof, preflight, manifest-screen, settle, the stylelint exception scope proofs, the story-catalogue and visual-tag tests and the terminology scan: the word "feature" never appears in `packages/*/src` or the mission quickstart, the canonical term is "mission") |
+| `Gate: hygiene` | `pnpm hygiene` and `pnpm test:scripts` | no token, no absolute user path (CLI state files included), no agent scratchpad path, no tooling-ledger id, no username of the running account, no e-mail address in the contract and fixture paths, pinned dependencies and actions, an exact `x.y.z` Rust toolchain channel, safe workflow triggers, baseline PNG checks; then the `node:test` suites of the gate scripts (hygiene, gate-proof, preflight, manifest-screen, settle, the stylelint exception scope proofs, the story-catalogue and visual-tag tests and the terminology scan: the word "feature" never appears in `packages/*/src` or the mission quickstart, the canonical term is "mission") |
 | `Gate: contract` | `pnpm contract:check` and `pnpm test:contract` | the vendored Mission Status contract equals its pin, the generated types and fixtures are fresh, every fixture is a valid and coherent contract document (closed shapes), no event-stream identifier in `packages/*/src` |
 | `Gate: data-driven` | `pnpm lint:data-driven` and `pnpm test:data-driven` | no phase name, status lane or other contract status word (`pending`, `complete`, `draft`, `discarded`) hard-coded in `packages/*/src` outside `src/defaults/`, `src/contract/`, stories, fixtures and `src/story-support/`; the selector list is `SELECTOR_ENTRIES` in `eslint.data-driven.config.mjs` (it reads the phase, lane, review, change-state, staleness, project health, artifact, Drift and Ops vocabularies from the vendored schemas), with a self-test over positive fixtures in `gates/fixtures/data-driven/` and inline `eslint-disable` comments ignored |
 | `Gate: storybook-build` | `pnpm build-storybook` | the static Storybook builds (330 stories), then the output is scanned for tokens |

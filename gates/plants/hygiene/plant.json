@@ -70,5 +70,21 @@
         ]
       }
     ]
+  },
+  {
+    "gate": "hygiene",
+    "ciCommand": "pnpm hygiene && pnpm test:scripts && pnpm test:terminology",
+    "expectFailPattern": "[rust-toolchain-pin]",
+    "overlays": [
+      {
+        "target": "rust-toolchain.toml",
+        "edits": [
+          {
+            "find": "channel = \"1.98.1\"\n",
+            "replace": "channel = \"stable\"\n"
+          }
+        ]
+      }
+    ]
   }
 ]
