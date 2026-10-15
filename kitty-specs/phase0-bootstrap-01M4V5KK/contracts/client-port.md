@@ -33,20 +33,23 @@ export type Result<Op extends ReadOp> =
   | { ok: false; refusal: Refusal<Op> }
   | { ok: false; unavailable: 'service-missing' | 'contract-mismatch' | 'transport' };
 
+/** `connecting` is the initial state, before first contact (SO-DES-003). It amends FR-008, which names four states; the
+ *  amendment is recorded in spec.md by the orchestrator. */
 export type ConnectionState =
-  | 'connected' | 'reconnecting' | 'degraded: service-missing' | 'degraded: contract-mismatch';
+  | 'connecting' | 'connected' | 'reconnecting' | 'degraded: service-missing' | 'degraded: contract-mismatch';
 
-/** The four states as a runtime list; a type test asserts it equals `ConnectionState` exactly (B8, C14). */
-export const CONNECTION_STATES = ['connected', 'reconnecting', 'degraded: service-missing', 'degraded: contract-mismatch'] as const;
+/** The five states as a runtime list; a type test asserts it equals `ConnectionState` exactly (B8, C14). */
+export const CONNECTION_STATES = ['connecting', 'connected', 'reconnecting', 'degraded: service-missing', 'degraded: contract-mismatch'] as const;
 
 export type Change =
   | { kind: 'status-transition'; cursor: string | null; data: Schemas['StatusTransitionEvent'] }
   | { kind: 'mission-lifecycle'; cursor: string | null; data: Schemas['MissionLifecycleEvent'] }
   | { kind: 'log-truncated'; cursor: null; data: Schemas['LogTruncatedEvent'] }
-  | { kind: 'refused'; cursor: null; refusal: Refusal<'streamEvents'> };
+  | { kind: 'refused'; cursor: null; refusal: Refusal<'streamEvents'> }
+  | { kind: 'resync'; cursor: null; reason: 'reconnected' };   // SO-DES-002: refetch everything; see "Subscription lifecycle"
 
 /** The kinds as a runtime list; a type test asserts it equals `Change['kind']` exactly. */
-export const CHANGE_KINDS = ['status-transition', 'mission-lifecycle', 'log-truncated', 'refused'] as const;
+export const CHANGE_KINDS = ['status-transition', 'mission-lifecycle', 'log-truncated', 'refused', 'resync'] as const;
 
 /** A cursor is valid only with a missionId; a cursor without a missionId key is a type error (pre-merge R1,
  *  CODE-BOUNDARY-002), and an empty missionId with a cursor is refused at run time. The contract refuses that request
@@ -113,10 +116,82 @@ whatever the query. The stub differs here: it provides no conditional refusals (
 `/api/v1/events?streamCursor=…` without a `missionId` streams unscoped with 200. Tests that compare the fixture adapter
 with the stub must not rely on this case.
 
+## Connection state (SO-DES-003)
+
+`connecting` is the state of an adapter before first contact with its service. Without it a start-up would be reported as
+`reconnecting`, which claims a connection that never existed, or as `connected`, which is not yet true. A real adapter
+(#20, #21) starts in `connecting` and leaves it for `connected` or a `degraded` state; it never returns to `connecting`
+(a lost connection is `reconnecting`). The fixture adapter defaults to `connected` instead, a documented test convenience
+(most tests want a live connection); `initialState: 'connecting'` tests the start-up.
+
+## Read error contract (SO-DES-004)
+
+The nine reads share one error contract, so a shell handles every failure through `Result` and never through
+`try`/`catch`:
+
+- **Reads never reject.** The returned promise always resolves to a `Result<Op>`, and a read never throws synchronously.
+- **A declared refusal is a `refusal`.** A status the operation declares as `application/problem+json` becomes
+  `{ ok: false, refusal: { status, body } }`.
+- **Everything else is `transport`.** Any undeclared status, the `default` Problem (excluded from `Refusal`, as in
+  `routes.json`), a timeout, an IPC error, an unparseable body or any failure inside the adapter becomes
+  `{ ok: false, unavailable: 'transport' }`, the shape `Result` already has. `service-missing` and `contract-mismatch` stay
+  the adapter's statements about the service (they also drive the `degraded` connection states), never a catch-all.
+- **Cancellation is reserved.** A later change adds an optional second parameter to every read, `{ signal?: AbortSignal }`.
+  Aborting it rejects the promise with an `AbortError`, the one rejection the port allows, and only for a caller that
+  passed a signal. Adding an optional parameter changes no adapter or caller of #18 to #21.
+
+The fixture adapter conforms: its only run-time failure path, copying the example it serves, is caught and resolves as
+`transport` (test: an example that cannot be cloned).
+
+## Subscription lifecycle (SO-DES-002)
+
+What a `subscribe` listener can rely on, whatever the adapter. The contract (`paths/events.yaml`) describes one HTTP
+connection; the port describes a subscription that outlives it.
+
+- **Subscriptions survive state changes.** A subscription is open until its unsubscribe function is called, or until a
+  `refused` change ends it. A move to `reconnecting` or a `degraded` state neither closes it nor reports an error: the
+  changes stop while the connection is down, and the connection state says why.
+- **A scoped subscription resumes from the last cursor it delivered.** On a reconnect the adapter resumes a
+  Mission-scoped stream after the last `cursor` it handed to the listener (the contract's `streamCursor`, or the
+  `Last-Event-ID` the browser sends; both carry the text form, which `toStreamCursorString` writes from the `streamCursor`
+  object of an event's data). An unscoped stream is live only and has nothing to resume. The caller's own
+  `SubscriptionScope.cursor` is the starting position of the first connection; the adapter's stored cursor takes over
+  from the first change it delivers. `SubscriptionScope.cursor` is the contract's `streamCursor` query parameter and
+  `Change.cursor` is the `id:` line; a type test in `src/contract/stream.ts` pins the query to `missionId` and
+  `streamCursor`, so the scope cannot drift from the contract (SO-DES-006).
+- **After `log-truncated` the adapter drops its stored cursor.** The cursor the browser holds is the one before the
+  truncation, and resuming with it is refused. The consumer re-subscribes from the Mission detail: it reads the Mission
+  again and opens a new subscription with the `streamCursor` of that detail (the cursor inside the event is only the
+  reset one, offset 0 with the digest of the empty input).
+- **`refused` may arrive at the start or after any reconnect, and ends the subscription.** The contract refuses a resume
+  that cannot be trusted (`out_of_range`, `content_mismatch`, `misaligned`, `negative`) before any event, so a reconnect can
+  end in a refusal as well as the first request. Exactly one `refused` is delivered, nothing after it, and the adapter
+  releases its resources. Recovery is a new subscription, as after `log-truncated`.
+- **`resync` is emitted after each reconnect, before any further event.** When the transport is back (the state returns to
+  `connected`), the adapter delivers one `{ kind: 'resync', cursor: null, reason: 'reconnected' }` to every open
+  subscription, and only then any later event. It means "refetch everything": a resumed scoped stream replays what it
+  missed, but an unscoped stream is live only and loses the changes of the gap, and a shell cannot know which case it is
+  in. The first contact (`connecting` to `connected`) is not a reconnect and is not followed by a `resync`. It carries no
+  cursor and does not end the subscription.
+
+Ordering is per subscription: the state change is heard by `connection.onChange` listeners first, then each subscription
+hears its `resync`, then its later changes in the order of the stream.
+
+The fixture adapter follows this: it holds the replay while the state is not `connected` (the replay index is its stored
+cursor, so it resumes after the last change delivered), starts it at first contact when `initialState` is not `connected`,
+and delivers the `resync` synchronously from `setConnectionState`. It replays no cursor on its own.
+
+## Ownership (SO-DES-001)
+
+The shell owns the refresh policy: what to refetch and when, including its reaction to `resync` and `log-truncated`.
+Adapters own the transport, reconnect, backoff, cursor bookkeeping and the mapping of transport events to
+`ConnectionState`. `kitty-core` owns supervision, discovery, the digest check and the raw `Change` relay. The port is
+the line between the first two; none of #18 to #21 changes it.
+
 ## Rules
 
 - `CLIENT_OPERATIONS` covers exactly the interface's methods (enforced by type), and its values equal the set of `routes.json` operationIds. The coverage test fails and names the read when either side is missing one (FR-008, FR-009).
 - The coverage test also asserts that the fixture adapter's own methods are exactly the keys of `CLIENT_OPERATIONS`.
 - A unit-tests plant deletes one entry together with its interface method, and the coverage test must fail.
-- The connection state is a closed set of exactly the four spec strings.
+- The connection state is a closed set of exactly five strings: the four of FR-008 and `connecting` (SO-DES-003).
 - The port imports no I/O API (the no-io gate covers it).

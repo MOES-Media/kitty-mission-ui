@@ -569,10 +569,10 @@ jobs:
             timeout: 6
             image: ''
           - gate: hygiene
-            timeout: 9
+            timeout: 10
             image: ''
           - gate: contract
-            timeout: 18
+            timeout: 19
             image: ''
           - gate: data-driven
             timeout: 6

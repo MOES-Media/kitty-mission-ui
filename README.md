@@ -300,7 +300,9 @@ curl -s http://127.0.0.1:<port>/__stub/last-request
   501 `no-example`. Only `GET` is served: any other method, HEAD included, is a 405 with `Allow: GET`.
 - `GET /api/v1/events` replays `changes.json`, byte for byte the same on every run. A stream scoped with `missionId`
   carries `id:` lines on status transitions and lifecycle events; an unscoped stream carries none, and a log-truncated
-  marker never does.
+  marker never does. A scoped request that carries `streamCursor` (query) or `Last-Event-ID` (header) resumes: a cursor
+  equal to an item's `id:` value resumes after that item, and any other non-empty cursor resumes after the last
+  `log-truncated` item. An unscoped request ignores the cursor. The stub never refuses a cursor (no 409).
 - `GET /__stub/last-request` returns the method, path and headers of the most recent `/api/v1` request. The values of
   `authorization`, `proxy-authorization`, `cookie` and `set-cookie` are reported as `"[redacted]"`; the names are kept.
 
@@ -334,7 +336,7 @@ The existing gates reach the new code too: `typecheck` runs `svelte-check` over 
 `no-io` and `data-driven` read `.svelte` files, `manifest` checks the generated element typings, `contract` checks the
 shared JSON files, `unit-tests` runs every workspace package's tests, and `hygiene` checks Cargo pins, the exact
 toolchain pin (the `rust-toolchain.toml` `channel` is an `x.y.z` release, never `stable`) and the action pins,
-permissions and checkout credentials of every workflow. Each extension has its own plant: 21 new plants in all.
+permissions and checkout credentials of every workflow. Each extension has its own plant: 24 new plants in all.
 
 ## Gates
 
@@ -379,8 +381,8 @@ estimate at about 66% (2367 s of 3600 s). `unit-tests` (150 s, 396 s in the same
 
 Proof-leg timeouts of the gates that issue `#17` extended follow the formula (1 + the plants in the leg) x the
 measured gate time + 2 minutes, rounded up, and never drop below their value before that issue. The gate times are the
-job times of the #17 pull request's first CI run (run 38750632963): `eslint` 34 s (8 plants) gives 8 minutes,
-`stylelint` 29 s (14) 10, `hygiene` 58 s (6) 9, `contract` 113 s (7) 18, `unit-tests` 185 s (8) 30 and the new `rust`
+job times of the #17 pull request's first CI run (run 38750632963): `eslint` 34 s (9 plants) gives 8 minutes,
+`stylelint` 29 s (14) 10, `hygiene` 58 s (7) 10, `contract` 113 s (8) 19, `unit-tests` 185 s (8) 30 and the new `rust`
 leg 43 s (3) 5. `typecheck`, `no-io`, `manifest` and `data-driven` compute at or below their earlier 6 minutes and keep
 it. On that run the slowest legs used under half their new limit: `unit-tests` 802 s of 1800 s (45%) and `eslint` 213 s
 of 480 s (44%). Every gate job stayed within 8 minutes (NFR-002); the slowest was `unit-tests` at 185 s.

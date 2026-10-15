@@ -54,13 +54,13 @@ The file is an envelope `{ "missionId": <the one mission id of the sequence>, "i
 
 ## ConnectionState (TypeScript, `mission-shell`)
 
-A closed union, exactly the spec's strings:
+A closed union: the four strings of FR-008 plus `connecting`, the initial state before first contact (SO-DES-003):
 
-`'connected' | 'reconnecting' | 'degraded: service-missing' | 'degraded: contract-mismatch'`
+`'connecting' | 'connected' | 'reconnecting' | 'degraded: service-missing' | 'degraded: contract-mismatch'`
 
-The port also exports `CONNECTION_STATES`, the same four strings as a `const` tuple, and a type test proves the union and the tuple are equal both ways (B8, D10).
+The port also exports `CONNECTION_STATES`, the same five strings as a `const` tuple, and a type test proves the union and the tuple are equal both ways (B8, D10).
 
-The fixture adapter starts in `connected`, and tests can force any state. Real transition rules belong to `kitty-core` (#19).
+A real adapter starts in `connecting`. The fixture adapter starts in `connected` by default (a documented test convenience), and tests can force any state. The mapping of transport events to states is the adapter's (see "Ownership" below).
 
 ## Change (TypeScript, `mission-shell`)
 
@@ -68,12 +68,27 @@ A discriminated union by `kind`:
 - `{ kind: 'status-transition'; cursor: string | null; data: StatusTransitionEvent }`
 - `{ kind: 'mission-lifecycle'; cursor: string | null; data: MissionLifecycleEvent }`
 - `{ kind: 'log-truncated'; cursor: null; data: LogTruncatedEvent }`
+- `{ kind: 'refused'; cursor: null; refusal: Refusal<'streamEvents'> }`: the stream's refusal channel; ends the subscription
+- `{ kind: 'resync'; cursor: null; reason: 'reconnected' }`: delivered after each reconnect, before any further event; means "refetch everything" (SO-DES-002; `contracts/client-port.md`, "Subscription lifecycle")
 
 `cursor` mirrors the SSE `id:`. It is a string for `status-transition` and `mission-lifecycle` on a mission-scoped subscription, `null` for every kind on an unscoped subscription, and always `null` for `log-truncated` (contract `paths/events.yaml`; R2-05).
 
 ## SubscriptionScope (TypeScript, `mission-shell`)
 
-`{ missionId?: string; cursor?: string }`. A `cursor` is valid only together with `missionId`, matching the contract's `streamCursor`/`Last-Event-ID` rule. The fixture adapter ignores `cursor` and replays from the start; resume belongs to #19.
+`{ missionId?: string; cursor?: string }`. A `cursor` is valid only together with `missionId`, matching the contract's `streamCursor`/`Last-Event-ID` rule. The fixture adapter ignores `cursor` and replays from the start (a replay needs no stored position). `cursor` is the text form of the contract's `streamCursor` parameter (`toStreamCursorString`); resume is the adapters' job (see "Ownership").
+
+## Ownership (SO-DES-001)
+
+Who owns what behind the port, so #18 to #21 build against it without changing it (SC-004):
+
+| Owner | Owns |
+|---|---|
+| The shell (`mission-shell`, #18 and #19) | refresh policy: what to refetch and when, including its reaction to `resync` and `log-truncated`, and how it shows each `ConnectionState` |
+| An adapter (fixture, Tauri #20, HTTP #21) | transport, reconnect, backoff, cursor bookkeeping (the last cursor delivered, dropped after `log-truncated`) and the mapping of transport events to `ConnectionState` |
+| `kitty-core` | supervision of the service, discovery, the digest check and the raw `Change` relay |
+
+This replaces the earlier statement that resume belongs to #19. Resume is the adapters' (the stored cursor), the decision
+to refetch is the shell's, and `kitty-core` relays raw changes without interpreting them.
 
 ## MissionStatusClient (TypeScript port)
 

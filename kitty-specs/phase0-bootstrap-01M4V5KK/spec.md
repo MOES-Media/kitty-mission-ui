@@ -118,7 +118,7 @@ The operator wants to know when spec-kitty's upstream contract moves away from t
 | FR-005 | Workspace builds | As a host developer, I want the repository to hold a Rust workspace (the shared core plus placeholder desktop and dashboard members) and the `mission-shell` package, all building from a clean checkout, so that #18 to #21 start from a working tree. | High | Open | [build] | no — the build must produce each member, and fails if any member is removed |
 | FR-006 | New gates in the gate structure | As the operator, I want every new check (Rust format, lint and tests; Svelte type check; declaration typings; the existing lint, token-only style and data-driven rules extended to Svelte files) to run on every pull request inside the existing gate structure, each with a planted-defect proof, so that host code is judged like screen code. | High | Open | [build] | no — each new gate's planted defect must turn its proof red |
 | FR-007 | No-io covers the shell | As the operator, I want the no-io gate to cover `mission-shell`, and mission-ui to keep passing its no-io and data-driven gates unchanged, so that the charter's rule holds for every package. | High | Open | [build] | no — I/O planted in the shell must fail the gate; mission-ui must still pass |
-| FR-008 | Client interface | As a host developer, I want one client interface covering every read in the pinned contract, a change subscription, and a connection state with exactly the values `connected`, `reconnecting`, `degraded: service-missing` and `degraded: contract-mismatch`, so that hosts and the shell never depend on a transport. | High | Open | [build] | no — the coverage test (FR-009) and a state-enumeration test must pass against the real interface |
+| FR-008 | Client interface | As a host developer, I want one client interface covering every read in the pinned contract, a change subscription, and a connection state with exactly the values `connecting`, `connected`, `reconnecting`, `degraded: service-missing` and `degraded: contract-mismatch` (amended 2026-10-15, see Amendments), so that hosts and the shell never depend on a transport. | High | Open | [build] | no — the coverage test (FR-009) and a state-enumeration test must pass against the real interface |
 | FR-009 | Contract coverage test | As the operator, I want a test that fails, naming the read, when the pinned contract contains a read the client interface lacks, so that the interface cannot fall behind the contract. | High | Open | [build] | no — removing one read from the interface must make the test fail and name it |
 | FR-010 | Stub serves examples | As a host developer, I want a local stub that answers every read in the pinned contract with that operation's vendored example, and a clear error for a read without an example, so that every screen has data before the service exists. | High | Open | [build] | no — the test compares each response with the vendored example file |
 | FR-011 | Scripted change sequence | As a host developer, I want the stub to play a scripted change sequence containing at least one status transition, one lifecycle event and one log-truncated marker, in a fixed order, so that live-update behaviour can be built and tested. | High | Open | [build] | no — the test asserts the exact sequence and kinds received |
@@ -185,3 +185,14 @@ The operator wants to know when spec-kitty's upstream contract moves away from t
 ## Open Questions
 
 None. The binding-check permanence question was ruled on 2026-10-13. Tool and version choices belong to the plan.
+
+## Amendments
+
+### 2026-10-15: port settled at landing (PR #32 second-opinion squad, operator decisions)
+
+SC-004 promises that #18 and #19 start without changing the client interface. The landing squad found three gaps that would each have forced such a change later. The operator chose to close all three in #17:
+
+- **SO-DES-003: initial state.** `ConnectionState` gains `connecting`, the state before first contact. FR-008 now lists five values. Without it, an adapter had to report `reconnecting` at every start-up (a flashing banner) or a false `connected`.
+- **SO-DES-002: reconnect ordering.** `Change` gains an in-band `resync` kind, delivered after each reconnect and before any later event. It is the consumer's signal to refetch everything, and it is totally ordered with the events after it. `client-port.md` gains a "Subscription lifecycle" section.
+- **SO-DES-008: stub resume.** The stub resumes a scoped stream deterministically: after the item whose id equals the cursor, and after the last `log-truncated` item for any other cursor. Consumers that follow upstream's truncation recovery therefore no longer loop against it, and #19 and #21 can test resume.
+

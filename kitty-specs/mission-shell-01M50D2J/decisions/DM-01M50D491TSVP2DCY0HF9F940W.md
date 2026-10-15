@@ -4,9 +4,10 @@
 - **Origin flow:** `specify`
 - **Slot key:** `specify.refresh.manual-control`
 - **Input key:** `explicit_refresh_triggers`
-- **Status:** `deferred`
+- **Status:** `resolved`
 - **Created:** `2026-10-15T18:27:56.090233+00:00`
-- **Resolved:** `2026-10-15T18:28:07.543161+00:00`
+- **Resolved:** `2026-10-15T18:35:28.595981+00:00`
+- **Resolved by:** `operator`
 - **Opened by:** `cli`
 - **Other answer:** `false`
 
@@ -23,13 +24,13 @@ Artifact and Ops views are not covered by the change stream and refresh explicit
 
 ## Final answer
 
-_(none)_
+A (recommended): navigation (entering or re-entering the view) plus the window becoming visible or focused again as signalled by the host, plus a shell-owned Refresh button in the top bar host-actions area on Artifact and Ops destinations
 
 ## Rationale
 
-Awaiting the operator: a product fork the issue, code and defaults do not settle. Specify subagent recorded options with a recommendation; the operator rules before plan.
+Operator ruling 2026-10-15, relayed by the coordinator: recommended option A; the Refresh button is flagged for design review.
 
 ## Change log
 
 - `2026-10-15T18:27:56.090233+00:00` — opened
-- `2026-10-15T18:28:07.543161+00:00` — deferred
+- `2026-10-15T18:35:28.595981+00:00` — resolved (final_answer="A (recommended): navigation (entering or re-entering the view) plus the window becoming visible or focused again as signalled by the host, plus a shell-owned Refresh button in the top bar host-actions area on Artifact and Ops destinations")

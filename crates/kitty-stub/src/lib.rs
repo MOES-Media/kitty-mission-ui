@@ -4,7 +4,8 @@
 //! - Reads serve the route's default example, or a selected example or fixture whose schema fits the route
 //!   (`X-Kitty-Stub-Fixture` wins over `X-Kitty-Stub-Example`); refusals are `application/problem+json` with the
 //!   example's own status.
-//! - `GET /api/v1/events` replays `changes.json` deterministically, then sends heartbeats.
+//! - `GET /api/v1/events` replays `changes.json` deterministically, then sends heartbeats. A scoped request with a
+//!   `streamCursor` or `Last-Event-ID` cursor resumes after the matching item, or after the last `log-truncated`.
 //! - One guard layer applies the upstream service's Host, Origin and `Forwarded` rules to every route.
 //! - `GET /__stub/last-request` reports the most recent `/api/v1` request.
 //!
@@ -15,7 +16,7 @@ use std::collections::BTreeMap;
 use std::convert::Infallible;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use axum::body::{Body, Bytes};
 use axum::extract::{Request, State};
@@ -87,6 +88,8 @@ struct ChangeItem {
 /// One change, pre-rendered as the bytes written on a mission-scoped and on an unscoped stream.
 #[derive(Debug)]
 struct Frame {
+    scoped_id: Option<String>,
+    truncated: bool,
     delay_ms: u64,
     scoped: Bytes,
     unscoped: Bytes,
@@ -133,6 +136,9 @@ impl Fixtures {
             serde_json::from_value(fixtures).map_err(|e| format!("fixtures: {e}"))?;
         let changes: Changes =
             serde_json::from_value(changes).map_err(|e| format!("changes: {e}"))?;
+        // Axum refuses to route two templates of the same shape (a duplicate path, or `{missionId}` against `{id}` at
+        // one position) by panicking when the router is built, so the conflict is caught here, at load.
+        let mut shapes: BTreeMap<String, &str> = BTreeMap::new();
         for route in &routes {
             if route.method != "GET" {
                 return Err(format!(
@@ -147,6 +153,12 @@ impl Fixtures {
                 ));
             }
             axum_path(&route.path)?;
+            if let Some(first) = shapes.insert(template_shape(&route.path), &route.path) {
+                return Err(format!(
+                    "{}: route template {} conflicts with {first}",
+                    route.operation_id, route.path
+                ));
+            }
             if let Some(key) = &route.default_example {
                 if !examples.contains_key(key) {
                     return Err(format!(
@@ -198,6 +210,8 @@ impl Frame {
             None => unscoped.clone(),
         };
         Ok(Frame {
+            scoped_id: item.scoped_id.clone(),
+            truncated: item.event == "log-truncated",
             delay_ms: item.delay_ms,
             scoped: Bytes::from(scoped),
             unscoped: Bytes::from(unscoped),
@@ -249,7 +263,8 @@ pub fn app(fixtures: Fixtures, options: Options) -> Router {
         .with_state(stub)
 }
 
-/// Serves `router` on `listener`, one HTTP/1.1 connection per task, until the future is dropped.
+/// Serves `router` on `listener`, one HTTP/1.1 connection per task, until the future is dropped or the listener fails
+/// for good (the returned error; see [`accept_error_is_fatal`]).
 ///
 /// `axum::serve` gives hyper no timer, so hyper's header-read timeout never fires and a client that sends half a
 /// request header holds its connection forever (CODE-SEC-001). This loop serves through hyper directly with a Tokio
@@ -259,12 +274,24 @@ pub async fn run_server(
     listener: tokio::net::TcpListener,
     router: Router,
     header_read_timeout: Duration,
-) {
+) -> Result<(), String> {
+    let mut reports = ErrorReports::default();
     loop {
         let stream = match listener.accept().await {
             Ok((stream, _peer)) => stream,
-            // Accept errors such as EMFILE are transient: back off briefly instead of spinning or stopping.
-            Err(_) => {
+            Err(e) => {
+                // A dead listener never recovers, so serving on would only spin: stop and let the process exit
+                // non-zero. Anything else (EMFILE, an aborted connection) is transient: report it (rate-limited),
+                // back off briefly instead of spinning, and retry.
+                if accept_error_is_fatal(&e) {
+                    return Err(format!("accept: {e}"));
+                }
+                if reports.should_report(Instant::now()) {
+                    eprintln!(
+                        "kitty-stub: accept: {e} (retrying; {} similar suppressed so far)",
+                        reports.suppressed()
+                    );
+                }
                 tokio::time::sleep(Duration::from_millis(50)).await;
                 continue;
             }
@@ -279,6 +306,59 @@ pub async fn run_server(
                 .await;
         });
     }
+}
+
+/// An accept error that cannot clear by retrying: a bad or closed listener descriptor (`EBADF`, `EINVAL`) or a
+/// listener that is not a connected-capable socket. Descriptor or memory exhaustion (`EMFILE`, `ENFILE`, `ENOMEM`)
+/// and per-connection aborts are not fatal.
+fn accept_error_is_fatal(e: &std::io::Error) -> bool {
+    use std::io::ErrorKind;
+    const EBADF: i32 = 9;
+    const EINVAL: i32 = 22;
+    matches!(e.raw_os_error(), Some(EBADF | EINVAL))
+        || matches!(e.kind(), ErrorKind::InvalidInput | ErrorKind::NotConnected)
+}
+
+/// Rate limit for accept-error reports: the first is reported, then at most one per second.
+#[derive(Debug, Default)]
+struct ErrorReports {
+    last: Option<Instant>,
+    suppressed: u64,
+}
+
+impl ErrorReports {
+    fn should_report(&mut self, now: Instant) -> bool {
+        match self.last {
+            Some(last) if now.duration_since(last) < Duration::from_secs(1) => {
+                self.suppressed += 1;
+                false
+            }
+            _ => {
+                self.last = Some(now);
+                true
+            }
+        }
+    }
+
+    /// How many reports the limiter has swallowed so far.
+    fn suppressed(&self) -> u64 {
+        self.suppressed
+    }
+}
+
+/// The template with every `{param}` segment reduced to `{}`: two templates with the same shape cannot both be routed.
+fn template_shape(template: &str) -> String {
+    template
+        .split('/')
+        .map(|segment| {
+            if segment.starts_with('{') && segment.ends_with('}') {
+                "{}"
+            } else {
+                segment
+            }
+        })
+        .collect::<Vec<_>>()
+        .join("/")
 }
 
 /// `/api/v1` plus the contract's template. Axum 0.8 uses the same `{param}` syntax, so each segment is checked to
@@ -341,7 +421,16 @@ fn serve(stub: &Stub, index: usize, headers: &HeaderMap, query: Option<&str>) ->
             None => return body(StatusCode::NOT_FOUND, JSON, &json!({"code": "no-example"})),
         }
     } else if route.kind == "stream" {
-        return stream(stub, mission_scoped(query));
+        let scoped = mission_scoped(query);
+        let from = if scoped {
+            resume_index(
+                &stub.fixtures.frames,
+                resume_cursor(headers, query).as_deref(),
+            )
+        } else {
+            0
+        };
+        return stream(stub, scoped, from);
     } else {
         match route
             .default_example
@@ -378,14 +467,68 @@ fn mission_scoped(query: Option<&str>) -> bool {
     })
 }
 
+/// The resume cursor of a request: a non-empty `streamCursor` query value, else a non-empty `Last-Event-ID` header.
+fn resume_cursor(headers: &HeaderMap, query: Option<&str>) -> Option<String> {
+    let from_query = query.unwrap_or("").split('&').find_map(|pair| {
+        let (key, value) = pair.split_once('=')?;
+        (key == "streamCursor" && !value.is_empty()).then(|| percent_decode(value))
+    });
+    from_query.or_else(|| {
+        headers
+            .get("last-event-id")
+            .map(|v| String::from_utf8_lossy(v.as_bytes()).into_owned())
+            .filter(|v| !v.is_empty())
+    })
+}
+
+/// `%XX` escapes only (the ids contain `:`, which clients encode); a malformed escape is kept as it is.
+fn percent_decode(value: &str) -> String {
+    let bytes = value.as_bytes();
+    let mut out = Vec::with_capacity(bytes.len());
+    let mut i = 0;
+    while i < bytes.len() {
+        let hex = |b: u8| (b as char).to_digit(16);
+        if bytes[i] == b'%' && i + 2 < bytes.len() {
+            if let (Some(hi), Some(lo)) = (hex(bytes[i + 1]), hex(bytes[i + 2])) {
+                out.push((hi * 16 + lo) as u8);
+                i += 3;
+                continue;
+            }
+        }
+        out.push(bytes[i]);
+        i += 1;
+    }
+    String::from_utf8_lossy(&out).into_owned()
+}
+
+/// Where a mission-scoped stream starts (stub-http.md "Resume"): after the item whose `scopedId` equals the cursor;
+/// for any other non-empty cursor, after the last `log-truncated` item (from the start when there is none); with no
+/// cursor, from the start.
+fn resume_index(frames: &[Frame], cursor: Option<&str>) -> usize {
+    let Some(cursor) = cursor else {
+        return 0;
+    };
+    match frames
+        .iter()
+        .position(|f| f.scoped_id.as_deref() == Some(cursor))
+    {
+        Some(at) => at + 1,
+        None => frames
+            .iter()
+            .rposition(|f| f.truncated)
+            .map_or(0, |at| at + 1),
+    }
+}
+
 /// `200 text/event-stream`: every change after its scaled delay, then a heartbeat every interval until the client
 /// goes away (the send fails once the body is dropped).
-fn stream(stub: &Stub, scoped: bool) -> Response {
+fn stream(stub: &Stub, scoped: bool, from: usize) -> Response {
     let (mut tx, rx) = Channel::<Bytes, Infallible>::new(8);
     let frames: Vec<(Duration, Bytes)> = stub
         .fixtures
         .frames
         .iter()
+        .skip(from)
         .map(|f| {
             // `Fixtures::check_time_scale` rejects a scale that overflows; an unchecked caller waits "forever".
             let delay = scaled_delay(f.delay_ms, stub.time_scale).unwrap_or(Duration::MAX);
@@ -484,5 +627,56 @@ async fn last_request(State(stub): State<Arc<Stub>>) -> Response {
     match last {
         Some(entry) => body(StatusCode::OK, JSON, &entry),
         None => StatusCode::NOT_FOUND.into_response(),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::io::{Error, ErrorKind};
+
+    /// SO-CORR-007: descriptor exhaustion and per-connection aborts are worth retrying; a dead listener never recovers.
+    #[test]
+    fn accept_errors_are_retried_or_fatal_by_kind() {
+        let retry = [
+            Error::from_raw_os_error(24), // EMFILE
+            Error::from_raw_os_error(23), // ENFILE
+            Error::from_raw_os_error(12), // ENOMEM
+            Error::from(ErrorKind::ConnectionAborted),
+            Error::from(ErrorKind::ConnectionReset),
+            Error::from(ErrorKind::Interrupted),
+            Error::from(ErrorKind::WouldBlock),
+            Error::from(ErrorKind::TimedOut),
+        ];
+        let fatal = [
+            Error::from_raw_os_error(9),  // EBADF
+            Error::from_raw_os_error(22), // EINVAL
+            Error::from(ErrorKind::InvalidInput),
+            Error::from(ErrorKind::NotConnected),
+        ];
+        let mut ran = 0;
+        for e in &retry {
+            assert!(!accept_error_is_fatal(e), "retry: {e:?}");
+            ran += 1;
+        }
+        for e in &fatal {
+            assert!(accept_error_is_fatal(e), "fatal: {e:?}");
+            ran += 1;
+        }
+        assert_eq!(ran, retry.len() + fatal.len());
+    }
+
+    /// The first accept error is reported, then at most one per second.
+    #[test]
+    fn accept_error_reports_are_rate_limited() {
+        let t0 = Instant::now();
+        let mut limit = ErrorReports::default();
+        assert!(limit.should_report(t0));
+        assert!(!limit.should_report(t0 + Duration::from_millis(10)));
+        assert!(!limit.should_report(t0 + Duration::from_millis(999)));
+        assert!(limit.should_report(t0 + Duration::from_secs(1)));
+        assert!(!limit.should_report(t0 + Duration::from_millis(1500)));
+        assert!(limit.should_report(t0 + Duration::from_secs(2)));
+        assert_eq!(limit.suppressed(), 3);
     }
 }

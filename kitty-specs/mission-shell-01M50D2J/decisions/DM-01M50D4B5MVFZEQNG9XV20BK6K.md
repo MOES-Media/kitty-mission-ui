@@ -4,9 +4,10 @@
 - **Origin flow:** `specify`
 - **Slot key:** `specify.verification.visual-baselines`
 - **Input key:** `shell_visual_verification`
-- **Status:** `deferred`
+- **Status:** `resolved`
 - **Created:** `2026-10-15T18:27:58.260689+00:00`
-- **Resolved:** `2026-10-15T18:28:09.172137+00:00`
+- **Resolved:** `2026-10-15T18:35:30.293417+00:00`
+- **Resolved by:** `operator`
 - **Opened by:** `cli`
 - **Other answer:** `false`
 
@@ -22,13 +23,13 @@ How is the shell's own new UI verified: the connection banners, the refresh cont
 
 ## Final answer
 
-_(none)_
+A (recommended): Storybook stories for every connection-banner state and each layout composition, with approved baselines in the existing visual gate, flagged for design review because the banners are not in the prototype
 
 ## Rationale
 
-Awaiting the operator: a product fork the issue, code and defaults do not settle. Specify subagent recorded options with a recommendation; the operator rules before plan.
+Operator ruling 2026-10-15, relayed by the coordinator: recommended option A.
 
 ## Change log
 
 - `2026-10-15T18:27:58.260689+00:00` — opened
-- `2026-10-15T18:28:09.172137+00:00` — deferred
+- `2026-10-15T18:35:30.293417+00:00` — resolved (final_answer="A (recommended): Storybook stories for every connection-banner state and each layout composition, with approved baselines in the existing visual gate, flagged for design review because the banners are not in the prototype")

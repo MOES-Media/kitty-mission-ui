@@ -117,3 +117,84 @@ test('the hygiene script runs the exact-pin rule only when a root Cargo.toml exi
     assert.deepEqual(cargoLines(), []);
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
+
+// SO-CORR-001: the rule must fail closed. Each form below used to yield zero members or zero findings.
+test('workspace members: a [workspace] header with a trailing comment still yields its members', () => {
+  assert.deepEqual(workspaceMembers('[workspace] # the root\nmembers = ["a", "b"]\n'), ['a', 'b']);
+});
+
+test('workspace members: a [workspace] header with inner spaces still yields its members', () => {
+  assert.deepEqual(workspaceMembers('[ workspace ]\nmembers = ["a"]\n'), ['a']);
+});
+
+test('workspace members: a root-level dotted workspace.members key yields its members', () => {
+  assert.deepEqual(workspaceMembers('workspace.members = ["a", "b/c"]\n\n[workspace.dependencies]\n'), ['a', 'b/c']);
+  assert.deepEqual(workspaceMembers('"workspace" . "members" = [\n  "a", # x\n  "b",\n]\n'), ['a', 'b']);
+  assert.deepEqual(workspaceMembers('workspace = { members = ["z"] }\n'), ['z']);
+});
+
+test('cargo pins: a quoted dotted key is read, not skipped', () => {
+  assert.deepEqual(report(MEMBER, member('"serde".version = "1"')),
+    [`cargo-pin|${MEMBER}|6|dependency serde: requirement "1" is not an exact =x.y.z pin`]);
+  assert.deepEqual(report(MEMBER, member('"serde".version = "=1.0.0"')), []);
+});
+
+test('cargo pins: a dotted key with spaces around the dot is read, not skipped', () => {
+  assert.deepEqual(report(MEMBER, member('serde . version = "1"')),
+    [`cargo-pin|${MEMBER}|6|dependency serde: requirement "1" is not an exact =x.y.z pin`]);
+  assert.deepEqual(report(MEMBER, member('serde . version = "=1.0.0"')), []);
+});
+
+test('cargo pins: a line the reader cannot parse inside a dependency table is a finding', () => {
+  const found = report(MEMBER, member('serde = "=1.0.0"\n!!! not toml'));
+  assert.equal(found.length, 1);
+  assert.match(found[0], /^cargo-pin\|crates\/demo\/Cargo\.toml\|7\|unparsed line in a dependency table/);
+  // a multi-line inline table is one entry, not unparsed lines
+  assert.deepEqual(report(MEMBER, member('serde = { version = "=1.0.0",\n  features = [\n    "derive",\n  ] }')), []);
+});
+
+test('cargo pins: every entry under a patch table is a finding', () => {
+  const found = report(MEMBER, '[patch.crates-io]\nserde = { path = "../serde" }\nlog = { git = "https://example.com/log" }\n');
+  assert.equal(found.length, 2);
+  assert.match(found[0], /^cargo-pin\|crates\/demo\/Cargo\.toml\|2\|patch entry serde:/);
+  assert.match(found[1], /\|3\|patch entry log:/);
+  assert.deepEqual(report(MEMBER, '[patch.crates-io]\n'), []);
+});
+
+test('cargo pins: a patch sub-table (also under a quoted registry url) is a finding', () => {
+  const a = report(MEMBER, '[patch.crates-io.serde]\npath = "../serde"\n');
+  assert.equal(a.length, 1);
+  assert.match(a[0], /\|1\|patch entry serde:/);
+  const b = report(MEMBER, "[patch.'https://github.com/x/y'.serde]\npath = \"../s\"\n");
+  assert.equal(b.length, 1);
+  assert.match(b[0], /\|1\|patch entry serde:/);
+});
+
+test('cargo pins: every entry under a replace table is a finding', () => {
+  const found = report(MEMBER, '[replace]\n"serde:1.0.0" = { path = "../serde" }\n');
+  assert.equal(found.length, 1);
+  assert.match(found[0], /\|2\|patch entry serde:1\.0\.0:/);
+  const sub = report(MEMBER, '[replace."serde:1.0.0"]\npath = "../serde"\n');
+  assert.equal(sub.length, 1);
+  assert.match(sub[0], /\|1\|patch entry serde:1\.0\.0:/);
+});
+
+test('cargo pins: a root-level dotted patch key is a finding', () => {
+  const found = report(MEMBER, 'patch.crates-io.serde = { path = "../serde" }\n');
+  assert.equal(found.length, 1);
+  assert.match(found[0], /\|1\|patch entry /);
+});
+
+test('cargo pins: an array-table header ends the dependency table', () => {
+  assert.deepEqual(report(MEMBER, member('serde = "=1.0.0"\n\n[[bin]]\nname = "x"\npath = "src/x.rs"')), []);
+});
+
+test('cargo pins: an integration walk finds members listed under a commented workspace header', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'cargo-pins-'));
+  const put = (p, c) => { mkdirSync(dirname(join(dir, p)), { recursive: true }); writeFileSync(join(dir, p), c); };
+  try {
+    put('Cargo.toml', '[workspace] # root\nmembers = ["crates/one"]\n');
+    put('crates/one/Cargo.toml', member('rand = "0.8"'));
+    assert.deepEqual(checkCargoPins(dir).map((f) => f.file), ['crates/one/Cargo.toml']);
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
