@@ -81,3 +81,9 @@ WP08's cargo-pins test lives in `scripts/hygiene/`, which `test:scripts` already
 | `scripts/contract/cli.test.mjs` | WP03 | b5a6e22 | The test copies `contracts/fixtures` into its temporary project, so the contract CLI finds the new generated files. |
 | `scripts/contract/update.test.mjs` | WP03 | b5a6e22 | Same reason, for the update path. |
 | `scripts/perf-split.test.mjs` | WP02 | bd8634e | Skips workspace packages without a `test/` directory, so the new `mission-shell` package does not break the perf-split check before it has tests. |
+
+## Relocations made by the pre-merge squad
+
+| Change | Finding | Why |
+|---|---|---|
+| The dashboard crate moved from `apps/dashboard/{Cargo.toml,src/**}` (as planned in plan.md, tasks.md, WP01, wps.yaml and lanes.json) to `apps/dashboard/server/` | CODE-BOUNDARY-007 | Leaves `apps/dashboard/` free for the #21 web frontend. The package name `kitty-dashboard` is unchanged; `crates/kitty-core/tests/workspace.rs` pins the new path. The historical WP artifacts keep the planned path. |
