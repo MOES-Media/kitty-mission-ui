@@ -2,8 +2,8 @@
 
 Phase 0 of `/spec-kitty.plan`. Each entry is a decision with its rationale and the alternatives considered. Nothing here
 reopens the spec: the three operator rulings of 2026-10-15 and the binding decisions of the #17 landing review are
-inputs, not questions. The two genuine forks this research found are recorded as deferred decision moments and marked
-in `plan.md` (R-12, R-17).
+inputs, not questions. The two genuine forks this research found (R-12, R-17) were ruled by the operator on 2026-10-15,
+option A for both, and are recorded as resolved decision moments.
 
 Measurements cited below come from CI run 38756980500 (the last green run of the #17 landing branch, PR #32, head
 before `8c1ce10`): gate-step and proof-leg durations, read from the job steps. Local timings are not taken in this
@@ -250,7 +250,7 @@ phase (no heavy runs during planning).
   neither the project head nor the Mission head ("none of others", FR-016).
 - **Design review**: the button and the banners are not in the prototype, so they carry the design-review flag (R-14).
 
-## R-12 Visual proof of the banner (FR-017, FR-018): one plant moved, or a second plant? (OPERATOR FORK)
+## R-12 Visual proof of the banner (FR-017, FR-018): one plant moved, or a second plant? (RULED: A)
 
 - **Facts**:
   - `Gate: visual` measured 17.10 min (gate step, `--repeat-each=5`, 330 baselines).
@@ -275,9 +275,9 @@ phase (no heavy runs during planning).
     - The pull request's CI wall-clock time grows by about 19 min on every push.
   - **C: no visual plant for the banner.** A unit test asserts that the banner is in the story's DOM. This deviates
     from FR-018 ("a planted change to a banner's appearance must fail the visual gate") and needs a spec amendment.
-- **Status**: deferred to the operator (decision moment in `plan.md`). The plan proceeds on A.
+- **Status**: ruled by the operator on 2026-10-15: **A** (decision `01M50HMCBJMREJ5XJASGE29X73`, resolved).
 
-## R-13 C-001 and C-005 enforcement gaps in the shell, and the C-003 "gate wiring" scope (OPERATOR FORK, R-17)
+## R-13 C-001 and C-005 enforcement gaps in the shell (in scope by the R-17 ruling)
 
 - **Facts**:
   - The no-io gate bans `location` and bare `window`. It does not ban `history` or `navigator.clipboard`, which C-001
@@ -285,7 +285,7 @@ phase (no heavy runs during planning).
   - The main ESLint config bans raw `<button>`, `<input>`, `<select>` and `<textarea>` only inside Lit `html`
     templates, not in Svelte markup, so C-005 is unenforced for the shell.
   - C-001 says the no-io gate keeps covering the shell "unchanged", so the fix does not go into no-io.
-- **Decision (pending R-17)**: one ESLint block for `packages/mission-shell/src/**` in `eslint.config.mjs`, with
+- **Decision** (in scope by the R-17 ruling): one ESLint block for `packages/mission-shell/src/**` in `eslint.config.mjs`, with
   failure-only messages:
   - `svelte/no-restricted-html-elements` for `button`, `input`, `select` and `textarea`, with the message
     `shell-markup: raw <button>, <input>, <select> and <textarea> are forbidden in shell markup; use the sk-* elements (C-005)`;
@@ -377,7 +377,7 @@ phase (no heavy runs during planning).
 - **Adversarial evidence**: no security-impacting dependency decision is made (no new version), so the adversarial
   squad challenge for dependencies is not triggered. The charter's post-plan squad runs anyway and covers this entry.
 
-## R-17 What C-003's "gate wiring" covers (OPERATOR FORK)
+## R-17 What C-003's "gate wiring" covers (RULED: A)
 
 - **Problem**: C-003 and SC-004 freeze "the gate wiring" without defining it. This plan changes five gate-adjacent
   things, and needs to know which are inside the freeze:
@@ -401,7 +401,7 @@ phase (no heavy runs during planning).
   - **B (strict)**: every file a gate reads is frozen. The ESLint hardening (R-13) and any timeout raise are dropped.
     The Storybook glob change, without which FR-018 cannot be met, becomes a spec conflict that stops the mission.
   - **C**: as A, but a timeout raise in `ci.yml` stops and goes back to the operator.
-- **Status**: deferred to the operator (decision moment in `plan.md`). The plan proceeds on A.
+- **Status**: ruled by the operator on 2026-10-15: **A** (decision `01M50HMK3E7A4XA93PZMZ9KBT8`, resolved).
 
 ## R-18 Smaller decisions
 

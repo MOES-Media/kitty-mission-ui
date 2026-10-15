@@ -74,7 +74,9 @@ pnpm 11.18.0 are unchanged. No Rust changes.
 - No I/O (C-001).
 - mission-ui byte-unchanged (C-002, SC-006).
 - Port, workspace members, gate wiring and `contracts/fixtures/*` frozen (C-003, SC-004). How "gate wiring" is read
-  is an open operator decision: [NEEDS CLARIFICATION: scope of "gate wiring" under C-003; the plan proceeds on option A, research R-17] <!-- decision_id: 01M50HMK3E7A4XA93PZMZ9KBT8 -->
+  is the operator's ruling of 2026-10-15 (decision `01M50HMK3E7A4XA93PZMZ9KBT8`, option A; research R-17): the gate
+  set and how each gate is bound are frozen, while rule content, plants, story globs, a package's test projects and
+  formula-derived timeouts may change.
 - Ownership boundary (C-004).
 - Elements over CSS (C-005).
 - Hygiene (C-006).
@@ -104,10 +106,10 @@ pnpm 11.18.0 are unchanged. No Rust changes.
 | Review: separate reviewer per WP; adversarial squad after plan; operator merges | PASS | The post-plan squad (R1 to R6) is recorded in `reviews/plan.squad.md`. The design review is CP-1 with the operator. |
 | Risk boundaries: no secrets, paths or usernames in tracked files | PASS | Story data is synthetic. Baselines are produced only in the pinned image. The hygiene gate scans the new files and `storybook-static`. |
 | Exact version pins; versions 14 or more days old | PASS | No new version. The two re-declared pins are exact, 27 and 279 days old, with no install scripts (research R-16). |
-| Quality standards not relaxed without operator approval | PASS with an open item | The only plant retired is the `sk-mission-sample` visual plant, under option A of the open visual-plant decision (research R-12). It is not retired before the operator rules. |
+| Quality standards not relaxed without operator approval | PASS | The only plant retired is the `sk-mission-sample` visual plant. It moves to the reconnecting-banner story by the operator's ruling of 2026-10-15 (decision `01M50HMCBJMREJ5XJASGE29X73`, option A; research R-12). |
 | Exceptions documented in the PR | PASS | None planned. The ESLint boundary exemption for `**/*.stories.ts` narrows nothing (research R-08) and is noted in the PR. |
 
-Re-checked after Phase 1 design: no new conflicts. The two open items are operator decisions, not violations.
+Re-checked after Phase 1 design, and again after the operator's rulings of 2026-10-15: no conflicts.
 
 ## Architecture
 
@@ -379,8 +381,8 @@ README.md, CHANGELOG.md           # shell section; Unreleased entry
     `plant-shell-clipboard.ts.plant` (P-3, P-4).
 - **Sequencing/depends-on**: none. It can land first, and every later IC is then linted by it.
 - **Risks**:
-  - Pending the operator's reading of "gate wiring" (decision `01M50HMK3E7A4XA93PZMZ9KBT8`). Under option B this IC is
-    dropped.
+  - In scope by the operator's ruling on "gate wiring" (decision `01M50HMK3E7A4XA93PZMZ9KBT8`, option A): rule
+    content may change.
   - `noInlineConfig` already applies to `packages/*/src/**`, so the rules cannot be silenced inline.
   - The `history` entry matches member access on the identifier `history`, so a shell local of that name would be
     flagged. Locals must be named otherwise.
@@ -403,7 +405,9 @@ README.md, CHANGELOG.md           # shell section; Unreleased entry
   - Svelte's production build embeds no file names. The hygiene scan of `storybook-static` must stay clean; if it does
     not, the plugin's `compilerOptions.dev` is checked to be false.
   - Baselines are made only in the pinned image (`heavy pnpm visual:update`). They are not final before CP-1.
-  - Pending decision `01M50HMCBJMREJ5XJASGE29X73` on the visual plant.
+  - The visual plant moves (decision `01M50HMCBJMREJ5XJASGE29X73`, option A): `gates/plants/visual/plant.json` loses
+    the `sk-mission-sample` gap edit and gets P-6 instead. The plant stays a single entry with the same `ciCommand`
+    and `prepare`.
 
 ### IC-09 — Proof timing, documentation and wrap-up
 
@@ -504,11 +508,12 @@ Each plant has a single token that appears only when the plant fails.
 | P-3 | eslint | raw control in shell markup | `packages/mission-shell/src/PlantRawControl.svelte` (from `PlantRawControl.svelte.plant`) with `<button type="button">` | `shell-markup: raw` |
 | P-4 | eslint | clipboard in the shell | `packages/mission-shell/src/plant-shell-clipboard.ts` (from `plant-shell-clipboard.ts.plant`) calling `navigator.clipboard.writeText` | `shell-io: navigator.clipboard` |
 | P-5 | storybook-build | shell story glob is built | `packages/mission-shell/src/stories/plant-shell-storybook.stories.ts` importing `./plant-shell-storybook-missing` | `plant-shell-storybook-missing` |
-| P-6 | visual | banner appearance changes | anchored edit in `packages/mission-shell/src/ui/ConnectionBanner.svelte` changing the banner's gap token | `shell-connection-banners--reconnecting-1280-diff.png` |
+| P-6 | visual | banner appearance changes (moved: replaces the `sk-mission-sample` plant) | anchored edit in `packages/mission-shell/src/ui/ConnectionBanner.svelte` changing the banner's gap token | `shell-connection-banners--reconnecting-1280-diff.png` |
 
-- P-6 depends on the open decision: [NEEDS CLARIFICATION: P-6 replaces the existing `sk-mission-sample` visual plant (option A) or is added as a second visual plant (option B); the plan proceeds on A, research R-12] <!-- decision_id: 01M50HMCBJMREJ5XJASGE29X73 -->
-- Under A the mission adds **5 new plants and moves 1**. Under B it adds 6.
-- P-3 and P-4 depend on IC-07 surviving decision `01M50HMK3E7A4XA93PZMZ9KBT8`.
+- P-6 replaces the existing `sk-mission-sample` visual plant, by the operator's ruling of 2026-10-15 (decision
+  `01M50HMCBJMREJ5XJASGE29X73`, option A; research R-12). The visual leg keeps one plant.
+- The mission adds **5 new plants (P-1 to P-5) and moves 1 (P-6)**.
+- P-3 and P-4 are in scope by the operator's ruling on "gate wiring" (decision `01M50HMK3E7A4XA93PZMZ9KBT8`, option A).
 - FR-017's named minimum is P-1 (refresh policy) and P-2 (intent coverage).
 - The other new checks (latest-wins, coalescing, connection timing, subscription counts, host fallbacks, link
   positive and negative controls, exactly-once "via" intents) are tests inside gates that P-1 and the existing binding
@@ -524,16 +529,14 @@ timeout = (1 + all plants in the leg) × the measured gate step + 2 minutes, nev
 | typecheck | 5 | 0.27 | about 0.35 | 4.1 | 6, unchanged |
 | eslint | 11 | 0.37 | about 0.45 | 7.4 | 8, unchanged; raised if the step exceeds 0.5 |
 | storybook-build | 2 | 0.20 | about 0.3 | 2.9 | 8, unchanged |
-| visual (A) | 1 | 17.10 | about 17.7 | 37.4 | 60, unchanged |
-| visual (B) | 2 | 17.10 | about 17.7 | 55.1 | 60, unchanged, about 3 min headroom |
+| visual | 1 (moved) | 17.10 | about 17.7 | 37.4 | 60, unchanged |
 
 **Leg-time impact** (SO-DES-017):
 - unit-tests: about 13.8 to about 20 min (+6: one more run, plus about 0.5 min per run for the Chromium shell tests).
 - typecheck: +0.4 min.
 - eslint: +0.7 min.
 - storybook-build: +0.6 min.
-- visual: +1.2 min under A, or +19 min under B. Under B the visual leg remains the critical path and the PR's CI wall
-  clock grows to about 58 min.
+- visual: +1.2 min (two runs, as today). The visual leg stays the critical path at about 39 min.
 - Gate jobs stay inside their budgets: unit-tests about 2.7 of 8 min, visual about 17.7 of 28 (NFR-005).
 
 ## Design review
@@ -546,14 +549,21 @@ Covered by CP-1 above, with the procedure in research R-14. Flagged UI:
 
 Approval is recorded against exact baseline hashes, so a later re-render that changes pixels needs a new CP-1 entry.
 
-## Operator decisions open at the end of this plan
+## Operator decisions of the plan (ruled 2026-10-15)
 
-1. Visual plant for FR-018 (decision `01M50HMCBJMREJ5XJASGE29X73`; research R-12). Recommended: A.
-2. Scope of "gate wiring" under C-003 (decision `01M50HMK3E7A4XA93PZMZ9KBT8`; research R-17). Recommended: A.
+1. Visual plant for FR-018 (decision `01M50HMCBJMREJ5XJASGE29X73`; research R-12): **A**. The single visual plant
+   moves from `sk-mission-sample` to the reconnecting-banner story (P-6).
+2. Scope of "gate wiring" under C-003 (decision `01M50HMK3E7A4XA93PZMZ9KBT8`; research R-17): **A**. The frozen
+   surface is the gate set and its binding:
+   - in `ci.yml`: the job ids, `needs`, each `id: gate` command, the proof-matrix gate list and images, and
+     `all.needs`;
+   - each plant's `ciCommand`;
+   - `scripts/gate-proof.mjs` and `scripts/gate-proof/**`;
+   - the root gate scripts.
 
-Both are deferred with markers above. The plan is complete on the recommended options. Option B of the first decision
-changes only P-6 and the visual timeout row. Option B of the second drops IC-07, P-3 and P-4, and stops the mission at
-IC-08 (the Storybook glob) as a spec conflict.
+   Rule content, plants, story globs, a package's test projects and formula-derived timeouts may change.
+
+Both rulings were relayed by the coordinator and are recorded as resolved decisions.
 
 ## Timeline risks
 
@@ -566,8 +576,8 @@ IC-08 (the Storybook glob) as a spec conflict.
 4. **Baselines need the pinned image** on Linux x86_64 with podman, run as `heavy` (memory). Each `visual:update` is
    about 18 min and memory-heavy, so the WPs run it once per candidate set, never in parallel.
 5. **Unit-tests leg growth**: if the Chromium shell tests exceed about 0.6 min per run, the unit-tests timeout rises
-   above 30. That is a `ci.yml` edit, allowed under option A of decision `01M50HMK3E7A4XA93PZMZ9KBT8` and a stop under
-   option C.
+   above 30. That is a `ci.yml` timeout edit, which the "gate wiring" ruling allows (decision
+   `01M50HMK3E7A4XA93PZMZ9KBT8`, option A).
 6. **Mixed Vitest projects**: if Node and Chromium projects cannot coexist in one config, the logic tests run in
    Chromium. That is about +5 min of unit-tests leg time, and probably a timeout raise.
 7. **The marker-type message shape** in svelte-check (IC-05) is unproven. If the error text does not carry the marker,
@@ -587,7 +597,7 @@ IC-08 (the Storybook glob) as a spec conflict.
   - the "Design review" section from CP-1 (SC-007);
   - the supply-chain table (research R-16);
   - the measured gate steps and the derived timeouts;
-  - the operator's rulings on the two decisions above;
+  - the operator's rulings on the two plan decisions (both option A, 2026-10-15);
   - the note that the ESLint boundary exemption for stories narrows nothing.
 
 ## Traceability

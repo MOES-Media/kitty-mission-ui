@@ -4,9 +4,10 @@
 - **Origin flow:** `plan`
 - **Slot key:** `plan.constraints.gate-wiring-scope`
 - **Input key:** `gate_wiring_scope`
-- **Status:** `deferred`
+- **Status:** `resolved`
 - **Created:** `2026-10-15T19:46:44.974159+00:00`
-- **Resolved:** `2026-10-15T19:46:51.448237+00:00`
+- **Resolved:** `2026-10-15T19:55:56.311730+00:00`
+- **Resolved by:** `operator`
 - **Opened by:** `architect-alphonso`
 - **Other answer:** `false`
 
@@ -23,13 +24,13 @@ C-003/SC-004 freeze 'the gate wiring' without defining it. The plan changes ESLi
 
 ## Final answer
 
-_(none)_
+A: wiring = gate set and binding (ci.yml job ids, needs, id: gate commands, proof matrix gate list and images, all.needs, plant ciCommands, gate-proof.mjs, root gate scripts); rule content, plants, story globs, package test projects and formula timeouts may change (recommended)
 
 ## Rationale
 
-Operator fork raised by the plan agent (research.md R-17); the plan proceeds on the recommended option A until the operator rules.
+Operator ruling 2026-10-15, relayed by the coordinator
 
 ## Change log
 
 - `2026-10-15T19:46:44.974159+00:00` — opened
-- `2026-10-15T19:46:51.448237+00:00` — deferred
+- `2026-10-15T19:55:56.311730+00:00` — resolved (final_answer="A: wiring = gate set and binding (ci.yml job ids, needs, id: gate commands, proof matrix gate list and images, all.needs, plant ciCommands, gate-proof.mjs, root gate scripts); rule content, plants, story globs, package test projects and formula timeouts may change (recommended)")

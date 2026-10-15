@@ -4,9 +4,10 @@
 - **Origin flow:** `plan`
 - **Slot key:** `plan.gates.visual-plant`
 - **Input key:** `visual_plant`
-- **Status:** `deferred`
+- **Status:** `resolved`
 - **Created:** `2026-10-15T19:46:38.066267+00:00`
-- **Resolved:** `2026-10-15T19:46:50.088609+00:00`
+- **Resolved:** `2026-10-15T19:55:54.473877+00:00`
+- **Resolved by:** `operator`
 - **Opened by:** `architect-alphonso`
 - **Other answer:** `false`
 
@@ -23,13 +24,13 @@ FR-018 requires a planted change to a banner's appearance to fail the visual gat
 
 ## Final answer
 
-_(none)_
+A: move the single visual plant from sk-mission-sample to the reconnecting banner story (leg stays 2 runs, ~39 min) (recommended)
 
 ## Rationale
 
-Operator fork raised by the plan agent (research.md R-12); the plan proceeds on the recommended option A until the operator rules.
+Operator ruling 2026-10-15, relayed by the coordinator
 
 ## Change log
 
 - `2026-10-15T19:46:38.066267+00:00` — opened
-- `2026-10-15T19:46:50.088609+00:00` — deferred
+- `2026-10-15T19:55:54.473877+00:00` — resolved (final_answer="A: move the single visual plant from sk-mission-sample to the reconnecting banner story (leg stays 2 runs, ~39 min) (recommended)")

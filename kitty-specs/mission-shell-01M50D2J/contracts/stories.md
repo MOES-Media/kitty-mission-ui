@@ -51,6 +51,6 @@
 - **storybook-build.** `packages/mission-shell/src/stories/plant-shell-storybook.stories.ts`, which imports
   `./plant-shell-storybook-missing`. The build fails with the token `plant-shell-storybook-missing`. This proves the
   shell glob is built.
-- **visual** (per decision R-12): an anchored edit in `packages/mission-shell/src/ui/ConnectionBanner.svelte` that
+- **visual** (moved from `sk-mission-sample` by the operator's ruling on research R-12, option A): an anchored edit in `packages/mission-shell/src/ui/ConnectionBanner.svelte` that
   changes the banner's appearance (its gap token), with the token `shell-connection-banners--reconnecting-1280-diff.png`
   and `prepare: pnpm storybook:build-only`.
