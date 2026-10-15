@@ -1,0 +1,12 @@
+[workspace]
+resolver = "2"
+# crates/kitty-stub joins this list in WP07, once it exists.
+members = ["crates/kitty-core", "apps/desktop/src-tauri", "apps/dashboard"]
+
+[workspace.package]
+edition = "2021"
+license = "AGPL-3.0-or-later"
+publish = false
+
+[workspace.dependencies]
+# exact pins only ("=x.y.z"); WP07 adds the stub's crates here as a recorded out-of-map edit

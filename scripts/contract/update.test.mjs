@@ -89,6 +89,8 @@ test('(d) a full update from a uniquely named directory vendors the committed by
   const root = temp('contract-root-');
   cpSync(join(ROOT, LAYOUT.vendor), join(root, LAYOUT.vendor), { recursive: true });
   cpSync(join(ROOT, 'packages/mission-ui/src'), join(root, 'packages/mission-ui/src'), { recursive: true });
+  // the authored change sequence is checked after the update; the generated JSON beside it is rewritten by the update
+  cpSync(join(ROOT, 'contracts/fixtures/mission-status.changes.json'), join(root, 'contracts/fixtures/mission-status.changes.json'));
   git(root, 'init', '-q');
   let printed = '';
   const code = await runUpdate({ argv: ['--from-repo', stage, '--sha', sha], root, write: (t) => { printed += t; } });
