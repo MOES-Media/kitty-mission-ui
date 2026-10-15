@@ -105,8 +105,32 @@ export default tseslint.config(
   },
   ...svelteRecommended,
   {
+    // The shell's .svelte sources get the rule set of the .ts package sources (CODE-TEST-001): the typed TypeScript rules
+    // (svelte-eslint-parser hands `<script lang="ts">` to the TypeScript parser, typed through the project service), the
+    // element-template restrictions and the custom-event rule. The markdown renderer rules and `noInlineConfig` come from
+    // the block below, whose glob covers .svelte too.
+    // Browser globals: as for the .ts sources, `no-undef` is off (typescript-eslint's eslint-recommended override) and the
+    // TypeScript checker resolves every global against the DOM lib of tsconfig.base.json (svelte-check runs it), so a
+    // misspelt or non-browser global is a type error. No hand-written globals list is kept.
     files: [SVELTE_SOURCES],
-    languageOptions: { parser: svelteParser, parserOptions: { parser: tseslint.parser, extraFileExtensions: ['.svelte'] } },
+    extends: [tseslint.configs.recommendedTypeChecked],
+    languageOptions: {
+      parser: svelteParser,
+      parserOptions: {
+        parser: tseslint.parser,
+        projectService: true,
+        tsconfigRootDir: import.meta.dirname,
+        extraFileExtensions: ['.svelte'],
+      },
+    },
+    plugins: { sk: skLocal },
+    rules: {
+      'no-restricted-syntax': ['error', ...elementSyntaxRestrictions],
+      'sk/dispatch-custom-event': 'error',
+      // Core prefer-const flags the rune idiom `let { … } = $props()`; the plugin's variant exempts $props and $derived.
+      'prefer-const': 'off',
+      'svelte/prefer-const': 'error',
+    },
   },
   {
     // Script files that can hold templates get the same structural rules (untyped).
@@ -135,7 +159,7 @@ export default tseslint.config(
     // it one `eslint-disable-next-line` above a banned construct turns every rule here off (the main config had none).
     // R1 and R4 are rules of their own and are set once here, so no per-file override of `no-restricted-syntax` or
     // `no-restricted-imports` can replace them; R2 and R3 ride in `elementSyntaxRestrictions`.
-    files: ['packages/*/src/**/*.{ts,mts,cts,tsx,js,mjs,cjs,jsx}'],
+    files: ['packages/*/src/**/*.{ts,mts,cts,tsx,js,mjs,cjs,jsx,svelte}'],
     linterOptions: { noInlineConfig: true },
     plugins: { sk: skLocal },
     rules: { 'sk/markdown-it-import-home': ['error', { home: MARKDOWN_IT_HOME }] },
