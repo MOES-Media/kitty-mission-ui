@@ -7,6 +7,7 @@ import routes from '../../../contracts/fixtures/mission-status.routes.json' with
 import examples from '../../../contracts/fixtures/mission-status.examples.json' with { type: 'json' };
 import changes from '../../../contracts/fixtures/mission-status.changes.json' with { type: 'json' };
 import {
+  CLIENT_OPERATIONS,
   CONNECTION_STATES,
   type Change,
   type ConnectionState,
@@ -15,6 +16,7 @@ import {
   type SubscriptionScope,
 } from '../src/client/port';
 import { createFixtureClient, setConnectionState, type ChangesEnvelope, type Scheduler } from '../src/client/fixture';
+import { operationCoverage } from '../src/client/coverage';
 
 const exampleTable = examples as Record<string, { schema: string; value: unknown }>;
 
@@ -93,7 +95,10 @@ beforeAll(async () => {
 
 describe('reads', () => {
   it('every read returns its default example', async () => {
-    expect(readRoutes.length).toBe(9);
+    // A read added to routes.json fails here by name (FR-009), before any count or call (CODE-TEST-002).
+    const problems = operationCoverage(Object.values(CLIENT_OPERATIONS), routes.map((route) => route.operationId));
+    expect(problems, problems.join('\n')).toEqual([]);
+    expect(readRoutes.length).toBeGreaterThan(0);
     const client = createFixtureClient();
     let checked = 0;
     for (const route of readRoutes) {
@@ -103,7 +108,7 @@ describe('reads', () => {
       expect(result, route.operationId).toEqual({ ok: true, value: exampleTable[key as string]?.value });
       checked += 1;
     }
-    expect(checked).toBe(9);
+    expect(checked).toBe(readRoutes.length);
   });
 
   it('a selected success example is served instead of the default', async () => {

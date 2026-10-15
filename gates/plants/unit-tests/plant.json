@@ -123,5 +123,21 @@
         ]
       }
     ]
+  },
+  {
+    "gate": "unit-tests",
+    "ciCommand": "pnpm test",
+    "expectFailPattern": "coverage: missing operation getNewThing",
+    "overlays": [
+      {
+        "target": "contracts/fixtures/mission-status.routes.json",
+        "edits": [
+          {
+            "find": "  {\n    \"operationId\": \"getArtifactContent\",\n",
+            "replace": "  {\n    \"operationId\": \"getNewThing\",\n    \"method\": \"GET\",\n    \"path\": \"/new-thing\",\n    \"kind\": \"read\",\n    \"responseSchema\": \"Project\",\n    \"defaultExample\": \"Project.example\",\n    \"refusals\": {}\n  },\n  {\n    \"operationId\": \"getArtifactContent\",\n"
+          }
+        ]
+      }
+    ]
   }
 ]

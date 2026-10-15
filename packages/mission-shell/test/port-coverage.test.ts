@@ -34,31 +34,32 @@ beforeAll(async () => {
 });
 
 describe('operation table against the contract routes', () => {
-  it('covers exactly the ten operationIds of routes.json', () => {
+  it('covers exactly the operationIds of routes.json, naming any it lacks before anything else is checked (FR-009)', () => {
     const ids = routeOperationIds();
-    expect(ids.length).toBe(10);
+    // The named comparison comes first and no literal count precedes it, so a read added to routes.json fails here as
+    // `coverage: missing operation <id>`, never as a bare count mismatch (CODE-TEST-002).
     const problems = operationCoverage(Object.values(CLIENT_OPERATIONS), ids);
     expect(problems, problems.join('\n')).toEqual([]);
+    expect(ids.length).toBeGreaterThan(0);
     expect([...Object.values(CLIENT_OPERATIONS)].sort()).toEqual([...ids].sort());
-    expect(Object.keys(CLIENT_OPERATIONS).length).toBe(10);
+    expect(Object.keys(CLIENT_OPERATIONS).length).toBe(ids.length);
   });
 
   it('the comparison helper names exactly a synthetic operation the table lacks', () => {
     const widened = [...routeOperationIds(), 'syntheticOperation'];
-    expect(widened.length).toBe(11);
+    expect(widened.length).toBe(routeOperationIds().length + 1);
     expect(operationCoverage(Object.values(CLIENT_OPERATIONS), widened)).toEqual(['coverage: missing operation syntheticOperation']);
   });
 
   it('the comparison helper names exactly a table entry the routes lack', () => {
     const narrowed = routeOperationIds().filter((id) => id !== 'getDriftReport');
-    expect(narrowed.length).toBe(9);
+    expect(narrowed.length).toBe(routeOperationIds().length - 1);
     expect(operationCoverage(Object.values(CLIENT_OPERATIONS), narrowed)).toEqual(['coverage: extra operation getDriftReport']);
   });
 
   it('the fixture adapter has exactly the methods of the table, plus connection', () => {
     const client = createFixtureClient();
     const methods = Object.keys(client).filter((key) => key !== 'connection');
-    expect(methods.length).toBe(10);
     expect([...methods].sort()).toEqual([...Object.keys(CLIENT_OPERATIONS)].sort());
     expect(Object.keys(client)).toContain('connection');
   });
