@@ -140,8 +140,13 @@ export function createFixtureClient(options: FixtureClientOptions = {}): Mission
   };
 
   const read = <Op extends ReadOp>(op: Op): Promise<Result<Op>> => {
-    const outcome = outcomes.get(op) as Outcome;
-    return Promise.resolve(structuredClone(outcome) as Result<Op>);
+    // A read never rejects and never throws (contracts/client-port.md, "Read error contract"): whatever goes wrong while
+    // serving it, here a value that cannot be copied, is a transport failure.
+    try {
+      return Promise.resolve(structuredClone(outcomes.get(op) as Outcome) as Result<Op>);
+    } catch {
+      return Promise.resolve({ ok: false, unavailable: 'transport' });
+    }
   };
 
   let state: ConnectionState = options.initialState ?? 'connected';

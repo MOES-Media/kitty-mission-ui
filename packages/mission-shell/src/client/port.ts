@@ -39,6 +39,11 @@ export type Refusal<Op extends RefusingOp> = {
     : never;
 }[RefusalStatus<Op>];
 
+/** The outcome of a read. A read never rejects (and never throws): it resolves to one of these three shapes. A declared
+ *  `application/problem+json` status is a `refusal`; the `default` Problem, any undeclared status, a timeout or an IPC error
+ *  is `{ ok: false, unavailable: 'transport' }`. Cancellation is reserved as an optional second parameter
+ *  `{ signal?: AbortSignal }` of each read, whose abort rejects with an `AbortError`: the one rejection the port allows,
+ *  and only when the caller asked for it. See "Read error contract" in contracts/client-port.md (SO-DES-004). */
 export type Result<Op extends ReadOp> =
   | { ok: true; value: Ok<Op> }
   | { ok: false; refusal: Refusal<Op> }

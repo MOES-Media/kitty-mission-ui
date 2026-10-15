@@ -124,6 +124,25 @@ with the stub must not rely on this case.
 (a lost connection is `reconnecting`). The fixture adapter defaults to `connected` instead, a documented test convenience
 (most tests want a live connection); `initialState: 'connecting'` tests the start-up.
 
+## Read error contract (SO-DES-004)
+
+The nine reads share one error contract, so a shell handles every failure through `Result` and never through
+`try`/`catch`:
+
+- **Reads never reject.** The returned promise always resolves to a `Result<Op>`, and a read never throws synchronously.
+- **A declared refusal is a `refusal`.** A status the operation declares as `application/problem+json` becomes
+  `{ ok: false, refusal: { status, body } }`.
+- **Everything else is `transport`.** Any undeclared status, the `default` Problem (excluded from `Refusal`, as in
+  `routes.json`), a timeout, an IPC error, an unparseable body or any failure inside the adapter becomes
+  `{ ok: false, unavailable: 'transport' }`, the shape `Result` already has. `service-missing` and `contract-mismatch` stay
+  the adapter's statements about the service (they also drive the `degraded` connection states), never a catch-all.
+- **Cancellation is reserved.** A later change adds an optional second parameter to every read, `{ signal?: AbortSignal }`.
+  Aborting it rejects the promise with an `AbortError`, the one rejection the port allows, and only for a caller that
+  passed a signal. Adding an optional parameter changes no adapter or caller of #18 to #21.
+
+The fixture adapter conforms: its only run-time failure path, copying the example it serves, is caught and resolves as
+`transport` (test: an example that cannot be cloned).
+
 ## Subscription lifecycle (SO-DES-002)
 
 What a `subscribe` listener can rely on, whatever the adapter. The contract (`paths/events.yaml`) describes one HTTP

@@ -15,7 +15,7 @@ import {
   type ReadOp,
   type SubscriptionScope,
 } from '../src/client/port';
-import { createFixtureClient, setConnectionState, type ChangesEnvelope, type Scheduler } from '../src/client/fixture';
+import { createFixtureClient, setConnectionState, type ChangesEnvelope, type ExampleTable, type Scheduler } from '../src/client/fixture';
 import { operationCoverage } from '../src/client/coverage';
 
 const exampleTable = examples as Record<string, { schema: string; value: unknown }>;
@@ -370,6 +370,22 @@ describe('stream refusals', () => {
     const { seen } = heardWith({}, { missionId: changes.missionId });
     expect(seen.length).toBe(changes.items.length);
     expect(seen.filter((change) => change.kind === 'refused')).toEqual([]);
+  });
+});
+
+describe('read error contract (SO-DES-004)', () => {
+  it('a read never rejects: an example the adapter cannot copy resolves as unavailable: transport', async () => {
+    // A function cannot be structured-cloned, so serving this example fails at run time, after the client was created.
+    const broken: ExampleTable = { ...exampleTable, 'Project.example': { schema: 'Project', value: { run: () => 0 } } };
+    const client = createFixtureClient({ fixtures: { examples: broken } });
+    const readOps = routes.filter((route) => route.operationId !== 'streamEvents').map((route) => route.operationId as ReadOp);
+    const results = await Promise.allSettled(readOps.map((op) => callRead(client, op)));
+    expect(results.map((result) => result.status)).toEqual(readOps.map(() => 'fulfilled'));
+    const project = results[readOps.indexOf('getProject')];
+    expect(project?.status === 'fulfilled' ? project.value : undefined).toEqual({ ok: false, unavailable: 'transport' });
+    // The reads whose examples are intact are unaffected.
+    const missions = results[readOps.indexOf('listMissions')];
+    expect(missions?.status === 'fulfilled' && missions.value.ok).toBe(true);
   });
 });
 
