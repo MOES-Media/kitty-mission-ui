@@ -122,3 +122,9 @@ export const CLIENT_OPERATIONS = {
   listOpsInvocations: 'listOpsInvocations',
   subscribe: 'streamEvents',
 } as const satisfies { readonly [K in ClientMethod]: string };
+
+/** The nine reads as a runtime list, derived from `CLIENT_OPERATIONS` (every method but `subscribe`) so the list is written
+ *  once (SO-BND-006). A type test asserts that the `ReadOp` union equals the same set. */
+export const READ_OPS: readonly ReadOp[] = (Object.keys(CLIENT_OPERATIONS) as (keyof typeof CLIENT_OPERATIONS)[]).filter(
+  (method): method is ReadOp => method !== 'subscribe',
+);

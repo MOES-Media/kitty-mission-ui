@@ -7,7 +7,9 @@ import routesJson from '../../../../contracts/fixtures/mission-status.routes.jso
 import examplesJson from '../../../../contracts/fixtures/mission-status.examples.json' with { type: 'json' };
 import changesJson from '../../../../contracts/fixtures/mission-status.changes.json' with { type: 'json' };
 import {
+  CHANGE_KINDS,
   CONNECTION_STATES,
+  READ_OPS,
   type Change,
   type ConnectionState,
   type MissionStatusClient,
@@ -53,20 +55,10 @@ export interface FixtureClientOptions {
   initialState?: ConnectionState;
 }
 
-const READ_OPS = [
-  'getProject',
-  'listMissions',
-  'getMission',
-  'getWorkPackage',
-  'getWorkPackageDetail',
-  'listArtifacts',
-  'getArtifactContent',
-  'getDriftReport',
-  'listOpsInvocations',
-] as const satisfies readonly ReadOp[];
-
-/** The change kinds an item of changes.json may carry: every kind but `refused`, which is a response, not an event. */
-const EVENT_KINDS: readonly string[] = ['status-transition', 'mission-lifecycle', 'log-truncated'] satisfies Exclude<Change['kind'], 'refused'>[];
+/** The change kinds an item of changes.json may carry, derived from `CHANGE_KINDS`: every kind but the two that are not
+ *  events of the log, `refused` (a response) and `resync` (a connection marker). */
+type EventKind = Exclude<Change['kind'], 'refused' | 'resync'>;
+const EVENT_KINDS: readonly string[] = CHANGE_KINDS.filter((kind): kind is EventKind => kind !== 'refused' && kind !== 'resync');
 
 /** The shared example of the stream's 400 `cursor_without_mission` refusal. */
 const CURSOR_WITHOUT_MISSION = 'StreamRefusal.cursor-without-mission';
@@ -101,7 +93,7 @@ function resolveOutcome(route: RouteEntry, key: string, table: ExampleTable): Ou
 
 function toChange(item: ChangesEnvelope['items'][number], scoped: boolean): Change {
   if (!EVENT_KINDS.includes(item.event)) throw new Error(`fixture client: unknown change event ${item.event}`);
-  const kind = item.event as Change['kind'];
+  const kind = item.event as EventKind;
   const cursor = kind === 'log-truncated' || !scoped ? null : (item.scopedId ?? null);
   return { kind, cursor, data: structuredClone(item.data) } as Change;
 }

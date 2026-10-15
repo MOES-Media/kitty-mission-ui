@@ -10,10 +10,12 @@ import {
   CHANGE_KINDS,
   CLIENT_OPERATIONS,
   CONNECTION_STATES,
+  READ_OPS,
   type Change,
   type ConnectionState,
   type MissionStatusClient,
   type Params,
+  type ReadOp,
   type Refusal,
   type Result,
   type SubscriptionScope,
@@ -63,6 +65,19 @@ describe('operation table against the contract routes', () => {
     const methods = Object.keys(client).filter((key) => key !== 'connection');
     expect([...methods].sort()).toEqual([...Object.keys(CLIENT_OPERATIONS)].sort());
     expect(Object.keys(client)).toContain('connection');
+  });
+});
+
+describe('read operations (SO-BND-006)', () => {
+  it('are the table minus subscribe, derived and not repeated', () => {
+    expect([...READ_OPS]).toEqual(Object.keys(CLIENT_OPERATIONS).filter((method) => method !== 'subscribe'));
+    expect(READ_OPS.length).toBe(9);
+    expect(READ_OPS.map((op) => CLIENT_OPERATIONS[op]).sort()).toEqual(
+      routes.map((route) => route.operationId).filter((id) => id !== 'streamEvents').sort(),
+    );
+    // The hand-written ReadOp union is exactly the table without subscribe: a read in one and not the other fails here.
+    const exact: Expect<Equal<Exclude<keyof typeof CLIENT_OPERATIONS, 'subscribe'>, ReadOp>> = true;
+    expect(exact).toBe(true);
   });
 });
 
@@ -247,7 +262,7 @@ describe('package entries', () => {
     expect(shell.CLIENT_OPERATIONS).toBe(CLIENT_OPERATIONS);
     expect(shell.CONNECTION_STATES).toBe(CONNECTION_STATES);
     expect(shell.CHANGE_KINDS).toBe(CHANGE_KINDS);
-    expect([...Object.keys(shell)].sort()).toEqual(['CHANGE_KINDS', 'CLIENT_OPERATIONS', 'CONNECTION_STATES', 'toStreamCursorString']);
+    expect([...Object.keys(shell)].sort()).toEqual(['CHANGE_KINDS', 'CLIENT_OPERATIONS', 'CONNECTION_STATES', 'READ_OPS', 'toStreamCursorString']);
   });
 
   it('the ./testing entry exposes the fixture adapter, and keeps the test hook private', () => {
