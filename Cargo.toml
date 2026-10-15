@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["crates/kitty-core", "crates/kitty-stub", "apps/desktop/src-tauri", "apps/dashboard"]
+members = ["crates/kitty-core", "crates/kitty-stub", "apps/desktop/src-tauri", "apps/dashboard/server"]
 
 [workspace.package]
 edition = "2021"

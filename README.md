@@ -247,12 +247,13 @@ cargo build --workspace --locked
 | `crates/kitty-core` | the shared Rust core, a skeleton for now (`#19`). Its `tests/workspace.rs` asserts the exact set of workspace members. |
 | `crates/kitty-stub` | `kitty-stub`, the loopback HTTP and SSE stand-in for the Mission Status service. `publish = false`. |
 | `apps/desktop/src-tauri` | the Kitty Desktop placeholder: a compile-only binary crate in Tauri's layout, so `#20` adds Tauri without moving files. |
-| `apps/dashboard` | the Kitty Dashboard placeholder: a compile-only binary crate (`#21`). |
+| `apps/dashboard/server` | the Kitty Dashboard placeholder: a compile-only binary crate (`#21`), below the app root so the dashboard's web frontend can live at `apps/dashboard/`. |
 | `contracts/fixtures/` | the contract data that the shell's fixture adapter and the stub both read (below). |
 
-`Cargo.toml` at the root is the workspace (`crates/*`, `apps/desktop/src-tauri`, `apps/dashboard`). Every dependency is
-pinned exactly (`=x.y.z`) in `[workspace.dependencies]`, and `Cargo.lock` is committed. The hygiene gate's `cargo-pins`
-check rejects a range in any `Cargo.toml`. I/O is allowed only under `apps/*` and `crates/*`, never under `packages/*`.
+`Cargo.toml` at the root is the workspace (`crates/*`, `apps/desktop/src-tauri`, `apps/dashboard/server`). Every
+dependency is pinned exactly (`=x.y.z`) in `[workspace.dependencies]`, and `Cargo.lock` is committed. The hygiene gate's
+`cargo-pins` check rejects a range in any `Cargo.toml`. I/O is allowed only under `apps/*` and `crates/*`, never under
+`packages/*`.
 
 ### Shared contract data
 

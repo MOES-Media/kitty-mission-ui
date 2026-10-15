@@ -11,6 +11,15 @@ const EXPECTED: [&str; 4] = [
     "kitty-stub",
 ];
 
+/// Where each member lives, relative to the workspace root. The dashboard crate is `apps/dashboard/server`, so the
+/// app root `apps/dashboard/` stays free for the web frontend of #21 (CODE-BOUNDARY-007).
+const MANIFESTS: [(&str, &str); 4] = [
+    ("kitty-core", "crates/kitty-core/Cargo.toml"),
+    ("kitty-dashboard", "apps/dashboard/server/Cargo.toml"),
+    ("kitty-desktop", "apps/desktop/src-tauri/Cargo.toml"),
+    ("kitty-stub", "crates/kitty-stub/Cargo.toml"),
+];
+
 /// `cargo metadata --no-deps` for the workspace that contains this crate, as raw JSON text.
 fn metadata() -> String {
     let out = Command::new(env!("CARGO"))
@@ -48,6 +57,38 @@ fn package_name(json: &str, id: &str) -> String {
     let from = json[..at].rfind(key).expect("package name precedes its id") + key.len();
     let len = json[from..].find('"').expect("name closes");
     json[from..from + len].to_string()
+}
+
+/// The `"manifest_path"` of the package object whose `"id"` is `id`: the nearest one after that id, with `/`
+/// separators.
+fn manifest_path(json: &str, id: &str) -> String {
+    let at = json
+        .find(&format!("\"id\":\"{id}\""))
+        .unwrap_or_else(|| panic!("package with id {id} present"));
+    let key = "\"manifest_path\":\"";
+    let from = at + json[at..].find(key).expect("manifest_path follows the id") + key.len();
+    let len = json[from..].find('"').expect("manifest_path closes");
+    json[from..from + len].replace("\\\\", "/")
+}
+
+#[test]
+fn workspace_members_live_at_the_expected_paths() {
+    let json = metadata();
+    let mut checked = 0;
+    for id in member_ids(&json) {
+        let name = package_name(&json, &id);
+        let (_, expected) = MANIFESTS
+            .iter()
+            .find(|(n, _)| *n == name)
+            .unwrap_or_else(|| panic!("unexpected member {name}"));
+        let path = manifest_path(&json, &id);
+        assert!(
+            path.ends_with(&format!("/{expected}")),
+            "{name} is at {path}, expected {expected}"
+        );
+        checked += 1;
+    }
+    assert_eq!(checked, MANIFESTS.len());
 }
 
 #[test]

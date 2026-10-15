@@ -89,12 +89,12 @@ test('checkCargoPins walks the root manifest and every member manifest on disk',
   const dir = mkdtempSync(join(tmpdir(), 'cargo-pins-'));
   const put = (p, c) => { mkdirSync(dirname(join(dir, p)), { recursive: true }); writeFileSync(join(dir, p), c); };
   try {
-    put('Cargo.toml', '[workspace]\nmembers = ["crates/one", "apps/two"]\n\n[workspace.dependencies]\nlog = "=0.4.22"\n');
+    put('Cargo.toml', '[workspace]\nmembers = ["crates/one", "apps/two/server"]\n\n[workspace.dependencies]\nlog = "=0.4.22"\n');
     put('crates/one/Cargo.toml', member('log = { workspace = true }'));
-    put('apps/two/Cargo.toml', member('rand = "0.8"'));
+    put('apps/two/server/Cargo.toml', member('rand = "0.8"'));
     const found = checkCargoPins(dir).map((f) => `${f.file}:${f.line}: ${f.message}`);
-    assert.deepEqual(found, ['apps/two/Cargo.toml:6: dependency rand: requirement "0.8" is not an exact =x.y.z pin']);
-    put('apps/two/Cargo.toml', member('rand = "=0.8.5"'));
+    assert.deepEqual(found, ['apps/two/server/Cargo.toml:6: dependency rand: requirement "0.8" is not an exact =x.y.z pin']);
+    put('apps/two/server/Cargo.toml', member('rand = "=0.8.5"'));
     assert.deepEqual(checkCargoPins(dir), []);
     put('Cargo.toml', '[workspace]\nmembers = ["crates/one", "crates/missing"]\n');
     assert.deepEqual(checkCargoPins(dir).map((f) => `${f.rule}|${f.file}`), ['cargo-pin|crates/missing/Cargo.toml']);

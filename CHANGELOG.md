@@ -13,9 +13,9 @@ All user-visible changes to this repository. Per-package notes live in `packages
     check that mounts the real `sk-missions-screen` and proves data arrives as properties and every declared intent
     reaches the shell.
   - A Rust workspace pinned to Rust 1.98.1 (`rust-toolchain.toml`): `crates/kitty-core`, `crates/kitty-stub` and
-    compile-only placeholders for Kitty Desktop (`apps/desktop/src-tauri`) and Kitty Dashboard (`apps/dashboard`), with
-    exact `=x.y.z` pins and a committed `Cargo.lock`, judged by a new `Gate: rust` (format, clippy with `-D warnings`,
-    tests; offline after separate install and fetch steps).
+    compile-only placeholders for Kitty Desktop (`apps/desktop/src-tauri`) and Kitty Dashboard
+    (`apps/dashboard/server`), with exact `=x.y.z` pins and a committed `Cargo.lock`, judged by a new `Gate: rust`
+    (format, clippy with `-D warnings`, tests; offline after separate install and fetch steps).
   - `kitty-stub`: a loopback-only HTTP and SSE stand-in that serves every vendored example and fixture, applies the
     service's Host, Origin and forwarding-header rules, and replays a scripted change sequence identically on every run.
   - Shared contract data in `contracts/fixtures/`: generated examples, fixtures and routes, plus the hand-authored change
