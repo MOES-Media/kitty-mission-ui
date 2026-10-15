@@ -1,0 +1,13 @@
+<script lang="ts">
+  // Plant (FR-004): a misspelled intent handler attribute (the attribute path chosen by WP04 T021) must fail svelte-check.
+  // The correctly spelled handler on the same element is the positive control: it type-checks.
+  import '@moes-media/mission-ui';
+  import type { SkOpenMissionDetail } from '@moes-media/mission-ui';
+
+  const onOpen = (event: CustomEvent<SkOpenMissionDetail>): void => {
+    void event;
+  };
+</script>
+
+<sk-missions-screen onsk-open-mission={onOpen}></sk-missions-screen>
+<sk-missions-screen onsk-open-misson={onOpen}></sk-missions-screen>
