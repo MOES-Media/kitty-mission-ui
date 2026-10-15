@@ -101,6 +101,9 @@ async fn main() -> ExitCode {
 }
 
 async fn run(args: Args, fixtures: Fixtures) -> Result<(), String> {
+    // The handlers exist before `listening` is written: a signal that follows the line closely is never lost to the
+    // default action (death by signal).
+    let mut shutdown = Shutdown::install()?;
     let listener = tokio::net::TcpListener::bind((Ipv4Addr::LOCALHOST, args.port))
         .await
         .map_err(|e| format!("bind: {e}"))?;
@@ -125,24 +128,45 @@ async fn run(args: Args, fixtures: Fixtures) -> Result<(), String> {
     // returning drops the listener, and the runtime's shutdown closes every connection.
     tokio::select! {
         () = server => Ok(()),
-        signal = shutdown_signal() => signal,
+        () = shutdown.wait() => Ok(()),
     }
 }
 
+/// SIGINT and SIGTERM, registered up front.
 #[cfg(unix)]
-async fn shutdown_signal() -> Result<(), String> {
-    use tokio::signal::unix::{signal, SignalKind};
-    let mut term = signal(SignalKind::terminate()).map_err(|e| format!("SIGTERM handler: {e}"))?;
-    let mut int = signal(SignalKind::interrupt()).map_err(|e| format!("SIGINT handler: {e}"))?;
-    tokio::select! {
-        _ = term.recv() => Ok(()),
-        _ = int.recv() => Ok(()),
+struct Shutdown {
+    term: tokio::signal::unix::Signal,
+    int: tokio::signal::unix::Signal,
+}
+
+#[cfg(unix)]
+impl Shutdown {
+    fn install() -> Result<Self, String> {
+        use tokio::signal::unix::{signal, SignalKind};
+        Ok(Shutdown {
+            term: signal(SignalKind::terminate()).map_err(|e| format!("SIGTERM handler: {e}"))?,
+            int: signal(SignalKind::interrupt()).map_err(|e| format!("SIGINT handler: {e}"))?,
+        })
+    }
+
+    async fn wait(&mut self) {
+        tokio::select! {
+            _ = self.term.recv() => {}
+            _ = self.int.recv() => {}
+        }
     }
 }
 
 #[cfg(not(unix))]
-async fn shutdown_signal() -> Result<(), String> {
-    tokio::signal::ctrl_c()
-        .await
-        .map_err(|e| format!("Ctrl-C handler: {e}"))
+struct Shutdown;
+
+#[cfg(not(unix))]
+impl Shutdown {
+    fn install() -> Result<Self, String> {
+        Ok(Shutdown)
+    }
+
+    async fn wait(&mut self) {
+        let _ = tokio::signal::ctrl_c().await;
+    }
 }
