@@ -66,3 +66,17 @@ test('the hygiene script reports a floating toolchain channel', () => {
     assert.deepEqual(found(), []);
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
+
+// SO-CORR-002: an extensionless `rust-toolchain` file overrides `rust-toolchain.toml` in rustup, so it must not exist.
+test('toolchain: a legacy extensionless toolchain file at the root is reported', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'toolchain-legacy-'));
+  const put = (p, c) => writeFileSync(join(dir, p), c);
+  try {
+    put('Cargo.toml', '[workspace]\nmembers = []\n');
+    put('rust-toolchain.toml', toolchain('"1.98.1"'));
+    assert.deepEqual(checkRustToolchainPin(dir), []);
+    put('rust-toolchain', '1.97.0\n');
+    assert.deepEqual(checkRustToolchainPin(dir).map((f) => `${f.rule}|${f.file}|${f.line}`), ['rust-toolchain-pin|rust-toolchain|0']);
+    assert.match(checkRustToolchainPin(dir)[0].message, /overrides rust-toolchain\.toml/);
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
