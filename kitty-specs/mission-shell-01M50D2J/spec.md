@@ -64,6 +64,10 @@ The operator chose the recommended option for each question; the decision moment
   - `listMissions` has no server-side search or filter. The Missions screen filters the rows it is given (its FR-009).
   - Drift "Rescan" is a second `GET /drift`. The 200 response is sent with `no-store`.
 
+### Amendments
+
+- **2026-10-15, FR-005 (decision `01M50K4DBT2VCW6DD4JQAGEMB4`, operator ruling on plan squad finding R1-02).** An `unavailable` result on a resource that already holds data keeps that data and the screen's view state. Only a resource without data goes to `error`. A refusal always applies.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Move between every screen (Priority: P1)
