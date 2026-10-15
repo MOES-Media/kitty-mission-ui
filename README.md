@@ -377,12 +377,13 @@ about 1096 s for the job (973 x 330/293) and about 2367 s for the proof leg (210
 leaves the job estimate at about 65% of the limit (1096 s of 1680 s), and the 60-minute proof leg timeout leaves its
 estimate at about 66% (2367 s of 3600 s). `unit-tests` (150 s, 396 s in the same run) keeps its job timeout of 8 minutes. Its proof leg rises from 10 to 11 minutes for the merged suite: the pull request run 38151797285 took 435 s, which is 72.5% of the old 600 s limit and 66% of the new 660 s (435 / 660).
 
-Proof-leg timeouts of the gates that issue `#17` extended start from the formula (1 + the plants in the leg) x the
-measured gate time + 2 minutes, rounded up, and never drop below their value before that issue. Against `main` before
-#17 they change as follows: `stylelint` 6 to 9, `data-driven` 6 to 8, `contract` 6 to 12 (7 plants, a 68 s local gate
-run), `unit-tests` 11 to 25 (8 plants; the formula on the 150 s CI gate time above, (1 + 8) x 2.5 + 2 = 24.5), and the
-new `rust` leg 20. The other times are a local proxy (`gate-proof local`), so every changed leg is re-measured on the
-first CI run of the #17 pull request and its timeout set from that measurement.
+Proof-leg timeouts of the gates that issue `#17` extended follow the formula (1 + the plants in the leg) x the
+measured gate time + 2 minutes, rounded up, and never drop below their value before that issue. The gate times are the
+job times of the #17 pull request's first CI run (run 38750632963): `eslint` 34 s (8 plants) gives 8 minutes,
+`stylelint` 29 s (14) 10, `hygiene` 58 s (6) 9, `contract` 113 s (7) 18, `unit-tests` 185 s (8) 30 and the new `rust`
+leg 43 s (3) 5. `typecheck`, `no-io`, `manifest` and `data-driven` compute at or below their earlier 6 minutes and keep
+it. On that run the slowest legs used under half their new limit: `unit-tests` 802 s of 1800 s (45%) and `eslint` 213 s
+of 480 s (44%). Every gate job stayed within 8 minutes (NFR-002); the slowest was `unit-tests` at 185 s.
 
 ### Installs are frozen
 
