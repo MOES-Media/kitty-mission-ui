@@ -4,7 +4,8 @@ Every `(element, intent)` pair declared in `packages/mission-ui/custom-elements.
 effect. `sk-mission-sample` and its `sk-mission-retry` are excluded by name (FR-004).
 
 - The type-level coverage check (`research.md` R-09) makes this table complete by construction.
-- A browser test triggers each row on a real element and asserts its effect (FR-003).
+- A browser test triggers each row on a real element and asserts its effect (FR-003). The sweep is **driven from
+  `INTENT_TABLE`**: one case per `(tag, event)` pair, 40 cases (R5-10).
 - "via X" marks a nested pattern element whose bubbling, composed event is delivered through hosting element X's
   binding. The test asserts it is handled exactly once.
 
@@ -43,27 +44,42 @@ effect. `sk-mission-sample` and its `sk-mission-retry` are excluded by name (FR-
 | `sk-drift-screen` | `sk-retry-load` | `target: 'drift-report'` re-reads `drift:{missionId or *}` | same |
 | `sk-ops-screen` | `sk-load-more` | read the next `ops` page with `pageCursor = detail.cursor`; append; `loadingMore` | same |
 | `sk-ops-screen` | `sk-retry-load` | `target: 'ops-page'`: with a cursor, re-read that page; without one, re-read the first page | same |
-| `sk-projects-screen` | `sk-open-project` | `host.openProject({ key: detail.key })` | not mounted |
+| `sk-projects-screen` | `sk-open-project` | `host.openProject({ key: detail.key })` | **ignored** (never mounted; guarded) |
 | `sk-projects-screen` | `sk-request-open-project` | open the dialog; `host.listFolders('')` for the start location | **ignored** (no host call, no state change) |
-| `sk-projects-screen` | `sk-retry-load` | `'projects'` re-calls `host.listRecentProjects()`; `'project'` re-calls it as well (the host owns per-entry reads) | not mounted |
+| `sk-projects-screen` | `sk-retry-load` | `'projects'` re-calls `host.listRecentProjects()`; `'project'` re-calls it as well (the host owns per-entry reads) | **ignored** (never mounted; guarded) |
 | `sk-open-project-dialog` | `sk-browse-folder` | `host.listFolders(detail.location)`; pass the folders to the dialog | **ignored** |
 | `sk-open-project-dialog` | `sk-confirm-open-project` | `host.openProject({ location: detail.location })` | **ignored** |
-| `sk-open-project-dialog` | `sk-retry-load` | `'folders'` re-calls `host.listFolders(current location)` | not mounted |
+| `sk-open-project-dialog` | `sk-retry-load` | `'folders'` re-calls `host.listFolders(current location)` | **ignored** (never mounted; guarded) |
 | `sk-phase-bar` | none | none | none |
 
-Totals: 9 hosting elements and 5 nested pattern elements (`sk-phase-bar` declares no event). There are 22 distinct
-intent names, and 40 table rows once the pairs that share a row are counted separately.
+Totals: 9 hosting elements and 5 nested pattern elements (`sk-phase-bar` declares no event). There are **23 distinct
+intent names** and **40 `(element, intent)` pairs**, verified against `custom-elements.json` (R1-07).
 
 ## Rules
 
-- **Desktop-only intents** (`sk-request-open-project`, `sk-browse-folder`, `sk-confirm-open-project`) in
-  `mode: 'dashboard'`: no host call, no state change, nothing thrown (FR-015). The positive control mounts the same
-  recording host in `mode: 'desktop'` and expects exactly one call per intent.
-- **The link scheme** is read with `/^([a-z][a-z0-9+.-]*):/i`, lower-cased, and compared for equality with `http`,
-  `https` and `mailto`. So `httpx:` and `javascript:` fail, and `HTTPS:` passes (FR-013, edge case). The positive
-  control (one `https:` link gives exactly one host call) sits in the same test as the two negative cases.
-- **A handler never throws.** A host member's throw or rejection resolves to its fallback (NFR-007).
-- **The coverage type.** `INTENT_TABLE` is declared with `satisfies` against a mapped type over `HostedTag` and
-  `MissionUiIntents`. A missing pair produces `{ unmappedIntent: '<tag> <event>' }` in the svelte-check error, which is
-  the typecheck plant's token. An extra pair, an intent that is no longer declared, is also a type error, so the table
-  cannot go stale.
+- **The dashboard guard** (FR-015, R2-11). The spec's three desktop-only intents, and the other three intents of the
+  Projects screen and the open-project dialog (`sk-open-project` and the two `sk-retry-load` intents), are ignored in
+  `mode: 'dashboard'`: no host call, no state change, nothing thrown.
+  - This is tested through `controller.intent` in Node, because those elements are never mounted on the dashboard.
+  - The positive control is the same recording host in `mode: 'desktop'`, with exactly one call per intent.
+  - A mounted dashboard test asserts that no picker entry point exists: no "All projects" footer item, no Projects
+    rail item, no `sk-projects-screen` and no `sk-open-project-dialog` (R1-03).
+- **The link scheme** is read with `/^([a-z][a-z0-9+.-]*):/i`, at position 0 with no trimming, lower-cased, and
+  compared for equality with `http`, `https` and `mailto`. `HTTPS:` passes (FR-013). The positive control (one
+  `https:` link gives exactly one host call) sits in the same test as every negative case (R3-05):
+  - `httpx:` and `javascript:`;
+  - mixed-case `JaVaScRiPt:`;
+  - `data:`, `file:` and `vbscript:`;
+  - a leading space and a leading tab before `https:`;
+  - the protocol-relative `//evil.example`;
+  - a relative path;
+  - the empty string.
+
+  The host's own obligations are in `contracts/shell-api.md` (`openExternalLink`).
+- **A handler never throws.** A host member's throw or rejection resolves to its fallback (NFR-007). Shell
+  programming errors are not swallowed: the harnesses fail on them.
+- **Copy** follows the protocol of research R-18: `copyResult = null` reaches the element before the host is awaited.
+- **The coverage type** (research R-09). The check type `Exclude<Declared, Mapped>` is assigned `true`, so a missing
+  pair fails with the literal `'<tag> <event>'` in the svelte-check error. P-2's token is
+  `sk-drift-screen sk-copy-command`. The reverse check rejects an extra pair. Entries are one per line, and handlers
+  are typed by `MissionUiIntents[T][E]`.

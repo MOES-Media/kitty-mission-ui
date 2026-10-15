@@ -1,16 +1,18 @@
 # Data Model: mission-shell (#18)
 
 There is no persistent storage. Everything here lives in memory for the life of one mounted shell, and is dropped on
-unmount or when the client changes. Contract shapes (`Project`, `MissionDetail`, `MissionOverviewPage` and the rest)
-come from the port and the pinned contract, and are never redefined. The screens' view types are supertypes of the
-contract types, so a contract value is passed to a screen unchanged (FR-005). The port is frozen (C-003): nothing here
-adds a field to `MissionStatusClient`, `Result`, `Refusal`, `ConnectionState`, `Change` or `SubscriptionScope`.
+unmount or when the client changes.
+- Contract shapes come from the port and the pinned contract, and are never redefined.
+- The screens' view types are supertypes of the contract types, so a contract value is passed to a screen unchanged
+  (FR-005).
+- The port is frozen (C-003). Its contract is `kitty-specs/phase0-bootstrap-01M4V5KK/contracts/client-port.md` on this
+  branch: five states, the `resync` and `refused` kinds, and reads that never reject.
 
 ## Destination
 
 A discriminated union by `screen`:
 
-| `screen` | Layout | Identifiers | Route (`research.md` R-02) |
+| `screen` | Layout | Identifiers | Route (research R-02) |
 |---|---|---|---|
 | `missions` | project | none | `/missions` |
 | `drift` | project | `missionId?` (scope) | `/drift`, `/drift/{missionId}` |
@@ -21,36 +23,31 @@ A discriminated union by `screen`:
 | `projects` | picker | none | `/projects` (desktop only) |
 
 **Invariants**:
-- `parseRoute(formatRoute(d))` deep-equals `d` for every destination (FR-002).
-- An unknown route parses to `{ screen: 'missions' }`.
-- `/projects` parses to Missions when `mode = 'dashboard'`.
-- `missionId` matches the contract ULID pattern and `wpId` the contract WP id pattern. Otherwise the route is unknown.
-- With `client = null` (desktop, no project open), the only reachable destination is `projects` (US5-3).
-
-The current navigation item is derived from the destination:
-- `missions`, `drift` and `ops` mark `nav-missions`, `nav-drift` and `nav-ops`;
-- `pipeline`, `work-packages` and `artifacts` mark `nav-pipeline`, `nav-work-packages` and `nav-artifacts`;
-- the rail marks `rail-missions` in the mission layout.
+- `parseRoute(formatRoute(d))` deep-equals `d` for every destination. A non-canonical encoding parses to the same
+  destination.
+- An unknown route parses to Missions. A route is unknown when:
+  - a segment fails to decode;
+  - an id does not match its contract pattern;
+  - a decoded artifact path fails the contract's `ArtifactPath` pattern or length.
+- `/projects` parses to Missions on the dashboard.
+- With `client = null`:
+  - on the desktop, the only destination is `projects`;
+  - on the dashboard, the project layout shows the shell `error` "No project is open.", with no reads (research R-10).
 
 ## ResourceKey and the displayed set
 
-A displayed resource is one port read with its parameters (spec, Key Entities). Its key is a string, and the shell
-records reads by key in tests.
-
 | Key | Port read | Feeds |
 |---|---|---|
-| `project` | `getProject({})` | project head (chrome, project layout); `project` of the Missions and Ops screens |
-| `missions` | `listMissions` pages 1..n (paged) | Missions screen `missions`, `pageInfo`, `loadingMore` |
-| `mission-names` | `listMissions({})`, first page only | Drift screen `missions` (`research.md` R-18) |
-| `mission:{M}` | `getMission({ path: { missionId: M } })` | Mission head (chrome, mission layout); Pipeline `mission`; WP screen `mission`; Artifact `mission` and `workPackages`; WP tree |
-| `wp:{M}/{W}` | `getWorkPackage({ path: { missionId: M, wpId: W } })` | WP screen `workPackage` |
-| `wp-detail:{M}/{W}` | `getWorkPackageDetail(...)` | WP screen `detail`, `detailStatus`, `detailRefusalCode` |
-| `artifacts:{M}` | `listArtifacts({ path: { missionId: M } })` | Artifact `listing`; artifacts tree |
-| `artifact:{M}:{P}` | `getArtifactContent({ path: { missionId: M }, query: { path: P } })` | Artifact `content`, `contentStatus` |
-| `drift:{M or *}` | `getDriftReport({ query: { missionId } })` or `getDriftReport({})` | Drift `report`, `rescanning` |
-| `ops` | `listOpsInvocations` pages 1..n (paged) | Ops `items`, `pageInfo`, `loadingMore`, `loadMoreError` |
-
-The displayed set of each destination:
+| `project` | `getProject({})` | project head (chrome); `project` of Missions and Ops |
+| `missions` | `listMissions` pages 1..n (a page chain) | Missions `missions`, `pageInfo`, `loadingMore`. **This is "the Missions list" of the refresh policy** |
+| `mission-names` | `listMissions({})`, page 1 only | Drift `missions` (never "the Missions list") |
+| `mission:{M}` | `getMission` | mission head (chrome); Pipeline, WP screen and Artifact `mission`; Artifact `workPackages`; WP tree |
+| `wp:{M}/{W}` | `getWorkPackage` (no `includePrompt`) | WP `workPackage` |
+| `wp-detail:{M}/{W}` | `getWorkPackageDetail` | WP `detail`, `detailStatus`, `detailRefusalCode` |
+| `artifacts:{M}` | `listArtifacts` | Artifact `listing`; artifacts tree |
+| `artifact:{M}:{P}` | `getArtifactContent` | Artifact `content`, `contentStatus` |
+| `drift:{M or *}` | `getDriftReport` | Drift `report`, `rescanning` |
+| `ops` | `listOpsInvocations` pages 1..n (a page chain) | Ops `items`, `pageInfo`, `loadingMore`, `loadMoreError` |
 
 | Destination | Stream-refreshed | Explicit-refreshed (the destination's own data, FR-016) |
 |---|---|---|
@@ -62,128 +59,147 @@ The displayed set of each destination:
 | Work Packages M, none | `mission:{M}` | none |
 | Artifacts M, P | `mission:{M}` | `artifacts:{M}`, `artifact:{M}:{P}` |
 | Artifacts M, none | `mission:{M}` | `artifacts:{M}` |
-| Projects | none (host data: `listRecentProjects`) | none |
+| Projects | none (host data) | none |
 
-**"Of Mission M"**: a key is of M exactly when its read parameters carry `missionId = M` (`research.md` R-04). So
-`drift:M` is of M, while `drift:*`, `missions`, `mission-names`, `project` and `ops` are of no Mission.
-
-**Navigation**:
-- On navigation the shell computes the new displayed set.
-- It drops the slots of keys that are no longer displayed. Their generations are bumped, so late results are
-  discarded.
-- It issues a read for every key of the new destination's own data, and for every chrome key that was not displayed
-  before.
-- Re-selecting the current destination re-reads its explicit-refreshed keys (US6-2).
-- The shell keeps no cache of keys that are not displayed.
+- A key is "of Mission M" exactly when its read parameters carry `missionId = M`.
+- **Navigation**:
+  - The shell drops the slots of keys that are no longer displayed.
+  - It creates fresh slots, without values, for new keys, and issues their reads as bypass reads.
+  - Keys displayed before and after keep their slots and values.
+  - Re-selecting the current destination re-reads its explicit-refreshed keys.
 
 ## Refresh policy
 
-The rule FR-007 to FR-009 implement. Only keys in the current displayed set are ever re-read. The exact, testable
-recording for the scripted sequence is in `contracts/refresh-policy.md`.
-
 | Change | Re-read, among displayed keys | Never |
 |---|---|---|
-| `status-transition` (M, W) | `mission:{M}`; `wp:{M}/{W}` and `wp-detail:{M}/{W}`; `missions` | artifacts, `artifact:*`, `drift:*`, `mission-names`, `ops`, `project` |
+| `status-transition` (M, W) | `mission:{M}`; `wp:{M}/{W}`, `wp-detail:{M}/{W}`; `missions` | `artifacts:*`, `artifact:*`, `drift:*`, `mission-names`, `ops`, `project` |
 | `mission-lifecycle` (M) | `missions`; `mission:{M}` | as above |
 | `log-truncated` (M) | every key of M; `missions` | keys of other Missions |
-| `resync` | every displayed key, explicit-refreshed ones included | nothing |
-| `refused` | nothing (the live-updates-off notice, FR-010) | everything |
+| `resync` (adapter), or a shell-side resync (a non-first `connected` while the subscription is refused) | every displayed key | nothing |
+| `refused` | nothing (the notice; FR-010) | everything |
 
-## ResourceSlot (one per displayed key)
+Stream changes (the first three rows) coalesce. `resync` and every other trigger are bypass reads (below).
+
+## Read scheduling
+
+**One controller-wide, monotonic generation counter.** Every issued read takes the next number.
+
+### ResourceSlot (one per displayed key)
 
 | Field | Meaning |
 |---|---|
-| `state` | `idle`, `in-flight` or `in-flight+trailing`; plus `windowOpenUntil` |
-| `generation` | incremented on every issued read, and on removal |
-| `value` | the last applied success value, or `undefined` |
-| `view` | `loading`, `ready`, `empty` or `error` (or the screen's own status words, below) |
-| `refusal` | `{ status, body }` of the last applied refusal, or `null` |
+| `latest` | the generation of the latest issued read (a page chain uses one generation) |
+| `inFlight` | whether a read or chain of `latest` is unsettled |
+| `trailing` | whether a coalesced stream request is pending |
+| `windowTimer` | a handle on the injected scheduler, or none |
+| `value` | the last applied success value, or none |
+| `view` | the view state, or the screen's own status word |
+| `refusal` | the last applied refusal, or `null` |
 
-**Transitions** (`research.md` R-05):
-- A request on `idle` issues a read, sets `in-flight`, and opens a 100 ms window.
-- A request on `in-flight`, or while the window is open, sets `trailing`.
-- A read settles: the result is applied only when its `generation` equals the slot's current generation (FR-009).
-  Then, when `trailing` is set and the window has closed, exactly one read is issued and a new window opens.
-  Otherwise the slot becomes `idle`.
-- While the connection state is `connecting`, requests are recorded but issued only at the first `connected`.
+### Transitions
 
-**Applying a result** (`research.md` R-06):
+| Event | Effect |
+|---|---|
+| stream request, idle slot, no window | issue (new generation), set `inFlight`, arm a 100 ms window |
+| stream request, window open or `inFlight` | set `trailing` |
+| window timer fires | if `trailing` and not `inFlight`: issue, clear `trailing`, arm a new window. Otherwise the window simply closes |
+| read or chain settles | apply only if its generation equals `latest`. Then, if `trailing` and the window is closed: issue, clear `trailing`, arm a new window |
+| bypass trigger (navigation, `resync`, Refresh, refocus, retry, Rescan) | issue at once with a new generation, clear `trailing`, re-arm the window |
+| slot removed | the timer is cleared and the slot discarded; later results find no slot |
 
-| Result | Slot has a value | Slot has no value |
+### Connection gate
+
+- While `connecting`, nothing is issued.
+- The first transition out of `connecting`, to any state, issues the current displayed set as bypass reads.
+- The first `connected` ever triggers no read of its own when it is not that transition.
+
+### Page chain (`missions`, `ops`)
+
+- Page 1, then each next page with the cursor of the page just read, up to the n pages loaded, or until a page has no
+  next cursor.
+- The chain uses one generation and is applied once, when complete.
+- On page k > 1, a failure applies the pages read so far.
+- Load-more:
+  - it appends one page with `loadingMore` set;
+  - a stream request during it becomes `trailing` and re-reads n + 1 pages;
+  - a bypass during it supersedes it;
+  - a load-more during a chain is queued, and issued with the new last cursor.
+
+## Applying a result
+
+| Result | Slot with a value | Slot without a value |
 |---|---|---|
-| `{ ok: true, value }` | value replaced; `ready` or `empty` | value set; `ready` or `empty` |
-| `{ ok: false, refusal }` | `error` with the refusal (an answer, applied) | `error` with the refusal |
-| `{ ok: false, unavailable }` | value and view kept | `error` |
+| `{ ok: true, value }` | replaced; `ready` or `empty` | set; `ready` or `empty` |
+| `{ ok: false, refusal }` | `error` (or `not-found` for 404 where the screen defines it), with the refusal | the same |
+| `{ ok: false, unavailable }` | value and view kept (spec FR-005 amendment) | `error` |
 
-- "Empty" follows each screen's own definition:
-  - Missions: no items on the first page;
-  - Ops: no items;
-  - Drift: no findings, which is `empty` per `DriftScreenStatus`;
-  - the others have no `empty` for their data.
-- A 404 refusal maps to the screens' `not-found` status where they define it (`WpScreenStatus`, `DetailStatus`,
-  `DriftScreenStatus`, `ArtifactStatus`).
-- A refused load-more cursor (400, `PageCursorRefusal`; the example is `PageCursorRefusal.invalid`) drops the loaded
-  pages and re-reads page 1.
-- On Ops, a load-more failure is shown through `loadMoreError` and keeps the loaded items.
+- **Stale-while-revalidate**: a slot with a value keeps its view while a re-read runs. `loading` appears only without a
+  value.
+- **Entering a degraded state** sets every slot without a value to `error` at once. Gated reads are kept and issued
+  (research R-06).
+- "Empty" follows each screen's definition: Missions has no items on page 1, Ops has no items, and Drift has no
+  findings. The others have no `empty`.
+- A refused load-more cursor (400, `PageCursorRefusal.invalid`) drops the loaded pages and re-reads page 1.
+- An Ops load-more failure sets `loadMoreError` and keeps the items.
 
 ## ConnectionPresentation
 
-| State | Banner (in the content column, above the screen) | Reads | Screens |
+| State | Banner | Reads | Screens |
 |---|---|---|---|
-| `connecting` | info notice "connecting", `announce` polite | none until the first `connected` | `loading` |
-| `connected` | none | normal | as their data says |
-| `reconnecting` | attention banner "data may be out of date", only after the state has lasted 1 s or more (NFR-004) | normal (results go through the table above) | keep their last data |
-| `degraded: service-missing` | danger banner, `announce` assertive, within 100 ms | normal | keep data; no data means `error` |
-| `degraded: contract-mismatch` | danger banner, `announce` assertive, within 100 ms | normal | keep data; no data means `error` |
-| (subscription refused) | neutral notice "live updates are off", independent of the state | normal | unchanged |
+| `connecting` | info notice, polite | gated | `loading` |
+| `connected` | none | normal | per data |
+| `reconnecting` | attention banner, polite, only once the state has lasted 1 s or more (the timer is armed after the state update, cleared on every exit, re-armed on re-entry) | normal | keep data |
+| `degraded: service-missing` | danger banner, assertive, in the same render | normal | keep data; no data means `error` |
+| `degraded: contract-mismatch` | danger banner, assertive, in the same render | normal | keep data; no data means `error` |
+| subscription refused | neutral notice "live updates are off", until remount | normal | unchanged; each non-first `connected` is a shell-side resync |
 
-- Any state back to `connected` hides the banner within 100 ms. The `resync` that the adapter delivers next re-reads
-  every displayed key (US4-6).
-- The first `connecting` to `connected` gets no `resync`, so the shell reads the current destination itself (US4-2).
-- Copy and tones are in `contracts/connection-presentation.md`.
-- Every banner is an `sk-notice` (C-005). Shell CSS only places it.
+Copy and tones are in `contracts/connection-presentation.md`. Every banner is an `sk-notice` (C-005).
 
 ## SessionState
 
-This state lives in memory while the shell is mounted, and is reset when the client changes.
-
 | Item | Scope |
 |---|---|
-| Missions `query` and `filter` | survive leaving and re-entering Missions (US2-7) |
+| Missions `query` and `filter` | survive leaving and re-entering Missions |
 | Drift `selectedFinding` | survives re-entering the same Drift scope |
-| tree expansion (artifacts folders) | per Mission |
-| `drawerOpen`, `flyoutOpen` | shell-wide; the shell accepts the elements' requests (it does not cancel them) |
-| `copyResult` | Drift, until the next copy or navigation |
+| artifacts tree expansion | per Mission |
+| `drawerOpen`, `flyoutOpen` | shell-wide |
+| `copyResult` | Drift. It is reset to `null` (and delivered) before each copy, and on navigation |
 | open-project dialog: `open`, `location`, `folders`, `selected` | desktop picker only |
 
-## ShellHost (the host interface, FR-012)
+## ShellHost (FR-012)
 
 | Member | Signature | Fallback when absent, throwing or rejecting |
 |---|---|---|
-| `copyText` | `(text: string) => Promise<'copied' or 'manual'>` | `'manual'` |
-| `openExternalLink` | `(href: string) => void` | nothing |
-| `listRecentProjects` | `() => Promise<ProjectEntry[]>` | Projects screen `error` |
-| `openProject` | `(target: { key: string } or { location: string }) => void` | nothing |
-| `listFolders` | `(location: string) => Promise<{ location: string; folders: FolderEntry[] }>` | dialog `error` |
-| `onWindowRefocus` | `(listener: () => void) => () => void` | no refocus refresh |
-| `routeChanged` | `(route: string) => void` | nothing |
+| `copyText` | `(text) => Promise<'copied' or 'manual'>` | `'manual'` |
+| `openExternalLink` | `(href) => void`. The host MUST re-validate the scheme case-insensitively, MUST NOT navigate its window or webview, and SHOULD show the destination first | nothing |
+| `listRecentProjects` | `() => Promise<ProjectEntry[]>` | Projects `error` |
+| `openProject` | `(target: { key } or { location }) => void` | nothing |
+| `listFolders` | `(location) => Promise<{ location, folders: FolderEntry[] }>` | dialog `error` |
+| `onWindowRefocus` | `(listener) => () => void` | no refocus refresh |
+| `routeChanged` | `(route) => void`, called after the shell's own navigations and after normalising a non-canonical host route | nothing |
 
 **Invariants**:
-- No member is ever called in `mode = 'dashboard'` for `sk-request-open-project`, `sk-browse-folder` or
-  `sk-confirm-open-project` (FR-015).
-- `openExternalLink` is called only with a scheme of exactly `http:`, `https:` or `mailto:`, compared
-  case-insensitively, after the shell's own check (FR-013).
+- In `mode = 'dashboard'`, none of the six picker and dialog intents reaches the host.
+- `openExternalLink` is called only for a scheme of exactly `http`, `https` or `mailto` (case-insensitive), matched at
+  position 0 with no leading whitespace.
+- Host errors are converted to fallbacks. **Shell programming errors are never swallowed**: the test harnesses fail on
+  any uncaught error or unhandled rejection (NFR-007).
 
-## ShellOptions (the mount surface; the contract is `contracts/shell-api.md`)
+## ShellOptions
 
-`client` (`MissionStatusClient` or `null`), `host` (`ShellHost`, default `{}`), `mode` (`'desktop'` or
-`'dashboard'`), `route` (string, default `/missions`), `scheduler` (the same `{ setTimeout, clearTimeout }` shape as
-the fixture adapter's, default global timers), `clock` (`() => Date`, default system clock), and `copy` (partial
-overrides of the degraded explanations).
+- `client` (or `null`).
+- `host` (default `{}`).
+- `mode` (`'desktop'` or `'dashboard'`).
+- `route` (default `/missions`, or `/projects` with a null client on the desktop).
+- `scheduler`: a `ShellScheduler`, declared once in `src/core/scheduler.ts` and structurally identical to the fixture's
+  `Scheduler`. A type test asserts that each is assignable to the other (R4-08). Default: global timers.
+- `clock` (default the system clock).
+- `copy` (degraded overrides).
 
 ## IntentTable
 
-`INTENT_TABLE: { [T in HostedTag]: { [E in MissionUiIntents[T]]: Handler or { via: HostedTag } } }`.
-- `HostedTag` is `Exclude<MissionUiTag, 'sk-mission-sample'>`.
-- A missing pair is a type error naming the pair through `{ unmappedIntent: '<tag> <event>' }` (FR-004).
-- The full table of effects is `contracts/intent-map.md`.
+- `INTENT_TABLE: { [T in HostedTag]: { [E in keyof MissionUiIntents[T]]: Handler<MissionUiIntents[T][E]> or { via: H } } }`.
+- `MissionUiIntents` maps each tag to `{ event: Detail }`, generated from the manifest.
+- `HostedTag` = `Exclude<MissionUiTag, 'sk-mission-sample'>`.
+- The check types are in research R-09, and the full effect table in `contracts/intent-map.md`.
+- Counts: 40 pairs, 23 distinct intent names.

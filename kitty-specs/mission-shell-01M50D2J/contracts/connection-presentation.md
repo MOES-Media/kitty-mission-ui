@@ -7,6 +7,8 @@ flag and is confirmed or amended by the operator at CP-1 (`plan.md`, "Design rev
 
 - Each banner is one `sk-notice` from `@spec-kitty/elements`, placed in the `sk-mission-shell` content slot above the
   hosted screen.
+- `src/ui/ConnectionBanner.svelte` holds the tone and announce table, one line per condition. The reconnecting line is
+  exactly `reconnecting: { tone: 'attention', announce: 'polite' },`, which is the anchor of visual plant P-6.
 - Shell CSS only lays it out: a flex column, with a gap from a `--sk-space-*` token.
 - The screen below keeps its own state.
 
@@ -22,7 +24,8 @@ flag and is confirmed or amended by the operator at CP-1 (`plan.md`, "Design rev
   example to explain an unsigned or quarantined service binary on the desktop.
 - **Timing (NFR-004)**:
   - A degraded banner appears in the first render after the state change.
-  - `reconnecting` arms a 1 s timer on the injected scheduler. The banner appears only if the state is still
+  - Entering `reconnecting` updates the state first, then arms a 1 s timer on the injected scheduler. Every exit
+    clears the timer, and a re-entry arms a fresh one (R2-08). The banner appears only if the state is still
     `reconnecting` when the timer fires, so a shorter drop shows nothing.
   - `connected` hides any banner in the same render.
   - Tests assert these with a fake scheduler.
@@ -46,5 +49,7 @@ flag and is confirmed or amended by the operator at CP-1 (`plan.md`, "Design rev
 | Mission not found (Pipeline `errorMessage`) | This Mission could not be found. It may have been removed. |
 | Read failed with no data (`errorMessage`, where the screen has no refusal property) | The data could not be loaded. |
 | Shell chrome error (`sk-mission-shell` `errorMessage`) | The project could not be loaded. |
+| Dashboard mounted with no client (`sk-mission-shell` `errorMessage`) | No project is open. |
 
-The design review at CP-1 covers this copy too.
+The design review at CP-1 covers this copy too, together with the no-selection screens of research R-03 (a departure
+from the spec's assumption, flagged for the operator).
