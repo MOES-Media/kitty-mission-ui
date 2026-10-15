@@ -73,6 +73,56 @@
       "status": "resolved",
       "step_id": null,
       "summary_json": null
+    },
+    {
+      "created_at": "2026-10-15T19:46:38.066267Z",
+      "decision_id": "01M50HMCBJMREJ5XJASGE29X73",
+      "final_answer": null,
+      "input_key": "visual_plant",
+      "mission_id": "01M50D2JBWV6TYMCYCK6ADFWKF",
+      "mission_slug": "mission-shell-01M50D2J",
+      "opened_by": "architect-alphonso",
+      "options": [
+        "A: move the single visual plant from sk-mission-sample to the reconnecting banner story (leg stays 2 runs, ~39 min) (recommended)",
+        "B: add a second visual plant (leg 3 runs, ~57 min of a 60 min timeout; PR CI wall clock +~19 min)",
+        "C: no visual plant; assert the banner in the story DOM instead (needs a spec amendment of FR-018)",
+        "Other"
+      ],
+      "origin_flow": "plan",
+      "other_answer": false,
+      "question": "FR-018 requires a planted change to a banner's appearance to fail the visual gate. The visual proof leg is already the longest CI job (37.4 min, 2 runs of ~17.7 min). How should the banner plant be added?",
+      "rationale": "Operator fork raised by the plan agent (research.md R-12); the plan proceeds on the recommended option A until the operator rules.",
+      "resolved_at": "2026-10-15T19:46:50.088609Z",
+      "resolved_by": null,
+      "slot_key": "plan.gates.visual-plant",
+      "status": "deferred",
+      "step_id": null,
+      "summary_json": null
+    },
+    {
+      "created_at": "2026-10-15T19:46:44.974159Z",
+      "decision_id": "01M50HMK3E7A4XA93PZMZ9KBT8",
+      "final_answer": null,
+      "input_key": "gate_wiring_scope",
+      "mission_id": "01M50D2JBWV6TYMCYCK6ADFWKF",
+      "mission_slug": "mission-shell-01M50D2J",
+      "opened_by": "architect-alphonso",
+      "options": [
+        "A: wiring = gate set and binding (ci.yml job ids, needs, id: gate commands, proof matrix gate list and images, all.needs, plant ciCommands, gate-proof.mjs, root gate scripts); rule content, plants, story globs, package test projects and formula timeouts may change (recommended)",
+        "B: strict, every file a gate reads is frozen; drop the ESLint hardening and timeout raises, and the Storybook glob change becomes a spec conflict that stops the mission",
+        "C: as A, but any ci.yml timeout raise stops and returns to the operator",
+        "Other"
+      ],
+      "origin_flow": "plan",
+      "other_answer": false,
+      "question": "C-003/SC-004 freeze 'the gate wiring' without defining it. The plan changes ESLint rule content (C-001/C-005 hardening), the Storybook stories glob plus Svelte plugin (FR-018), a second Vitest project in mission-shell, plants, and possibly a formula-derived proof-leg timeout. Which reading of 'gate wiring' applies?",
+      "rationale": "Operator fork raised by the plan agent (research.md R-17); the plan proceeds on the recommended option A until the operator rules.",
+      "resolved_at": "2026-10-15T19:46:51.448237Z",
+      "resolved_by": null,
+      "slot_key": "plan.constraints.gate-wiring-scope",
+      "status": "deferred",
+      "step_id": null,
+      "summary_json": null
     }
   ],
   "mission_id": "01M50D2JBWV6TYMCYCK6ADFWKF",
