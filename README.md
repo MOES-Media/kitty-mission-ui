@@ -300,6 +300,8 @@ curl -s http://127.0.0.1:<port>/__stub/last-request
 - `GET /api/v1/events` replays `changes.json`, byte for byte the same on every run. A stream scoped with `missionId`
   carries `id:` lines on status transitions and lifecycle events; an unscoped stream carries none, and a log-truncated
   marker never does.
+- `GET /__stub/last-request` returns the method, path and headers of the most recent `/api/v1` request. The values of
+  `authorization`, `proxy-authorization`, `cookie` and `set-cookie` are reported as `"[redacted]"`; the names are kept.
 
 ### Upstream drift alert
 

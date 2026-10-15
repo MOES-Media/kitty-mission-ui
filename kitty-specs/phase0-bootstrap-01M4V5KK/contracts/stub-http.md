@@ -79,6 +79,8 @@ The test runs with `--time-scale 0 --heartbeat-ms 50` and captures up to the fir
 
 `GET /__stub/last-request` returns exactly `{"method","path","headers":{…}}` for the most recent `/api/v1` request, with header names lower-cased. `path` is the request path without the query string; there is no separate `query` field (A23). This lets #21 assert what its proxy forwarded. The same request rules apply to this route.
 
+Credential headers are redacted (CODE-SEC-002): for `authorization`, `proxy-authorization`, `cookie` and `set-cookie` the header name is kept and its value is reported as `"[redacted]"` (one value, even when the header was repeated). A test can still assert that a credential was or was not forwarded, but the stub never echoes a credential back.
+
 ## Not provided (by design)
 
 Cursor resume, the contract's *conditional* refusal behaviour (it never decides on its own to answer 400, 404 or 409 the way the service would; refusal bodies are served only when selected), and paging behaviour. The stub serves data; it does not reproduce the service's semantics.

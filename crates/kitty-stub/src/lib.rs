@@ -40,6 +40,14 @@ const EXAMPLE_HEADER: &str = "x-kitty-stub-example";
 const JSON: &str = "application/json";
 const PROBLEM_JSON: &str = "application/problem+json";
 const HEARTBEAT: &[u8] = b": heartbeat\n\n";
+/// Headers whose values `/__stub/last-request` never echoes (CODE-SEC-002): the name is kept, the value is replaced.
+const REDACTED_HEADERS: [&str; 4] = [
+    "authorization",
+    "proxy-authorization",
+    "cookie",
+    "set-cookie",
+];
+const REDACTED: &str = "[redacted]";
 
 /// One `routes.json` entry (data-model RouteEntry).
 #[derive(Debug, Clone, Deserialize)]
@@ -424,12 +432,17 @@ async fn guard(State(stub): State<Arc<Stub>>, req: Request, next: Next) -> Respo
 }
 
 /// F-28: remembers `{ method, path, headers }` of the most recent `/api/v1` request that passed the guard. Header
-/// names are lower-case (the `http` crate normalises them); repeated headers are joined with `, `.
+/// names are lower-case (the `http` crate normalises them); repeated headers are joined with `, `. Credential headers
+/// ([`REDACTED_HEADERS`]) keep their name, but their value is reported as `[redacted]`.
 async fn record(State(stub): State<Arc<Stub>>, req: Request, next: Next) -> Response {
     let path = req.uri().path();
     if path == API_PREFIX || path.starts_with(&format!("{API_PREFIX}/")) {
         let mut headers = serde_json::Map::new();
         for name in req.headers().keys() {
+            if REDACTED_HEADERS.contains(&name.as_str()) {
+                headers.insert(name.as_str().to_owned(), Value::from(REDACTED));
+                continue;
+            }
             let values: Vec<String> = req
                 .headers()
                 .get_all(name)
