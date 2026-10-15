@@ -156,11 +156,11 @@ export function createFixtureClient(options: FixtureClientOptions = {}): Mission
     getDriftReport: () => read('getDriftReport'),
     listOpsInvocations: () => read('listOpsInvocations'),
     subscribe(listener, scope) {
-      // The fixture replays from the start; resuming from scope.cursor belongs to the real adapters. A missionId scopes
-      // the stream; the same test decides whether a cursor has a Mission (a JavaScript caller can send one without).
+      // The fixture replays from the start; resuming from scope.cursor belongs to the real adapters. Only a non-empty
+      // missionId scopes the stream, as the stub reads `?missionId=`; the same test decides whether a cursor has a Mission.
       const missionId: unknown = scope?.missionId;
       const cursor: unknown = scope?.cursor;
-      const scoped = typeof missionId === 'string';
+      const scoped = typeof missionId === 'string' && missionId !== '';
       const orphanCursor = !scoped && typeof cursor === 'string' && cursor !== '';
       let index = 0;
       let handle: unknown = null;

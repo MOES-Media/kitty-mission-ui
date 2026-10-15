@@ -67,7 +67,7 @@ export const CHANGE_KINDS = ['status-transition', 'mission-lifecycle', 'log-trun
 
 /** The scope of a subscription. A `cursor` is valid only together with `missionId` (the contract refuses a cursor without
  *  one as 400 `cursor_without_mission`), so the union makes that request unrepresentable: either a Mission, optionally
- *  with a cursor to resume after, or neither. */
+ *  with a cursor to resume after, or neither. An empty `missionId` is no Mission, as the stub reads `?missionId=`. */
 export type SubscriptionScope = { missionId: string; cursor?: string } | { missionId?: undefined; cursor?: undefined };
 
 export interface MissionStatusClient {

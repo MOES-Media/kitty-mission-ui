@@ -78,7 +78,7 @@ function callRead(client: MissionStatusClient, op: ReadOp) {
 
 const readRoutes = routes.filter((route) => route.kind === 'read');
 
-function replay(scope?: { missionId?: string }): Change[] {
+function replay(scope?: SubscriptionScope): Change[] {
   const scheduler = fakeScheduler();
   const client = createFixtureClient({ scheduler });
   const seen: Change[] = [];
@@ -194,6 +194,14 @@ describe('subscriptions', () => {
     expect(seen.map((change) => change.kind)).toEqual(changes.items.map((item) => item.event));
   });
 
+  it('an empty missionId is unscoped, as the stub reads ?missionId= (CODE-CONTRACT-001)', () => {
+    const empty = replay({ missionId: '' });
+    expect(empty).toEqual(replay());
+    expect(empty.map((change) => change.cursor)).toEqual(changes.items.map(() => null));
+    // Positive control: a non-empty missionId is scoped and carries string cursors.
+    expect(replay({ missionId: changes.missionId }).some((change) => typeof change.cursor === 'string')).toBe(true);
+  });
+
   it('follows the delays of changes.json', () => {
     const scheduler = fakeScheduler();
     const seen: Change[] = [];
@@ -305,8 +313,8 @@ describe('stream refusals', () => {
     const example = exampleTable['StreamRefusal.cursor-without-mission'];
     expect((example?.value as { code: string }).code).toBe('cursor_without_mission');
     const expected = [{ kind: 'refused', cursor: null, refusal: { status: 400, body: example?.value } }];
-    // A JavaScript caller can pass what the type forbids.
-    for (const scope of [{ cursor: '1:a' }, { missionId: undefined, cursor: '1:a' }]) {
+    // A JavaScript caller can pass what the type forbids; an empty missionId is no Mission (CODE-CONTRACT-001).
+    for (const scope of [{ cursor: '1:a' }, { missionId: '', cursor: '1:a' }, { missionId: undefined, cursor: '1:a' }]) {
       const { seen, pending } = heardWith({}, scope as unknown as SubscriptionScope);
       expect(seen, JSON.stringify(scope)).toEqual(expected);
       expect(pending).toBe(0);

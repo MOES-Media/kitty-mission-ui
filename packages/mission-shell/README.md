@@ -39,8 +39,8 @@ pnpm --filter @moes-media/mission-shell test        # Vitest browser mode (Chrom
 
 **The cursor rule.** `SubscriptionScope` is `{ missionId, cursor? }` or `{}`: a `cursor` without a `missionId` does not
 type-check, because the contract refuses it (400 `cursor_without_mission`), and the fixture adapter refuses it the same
-way when a JavaScript caller sends one. On a subscription scoped to a Mission (`scope.missionId`), status transitions and lifecycle events
-carry a string cursor. On an unscoped subscription every cursor is `null`, and a log-truncated marker always has a `null`
+way when a JavaScript caller sends one. On a subscription scoped to a Mission (a non-empty `scope.missionId`; an empty one is unscoped, as the stub reads
+`?missionId=`), status transitions and lifecycle events carry a string cursor. On an unscoped subscription every cursor is `null`, and a log-truncated marker always has a `null`
 cursor. A log-truncated marker is its own kind, never a status change.
 
 The contract types come from mission-ui's generated `src/contract/types.generated.ts` by deep import, so mission-ui
