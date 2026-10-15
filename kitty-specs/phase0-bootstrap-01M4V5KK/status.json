@@ -26,7 +26,7 @@
       "last_event_id": "01M4ZPDMZGX269PJGH9AT6FX3V",
       "last_transition_at": "2026-10-15T11:51:05.968874+00:00",
       "review_result": {
-        "feedback_path": "/home/jeroennouws/dev/SK-missions/ui17/kitty-specs/phase0-bootstrap-01M4V5KK/tasks/WP01-rust-workspace-and-rust-gate/review-cycle-1.md",
+        "feedback_path": "<workspace>/ui17/kitty-specs/phase0-bootstrap-01M4V5KK/tasks/WP01-rust-workspace-and-rust-gate/review-cycle-1.md",
         "reference": "review-cycle://phase0-bootstrap-01M4V5KK/WP01-rust-workspace-and-rust-gate/review-cycle-1.md",
         "reviewer": "claude",
         "verdict": "approved"
@@ -43,7 +43,7 @@
       "last_event_id": "01M4ZPDNX977XDRTGZMAWF7M91",
       "last_transition_at": "2026-10-15T11:51:06.921213+00:00",
       "review_result": {
-        "feedback_path": "/home/jeroennouws/dev/SK-missions/ui17/kitty-specs/phase0-bootstrap-01M4V5KK/tasks/WP02-mission-shell-package-and-svelte-gates/review-cycle-1.md",
+        "feedback_path": "<workspace>/ui17/kitty-specs/phase0-bootstrap-01M4V5KK/tasks/WP02-mission-shell-package-and-svelte-gates/review-cycle-1.md",
         "reference": "review-cycle://phase0-bootstrap-01M4V5KK/WP02-mission-shell-package-and-svelte-gates/review-cycle-1.md",
         "reviewer": "claude",
         "verdict": "approved"
@@ -60,7 +60,7 @@
       "last_event_id": "01M4ZPDPT3GANPJ6D83K4JNYSC",
       "last_transition_at": "2026-10-15T11:51:07.843206+00:00",
       "review_result": {
-        "feedback_path": "/home/jeroennouws/dev/SK-missions/ui17/kitty-specs/phase0-bootstrap-01M4V5KK/tasks/WP03-shared-fixture-and-change-files/review-cycle-1.md",
+        "feedback_path": "<workspace>/ui17/kitty-specs/phase0-bootstrap-01M4V5KK/tasks/WP03-shared-fixture-and-change-files/review-cycle-1.md",
         "reference": "review-cycle://phase0-bootstrap-01M4V5KK/WP03-shared-fixture-and-change-files/review-cycle-1.md",
         "reviewer": "claude",
         "verdict": "approved"
@@ -77,7 +77,7 @@
       "last_event_id": "01M4ZPDQJZMY4PNC0HGKSVYSJM",
       "last_transition_at": "2026-10-15T11:51:08.639035+00:00",
       "review_result": {
-        "feedback_path": "/home/jeroennouws/dev/SK-missions/ui17/kitty-specs/phase0-bootstrap-01M4V5KK/tasks/WP04-element-typings-from-manifest/review-cycle-2.md",
+        "feedback_path": "<workspace>/ui17/kitty-specs/phase0-bootstrap-01M4V5KK/tasks/WP04-element-typings-from-manifest/review-cycle-2.md",
         "reference": "review-cycle://phase0-bootstrap-01M4V5KK/WP04-element-typings-from-manifest/review-cycle-2.md",
         "reviewer": "claude",
         "verdict": "approved"
@@ -94,7 +94,7 @@
       "last_event_id": "01M4ZPDRAJWGEJNSHCSQ5BM5P7",
       "last_transition_at": "2026-10-15T11:51:09.394974+00:00",
       "review_result": {
-        "feedback_path": "/home/jeroennouws/dev/SK-missions/ui17/kitty-specs/phase0-bootstrap-01M4V5KK/tasks/WP05-client-port-and-fixture-adapter/review-cycle-1.md",
+        "feedback_path": "<workspace>/ui17/kitty-specs/phase0-bootstrap-01M4V5KK/tasks/WP05-client-port-and-fixture-adapter/review-cycle-1.md",
         "reference": "review-cycle://phase0-bootstrap-01M4V5KK/WP05-client-port-and-fixture-adapter/review-cycle-1.md",
         "reviewer": "claude",
         "verdict": "approved"
@@ -111,7 +111,7 @@
       "last_event_id": "01M4ZPDTE992M3ZXQHPT6MFV9Z",
       "last_transition_at": "2026-10-15T11:51:11.561400+00:00",
       "review_result": {
-        "feedback_path": "/home/jeroennouws/dev/SK-missions/ui17/kitty-specs/phase0-bootstrap-01M4V5KK/tasks/WP06-permanent-binding-check/review-cycle-1.md",
+        "feedback_path": "<workspace>/ui17/kitty-specs/phase0-bootstrap-01M4V5KK/tasks/WP06-permanent-binding-check/review-cycle-1.md",
         "reference": "review-cycle://phase0-bootstrap-01M4V5KK/WP06-permanent-binding-check/review-cycle-1.md",
         "reviewer": "claude",
         "verdict": "approved"
@@ -128,7 +128,7 @@
       "last_event_id": "01M4ZPDS09GHEFHKY8JH6YDG9D",
       "last_transition_at": "2026-10-15T11:51:10.089200+00:00",
       "review_result": {
-        "feedback_path": "/home/jeroennouws/dev/SK-missions/ui17/kitty-specs/phase0-bootstrap-01M4V5KK/tasks/WP07-kitty-stub-crate/review-cycle-1.md",
+        "feedback_path": "<workspace>/ui17/kitty-specs/phase0-bootstrap-01M4V5KK/tasks/WP07-kitty-stub-crate/review-cycle-1.md",
         "reference": "review-cycle://phase0-bootstrap-01M4V5KK/WP07-kitty-stub-crate/review-cycle-1.md",
         "reviewer": "claude",
         "verdict": "approved"
@@ -145,7 +145,7 @@
       "last_event_id": "01M4ZPDSQ2E5J79APPSDA4MEK8",
       "last_transition_at": "2026-10-15T11:51:10.818766+00:00",
       "review_result": {
-        "feedback_path": "/home/jeroennouws/dev/SK-missions/ui17/kitty-specs/phase0-bootstrap-01M4V5KK/tasks/WP08-hygiene-and-drift-alert/review-cycle-1.md",
+        "feedback_path": "<workspace>/ui17/kitty-specs/phase0-bootstrap-01M4V5KK/tasks/WP08-hygiene-and-drift-alert/review-cycle-1.md",
         "reference": "review-cycle://phase0-bootstrap-01M4V5KK/WP08-hygiene-and-drift-alert/review-cycle-1.md",
         "reviewer": "claude",
         "verdict": "approved"
@@ -162,7 +162,7 @@
       "last_event_id": "01M4ZPDV4E2XSG7YEYRDQG2MP0",
       "last_transition_at": "2026-10-15T11:51:12.270755+00:00",
       "review_result": {
-        "feedback_path": "/home/jeroennouws/dev/SK-missions/ui17/kitty-specs/phase0-bootstrap-01M4V5KK/tasks/WP09-docs-timings-and-wrap-up/review-cycle-1.md",
+        "feedback_path": "<workspace>/ui17/kitty-specs/phase0-bootstrap-01M4V5KK/tasks/WP09-docs-timings-and-wrap-up/review-cycle-1.md",
         "reference": "review-cycle://phase0-bootstrap-01M4V5KK/WP09-docs-timings-and-wrap-up/review-cycle-1.md",
         "reviewer": "claude",
         "verdict": "approved"
