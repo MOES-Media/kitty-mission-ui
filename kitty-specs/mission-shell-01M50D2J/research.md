@@ -158,8 +158,12 @@ proof-leg durations, read from the job steps.
   - Navigation creates fresh slots for keys that were not displayed, so a new screen shows `loading`. Keys displayed
     both before and after (chrome, or re-selecting the same destination) keep their values.
 - **The connection gate** (R2-09 superseded by FS-01 and FS-02; spec FR-011, US4-1, US4-2):
-  - **No read is issued until the first `connected` ever.** While the state is `connecting`, or a `degraded` or
-    `reconnecting` state reached before any `connected`, requests are recorded but not issued.
+  - **Per client** (FS2-01): the gate, the "first `connected`" mark and the refused flag belong to the current
+    client, and `setClient` resets all three. A client already `connected` at mount or at `setClient` counts as that
+    client's first `connected` and issues the displayed set at once. A Node test runs `setClient(b)` with `b` going
+    `connecting` → `connected`, and expects shell-issued reads and no `resync`.
+  - **No read is issued until the client's first `connected`.** While the state is `connecting`, or a `degraded` or
+    `reconnecting` state reached before that client's first `connected`, requests are recorded but not issued.
   - **A degraded state before the first `connected`** (from `connecting`, or an initial degraded state) sets the
     no-value slots of the displayed set to `error` **without issuing reads**.
   - **The first `connected`, whatever came before it, issues the current displayed set itself**, as bypass reads. It is
@@ -260,13 +264,13 @@ proof-leg durations, read from the job steps.
   path.
   - The ESLint boundary block's patterns (`**/client/fixture`, `**/fixture`, `**/harness/**` and the fixture JSON) do
     not match that path, so **no boundary exemption is added** (R4-07). The boundary block is unchanged.
-  - A story-local `storyClient({ state, reads, startConnected })` wraps the fixture client:
+  - A story-local `storyClient({ state, startConnected })` wraps the fixture client:
     - `connection` reports `state`. With `startConnected`, used by the stories "with data", it first reports
-      `connected` and switches to `state` once the reads have settled. The shell reads nothing before the first
-      `connected` (FS-01);
-    - `reads: 'fixture'` delegates to the fixture;
-    - `reads: 'unavailable'` resolves every read as `{ ok: false, unavailable: 'contract-mismatch' }`, for the
-      contract-mismatch story without data (R1-01).
+      `connected` (the shell reads nothing before the first `connected`, FS-01).
+    - **Settling** (FS2-04): `storyClient` tracks every read promise it hands out and exposes `whenSettled()`. The
+      switch from `connected` to `state` happens on the microtask after the last tracked read settles.
+    - Reads always delegate to the fixture. The former `reads: 'unavailable'` option is dropped (FS2-03): no story
+      needs it, because the contract-mismatch story issues no reads.
   - The fixture is created with `fixtures: { changes: { missionId: <the sequence id>, items: [] } }`, so nothing
     replays during a story (R2-12).
   - The `refused` story selects `examples: { streamEvents: 'StreamRefusal.content-mismatch' }`.

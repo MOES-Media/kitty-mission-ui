@@ -293,11 +293,14 @@ README.md, CHANGELOG.md
 - **Sequencing/depends-on**: IC-01, IC-02.
 - **Risks**:
   - **Gate and degraded states** (FS-01, FS-02; R1-01 and R2-09 superseded):
-    - No read is issued before the first `connected`.
+    - The gate, the "first `connected`" mark and the refused flag are per client, and `setClient` resets them (FS2-01).
+      A client already `connected` at mount or at `setClient` issues the displayed set at once.
+    - No read is issued before the client's first `connected`.
     - A degraded state before it sets the displayed no-value slots to `error`, without reads.
     - The first `connected` issues the displayed set itself; there is no `resync` at first contact.
     - While degraded, a no-value slot shows `error` even with a read in flight (FS-05).
-    - Tests: `connecting` → degraded → `connected`; an initial degraded state; a navigation while degraded after the
+    - Tests: `setClient(b)` with `b` going `connecting` → `connected` (shell-issued reads, no `resync`);
+      `connecting` → degraded → `connected`; an initial degraded state; a navigation while degraded after the
       first `connected`.
   - **Refusals**: every refusal from `routes.json` is enumerated (research R-06 table). The 404 `Problem` is injected
     through `fixtures.examples` (R5-08).
