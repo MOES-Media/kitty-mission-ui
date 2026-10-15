@@ -6,9 +6,13 @@ All user-visible changes to this repository. Per-package notes live in `packages
 
 ### Added
 
-- **Phase 0 bootstrap: a Svelte shell, a Rust workspace and a local Mission Status stub for the hosts** (`#17`).
+- **Phase 0 bootstrap: Kitty Desktop and Kitty Dashboard can now be built on one shared shell, one client interface and
+  a local stand-in for the Mission Status service** (`#17`). Before, the repository held only the Lit screens, with no
+  host to run them in and no way to exercise them against service data. Now the hosts (#20, #21) and the next missions
+  (#18, #19) start from a settled interface and a stub they can test against.
   - `@moes-media/mission-shell` (Svelte 5.57.1, no I/O): the transport-free `MissionStatusClient` port with one method
-    per contract read, a change subscription with a refusal channel and four connection states; an in-memory fixture
+    per contract read (reads never reject), a change subscription with in-band `refused` and `resync` changes and a
+    documented lifecycle, and five connection states starting at `connecting`; an in-memory fixture
     adapter with an injectable scheduler, on its own `@moes-media/mission-shell/testing` entry; element typings generated from `custom-elements.json` by `scripts/typings.mjs`; and a permanent binding
     check that mounts the real `sk-missions-screen` and proves data arrives as properties and every declared intent
     reaches the shell.
@@ -17,14 +21,14 @@ All user-visible changes to this repository. Per-package notes live in `packages
     (`apps/dashboard/server`), with exact `=x.y.z` pins and a committed `Cargo.lock`, judged by a new `Gate: rust`
     (format, clippy with `-D warnings`, tests; offline after separate install and fetch steps).
   - `kitty-stub`: a loopback-only HTTP and SSE stand-in that serves every vendored example and fixture, applies the
-    service's Host, Origin and forwarding-header rules, and replays a scripted change sequence identically on every run.
+    service's Host, Origin and forwarding-header rules, replays a scripted change sequence identically on every run, and
+    resumes a Mission's stream deterministically from a cursor.
   - Shared contract data in `contracts/fixtures/`: generated examples, fixtures and routes, plus the hand-authored change
     sequence, all checked by `Gate: contract`.
   - The existing gates reach the new code: `svelte-check` in `typecheck`, Svelte files in `eslint`, `stylelint`,
     `no-io` and `data-driven`, stale typings in `manifest`, and `unit-tests` running every workspace package. `hygiene`
     gains a Cargo exact-pin check and checks the action pins, permissions and checkout credentials of every workflow.
-    21 new planted-defect proofs; the proof-leg timeouts start from local measurements and are
-    re-measured on the first CI run.
+    24 new planted-defect proofs; the proof-leg timeouts come from the pull request's first CI run.
   - A scheduled `Contract drift` workflow (daily and on demand, not a gate, no secrets) reports upstream contract files
     that differ from `PIN.json`.
   - mission-ui's screens, stories and baselines are unchanged.
