@@ -1,25 +1,27 @@
-//! `kitty-stub --fixtures <dir> [--port <n>] [--heartbeat-ms <ms>] [--time-scale <f>]` (contracts/stub-http.md).
+//! `kitty-stub --fixtures <dir> [--port <n>] [--heartbeat-ms <ms>] [--time-scale <f>] [--header-timeout-ms <ms>]`
+//! (contracts/stub-http.md).
 //!
 //! Binds `127.0.0.1` only (no flag changes the address), prints `listening <addr>` from the bound listener as the
 //! first stdout line, and exits on SIGINT or SIGTERM.
 
-use std::future::IntoFuture;
 use std::io::Write;
 use std::net::Ipv4Addr;
 use std::path::PathBuf;
 use std::process::ExitCode;
 use std::time::Duration;
 
-use kitty_stub::{app, Fixtures, Options};
+use kitty_stub::{app, run_server, Fixtures, Options};
 
 const USAGE: &str =
-    "usage: kitty-stub --fixtures <dir> [--port <n>] [--heartbeat-ms <ms>] [--time-scale <f>]";
+    "usage: kitty-stub --fixtures <dir> [--port <n>] [--heartbeat-ms <ms>] [--time-scale <f>] \
+                     [--header-timeout-ms <ms>]";
 
 struct Args {
     fixtures: PathBuf,
     port: u16,
     heartbeat_ms: u64,
     time_scale: f64,
+    header_timeout_ms: u64,
 }
 
 fn parse(mut args: impl Iterator<Item = String>) -> Result<Args, String> {
@@ -27,6 +29,7 @@ fn parse(mut args: impl Iterator<Item = String>) -> Result<Args, String> {
     let mut port = 0;
     let mut heartbeat_ms = 30_000;
     let mut time_scale = 1.0;
+    let mut header_timeout_ms = 10_000;
     while let Some(flag) = args.next() {
         let mut value = || args.next().ok_or_else(|| format!("{flag} needs a value"));
         match flag.as_str() {
@@ -40,11 +43,19 @@ fn parse(mut args: impl Iterator<Item = String>) -> Result<Args, String> {
             "--time-scale" => {
                 time_scale = value()?.parse().map_err(|e| format!("--time-scale: {e}"))?
             }
+            "--header-timeout-ms" => {
+                header_timeout_ms = value()?
+                    .parse()
+                    .map_err(|e| format!("--header-timeout-ms: {e}"))?
+            }
             other => return Err(format!("unknown argument {other}")),
         }
     }
     if heartbeat_ms == 0 {
         return Err("--heartbeat-ms must be greater than 0".into());
+    }
+    if header_timeout_ms == 0 {
+        return Err("--header-timeout-ms must be greater than 0".into());
     }
     if !(time_scale >= 0.0 && f64::is_finite(time_scale)) {
         return Err("--time-scale must be a finite number >= 0".into());
@@ -55,6 +66,7 @@ fn parse(mut args: impl Iterator<Item = String>) -> Result<Args, String> {
         port,
         heartbeat_ms,
         time_scale,
+        header_timeout_ms,
     })
 }
 
@@ -94,11 +106,12 @@ async fn run(args: Args) -> Result<(), String> {
         heartbeat: Duration::from_millis(args.heartbeat_ms),
         time_scale: args.time_scale,
     };
-    let server = axum::serve(listener, app(fixtures, options));
+    let header_timeout = Duration::from_millis(args.header_timeout_ms);
+    let server = run_server(listener, app(fixtures, options), header_timeout);
     // An open SSE stream never ends on its own, so a signal stops the server outright rather than draining:
     // returning drops the listener, and the runtime's shutdown closes every connection.
     tokio::select! {
-        result = server.into_future() => result.map_err(|e| format!("serve: {e}")),
+        () = server => Ok(()),
         signal = shutdown_signal() => signal,
     }
 }

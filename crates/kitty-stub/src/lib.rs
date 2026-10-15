@@ -26,6 +26,8 @@ use axum::response::{IntoResponse, Response};
 use axum::routing::{get, MethodRouter};
 use axum::Router;
 use http_body_util::channel::Channel;
+use hyper_util::rt::{TokioIo, TokioTimer};
+use hyper_util::service::TowerToHyperService;
 use serde::Deserialize;
 use serde_json::{json, Value};
 
@@ -221,6 +223,38 @@ pub fn app(fixtures: Fixtures, options: Options) -> Router {
         .layer(middleware::from_fn_with_state(stub.clone(), record))
         .layer(middleware::from_fn_with_state(stub.clone(), guard))
         .with_state(stub)
+}
+
+/// Serves `router` on `listener`, one HTTP/1.1 connection per task, until the future is dropped.
+///
+/// `axum::serve` gives hyper no timer, so hyper's header-read timeout never fires and a client that sends half a
+/// request header holds its connection forever (CODE-SEC-001). This loop serves through hyper directly with a Tokio
+/// timer, so a connection whose request header is not complete within `header_read_timeout` is closed. The timeout
+/// covers the request header only: an open event stream is not affected.
+pub async fn run_server(
+    listener: tokio::net::TcpListener,
+    router: Router,
+    header_read_timeout: Duration,
+) {
+    loop {
+        let stream = match listener.accept().await {
+            Ok((stream, _peer)) => stream,
+            // Accept errors such as EMFILE are transient: back off briefly instead of spinning or stopping.
+            Err(_) => {
+                tokio::time::sleep(Duration::from_millis(50)).await;
+                continue;
+            }
+        };
+        let service = TowerToHyperService::new(router.clone());
+        tokio::spawn(async move {
+            // A connection error (a reset, a malformed request, the header timeout) only ends that connection.
+            let _ = hyper::server::conn::http1::Builder::new()
+                .timer(TokioTimer::new())
+                .header_read_timeout(header_read_timeout)
+                .serve_connection(TokioIo::new(stream), service)
+                .await;
+        });
+    }
 }
 
 /// `/api/v1` plus the contract's template. Axum 0.8 uses the same `{param}` syntax, so each segment is checked to

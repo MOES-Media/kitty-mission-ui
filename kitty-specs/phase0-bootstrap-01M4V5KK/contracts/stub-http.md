@@ -3,7 +3,7 @@
 The crate has `publish = false` and is never part of a release artefact.
 
 ```
-kitty-stub --fixtures <dir> [--port <n>] [--heartbeat-ms <ms>] [--time-scale <f>]
+kitty-stub --fixtures <dir> [--port <n>] [--heartbeat-ms <ms>] [--time-scale <f>] [--header-timeout-ms <ms>]
 ```
 
 | Option | Default | Meaning |
@@ -11,8 +11,11 @@ kitty-stub --fixtures <dir> [--port <n>] [--heartbeat-ms <ms>] [--time-scale <f>
 | `--port` | `0` | port to bind on `127.0.0.1`; `0` means ephemeral |
 | `--heartbeat-ms` | `30000` | interval between `: heartbeat` comments |
 | `--time-scale` | `1.0` | multiplier for every item's `delayMs`; tests use `0` |
+| `--header-timeout-ms` | `10000` | how long a connection may take to send a complete request header before it is closed |
 
 The stub binds `127.0.0.1:<port>` only. The first line on stdout is `listening <addr>`, printed from the bound listener's `local_addr()` (never from configuration), so tests and later missions can read the bound port. The loopback test runs the real binary, asserts the announced address is `127.0.0.1`, and connects on a non-loopback local address expecting a refusal. That address is found with `std` only (a UDP socket "connect" to a documentation-range address reveals the default-route local IP without sending traffic); the test is skipped, with the reason logged, when it is loopback or unavailable. No crate is added (R2-08, R3-07). (The upstream service does not announce its port, epic #16; the stub deliberately does.) The stub loads the four named files from `<dir>` (`routes.json`, `examples.json`, `fixtures.json`, `changes.json`, each with its `mission-status.` prefix) once at start-up (B17).
+
+**Header-read timeout (CODE-SEC-001).** The stub serves HTTP/1.1 through hyper with a Tokio timer, so a connection whose request header is not complete within `--header-timeout-ms` (default 10 s) is closed without a response body. A client that sends half a header can no longer hold a connection open forever (slowloris). The limit covers the request header only, including the wait for the next request on a kept-alive connection; an open event stream is not cut. There is no cap on the number of connections. The binary test sends a partial header with a 300 ms timeout and expects the server to close the socket.
 
 ## Request rules (all routes, mirroring the upstream service)
 

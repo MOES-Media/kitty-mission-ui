@@ -18,17 +18,16 @@ impl Drop for Running {
 }
 
 fn start() -> (Running, SocketAddr) {
+    start_with(&["--time-scale", "0"])
+}
+
+/// Starts the binary on an ephemeral port with a 50 ms heartbeat and the given extra arguments.
+fn start_with(extra: &[&str]) -> (Running, SocketAddr) {
     let fixtures = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../contracts/fixtures");
     let mut child = Command::new(env!("CARGO_BIN_EXE_kitty-stub"))
-        .args([
-            "--port",
-            "0",
-            "--heartbeat-ms",
-            "50",
-            "--time-scale",
-            "0",
-            "--fixtures",
-        ])
+        .args(["--port", "0", "--heartbeat-ms", "50"])
+        .args(extra)
+        .arg("--fixtures")
         .arg(&fixtures)
         .stdout(Stdio::piped())
         .stderr(Stdio::inherit())
@@ -144,4 +143,47 @@ fn exits_cleanly_on_sigterm_with_a_stream_open() {
         );
         std::thread::sleep(Duration::from_millis(20));
     }
+}
+
+/// CODE-SEC-001: a client that never finishes its request header is disconnected once the header-read timeout runs
+/// out, instead of holding the connection forever (slowloris). The timeout is shortened for the test.
+#[test]
+fn closes_a_connection_whose_header_never_completes() {
+    let (_stub, addr) = start_with(&["--time-scale", "0", "--header-timeout-ms", "300"]);
+    // Positive control: a complete request on a fresh connection is still served.
+    let ok = http_get(addr, "/api/v1/project", &addr.to_string());
+    assert!(ok.starts_with("HTTP/1.1 200 "), "{ok}");
+
+    let mut stream = TcpStream::connect_timeout(&addr, Duration::from_secs(5)).unwrap();
+    stream
+        .set_read_timeout(Some(Duration::from_secs(5)))
+        .unwrap();
+    write!(
+        stream,
+        "GET /api/v1/project HTTP/1.1\r\nHost: {addr}\r\nX-Slow: "
+    )
+    .unwrap();
+    let sent = Instant::now();
+    let mut rest = Vec::new();
+    // The server closes the socket: EOF (possibly after a 408) or a reset, not the 5 s read timeout.
+    let result = stream.read_to_end(&mut rest);
+    let waited = sent.elapsed();
+    if let Err(e) = &result {
+        assert!(
+            !matches!(
+                e.kind(),
+                std::io::ErrorKind::WouldBlock | std::io::ErrorKind::TimedOut
+            ),
+            "the half-sent header was still open after {waited:?}"
+        );
+    }
+    let text = String::from_utf8_lossy(&rest);
+    assert!(
+        rest.is_empty() || text.starts_with("HTTP/1.1 408 "),
+        "no response but a timeout is expected: {text}"
+    );
+    assert!(
+        waited < Duration::from_secs(3),
+        "closed after {waited:?}, expected about 300 ms"
+    );
 }

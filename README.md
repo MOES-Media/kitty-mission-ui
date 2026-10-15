@@ -280,8 +280,12 @@ curl -sN http://127.0.0.1:<port>/api/v1/events      # the scripted sequence, the
 curl -s http://127.0.0.1:<port>/__stub/last-request
 ```
 
-- Options: `--fixtures <dir>` (required; the `contracts/fixtures` directory), `--port <n>` (0 picks a free port), `--heartbeat-ms <ms>` (default 30000) and `--time-scale <f>` (scales the
-  delays of the scripted sequence; 0 plays it at once). SIGINT or SIGTERM stops it.
+- Options: `--fixtures <dir>` (required; the `contracts/fixtures` directory), `--port <n>` (0 picks a free port), `--heartbeat-ms <ms>` (default 30000), `--time-scale <f>` (scales the
+  delays of the scripted sequence; 0 plays it at once) and `--header-timeout-ms <ms>` (default 10000). SIGINT or SIGTERM
+  stops it.
+- **Header-read timeout.** A connection that has not sent a complete request header within `--header-timeout-ms` is
+  closed, so a half-sent header cannot hold a connection forever. It covers the header only; an open event stream is
+  not cut. There is no connection cap.
 - It binds `127.0.0.1` only; no option changes the address.
 - **Host rule.** Like the real service, every route answers 403 with `{"code": ...}` when the `Host` header is not exactly
   one `127.0.0.1:<port>` or `localhost:<port>` (`host`), when an `Origin` is repeated or present and not the stub's own
