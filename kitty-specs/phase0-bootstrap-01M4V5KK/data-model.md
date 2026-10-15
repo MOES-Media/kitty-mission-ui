@@ -77,6 +77,19 @@ A discriminated union by `kind`:
 
 `{ missionId?: string; cursor?: string }`. A `cursor` is valid only together with `missionId`, matching the contract's `streamCursor`/`Last-Event-ID` rule. The fixture adapter ignores `cursor` and replays from the start (a replay needs no stored position). `cursor` is the text form of the contract's `streamCursor` parameter (`toStreamCursorString`); resume is the adapters' job (see "Ownership").
 
+## Ownership (SO-DES-001)
+
+Who owns what behind the port, so #18 to #21 build against it without changing it (SC-004):
+
+| Owner | Owns |
+|---|---|
+| The shell (`mission-shell`, #18 and #19) | refresh policy: what to refetch and when, including its reaction to `resync` and `log-truncated`, and how it shows each `ConnectionState` |
+| An adapter (fixture, Tauri #20, HTTP #21) | transport, reconnect, backoff, cursor bookkeeping (the last cursor delivered, dropped after `log-truncated`) and the mapping of transport events to `ConnectionState` |
+| `kitty-core` | supervision of the service, discovery, the digest check and the raw `Change` relay |
+
+This replaces the earlier statement that resume belongs to #19. Resume is the adapters' (the stored cursor), the decision
+to refetch is the shell's, and `kitty-core` relays raw changes without interpreting them.
+
 ## MissionStatusClient (TypeScript port)
 
 See `contracts/client-port.md`.
