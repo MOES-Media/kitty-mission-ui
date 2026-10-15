@@ -1,0 +1,6 @@
+<script lang="ts">
+  // Plant (FR-004, SC-002 declaration typings): a property sk-missions-screen does not declare must fail svelte-check.
+  import '@moes-media/mission-ui';
+</script>
+
+<sk-missions-screen plantNoSuchProp={1}></sk-missions-screen>

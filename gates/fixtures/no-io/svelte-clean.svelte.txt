@@ -1,0 +1,11 @@
+<script lang="ts">
+  import type { Snippet } from 'svelte';
+
+  let { children, label }: { children?: Snippet; label: string } = $props();
+  const holder = { window: 1, self: 2 };
+  const dispatch = (node: HTMLElement): boolean => node.dispatchEvent(new CustomEvent('sk-open', { bubbles: true, composed: true }));
+  void holder.window;
+  void dispatch;
+</script>
+
+<section aria-label={label}>{@render children?.()}</section>

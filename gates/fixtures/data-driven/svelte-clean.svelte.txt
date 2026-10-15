@@ -1,0 +1,8 @@
+<script lang="ts">
+  import type { Snippet } from 'svelte';
+
+  let { lane, terminal, children }: { lane: string; terminal: readonly string[]; children?: Snippet } = $props();
+  const finished = terminal.includes(lane);
+</script>
+
+<section data-finished={finished}>{lane}{@render children?.()}</section>
