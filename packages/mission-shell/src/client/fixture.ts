@@ -7,7 +7,9 @@ import routesJson from '../../../../contracts/fixtures/mission-status.routes.jso
 import examplesJson from '../../../../contracts/fixtures/mission-status.examples.json' with { type: 'json' };
 import changesJson from '../../../../contracts/fixtures/mission-status.changes.json' with { type: 'json' };
 import {
+  CHANGE_KINDS,
   CONNECTION_STATES,
+  READ_OPS,
   type Change,
   type ConnectionState,
   type MissionStatusClient,
@@ -48,23 +50,15 @@ export interface FixtureClientOptions {
   /** Replacement data sets; each defaults to the file of contracts/fixtures. */
   fixtures?: { routes?: readonly RouteEntry[]; examples?: ExampleTable; changes?: ChangesEnvelope };
   scheduler?: Scheduler;
+  /** The starting connection state. Default `connected`, unlike a real adapter (which starts in `connecting`): the fixture
+   *  is for tests, which mostly want a live connection, and pass `connecting` to test the start-up. */
   initialState?: ConnectionState;
 }
 
-const READ_OPS = [
-  'getProject',
-  'listMissions',
-  'getMission',
-  'getWorkPackage',
-  'getWorkPackageDetail',
-  'listArtifacts',
-  'getArtifactContent',
-  'getDriftReport',
-  'listOpsInvocations',
-] as const satisfies readonly ReadOp[];
-
-/** The change kinds an item of changes.json may carry: every kind but `refused`, which is a response, not an event. */
-const EVENT_KINDS: readonly string[] = ['status-transition', 'mission-lifecycle', 'log-truncated'] satisfies Exclude<Change['kind'], 'refused'>[];
+/** The change kinds an item of changes.json may carry, derived from `CHANGE_KINDS`: every kind but the two that are not
+ *  events of the log, `refused` (a response) and `resync` (a connection marker). */
+type EventKind = Exclude<Change['kind'], 'refused' | 'resync'>;
+const EVENT_KINDS: readonly string[] = CHANGE_KINDS.filter((kind): kind is EventKind => kind !== 'refused' && kind !== 'resync');
 
 /** The shared example of the stream's 400 `cursor_without_mission` refusal. */
 const CURSOR_WITHOUT_MISSION = 'StreamRefusal.cursor-without-mission';
@@ -99,7 +93,7 @@ function resolveOutcome(route: RouteEntry, key: string, table: ExampleTable): Ou
 
 function toChange(item: ChangesEnvelope['items'][number], scoped: boolean): Change {
   if (!EVENT_KINDS.includes(item.event)) throw new Error(`fixture client: unknown change event ${item.event}`);
-  const kind = item.event as Change['kind'];
+  const kind = item.event as EventKind;
   const cursor = kind === 'log-truncated' || !scoped ? null : (item.scopedId ?? null);
   return { kind, cursor, data: structuredClone(item.data) } as Change;
 }
@@ -138,11 +132,18 @@ export function createFixtureClient(options: FixtureClientOptions = {}): Mission
   };
 
   const read = <Op extends ReadOp>(op: Op): Promise<Result<Op>> => {
-    const outcome = outcomes.get(op) as Outcome;
-    return Promise.resolve(structuredClone(outcome) as Result<Op>);
+    // A read never rejects and never throws (contracts/client-port.md, "Read error contract"): whatever goes wrong while
+    // serving it, here a value that cannot be copied, is a transport failure.
+    try {
+      return Promise.resolve(structuredClone(outcomes.get(op) as Outcome) as Result<Op>);
+    } catch {
+      return Promise.resolve({ ok: false, unavailable: 'transport' });
+    }
   };
 
   let state: ConnectionState = options.initialState ?? 'connected';
+  /** The open, non-refused subscriptions, which the connection drives: they pause, start and resynchronise with it. */
+  const subscriptions = new Set<(next: ConnectionState) => void>();
   const stateListeners = new Set<(state: ConnectionState) => void>();
 
   const client: MissionStatusClient = {
@@ -171,27 +172,70 @@ export function createFixtureClient(options: FixtureClientOptions = {}): Mission
           if (active) listener({ kind: 'refused', cursor: null, refusal: structuredClone(refusal) });
         }, 0);
       };
-      const scheduleNext = (): void => {
-        const item = changes.items[index];
-        if (!item) {
-          handle = null;
-          return;
-        }
-        handle = scheduler.setTimeout(() => {
-          if (!active) return;
-          index += 1;
-          scheduleNext();
-          listener(toChange(item, scoped));
-        }, item.delayMs);
-      };
-      // A selected refusal wins, as the stub serves a selected example whatever the query; otherwise the cursor rule.
-      if (streamRefusal) refuse(streamRefusal);
-      else if (orphanCursor) refuse(cursorWithoutMission());
-      else scheduleNext();
-      return () => {
-        active = false;
+      // `pending` and `generation` keep the replay to one timer even when a scheduler runs its callback at once or a
+      // listener changes the connection while it is being called.
+      let pending = false;
+      let generation = 0;
+      const cancel = (): void => {
+        generation += 1;
+        pending = false;
         if (handle !== null) scheduler.clearTimeout(handle);
         handle = null;
+      };
+      const scheduleNext = (): void => {
+        const item = changes.items[index];
+        // Changes flow only while the connection is up; a reconnect schedules the next one again (see `reconnected`).
+        if (!item || !active || pending || state !== 'connected') return;
+        pending = true;
+        const mine = ++generation;
+        const timer = scheduler.setTimeout(() => {
+          if (mine !== generation) return;
+          pending = false;
+          handle = null;
+          if (!active) return;
+          index += 1;
+          // Deliver first, schedule the next change after: a scheduler that runs its callback at once (a test's, say) would
+          // otherwise deliver the next change before this one. A listener that unsubscribes stops the replay.
+          try {
+            listener(toChange(item, scoped));
+          } finally {
+            if (active) scheduleNext();
+          }
+        }, item.delayMs);
+        if (mine === generation && pending) handle = timer;
+      };
+      // Set once the replay has started while connected: only a subscription that was live can be resynchronised.
+      let live = false;
+      const start = (): void => {
+        live = true;
+        scheduleNext();
+      };
+      // The connection drives the replay: it pauses while the connection is down (`index` stays the last change delivered),
+      // starts at first contact, and on a return to `connected` delivers one `resync` before the replay continues.
+      const connectionChanged = (next: ConnectionState): void => {
+        if (!active) return;
+        if (next !== 'connected') cancel();
+        else if (!live) start(); // first contact: nothing to resynchronise
+        else {
+          try {
+            listener({ kind: 'resync', cursor: null, reason: 'reconnected' });
+          } finally {
+            if (active) scheduleNext();
+          }
+        }
+      };
+      // A selected refusal wins, as the stub serves a selected example whatever the query; otherwise the cursor rule. A
+      // refusal is delivered whatever the connection state and ends the subscription: it is never resynchronised.
+      if (streamRefusal) refuse(streamRefusal);
+      else if (orphanCursor) refuse(cursorWithoutMission());
+      else {
+        subscriptions.add(connectionChanged);
+        if (state === 'connected') start();
+      }
+      return () => {
+        active = false;
+        subscriptions.delete(connectionChanged);
+        cancel();
       };
     },
     connection: {
@@ -211,7 +255,20 @@ export function createFixtureClient(options: FixtureClientOptions = {}): Mission
     if (!CONNECTION_STATES.includes(next)) throw new Error(`fixture client: unknown connection state ${String(next)}`);
     if (next === state) return;
     state = next;
-    for (const listener of [...stateListeners]) listener(next);
+    // Every listener runs even when an earlier one throws; the errors are rethrown together afterwards, so one faulty
+    // listener neither hides the state change from the others nor leaves a subscription un-resynchronised.
+    const errors: unknown[] = [];
+    const run = (call: () => void): void => {
+      try {
+        call();
+      } catch (error) {
+        errors.push(error);
+      }
+    };
+    for (const listener of [...stateListeners]) run(() => listener(next));
+    // The subscriptions follow the connection after its own listeners have heard it.
+    for (const follow of [...subscriptions]) run(() => follow(next));
+    if (errors.length > 0) throw new AggregateError(errors, `fixture client: ${errors.length} listener(s) threw while the connection became ${next}`);
   });
   return client;
 }

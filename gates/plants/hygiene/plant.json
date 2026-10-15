@@ -86,5 +86,17 @@
         ]
       }
     ]
+  },
+  {
+    "gate": "hygiene",
+    "ciCommand": "pnpm hygiene && pnpm test:scripts && pnpm test:terminology",
+    "expectFailPattern": "a legacy rust-toolchain file overrides",
+    "overlays": [
+      {
+        "target": "rust-toolchain",
+        "generated": "a NEW UNTRACKED extensionless file at the repo root; rustup reads it before rust-toolchain.toml, so the pin rule must report it",
+        "generator": "node -e \"require('fs').writeFileSync('rust-toolchain','1.98.1\\n')\""
+      }
+    ]
   }
 ]

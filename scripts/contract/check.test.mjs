@@ -629,6 +629,12 @@ test('C7: a stream identifier in an element file gives provisional', async () =>
   assert.deepEqual(tokens(await check(root)), [TOKENS.provisional]);
 });
 
+test('C7: a stream identifier in a Svelte source gives provisional', async () => {
+  const root = tempRepo();
+  write(root, 'packages/mission-ui/src/elements/plant-c7.svelte', '<script lang="ts">\n  type T = StatusTransitionEvent;\n</script>\n');
+  assert.deepEqual(tokens(await check(root)), [TOKENS.provisional]);
+});
+
 test('C7: the contract directory itself may name stream identifiers', async () => {
   const root = tempRepo();
   write(root, 'packages/mission-ui/src/contract/extra.ts', 'export type T = StreamCursor;\n');

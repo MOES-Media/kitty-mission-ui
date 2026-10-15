@@ -422,3 +422,40 @@ async fn events_serve_an_allowed_stream_refusal_and_reject_anything_else() {
         json!({"code": "schema-mismatch", "schema": "StreamRefusal", "operationId": "streamEvents"})
     );
 }
+
+/// SO-CORR-003: two templates that axum would refuse to route (a panic after `listening`) are a load error that names
+/// both templates, for an identical path and for the same position under different parameter names.
+#[test]
+fn conflicting_route_templates_are_a_load_error_naming_both() {
+    let with_extra = |path: &str| {
+        let mut routes = oracle("routes");
+        let mut extra = routes
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|r| r["path"] == "/missions/{missionId}")
+            .unwrap()
+            .clone();
+        extra["operationId"] = json!("conflicting");
+        extra["path"] = json!(path);
+        routes.as_array_mut().unwrap().push(extra);
+        Fixtures::from_values(
+            routes,
+            oracle("examples"),
+            oracle("fixtures"),
+            oracle("changes"),
+        )
+    };
+    for (extra, first) in [
+        ("/missions/{missionId}", "/missions/{missionId}"),
+        ("/missions/{id}", "/missions/{missionId}"),
+    ] {
+        let err = with_extra(extra).expect_err(extra);
+        assert!(
+            err.contains(extra) && err.contains(first),
+            "{extra}: the error must name both templates: {err}"
+        );
+    }
+    // Positive control: a template that differs by a literal segment is not a conflict.
+    assert!(with_extra("/missions/{missionId}/extra").is_ok());
+}

@@ -4,8 +4,10 @@
 - **Origin flow:** `specify`
 - **Slot key:** `specify.supervision.ownership`
 - **Input key:** `service_lifetime_ownership`
-- **Status:** `open`
+- **Status:** `resolved`
 - **Created:** `2026-10-15T18:27:44.395779+00:00`
+- **Resolved:** `2026-10-15T19:25:17.409812+00:00`
+- **Resolved by:** `operator`
 - **Opened by:** `cli`
 - **Other answer:** `false`
 
@@ -22,12 +24,13 @@ Does kitty-core start the service itself, and who owns its lifetime when Kitty D
 
 ## Final answer
 
-_(none)_
+kitty-core always spawns its own child process per host and project, on a port it picks, and stops it when the host stops; two hosts run two services
 
 ## Rationale
 
-_(none)_
+Operator ruling 2026-10-15, relayed by the coordinator
 
 ## Change log
 
 - `2026-10-15T18:27:44.395779+00:00` — opened
+- `2026-10-15T19:25:17.409812+00:00` — resolved (final_answer="kitty-core always spawns its own child process per host and project, on a port it picks, and stops it when the host stops; two hosts run two services")

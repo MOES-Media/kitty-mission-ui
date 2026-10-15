@@ -1,6 +1,6 @@
 /**
  * The `MissionStatusClient` port (contracts/client-port.md, FR-008): every read of the pinned mission-status contract, a
- * change subscription and a closed four-value connection state. The port is transport-free and performs no I/O; adapters
+ * change subscription and a closed five-value connection state. The port is transport-free and performs no I/O; adapters
  * implement it (the fixture adapter here, the desktop and HTTP adapters later). Contract types come from mission-ui's
  * generated file by deep import (mission-ui has no `exports` field, C-002); the provisional stream schemas are reached
  * through the aliases of ../contract/stream (contract gate C7).
@@ -39,15 +39,28 @@ export type Refusal<Op extends RefusingOp> = {
     : never;
 }[RefusalStatus<Op>];
 
+/** The outcome of a read. A read never rejects (and never throws): it resolves to one of these three shapes. A declared
+ *  `application/problem+json` status is a `refusal`; the `default` Problem, any undeclared status, a timeout or an IPC error
+ *  is `{ ok: false, unavailable: 'transport' }`. Cancellation is reserved as an optional second parameter
+ *  `{ signal?: AbortSignal }` of each read, whose abort rejects with an `AbortError`: the one rejection the port allows,
+ *  and only when the caller asked for it. See "Read error contract" in contracts/client-port.md (SO-DES-004). */
 export type Result<Op extends ReadOp> =
   | { ok: true; value: Ok<Op> }
   | { ok: false; refusal: Refusal<Op> }
   | { ok: false; unavailable: 'service-missing' | 'contract-mismatch' | 'transport' };
 
-export type ConnectionState = 'connected' | 'reconnecting' | 'degraded: service-missing' | 'degraded: contract-mismatch';
+/** The connection of an adapter. `connecting` is the initial state, before first contact (SO-DES-003): an adapter that has
+ *  not yet reached its service is neither `connected` nor `reconnecting`, and a shell must not show "reconnecting" on
+ *  start-up. The other four are the states of FR-008. */
+export type ConnectionState =
+  | 'connecting'
+  | 'connected'
+  | 'reconnecting'
+  | 'degraded: service-missing'
+  | 'degraded: contract-mismatch';
 
-/** The four states as a runtime list; a type test asserts it equals `ConnectionState` exactly (B8). */
-export const CONNECTION_STATES = ['connected', 'reconnecting', 'degraded: service-missing', 'degraded: contract-mismatch'] as const;
+/** The states as a runtime list; a type test asserts it equals `ConnectionState` exactly (B8). */
+export const CONNECTION_STATES = ['connecting', 'connected', 'reconnecting', 'degraded: service-missing', 'degraded: contract-mismatch'] as const;
 
 /** One change of the stream. `cursor` mirrors the SSE `id:`: a string for status-transition and mission-lifecycle on a
  *  mission-scoped subscription, null on an unscoped one, and always null for log-truncated (R2-05).
@@ -55,15 +68,23 @@ export const CONNECTION_STATES = ['connected', 'reconnecting', 'degraded: servic
  *  `refused` is the refusal channel of the stream: the contract refuses a stream request before any event (400 and 409
  *  StreamRefusal, 404 Problem for an unknown Mission). A refused subscription delivers exactly one `refused` change, in the
  *  `{ status, body }` shape of a read's `Result` refusal, and nothing after it. It is a kind of `Change`, not a second
- *  callback, so one listener sees everything the stream can say and an exhaustive switch over `kind` cannot forget it. */
+ *  callback, so one listener sees everything the stream can say and an exhaustive switch over `kind` cannot forget it.
+ *
+ *  `resync` is the in-band reconnect marker (SO-DES-002): after each reconnect of the transport the adapter delivers
+ *  exactly one `resync` to every open subscription, before any further event. It says "what you hold may be stale, refetch
+ *  everything": events sent while the connection was down are not replayed, so the consumer reads again what it shows. It
+ *  has no cursor (`null`): it is not a position to resume from. `reason` has one value today, `reconnected`; the field
+ *  keeps the kind open to a second cause without a new kind. Unlike `refused`, it does not end the subscription. See
+ *  "Subscription lifecycle" in contracts/client-port.md. */
 export type Change =
   | { kind: 'status-transition'; cursor: string | null; data: StatusChangeEvent }
   | { kind: 'mission-lifecycle'; cursor: string | null; data: LifecycleEvent }
   | { kind: 'log-truncated'; cursor: null; data: TruncationEvent }
-  | { kind: 'refused'; cursor: null; refusal: Refusal<'streamEvents'> };
+  | { kind: 'refused'; cursor: null; refusal: Refusal<'streamEvents'> }
+  | { kind: 'resync'; cursor: null; reason: 'reconnected' };
 
 /** The kinds of `Change` as a runtime list; a type test asserts it equals `Change['kind']` exactly. */
-export const CHANGE_KINDS = ['status-transition', 'mission-lifecycle', 'log-truncated', 'refused'] as const;
+export const CHANGE_KINDS = ['status-transition', 'mission-lifecycle', 'log-truncated', 'refused', 'resync'] as const;
 
 /** The scope of a subscription. A `cursor` is valid only together with `missionId` (the contract refuses a cursor without
  *  one as 400 `cursor_without_mission`), so a cursor without a `missionId` key is a type error: either a Mission,
@@ -101,3 +122,9 @@ export const CLIENT_OPERATIONS = {
   listOpsInvocations: 'listOpsInvocations',
   subscribe: 'streamEvents',
 } as const satisfies { readonly [K in ClientMethod]: string };
+
+/** The nine reads as a runtime list, derived from `CLIENT_OPERATIONS` (every method but `subscribe`) so the list is written
+ *  once (SO-BND-006). A type test asserts that the `ReadOp` union equals the same set. */
+export const READ_OPS: readonly ReadOp[] = (Object.keys(CLIENT_OPERATIONS) as (keyof typeof CLIENT_OPERATIONS)[]).filter(
+  (method): method is ReadOp => method !== 'subscribe',
+);

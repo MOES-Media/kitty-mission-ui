@@ -562,7 +562,7 @@ function checkHygieneScope(root, docs, bulkPages) {
 
 // ---- C7 ---------------------------------------------------------------------------------------------------------
 function checkProvisional(root) {
-  const files = authoredFiles(root).filter((f) => f.endsWith('.ts') && !/^packages\/[^/]+\/src\/contract\//.test(f));
+  const files = authoredFiles(root).filter((f) => /\.(?:ts|svelte)$/.test(f) && !/^packages\/[^/]+\/src\/contract\//.test(f));
   const out = [];
   if (files.length === 0 || !files.includes('packages/mission-ui/src/index.ts')) {
     out.push(problem(TOKENS.guard, `the C7 scan covers ${files.length} files and must include packages/mission-ui/src/index.ts`));

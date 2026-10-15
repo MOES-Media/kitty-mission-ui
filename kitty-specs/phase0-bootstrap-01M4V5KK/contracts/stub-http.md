@@ -75,6 +75,16 @@ After the last item, the stream stays open and sends `: heartbeat` every `--hear
 
 The test runs with `--time-scale 0 --heartbeat-ms 50` and captures up to the first heartbeat. It parses the captured stream and asserts that the event names, the `id:` lines and the `data` equal the items of `changes.json` in order, once for a mission-scoped request and once for an unscoped one (no `id:` lines) (R3-04). Determinism (NFR-004) is checked on top: the captured bytes are identical across 10 runs in one process, and, at the binary level, across three separate `kitty-stub` processes run with `--time-scale 0.02` (real, scaled delays), compared byte for byte up to the first heartbeat, scoped and unscoped (CODE-TEST-003). The cross-process test reads HTTP/1.0 so chunk boundaries cannot differ with timing.
 
+## Resume
+
+A mission-scoped `GET /api/v1/events` request resumes when it carries a non-empty cursor: the `streamCursor` query parameter, else the `Last-Event-ID` header (the query parameter wins when both are present; `%XX` escapes in the query value are decoded). Both spellings behave the same. The rule is exactly this, over the items of `changes.json` in order:
+
+1. A cursor equal to an item's `scopedId` (the value that item is sent with in its `id:` line) resumes **after that item**: the stream starts at the next item, with the next item's own delay.
+2. Any other non-empty cursor resumes **after the last `log-truncated` item** of the sequence. When the sequence has no `log-truncated` item, the stream starts at the first item.
+3. No cursor, or an empty one, starts at the first item.
+
+An unscoped request ignores the cursor. Resume changes only where the replay starts; the bytes of the items that are sent are the same as in a full replay, and the stream still ends with heartbeats. There is no other service behaviour: no refusal, no `409`, no cursor validation, and a `StreamRefusal` example is still served only when selected.
+
 ## Test support
 
 `GET /__stub/last-request` returns exactly `{"method","path","headers":{…}}` for the most recent `/api/v1` request, with header names lower-cased. `path` is the request path without the query string; there is no separate `query` field (A23). This lets #21 assert what its proxy forwarded. The same request rules apply to this route.
@@ -83,4 +93,4 @@ Credential headers are redacted (CODE-SEC-002): for `authorization`, `proxy-auth
 
 ## Not provided (by design)
 
-Cursor resume, the contract's *conditional* refusal behaviour (it never decides on its own to answer 400, 404 or 409 the way the service would; refusal bodies are served only when selected), and paging behaviour. The stub serves data; it does not reproduce the service's semantics.
+The service's cursor semantics (the stub resumes by the rule in "Resume" and validates nothing), the contract's *conditional* refusal behaviour (it never decides on its own to answer 400, 404 or 409 the way the service would; refusal bodies are served only when selected), and paging behaviour. The stub serves data; it does not reproduce the service's semantics.

@@ -525,3 +525,37 @@ describe('the shell .svelte sources get the rule set of the .ts sources (CODE-TE
     expect(await rules(svelte("  import type { Snippet } from 'svelte';\n  let { children }: { children?: Snippet } = $props();\n") + '{@render children?.()}\n')).toEqual([]);
   });
 });
+
+describe('the import boundary inside the shell (SO-BND-005)', () => {
+  const SHELL = `${ROOT}packages/mission-shell/src/`;
+  const FIXTURE_JSON = "import changes from '../../../../contracts/fixtures/mission-status.changes.json' with { type: 'json' };\nexport const c = changes;\n";
+  const restricted = async (file: string, code: string): Promise<string[]> => {
+    const [result] = await eslint.lintText(code, { filePath: file });
+    return (result?.messages ?? []).filter((message) => message.ruleId === 'no-restricted-imports').map((message) => message.message);
+  };
+
+  it('bans the fixture adapter from the production sources (a .ts file and a component)', async () => {
+    expect(await restricted(`${SHELL}client/port.ts`, "import { createFixtureClient } from './fixture';\nexport const c = createFixtureClient;\n")).toHaveLength(1);
+    expect(await restricted(`${SHELL}index.ts`, "export { createFixtureClient } from './client/fixture';\n")).toHaveLength(1);
+    expect(await restricted(`${SHELL}Shell.svelte`, `<script lang="ts">\n  import { createFixtureClient } from './client/fixture';\n  export const c = createFixtureClient;\n</script>\n`)).toHaveLength(1);
+  });
+
+  it('bans the test harness and the fixture JSON from the production sources', async () => {
+    expect(await restricted(`${SHELL}Shell.svelte`, `<script lang="ts">\n  import Harness from './harness/BindingHarness.svelte';\n  export const h = Harness;\n</script>\n`)).toHaveLength(1);
+    expect(await restricted(`${SHELL}client/port.ts`, FIXTURE_JSON)).toHaveLength(1);
+  });
+
+  it('lets the fixture adapter, the testing entry and the harness use them (positive controls)', async () => {
+    expect(await restricted(`${SHELL}client/fixture.ts`, FIXTURE_JSON)).toEqual([]);
+    expect(await restricted(`${SHELL}testing.ts`, "export { createFixtureClient } from './client/fixture';\n")).toEqual([]);
+    expect(await restricted(`${SHELL}harness/BindingHarness.svelte`, `<script lang="ts">\n  import { createFixtureClient } from '../client/fixture';\n  export const c = createFixtureClient;\n</script>\n`)).toEqual([]);
+  });
+
+  it('does not reach other packages (their sources are not shell sources)', async () => {
+    expect(await restricted(`${SRC}logic/summary.ts`, "import { createFixtureClient } from '../client/fixture';\nexport const c = createFixtureClient;\n")).toEqual([]);
+  });
+
+  it('reports a banned import even under an inline disable directive (noInlineConfig)', async () => {
+    expect(await restricted(`${SHELL}client/port.ts`, `${DISABLE}import { createFixtureClient } from './fixture';\nexport const c = createFixtureClient;\n`)).toHaveLength(1);
+  });
+});

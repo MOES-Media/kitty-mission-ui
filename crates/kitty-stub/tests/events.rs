@@ -173,3 +173,160 @@ async fn a_selected_stream_refusal_is_problem_json_with_its_status() {
     assert_eq!(reply.content_type(), "application/problem+json");
     assert_eq!(reply.json(), example["value"]);
 }
+
+// SO-DES-008: minimal deterministic resume. A scoped request with `streamCursor` (query) or `Last-Event-ID` (header)
+// resumes after the item whose `scopedId` equals the cursor; any other non-empty cursor resumes after the last
+// `log-truncated` item. Unscoped requests ignore the cursor. No refusals, no 409.
+
+async fn capture_with_header(uri: &str, name: &str, value: &str) -> Reply {
+    capture_until_heartbeat(
+        stub(),
+        get(uri).header(name, value).body(Body::empty()).unwrap(),
+    )
+    .await
+}
+
+fn names_and_ids(events: &[Event]) -> Vec<(String, Option<String>)> {
+    events
+        .iter()
+        .map(|e| (e.name.clone(), e.id.clone()))
+        .collect()
+}
+
+fn expected(items: &[Value]) -> Vec<(String, Option<String>)> {
+    items
+        .iter()
+        .map(|i| {
+            (
+                i["event"].as_str().unwrap().to_string(),
+                i["scopedId"].as_str().map(str::to_string),
+            )
+        })
+        .collect()
+}
+
+/// `:` is legal in a query value, but clients percent-encode it; both spellings must resolve to the same id.
+fn encode(id: &str) -> String {
+    id.replace(':', "%3A")
+}
+
+#[tokio::test]
+async fn resuming_after_an_id_skips_that_item_and_every_item_before_it() {
+    let items = items();
+    let mut ran = 0;
+    for (k, item) in items.iter().enumerate() {
+        let Some(id) = item["scopedId"].as_str() else {
+            continue;
+        };
+        for cursor in [id.to_string(), encode(id)] {
+            let reply = capture(&format!(
+                "/api/v1/events?missionId={MISSION_ID}&streamCursor={cursor}"
+            ))
+            .await;
+            assert_eq!(reply.status, StatusCode::OK);
+            let events = parse(std::str::from_utf8(&reply.body).unwrap());
+            assert_eq!(
+                names_and_ids(&events),
+                expected(&items[k + 1..]),
+                "after item {k} ({cursor})"
+            );
+            ran += 1;
+        }
+    }
+    assert!(ran >= 6, "the oracle has several ids; ran {ran}");
+    // Positive control: the whole stream is longer than any resumed one.
+    let full = capture(&format!("/api/v1/events?missionId={MISSION_ID}")).await;
+    assert_eq!(
+        parse(std::str::from_utf8(&full.body).unwrap()).len(),
+        items.len()
+    );
+}
+
+#[tokio::test]
+async fn an_unknown_cursor_resumes_after_the_last_log_truncated_item() {
+    let items = items();
+    let cut = items
+        .iter()
+        .rposition(|i| i["event"] == "log-truncated")
+        .expect("the oracle covers log-truncated");
+    assert!(
+        cut + 1 < items.len(),
+        "the oracle has items after the truncation"
+    );
+    for cursor in ["not-an-id", "0:deadbeef", "312"] {
+        let reply = capture(&format!(
+            "/api/v1/events?missionId={MISSION_ID}&streamCursor={cursor}"
+        ))
+        .await;
+        assert_eq!(reply.status, StatusCode::OK, "{cursor}");
+        let events = parse(std::str::from_utf8(&reply.body).unwrap());
+        assert_eq!(
+            names_and_ids(&events),
+            expected(&items[cut + 1..]),
+            "{cursor}"
+        );
+    }
+}
+
+#[tokio::test]
+async fn last_event_id_resumes_exactly_like_stream_cursor() {
+    let items = items();
+    let known = items[1]["scopedId"].as_str().unwrap().to_string();
+    let mut ran = 0;
+    for cursor in [known.as_str(), "not-an-id"] {
+        let by_query = capture(&format!(
+            "/api/v1/events?missionId={MISSION_ID}&streamCursor={}",
+            encode(cursor)
+        ))
+        .await;
+        let by_header = capture_with_header(
+            &format!("/api/v1/events?missionId={MISSION_ID}"),
+            "last-event-id",
+            cursor,
+        )
+        .await;
+        assert_eq!(by_header.status, StatusCode::OK);
+        assert_eq!(by_header.body, by_query.body, "{cursor}");
+        // Positive control: the resumed stream is not the full one.
+        let full = capture(&format!("/api/v1/events?missionId={MISSION_ID}")).await;
+        assert_ne!(by_header.body, full.body, "{cursor}");
+        ran += 1;
+    }
+    assert_eq!(ran, 2);
+}
+
+#[tokio::test]
+async fn an_unscoped_or_empty_cursor_changes_nothing() {
+    let unscoped = capture("/api/v1/events").await.body;
+    let scoped = capture(&format!("/api/v1/events?missionId={MISSION_ID}"))
+        .await
+        .body;
+    assert_eq!(
+        capture("/api/v1/events?streamCursor=not-an-id").await.body,
+        unscoped
+    );
+    assert_eq!(
+        capture_with_header("/api/v1/events", "last-event-id", "not-an-id")
+            .await
+            .body,
+        unscoped
+    );
+    assert_eq!(
+        capture(&format!(
+            "/api/v1/events?missionId={MISSION_ID}&streamCursor="
+        ))
+        .await
+        .body,
+        scoped
+    );
+    assert_eq!(
+        capture_with_header(
+            &format!("/api/v1/events?missionId={MISSION_ID}"),
+            "last-event-id",
+            ""
+        )
+        .await
+        .body,
+        scoped
+    );
+}
