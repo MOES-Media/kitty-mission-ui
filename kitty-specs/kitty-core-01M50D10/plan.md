@@ -3,7 +3,7 @@
 **Branch**: `feat/kitty-core-19` | **Date**: 2026-10-15 | **Spec**: [spec.md](spec.md)
 **Input**: Mission specification from `kitty-specs/kitty-core-01M50D10/spec.md`; mission-ui issue 19 under epic 16, with the design notes on issues 19, 20 and 21 from the PR #32 landing review.
 **Branch contract**: planning starts on `feat/kitty-core-19`, which is also the planning base and the merge target of every work package; the mission PR goes from `feat/kitty-core-19` into `main`.
-**Open plan decisions**: four forks wait for the operator (see "Open plan decisions"). This plan is written on the recommended option of each.
+**Plan decisions**: the operator resolved all four plan forks on 2026-10-15, choosing option A each time (see "Plan decisions").
 
 ## Summary
 
@@ -81,7 +81,7 @@ The existing stub tests run unchanged. The port, the workspace members, the CI j
 | Risk boundaries: no secrets, paths or usernames in tracked files | PASS | Captured child output lives only in memory (C-006). Tests write only to temp directories. |
 | Exact version pins | PASS | Every new crate is `=x.y.z` in `[workspace.dependencies]`, with its publish date in a comment (NFR-002). |
 | Distribution: never bundle the service; discover it | PASS | Discovery only (FR-023). `kitty-fake-service` is a test binary in a `publish = false` crate. It is never packaged by #20 or #21, which build only their own binaries. |
-| Exceptions are documented in the PR | PASS | No exception is planned. A proof-leg timeout change, if it is needed, is ruled by the operator first (DM `01M50HVPJ9CDBB7405T9K0645R`). |
+| Exceptions are documented in the PR | PASS | No exception is planned. Proof-leg timeouts are formula-tuned values, not frozen wiring (DM `01M50HVPJ9CDBB7405T9K0645R`, resolved A). |
 
 Re-checked after Phase 1 design: no new conflicts.
 
@@ -177,7 +177,7 @@ kitty-specs/kitty-core-01M50D10/
 │   ├── kitty-core-api.md   # the Rust public surface hosts build on (SC-005)
 │   ├── bundled-document.md # the generated bundle and the canonical digest form
 │   └── stub-http-delta.md  # the stub's new route and options (extends #17's stub-http.md)
-├── decisions/              # specify rulings + the four open plan decisions
+├── decisions/              # specify rulings + the four resolved plan decisions
 └── checklists/requirements.md
 ```
 
@@ -217,7 +217,7 @@ scripts/contract/bundle.test.mjs    # NEW: determinism, every $ref inlined, a on
 contracts/fixtures/mission-status.openapi.json   # NEW, generated
 .gitattributes                      # EXTENDED: one LF + linguist-generated line for the bundle
 gates/plants/contract/plant.json    # EXTENDED: stale-bundle plant
-.github/workflows/ci.yml            # timeout values only, and only if DM 01M50HVPJ9CDBB7405T9K0645R allows (contract 19→21)
+.github/workflows/ci.yml            # timeout values only, and per DM 01M50HVPJ9CDBB7405T9K0645R, resolved A (contract 19→21)
 README.md, CHANGELOG.md             # EXTENDED
 ```
 
@@ -230,7 +230,7 @@ README.md, CHANGELOG.md             # EXTENDED
 
 | Violation | Why Needed | Simpler Alternative Rejected Because |
 |---|---|---|
-| A generated bundle of about 630 KB committed under `contracts/fixtures/` | The stub must serve the pinned document, and the pinned digest must come from one bundling that already exists in the contract scripts (C-005) | A bundler in Rust would be a second, hand-written reference resolver (decision `01M50HVKZ0D1C5HBMB1J1P99E1`, option B). Bundling at stub start-up would make the stub depend on a parser stack it does not need. |
+| A generated bundle of about 630 KB committed under `contracts/fixtures/` | The stub must serve the pinned document, and the pinned digest must come from one bundling that already exists in the contract scripts (C-005) | A bundler in Rust would be a second, hand-written reference resolver (decision `01M50HVKZ0D1C5HBMB1J1P99E1`, option B, not chosen). Bundling at stub start-up would make the stub depend on a parser stack it does not need. |
 | A test-only `[[bin]]` inside a production crate | C-002 forbids a new member, and cargo exposes only a package's own binaries to its tests | A self-exec of the test harness would need `harness = false` and a hand-made runner. A binary in kitty-stub cannot be reached from kitty-core's tests. |
 | One `unsafe` block family (`libc::kill`, `prctl` in `pre_exec`) | SIGTERM before SIGKILL (FR-021), and tying the child to its parent on Linux (spec edge case) | tokio only offers SIGKILL. `nix` would be a new crate for two calls. |
 
@@ -282,7 +282,7 @@ README.md, CHANGELOG.md             # EXTENDED
   - `circular: false` must throw on a cycle rather than emit a partial document. The current pin has none, as verified at plan time.
   - The existing four fixture files must stay byte-identical (SC-004). The WP runs `git diff --exit-code` on them.
   - Any test that counts `FIXTURE_FILES` or the generator's output line is updated in the same WP.
-  - If decision `01M50HVKZ0D1C5HBMB1J1P99E1` goes to option B, this IC is replaced: see that decision.
+  - Decision `01M50HVKZ0D1C5HBMB1J1P99E1` was resolved A, so this IC stands as written.
 
 ### IC-03 — Stub extensions
 
@@ -443,7 +443,7 @@ README.md, CHANGELOG.md             # EXTENDED
 - **Affected surfaces**:
   - `README.md`: the kitty-core section, discovery configuration, the stub's new options;
   - `CHANGELOG.md`;
-  - `.github/workflows/ci.yml`: the proof-matrix `timeout` values only, if decision `01M50HVPJ9CDBB7405T9K0645R` allows;
+  - `.github/workflows/ci.yml`: the proof-matrix `timeout` values only, as decision `01M50HVPJ9CDBB7405T9K0645R` (resolved A) allows;
   - the mission evidence: NFR-003 p95, local and CI gate times.
 - **Sequencing/depends-on**: all.
 - **Risks**:
@@ -497,8 +497,8 @@ This brings the mission-level total to 1 new plant. The contract leg goes from 8
 
 | Leg | Measured gate step | Plants after | Formula | Timeout now → planned |
 |---|---|---|---|---|
-| `contract` | 113 s (1.88 min) | 9 | 10 × 1.88 + 2 = 20.8 | 19 → **21** (needs `01M50HVPJ9CDBB7405T9K0645R` = A) |
-| `rust` | 34 s (0.57 min) today | 3 | 4 × T + 2 ≤ 5 ⇔ T ≤ 45 s | 5 → 5 if T ≤ 45 s on the PR's first CI run; otherwise 4 × T + 2, rounded up (also needs DM A) |
+| `contract` | 113 s (1.88 min) | 9 | 10 × 1.88 + 2 = 20.8 | 19 → **21** (allowed: `01M50HVPJ9CDBB7405T9K0645R` resolved A) |
+| `rust` | 34 s (0.57 min) today | 3 | 4 × T + 2 ≤ 5 ⇔ T ≤ 45 s | 5 → 5 if T ≤ 45 s on the PR's first CI run; otherwise 4 × T + 2, rounded up (allowed by the same ruling) |
 
 The rust leg's real cost is smaller than the formula: the plants fail at fmt, at clippy and early in test, and they share the build (the leg measured 35 s against a 34 s gate). The formula is still the rule.
 
@@ -512,11 +512,11 @@ The rust leg's real cost is smaller than the formula: the plants fail at fmt, at
 - The extra compile is 14 small crates. A local cold `cargo check` of the whole set took 6.7 s.
 - Every WP records `cargo test -p kitty-core` wall time. IC-10 records the CI step time, which decides the rust leg value.
 
-## Open plan decisions
+## Plan decisions
 
-Each one is a recorded Decision Moment, opened with `--flow plan`. The plan follows option A of each. A different ruling changes the ICs named.
+Each one is a recorded Decision Moment (`--flow plan`). The operator resolved all four on 2026-10-15, choosing option A each time. The ruling was relayed by the coordinator. The last column records what option B would have changed.
 
-| Decision | Question | Recommended | Changes if not A |
+| Decision | Question | Ruled (A) | Option B, not chosen |
 |---|---|---|---|
 | `01M50HVKZ0D1C5HBMB1J1P99E1` | Where is the bundle produced and checked? | A: `contract:generate` plus the `Gate: contract` staleness check, +1 plant | B: IC-02 becomes a Rust inliner in kitty-core (a build script embeds the vendored files). The stub binary serves the document only with `--openapi <file>`. No contract plant, no contract timeout change. |
 | `01M50HVNACZ8T6XM1XKJ68TR8J` | Parse the served document as YAML now? | A: `yaml_serde =0.10.7` | B: JSON only, 3 fewer crates. The real service's YAML is contract-mismatch until #22. |
@@ -554,7 +554,7 @@ The full table is research R-07.
   - `hyper/client` adds `want` and `try-lock`;
   - `hyper-util/client` adds `tracing`, `tracing-core` and `once_cell`;
   - `http1` and `tokio` are already covered.
-  - Option A of `01M50HVQZBYA7M58WD1ABFMF8K` therefore takes only `hyper/client`.
+  - `01M50HVQZBYA7M58WD1ABFMF8K` was resolved A, so only `hyper/client` is taken.
 
 ## PR shape
 

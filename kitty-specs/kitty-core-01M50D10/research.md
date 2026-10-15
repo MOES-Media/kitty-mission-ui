@@ -21,9 +21,9 @@
 
 Each entry gives the Decision, the Rationale, and the Alternatives considered.
 
-## R-01 — The hyper client layer (open decision `01M50HVQZBYA7M58WD1ABFMF8K`)
+## R-01 — The hyper client layer (decision `01M50HVQZBYA7M58WD1ABFMF8K`, resolved A)
 
-- **Decision (recommended).**
+- **Decision (operator ruling, 2026-10-15).**
   - Use `hyper::client::conn::http1::handshake` over a `tokio::net::TcpStream` to `127.0.0.1:<port>`, wrapped in `hyper_util::rt::TokioIo`. There is one connection per request or stream, and the connection task is spawned and aborted with its owner.
   - Enable `hyper`'s `client` Cargo option at member level. `hyper-util` needs only its `tokio` option, which the workspace already enables.
 - **Rationale.**
@@ -41,9 +41,9 @@ Each entry gives the Decision, the Rationale, and the Alternatives considered.
   - The `client-legacy` pooled `Client<HttpConnector>`: rejected as the default for its three extra crates, its pooling hazard across port changes, and a connector that does more than loopback needs.
   - `reqwest`: rejected by the ruling.
 
-## R-02 — The bundle: source, format and staleness (open decision `01M50HVKZ0D1C5HBMB1J1P99E1`)
+## R-02 — The bundle: source, format and staleness (decision `01M50HVKZ0D1C5HBMB1J1P99E1`, resolved A)
 
-- **Decision (recommended).**
+- **Decision (operator ruling, 2026-10-15).**
   - `scripts/contract/generate.mjs` builds `contracts/fixtures/mission-status.openapi.json` with `new $RefParser().dereference(openapi.yaml, { dereference: { circular: false } })` and writes it with the existing `jsonText`, which escapes BOM and bidi characters (F-21).
   - It is one more entry of `generateJsonSources`, so `Gate: contract`'s existing `checkJsonFresh` compares it byte for byte.
   - kitty-core embeds it with `include_str!`. The stub serves it as its default document.
@@ -92,9 +92,9 @@ Each entry gives the Decision, the Rationale, and the Alternatives considered.
   - Full RFC 8785 (JCS): rejected. Its ES6 number printing and UTF-16 key order would need more code, for no gain while both inputs go through one Rust path.
   - Hashing raw bytes: rejected by the ruling (`01M50D47J1Q1P03XASV69C4J5X`).
 
-## R-04 — YAML parser (open decision `01M50HVNACZ8T6XM1XKJ68TR8J`)
+## R-04 — YAML parser (decision `01M50HVNACZ8T6XM1XKJ68TR8J`, resolved A)
 
-- **Decision (recommended).** `yaml_serde =0.10.7`, the continuation of `serde_yaml` by the YAML Organization (repository `github.com/yaml/yaml-serde`), licensed MIT OR Apache-2.0. It brings `libyaml-rs 0.3.0` and `ryu 1.0.23`. None of the three has a build script or a procedural macro.
+- **Decision (operator ruling, 2026-10-15).** `yaml_serde =0.10.7`, the continuation of `serde_yaml` by the YAML Organization (repository `github.com/yaml/yaml-serde`), licensed MIT OR Apache-2.0. It brings `libyaml-rs 0.3.0` and `ryu 1.0.23`. None of the three has a build script or a procedural macro.
 - **Candidates checked on crates.io (2026-10-15).**
 
   | Crate | State |
@@ -217,7 +217,7 @@ New direct crates are `yaml_serde` and `sha2`. `percent-encoding` and `libc` are
   - The `Gate: rust` step measured 34 s and 20 s on the last two CI runs. The rust proof leg measured 35 s with 3 plants.
   - The #17 formula keeps the rust leg at 5 minutes only while the gate step is 45 s or less.
   - A local cold `cargo check --all-targets` of the full planned dependency set took 6.7 s.
-  - IC-10 measures the real CI value. Decision `01M50HVPJ9CDBB7405T9K0645R` rules what happens if it exceeds 45 s.
+  - IC-10 measures the real CI value. Decision `01M50HVPJ9CDBB7405T9K0645R` (resolved A) applies if it exceeds 45 s: the rust leg timeout is re-set by the formula.
 
 ## R-10 — Status delivery to hosts
 
@@ -256,4 +256,4 @@ New direct crates are `yaml_serde` and `sha2`. `percent-encoding` and `libc` are
 
 ## Adversarial challenge
 
-This is to be filled by the R1–R6 plan squad (`reviews/plan.squad.md`). The four open plan decisions are its starting questions.
+This is to be filled by the R1–R6 plan squad (`reviews/plan.squad.md`). The four plan decisions were resolved A by the operator on 2026-10-15. The squad may still challenge their consequences.
