@@ -13,7 +13,7 @@
 
 ## Requirement Completeness
 
-- [x] No [NEEDS CLARIFICATION] markers remain. Five operator questions are open Decision Moments listed under Open Questions; each FR they touch states the recommended default.
+- [x] No [NEEDS CLARIFICATION] markers remain. The five operator questions are resolved Decision Moments (operator ruling, 2026-10-15), and `decision verify` is clean.
 - [x] Requirements are testable and unambiguous
 - [x] Requirement types are separated (Functional / Non-Functional / Constraints)
 - [x] IDs are unique across FR-###, NFR-###, C-### and SC-### entries, and match the requirement-ID grammar
@@ -36,4 +36,6 @@
 
 ## Notes
 
-- Q1 to Q5 (Decision Moments 01M50D3SCB6ZG0PDWCEBGVAG7T, 01M50D47J1Q1P03XASV69C4J5X, 01M50D3W9ZS4VHP9K4CWQQW4Q4, 01M50D3XMBS9DD3AEWP1F66RRS, 01M50D403EEYQYEPSSMAV732DF) await the operator. Resolve them before `/spec-kitty.plan`, and amend FR-011, FR-014, FR-017, FR-020 and FR-023 if an answer other than the recommended one is chosen.
+- Q1 to Q5 were resolved by the operator on 2026-10-15, with the recommended option each time. The decisions are 01M50D3SCB6ZG0PDWCEBGVAG7T, 01M50D47J1Q1P03XASV69C4J5X, 01M50D3W9ZS4VHP9K4CWQQW4Q4, 01M50D3XMBS9DD3AEWP1F66RRS and 01M50D403EEYQYEPSSMAV732DF.
+- FR-011, FR-012, FR-014, FR-017, FR-020 and FR-023 now state the rulings rather than defaults.
+- All items pass, and the spec is ready for `/spec-kitty.plan`.

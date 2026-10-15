@@ -2,7 +2,7 @@
 
 **Mission Branch**: `feat/kitty-core-19`
 **Created**: 2026-10-15
-**Status**: Specified, with five open questions awaiting the operator (see Open Questions). Intent is taken from issue #19, its landing-review design notes, and the ownership decisions of #17; requirements that depend on an open question say so.
+**Status**: Specified. Intent is taken from issue #19, its landing-review design notes, and the ownership decisions of #17. The five open questions were ruled by the operator on 2026-10-15 (see Clarifications).
 **Input**: GitHub issue moes-media/kitty-mission-ui#19 ("M3 kitty-core: shared Rust core (contract client, SSE, supervision)"), Phase 0 mission 3 of 6 under the epic #16. It builds on #17 (PR #32), which delivered the workspace, the client port, the stub and the shared fixtures.
 
 ## Intent Summary
@@ -31,6 +31,27 @@ Kitty Desktop and Kitty Dashboard both read spec-kitty's Mission Status service.
 - **Out of scope:** refresh policy (#18), Tauri commands and Channels (#20), the dashboard proxy and the HTTP adapter (#21), and the real service (#22).
 
 ## Clarifications
+
+### Operator rulings, 2026-10-15
+
+The operator chose the recommended option for each of the five specify questions. Each one is recorded as a resolved Decision Moment.
+
+- **Client transport** (decision `01M50D3SCB6ZG0PDWCEBGVAG7T`). kitty-core uses a route table built from the generated `contracts/fixtures/mission-status.routes.json`, over the hyper and hyper-util client already pinned in the workspace, with its own SSE frame reader. There are no typed models and no client generated from `openapi.yaml`. This fixes FR-001, FR-002 and FR-007.
+- **Contract digest** (decision `01M50D47J1Q1P03XASV69C4J5X`). The digest is canonical:
+  - the pinned multi-file contract is bundled into one document with every reference inlined;
+  - both that bundle and the document the service serves are parsed and canonicalised (sorted keys, JSON form) before SHA-256;
+  - the stub serves that bundle.
+  
+  This fixes FR-011, FR-012 and FR-014.
+- **Restart policy** (decision `01M50D3W9ZS4VHP9K4CWQQW4Q4`). After a crash the supervisor restarts with capped exponential backoff. After 5 crashes within 5 minutes it gives up: the state is `stopped` with degraded service-missing, reason `crashing`, until the host asks to retry. This fixes FR-020.
+- **Service lifetime** (decision `01M50D3XMBS9DD3AEWP1F66RRS`). Each host's kitty-core starts its own child process per project, on a port it picks, and stops it when the host stops. kitty-core never attaches to a service it did not start, so two hosts on one project run two services. This fixes FR-017 and FR-021.
+- **Discovery lookup rules** (decision `01M50D403EEYQYEPSSMAV732DF`). The rules, in order:
+  1. A path from host configuration wins, and an invalid one fails loudly with no fallback.
+  2. Otherwise, one environment variable.
+  3. Otherwise, a PATH search for a configurable binary name.
+  4. Nothing found means service-missing.
+  
+  This fixes FR-023.
 
 ### Binding decisions carried into this mission (operator, #17 landing review, 2026-10-15)
 
@@ -146,7 +167,7 @@ A user runs a host on a machine where the service is not installed, cannot be fo
 
 ### User Story 6 - Discovery follows rules that can be tested now (Priority: P2)
 
-Upstream has no install convention yet. Discovery sits behind a replaceable interface, and this mission implements and tests only its lookup rules (see Q5). A real convention can be added later without touching supervision.
+Upstream has no install convention yet. Discovery sits behind a replaceable interface, and this mission implements and tests only its lookup rules (operator ruling, 2026-10-15). A real convention can be added later without touching supervision.
 
 **Why this priority**: it unblocks hosts today and keeps the later upstream convention a local change. It is P2 because supervision tests can inject a binary path directly.
 
@@ -155,7 +176,7 @@ Upstream has no install convention yet. Discovery sits behind a replaceable inte
 **Acceptance Scenarios**:
 
 1. **Given** an explicit binary path, **When** discovery runs, **Then** that path is used, and an invalid explicit path is service-missing. Discovery never falls back to another rule.
-2. **Given** no explicit path, **When** discovery runs, **Then** the remaining rules apply in their documented order, and the first match wins.
+2. **Given** no explicit path, **When** discovery runs, **Then** the environment variable is used if set, else a PATH search for the configured binary name, and nothing found is service-missing.
 3. **Given** a host or a test, **When** it provides its own discovery implementation, **Then** the supervisor uses it unchanged.
 
 ### Supervision lifecycle
@@ -170,7 +191,7 @@ stateDiagram-v2
     starting --> crashed: start timeout or start failures exhausted
     ready --> crashed: process exited
     crashed --> backoff: restart policy allows another try
-    crashed --> stopped: restart policy gives up (Q3)
+    crashed --> stopped: 5 crashes within 5 minutes (degraded: service-missing, crashing)
     backoff --> starting: delay elapsed
     starting --> stopped: stop
     ready --> stopped: stop
@@ -186,7 +207,7 @@ stateDiagram-v2
 - **An event whose data is not one JSON value, or a frame larger than the size limit.** The stream ends as unavailable with a transport reason, and nothing partial is relayed.
 - **A cursor without a Mission.** kitty-core refuses it before any I/O, and nothing is sent to the service. The port's type already forbids it (`SubscriptionScope`).
 - **A path or query value with reserved characters or `../`** (for example an `ArtifactPath`). It is percent-encoded, so the request path the stub records is the route template filled in, and no value changes which route is hit.
-- **Two hosts open the same project.** Ownership is Q4. Until it is ruled, each supervisor owns only the process it started, and never stops one it did not start.
+- **Two hosts open the same project.** Each host starts its own service on its own port (operator ruling, 2026-10-15). A supervisor owns only the process it started, and never attaches to or stops one it did not start.
 - **The host process is killed hard** (SIGKILL). A child cannot always be reaped. Where the platform allows, the child is tied to the parent's lifetime; otherwise this is a documented limit (Assumptions).
 - **Captured service output.** It is bounded in size, kept only in memory for diagnostics, and never written to tracked files.
 - **A refusal on a later connection.** kitty-core relays one stream connection at a time, so a refusal on a reconnect is relayed the same way as on the first open. Ending the subscription is the adapter's job.
@@ -207,19 +228,19 @@ stateDiagram-v2
 | FR-008 | Stream scope and cursor pass-through | As a host developer, I want a stream opened for one Mission (optionally with a cursor, sent as `streamCursor`) or for all Missions, and a cursor without a non-empty Mission refused before any I/O, so that the adapter can resume through kitty-core while the contract's rule cannot be broken. | High | Open | [build] | no — the test opens the stub's stream with a `scopedId` from `changes.json` and asserts only the later items arrive; a cursor without a Mission must send nothing |
 | FR-009 | Refused stream relayed | As a host developer, I want a stream that the service refuses before any event (400 or 409 `StreamRefusal`, 404 `Problem`) to end in exactly one refused outcome carrying the status and the raw body, so that the adapter can deliver the port's `refused` change without parsing the body twice. | High | Open | [build] | no — the test selects each of the five `StreamRefusal` examples and the 404 at stub start-up |
 | FR-010 | Unavailable stream distinguished | As a host developer, I want any other end of a stream (an undeclared status such as 503 at open, a dropped connection, malformed framing, an oversized frame, or no byte within the idle limit, which defaults to 90 seconds: three heartbeat intervals) reported as an unavailable outcome with its reason, and with the status and body when there was an answer, distinct from refused, so that the adapter backs off and reconnects instead of ending the subscription. | High | Open | [build] | no — each reason is produced by the stub or a fake, and the outcome kind is asserted |
-| FR-011 | Contract digest check | As the operator, I want kitty-core to fetch `GET /api/v1/openapi.yaml` after each start, and before the service counts as ready, and compare its digest with the pinned digest (document and form per Q2). An unequal digest, a non-200 answer or an unparseable document is contract-mismatch. This is so that a service speaking another contract is never used. | High | Open | [build] | no — the pinned document must pass, and a modified document must fail, on the same stub |
-| FR-012 | Pinned digest follows the pin | As the operator, I want the pinned digest derived from the vendored contract under `contracts/spec-kitty/`, never typed in by hand, and a test that fails when they disagree, so that `contract:update` cannot leave a stale digest. | High | Open | [build] | no — editing one vendored contract file in a test copy must change the derived digest |
+| FR-011 | Contract digest check | As the operator, I want kitty-core to fetch `GET /api/v1/openapi.yaml` after each start, and before the service counts as ready, and compare its digest with the pinned digest. Both sides are digested in the same canonical form: parsed, references inlined, keys sorted, JSON form, SHA-256. An unequal digest, a non-200 answer or an unparseable document is contract-mismatch. This is so that a service speaking another contract is never used. | High | Open | [build] | no — the pinned document must pass, and a modified document must fail, on the same stub |
+| FR-012 | Pinned digest follows the pin | As the operator, I want the pinned digest derived from the vendored contract under `contracts/spec-kitty/`, bundled into one document with every reference inlined, never typed in by hand, and a test that fails when they disagree, so that `contract:update` cannot leave a stale digest. | High | Open | [build] | no — editing one vendored contract file in a test copy must change the derived digest |
 | FR-013 | Mismatch blocks use | As a host developer, I want every read and stream request made while the status is contract-mismatch answered at once with contract-mismatch, without contacting the service. The supervisor then stops a service it started. This is so that no data from an unknown contract reaches a screen. | High | Open | [build] | no — the stub's last-request must show no request after the check failed |
-| FR-014 | Stub serves the contract document | As a test author, I want the stub to serve `GET /api/v1/openapi.yaml` (the pinned document, in the form Q2 fixes) under the same Host, Origin and forwarding rules as its other routes, and a start-up option to serve another document file instead, so that the digest check can be tested to pass and to fail (SO-DES-010). | High | Open | [build] | no — a test fetches the route, compares it with the pinned document, and does the same for a substitute file |
+| FR-014 | Stub serves the contract document | As a test author, I want the stub to serve `GET /api/v1/openapi.yaml` (the pinned contract bundled into one document, with every reference inlined) under the same Host, Origin and forwarding rules as its other routes, and a start-up option to serve another document file instead, so that the digest check can be tested to pass and to fail (SO-DES-010). | High | Open | [build] | no — a test fetches the route, compares it with the pinned document, and does the same for a substitute file |
 | FR-015 | Stub start-up selection | As a test author, I want a repeatable start-up option that makes a route serve a selected example or fixture without request headers (for example `--select <operationId>=<Schema.name>`). It follows the acceptance rules of the existing header selection, and a request header still takes precedence. An invalid selection is a usage error before the stub listens. This is so that kitty-core's and #21's tests never inject test-only headers (SO-DES-009). | High | Open | [build] | no — a refusal selected at start-up must be served with no headers, and an unknown selection must exit with the usage code |
 | FR-016 | Supervision state machine | As a host developer, I want one supervisor per project, with the states `starting`, `ready`, `crashed`, `backoff` and `stopped` and the transitions in the lifecycle diagram, and each transition delivered to the host in order, so that both hosts drive their UI from the same lifecycle. | High | Open | [build] | no — every scenario test asserts the exact sequence of states |
-| FR-017 | Launch | As a host developer, I want the supervisor to start the discovered binary with `--mission-status.project-root <project root>` and `--mission-status.port <chosen port>`, one process per project, with its output captured in memory up to a size limit, so that the service starts as upstream documents it. Whether kitty-core spawns, or attaches to a service already running, is Q4. | High | Open | [build] | no — the fake binary records its arguments, and the test asserts them |
+| FR-017 | Launch | As a host developer, I want the supervisor to start the discovered binary with `--mission-status.project-root <project root>` and `--mission-status.port <chosen port>`, one process per project, with its output captured in memory up to a size limit, so that the service starts as upstream documents it. kitty-core always starts its own child, and never attaches to a service it did not start. | High | Open | [build] | no — the fake binary records its arguments, and the test asserts them |
 | FR-018 | Readiness | As a host developer, I want `ready` reported only after the service answers on its loopback port and the digest check (FR-011) has passed. A start that has not reached ready within the start timeout (10 s by default) is a start failure. This is so that a host never relays to a half-started service. | High | Open | [build] | no — a fake that never answers must time out into the restart policy |
 | FR-019 | Busy port retry | As a host developer, I want a service that exits before it is ready to be restarted at once on a different free loopback port, up to 3 attempts per start, before the attempt counts as a crash, so that the race between picking a port and binding it does not strand the host. | High | Open | [build] | no — the test occupies the first chosen port and asserts a second port is used and `ready` is reached |
-| FR-020 | Crash restart and give-up | As a host developer, I want a service that exits after `ready` to be reported `crashed`, then restarted after a `backoff` delay that grows exponentially from 0.5 s to a cap of 30 s and resets after 60 s of uninterrupted `ready`. Repeated crashes are handled as Q3 rules (recommended: give up after 5 crashes within 5 minutes, then `stopped` with degraded service-missing, reason "crashing"). This is so that a crashing service recovers without spinning forever. | High | Open | [build] | no — under a controllable clock the test asserts each delay and the give-up point |
+| FR-020 | Crash restart and give-up | As a host developer, I want a service that exits after `ready` to be reported `crashed`, then restarted after a `backoff` delay that grows exponentially from 0.5 s to a cap of 30 s and resets after 60 s of uninterrupted `ready`. After 5 crashes within 5 minutes it gives up: the state is `stopped` with degraded service-missing, reason `crashing`, until the host asks to retry. This is so that a crashing service recovers without spinning forever. | High | Open | [build] | no — under a controllable clock the test asserts each delay and the give-up point |
 | FR-021 | Clean shutdown | As a host developer, I want a stop request, or dropping the supervisor, to send the platform's stop signal, wait a 5 s grace period, then kill the process, and to report `stopped`, so that no service process outlives its host. | High | Open | [build] | no — the test asserts the process no longer exists, including for a fake that ignores the stop signal |
 | FR-022 | Missing or unusable binary | As a user, I want a binary that is not found, or that cannot be executed (for example, quarantined or without execute permission), to give degraded service-missing with a reason (`not-found` or `cannot-execute`) and the OS error as detail, without panicking and without a retry loop. A retry happens only when the host asks. This is so that the host can explain the problem, including the unsigned-binary case (#20). | High | Open | [build] | no — one test per reason; each must yield the reason and `stopped` |
-| FR-023 | Discovery behind an interface | As a host developer, I want discovery behind a replaceable interface. Its default implementation applies the lookup rules of Q5 (recommended: an explicit path wins and never falls back; then one environment variable; then a PATH search for the configured binary name). Each rule is tested. This is so that an upstream install convention can be added later without touching supervision. | Medium | Open | [build] | no — one test per rule in temporary directories, plus a test that an injected implementation is used |
+| FR-023 | Discovery behind an interface | As a host developer, I want discovery behind a replaceable interface. Its default implementation applies these lookup rules in order: a path from host configuration wins and, if invalid, fails loudly with no fallback; otherwise one environment variable; otherwise a PATH search for a configurable binary name; nothing found is service-missing. Each rule is tested. This is so that an upstream install convention can be added later without touching supervision. | Medium | Open | [build] | no — one test per rule in temporary directories, plus a test that an injected implementation is used |
 | FR-024 | Degraded-mode signal | As a host developer, I want one observable status that combines the supervision state with a degraded reason: none, `service-missing` (with its reason) or `contract-mismatch` (with the expected and the actual digest). I also want a documented mapping from it to the port's `ConnectionState` for adapters to apply. Both hosts can then show the same banner, while the port's types stay unchanged. | High | Open | [build] | no — every scenario test asserts the status, and a test asserts the documented mapping covers every combination |
 
 ### Non-Functional Requirements
@@ -255,8 +276,8 @@ stateDiagram-v2
 - **Raw change**: one relayed stream event: event name, cursor or none, and the raw data bytes. It is relayed into the port's `Change` by the adapter.
 - **Stream outcome**: how one stream connection ends. It is refused (status and raw body, before any event), unavailable (reason, plus status and body when there was an answer), or closed by the caller.
 - **Supervisor**: owns at most one service process for one project. It has a state (`starting`, `ready`, `crashed`, `backoff`, `stopped`), the chosen port, and restart bookkeeping.
-- **Core status (degraded signal)**: the supervision state plus a degraded reason: none, `service-missing` (`not-found`, `cannot-execute`, or `crashing` per Q3), or `contract-mismatch` (expected and actual digest).
-- **Pinned contract digest**: the digest of the vendored contract, in the form Q2 fixes, derived from `contracts/spec-kitty/`.
+- **Core status (degraded signal)**: the supervision state plus a degraded reason: none, `service-missing` (`not-found`, `cannot-execute` or `crashing`), or `contract-mismatch` (expected and actual digest).
+- **Pinned contract digest**: the canonical digest of the vendored contract (bundled with references inlined, keys sorted, JSON form, SHA-256), derived from `contracts/spec-kitty/`.
 - **Discovery**: a replaceable lookup that yields a binary path or "not found", with the reason.
 
 ## Domain Language
@@ -286,35 +307,22 @@ stateDiagram-v2
 ## Assumptions
 
 - The port additions from the #17 landing (`connecting`, `resync`, `refused` as a `Change` kind) are merged before this mission's implementation starts. The orchestrator rebases this branch onto `main` after #17 merges.
-- The real service serves its contract at `GET /api/v1/openapi.yaml`, as the epic states. Whether it serves one bundled document or the root index file with relative references is not yet known upstream. Q2 decides how the digest is taken. #22 confirms it against the real binary.
+- The real service serves its contract at `GET /api/v1/openapi.yaml`, as the epic states. Whether it serves one bundled document or the root index file with relative references is not yet known upstream. The canonical digest assumes a bundled document. If the real service serves the unbundled root file, it shows as contract-mismatch until #22 adapts the check.
 - The service's 503 capacity answer comes from the spec-kitty#5529 service facts and is not declared in the pinned contract. It is relayed as an undeclared status (FR-003, FR-010).
 - How the service signals a busy port (exit code or message) is undocumented. Any exit before ready is treated as a possible busy port and retried on a new port, up to the attempt limit (FR-019).
 - A hard kill of the host (SIGKILL) may leave the child running on platforms where a child cannot be tied to its parent's lifetime. Where that is possible it is done, and otherwise the limit is documented.
 - The binary name for discovery is configurable, because upstream has not fixed it.
 - CI runs kitty-core's tests on Linux only, as the existing `Gate: rust` does. Signal and process behaviour on macOS and Windows is covered when #20 adds the multi-OS matrix.
-- The plan picks the crates and the structure (the transport per Q1, and where the fake binary lives inside the existing members) within C-002 and NFR-002.
+- The plan picks any remaining crates (for example, for YAML parsing and SHA-256) and the structure (including where the fake binary lives inside the existing members), within C-002, NFR-002 and the operator's transport ruling.
 
 ## Open Questions
 
-Five open questions await the operator. Each is recorded as an open Decision Moment. The requirements above follow the recommended option (marked "recommended") and name the question wherever an answer would change them.
+None. The operator ruled on all five questions on 2026-10-15, choosing the recommended option each time (see Clarifications):
 
-- **Q1: Client transport.** Decision `01M50D3SCB6ZG0PDWCEBGVAG7T`, awaiting the operator. How should kitty-core speak HTTP and SSE?
-  - (A, recommended) A route table from the generated `routes.json`, over the hyper and hyper-util client already pinned, with kitty-core's own SSE frame reader. Verbatim relay comes naturally (no models), and it adds the fewest new crates.
-  - (B) reqwest plus eventsource-stream, driven by the same table. More ergonomic, but it pulls in a larger new dependency tree to pin and age-check.
-  - (C) A client generated from `openapi.yaml` (for example progenitor), with typed models, capturing raw bytes before deserialising. Closest to the issue's wording, but its models fight SO-DES-012, and it adds a generator to the toolchain.
-- **Q2: Digest document and form.** Decision `01M50D47J1Q1P03XASV69C4J5X`, awaiting the operator. What is the digest taken over?
-  - (A, recommended) A canonical digest of the parsed document. The pinned multi-file contract is bundled into one document with its references inlined, both sides are canonicalised (sorted keys, JSON form) and then hashed with SHA-256. The stub serves the bundled document. It ignores formatting and catches any schema change. The risk is that an unbundled upstream document mismatches until #22 adapts.
-  - (B) A byte digest of the served file, compared with the existing `PIN.json` entry for `mission-status/openapi.yaml`. Needs no new tooling, but it covers only the root index file, misses changes to referenced schemas, and breaks on whitespace.
-  - (C) A byte digest of the served file, compared with a new "served document" digest that `contract:update` records. It catches schema changes, but it depends on upstream's exact serialisation.
-- **Q3: Restart policy for repeated crashes.** Decision `01M50D3W9ZS4VHP9K4CWQQW4Q4`, awaiting the operator.
-  - (A, recommended) Capped exponential backoff, giving up after 5 crashes within 5 minutes. The state is then `stopped` with degraded service-missing (reason "crashing") until the host asks to retry. A crash loop, for example a quarantined binary, becomes an explainable banner.
-  - (B) Restart forever with capped backoff. The host shows `reconnecting` indefinitely, and a crash loop is invisible.
-  - (C) Never restart automatically. Simplest, but every crash needs user action.
-- **Q4: Who starts the service, and who owns its lifetime?** Decision `01M50D3XMBS9DD3AEWP1F66RRS`, awaiting the operator.
-  - (A, recommended) kitty-core always starts its own child per host and project, on a port it picks, and stops it with the host. Two hosts on one project run two services. Simple and isolated, at the cost of a duplicate process.
-  - (B) kitty-core starts a service, but first attaches to one that another host already started for the same project, through a lock or port file that kitty-core writes. One process, but it adds a shared-state file, stale-lock handling and a lifetime handover.
-  - (C) kitty-core never starts the service, and only attaches at a configured port and watches its health. This drops the supervision scope of the issue.
-- **Q5: Discovery lookup rules.** Decision `01M50D403EEYQYEPSSMAV732DF`, awaiting the operator.
-  - (A, recommended) An explicit path from host configuration wins and fails loudly if it is invalid. Otherwise one environment variable. Otherwise a PATH search for the configured binary name. Nothing found means service-missing.
-  - (B) Explicit path only, until upstream defines an install location. Strictest, but every user must configure a path.
-  - (C) Rule A plus a list of per-OS default install directories. Friendlier, but it guesses at locations that upstream has not defined, and each guess becomes a test fixture.
+| Question | Decision | Ruling |
+|---|---|---|
+| Q1: client transport | `01M50D3SCB6ZG0PDWCEBGVAG7T` | A route table from `routes.json`, over the pinned hyper and hyper-util client, with kitty-core's own SSE frame reader |
+| Q2: digest document and form | `01M50D47J1Q1P03XASV69C4J5X` | A canonical digest of the bundled document (references inlined, keys sorted, SHA-256), and the stub serves the bundle |
+| Q3: restart policy | `01M50D3W9ZS4VHP9K4CWQQW4Q4` | Capped backoff; give up after 5 crashes within 5 minutes and go to `stopped`, degraded service-missing (`crashing`), until the host retries |
+| Q4: service lifetime | `01M50D3XMBS9DD3AEWP1F66RRS` | Each host starts its own child per project, on a port it picks, and stops it on exit |
+| Q5: discovery lookup rules | `01M50D403EEYQYEPSSMAV732DF` | A configured path wins and fails loudly with no fallback; otherwise one environment variable; otherwise a PATH search for a configurable binary name |
