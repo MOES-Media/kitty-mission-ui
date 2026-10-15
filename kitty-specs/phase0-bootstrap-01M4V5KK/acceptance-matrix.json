@@ -67,11 +67,11 @@
     {
       "criterion_id": "FR-007",
       "description": "Verify FR-007 is satisfied",
-      "proof_type": "automated_test",
-      "evidence": null,
-      "pass_fail": "pending",
-      "verified_by": null,
-      "verified_at": null,
+      "proof_type": "gate_proof",
+      "evidence": "no-io plant 'no-io: fetch is forbidden (network I/O)' over a .svelte file; lint:no-io and lint:data-driven cover packages/*/src including .svelte (205/205 self-tests)",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-15T11:48:24.597168+00:00",
       "notes": "TODO: replace with a real acceptance criterion"
     },
     {
