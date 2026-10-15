@@ -8,6 +8,9 @@
   "dependencies": {
     "@moes-media/mission-ui": "workspace:*"
   },
+  "peerDependencies": {
+    "svelte": "5.57.1"
+  },
   "scripts": {
     "typecheck": "svelte-check --tsconfig ./tsconfig.json --fail-on-warnings --output human-verbose",
     "test": "vitest run"
