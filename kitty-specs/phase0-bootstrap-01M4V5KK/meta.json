@@ -5,7 +5,7 @@
   "friendly_name": "Phase 0 bootstrap: binding check, workspace and CI, port and stub",
   "mid8": "01M4V5KK",
   "mission_id": "01M4V5KK5JCKYWZ6F3WS5DAQZK",
-  "mission_number": null,
+  "mission_number": 4,
   "mission_slug": "phase0-bootstrap-01M4V5KK",
   "mission_type": "software-dev",
   "pr_bound": true,
