@@ -221,7 +221,7 @@ describe('package entries', () => {
     expect(shell.CLIENT_OPERATIONS).toBe(CLIENT_OPERATIONS);
     expect(shell.CONNECTION_STATES).toBe(CONNECTION_STATES);
     expect(shell.CHANGE_KINDS).toBe(CHANGE_KINDS);
-    expect([...Object.keys(shell)].sort()).toEqual(['CHANGE_KINDS', 'CLIENT_OPERATIONS', 'CONNECTION_STATES']);
+    expect([...Object.keys(shell)].sort()).toEqual(['CHANGE_KINDS', 'CLIENT_OPERATIONS', 'CONNECTION_STATES', 'toStreamCursorString']);
   });
 
   it('the ./testing entry exposes the fixture adapter, and keeps the test hook private', () => {
