@@ -4,10 +4,13 @@
 import { beforeAll, describe, expect, expectTypeOf, it } from 'vitest';
 import { page } from 'vitest/browser';
 import routes from '../../../contracts/fixtures/mission-status.routes.json' with { type: 'json' };
+import changes from '../../../contracts/fixtures/mission-status.changes.json' with { type: 'json' };
 import type { components } from '@moes-media/mission-ui/src/contract/types.generated';
 import {
+  CHANGE_KINDS,
   CLIENT_OPERATIONS,
   CONNECTION_STATES,
+  type Change,
   type ConnectionState,
   type MissionStatusClient,
   type Params,
@@ -78,6 +81,80 @@ describe('connection states', () => {
   });
 });
 
+describe('change kinds', () => {
+  it('are exactly the three stream events and the refusal', () => {
+    expect([...CHANGE_KINDS]).toEqual(['status-transition', 'mission-lifecycle', 'log-truncated', 'refused']);
+    const exact: Expect<Equal<Change['kind'], (typeof CHANGE_KINDS)[number]>> = true;
+    // @ts-expect-error the kinds without the refusal are not every kind of Change
+    const withoutRefusal: Expect<Equal<Exclude<Change['kind'], 'refused'>, (typeof CHANGE_KINDS)[number]>> = true;
+    expect([exact, withoutRefusal]).toEqual([true, true]);
+    // Every event the authored change sequence uses is a kind; the refusal is the only kind that is not an event.
+    const events = new Set(changes.items.map((item) => item.event));
+    expect([...events].filter((event) => !(CHANGE_KINDS as readonly string[]).includes(event))).toEqual([]);
+    expect(CHANGE_KINDS.filter((kind) => !events.has(kind))).toEqual(['refused']);
+  });
+});
+
+describe('stream refusals', () => {
+  type Schemas = components['schemas'];
+
+  it('are every problem+json refusal streamEvents declares, derived from the contract', () => {
+    expectTypeOf<Refusal<'streamEvents'>>().not.toBeNever();
+    expectTypeOf<Refusal<'streamEvents'>>().toEqualTypeOf<
+      { status: number; body: Schemas['StreamRefusal'] } | { status: number; body: Schemas['Problem'] }
+    >();
+  });
+
+  it('arrive as a change of kind refused, with a null cursor and the refusal of the contract', () => {
+    type Refused = Extract<Change, { kind: 'refused' }>;
+    expectTypeOf<Refused>().toEqualTypeOf<{ kind: 'refused'; cursor: null; refusal: Refusal<'streamEvents'> }>();
+    const body: Schemas['StreamRefusal'] = {
+      type: 'about:blank',
+      title: 'The resume cursor was refused',
+      status: 409,
+      code: 'content_mismatch',
+    };
+    const refused: Change = { kind: 'refused', cursor: null, refusal: { status: 409, body } };
+    // @ts-expect-error a refusal never carries a cursor
+    const withCursor: Change = { kind: 'refused', cursor: '1:a', refusal: { status: 409, body } };
+    // @ts-expect-error a refusal body without the Problem title is not a contract refusal
+    const untitled: Change = { kind: 'refused', cursor: null, refusal: { status: 400, body: { status: 400, code: 'negative' } } };
+    expect([refused.kind, withCursor.kind, untitled.kind]).toEqual(['refused', 'refused', 'refused']);
+  });
+
+  it('make a switch over the change kinds that forgets the refusal a type error', () => {
+    const complete = (change: Change): string => {
+      switch (change.kind) {
+        case 'status-transition':
+        case 'mission-lifecycle':
+        case 'log-truncated':
+          return change.kind;
+        case 'refused':
+          return String(change.refusal.status);
+        default: {
+          const unhandled: never = change;
+          return unhandled;
+        }
+      }
+    };
+    const forgetful = (change: Change): string => {
+      switch (change.kind) {
+        case 'status-transition':
+        case 'mission-lifecycle':
+        case 'log-truncated':
+          return change.kind;
+        default: {
+          // @ts-expect-error the refused kind is left over, so it is not never
+          const unhandled: never = change;
+          return unhandled;
+        }
+      }
+    };
+    const change: Change = { kind: 'refused', cursor: null, refusal: { status: 404, body: { title: 'No such Mission', status: 404 } } };
+    expect([complete(change), forgetful(change)]).toEqual(['404', change]);
+  });
+});
+
 describe('port types', () => {
   it('keep a required query parameter required', () => {
     const withPath: Params<'getArtifactContent'> = { path: { missionId: 'm' }, query: { path: 'spec.md' } };
@@ -129,6 +206,7 @@ describe('package entry', () => {
     expect(shell.CLIENT_OPERATIONS).toBe(CLIENT_OPERATIONS);
     expect(shell.CONNECTION_STATES).toBe(CONNECTION_STATES);
     expect(Object.keys(shell)).not.toContain('setConnectionState');
-    expect([...Object.keys(shell)].sort()).toEqual(['CLIENT_OPERATIONS', 'CONNECTION_STATES', 'createFixtureClient']);
+    expect(shell.CHANGE_KINDS).toBe(CHANGE_KINDS);
+    expect([...Object.keys(shell)].sort()).toEqual(['CHANGE_KINDS', 'CLIENT_OPERATIONS', 'CONNECTION_STATES', 'createFixtureClient']);
   });
 });

@@ -6,7 +6,14 @@ import { page } from 'vitest/browser';
 import routes from '../../../contracts/fixtures/mission-status.routes.json' with { type: 'json' };
 import examples from '../../../contracts/fixtures/mission-status.examples.json' with { type: 'json' };
 import changes from '../../../contracts/fixtures/mission-status.changes.json' with { type: 'json' };
-import { CONNECTION_STATES, type Change, type ConnectionState, type MissionStatusClient, type ReadOp } from '../src/client/port';
+import {
+  CONNECTION_STATES,
+  type Change,
+  type ConnectionState,
+  type MissionStatusClient,
+  type ReadOp,
+  type SubscriptionScope,
+} from '../src/client/port';
 import { createFixtureClient, setConnectionState, type ChangesEnvelope, type Scheduler } from '../src/client/fixture';
 
 const exampleTable = examples as Record<string, { schema: string; value: unknown }>;
@@ -144,7 +151,7 @@ describe('subscriptions', () => {
     changes.items.forEach((item, index) => {
       const change = seen[index];
       expect(change?.kind).toBe(item.event);
-      expect(change?.data).toEqual(item.data);
+      expect(change && change.kind !== 'refused' ? change.data : undefined).toEqual(item.data);
       const scopedId = (item as { scopedId?: string }).scopedId;
       expect(change?.cursor).toBe(item.event === 'log-truncated' ? null : scopedId);
       checked += 1;
@@ -223,6 +230,81 @@ describe('subscriptions', () => {
     expect(runs.length).toBe(10);
     expect(new Set(runs).size).toBe(1);
     expect(JSON.parse(runs[0] as string).scoped.length).toBe(changes.items.length);
+  });
+});
+
+/** Subscribes a fresh client made with `options`, replays the whole sequence and returns what the listener heard. */
+function heardWith(options: Parameters<typeof createFixtureClient>[0], scope?: SubscriptionScope): { seen: Change[]; pending: number } {
+  const scheduler = fakeScheduler();
+  const seen: Change[] = [];
+  createFixtureClient({ ...options, scheduler }).subscribe((change) => seen.push(change), scope);
+  scheduler.advance(totalDelay);
+  return { seen, pending: scheduler.pending() };
+}
+
+describe('stream refusals', () => {
+  const streamRoute = routes.find((route) => route.operationId === 'streamEvents');
+
+  it('the route of the oracle declares 400 and 409 StreamRefusal and 404 Problem', () => {
+    expect(streamRoute?.refusals).toEqual({ Problem: [404], StreamRefusal: [400, 409] });
+  });
+
+  for (const key of ['StreamRefusal.cursor-without-mission', 'StreamRefusal.misaligned', 'StreamRefusal.content-mismatch', 'StreamRefusal.out-of-range']) {
+    it(`a selected ${key} is the one and only change, with its own status`, () => {
+      const example = exampleTable[key];
+      const status = (example?.value as { status: number }).status;
+      expect([400, 409]).toContain(status);
+      const { seen, pending } = heardWith({ examples: { streamEvents: key } }, { missionId: changes.missionId });
+      expect(seen).toEqual([{ kind: 'refused', cursor: null, refusal: { status, body: example?.value } }]);
+      expect(pending).toBe(0);
+    });
+  }
+
+  it('a selected 404 Problem refuses the stream with status 404', () => {
+    const notFound = { type: 'about:blank', title: 'The Mission was not found', status: 404, code: 'mission_not_found' };
+    const table = { ...exampleTable, 'Problem.unknown-mission': { schema: 'Problem', value: notFound } };
+    const { seen } = heardWith({ examples: { streamEvents: 'Problem.unknown-mission' }, fixtures: { examples: table } }, { missionId: changes.missionId });
+    expect(seen).toEqual([{ kind: 'refused', cursor: null, refusal: { status: 404, body: notFound } }]);
+  });
+
+  it('each refusal status reaches the listener: 400, 404 and 409', () => {
+    const notFound = { type: 'about:blank', title: 'The Mission was not found', status: 404 };
+    const table = { ...exampleTable, 'Problem.unknown-mission': { schema: 'Problem', value: notFound } };
+    const statuses = ['StreamRefusal.cursor-without-mission', 'Problem.unknown-mission', 'StreamRefusal.content-mismatch'].map((key) => {
+      const { seen } = heardWith({ examples: { streamEvents: key }, fixtures: { examples: table } });
+      const only = seen[0];
+      return seen.length === 1 && only?.kind === 'refused' ? only.refusal.status : -1;
+    });
+    expect(statuses).toEqual([400, 404, 409]);
+  });
+
+  it('the refusal arrives through the scheduler, never during subscribe, and unsubscribe cancels it', () => {
+    const scheduler = fakeScheduler();
+    const seen: Change[] = [];
+    const client = createFixtureClient({ scheduler, examples: { streamEvents: 'StreamRefusal.content-mismatch' } });
+    const unsubscribe = client.subscribe((change) => seen.push(change));
+    expect(seen).toEqual([]);
+    expect(scheduler.pending()).toBe(1);
+    unsubscribe();
+    expect(scheduler.pending()).toBe(0);
+    scheduler.advance(totalDelay);
+    expect(seen).toEqual([]);
+  });
+
+  it('a selection that is not a declared stream refusal throws at creation', () => {
+    // An event example is a stream item, never a response; a read's refusal schema is not one of the stream's.
+    expect(() => createFixtureClient({ examples: { streamEvents: 'StatusTransitionEvent.first' } })).toThrow(/streamEvents/);
+    expect(() => createFixtureClient({ examples: { streamEvents: 'ArtifactRefusal.not-found' } })).toThrow(/ArtifactRefusal\.not-found.*streamEvents/);
+    const teapot = { ...exampleTable, 'Problem.teapot': { schema: 'Problem', value: { title: 'Teapot', status: 418 } } };
+    expect(() => createFixtureClient({ examples: { streamEvents: 'Problem.teapot' }, fixtures: { examples: teapot } })).toThrow(/status 418/);
+    // Positive control: a declared stream refusal is accepted.
+    expect(() => createFixtureClient({ examples: { streamEvents: 'StreamRefusal.negative' } })).not.toThrow();
+  });
+
+  it('without a selection the stream is not refused', () => {
+    const { seen } = heardWith({}, { missionId: changes.missionId });
+    expect(seen.length).toBe(changes.items.length);
+    expect(seen.filter((change) => change.kind === 'refused')).toEqual([]);
   });
 });
 

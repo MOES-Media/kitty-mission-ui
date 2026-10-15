@@ -28,6 +28,9 @@ pnpm --filter @moes-media/mission-shell test        # Vitest browser mode (Chrom
   `{ ok: false, unavailable: 'service-missing' | 'contract-mismatch' | 'transport' }`.
 - `subscribe(listener, scope?)` is the change stream (`streamEvents`) and returns an unsubscribe function. A `Change`
   has a `kind` (`status-transition`, `mission-lifecycle` or `log-truncated`), a `cursor` and the contract's event `data`.
+  The fourth kind, `refused`, is the stream's refusal channel: a refused subscription delivers exactly one
+  `{ kind: 'refused', cursor: null, refusal: { status, body } }` and nothing after it. `Refusal<'streamEvents'>` is derived
+  from the contract: 400 and 409 `StreamRefusal`, 404 `Problem`. The kinds are listed at run time as `CHANGE_KINDS`.
 - `connection.state` is one of exactly four `ConnectionState` values, also listed at run time as `CONNECTION_STATES`:
   `connected`, `reconnecting`, `degraded: service-missing` and `degraded: contract-mismatch` (with a space after the
   colon). `connection.onChange(listener)` returns an unsubscribe function.
@@ -48,7 +51,7 @@ Every read resolves to its route's default example; `subscribe` replays `mission
 
 | Option | Default | Effect |
 |---|---|---|
-| `examples` | each route's `defaultExample` | an example key (`<Schema>.<name>`) per read. A refusal example resolves as a refusal with its own status; a schema the operation does not declare throws when the client is created. |
+| `examples` | each route's `defaultExample` | an example key (`<Schema>.<name>`) per read, and for `streamEvents`. A refusal example resolves as a refusal with its own status (for `streamEvents`, every subscription receives one `refused` change); a schema the operation does not declare throws when the client is created. |
 | `fixtures` | the files of `contracts/fixtures/` | replacement `routes`, `examples` or `changes` data, for tests |
 | `scheduler` | the global `setTimeout` and `clearTimeout` | the timer pair that spaces replayed changes by their `delayMs`; inject a fake one for deterministic tests |
 | `initialState` | `connected` | the starting connection state |

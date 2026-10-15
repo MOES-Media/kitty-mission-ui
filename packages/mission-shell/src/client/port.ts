@@ -26,11 +26,14 @@ export type Params<Op extends ReadOp> = operations[Op]['parameters'];
 /** The `200` `application/json` body of a read. */
 export type Ok<Op extends ReadOp> = operations[Op]['responses'][200]['content']['application/json'];
 
-type RefusalStatus<Op extends ReadOp> = Exclude<keyof operations[Op]['responses'], 'default'>;
+/** The operations that can refuse: the nine reads and the event stream (`subscribe`). */
+export type RefusingOp = ReadOp | 'streamEvents';
+
+type RefusalStatus<Op extends RefusingOp> = Exclude<keyof operations[Op]['responses'], 'default'>;
 
 /** Every `application/problem+json` refusal the operation declares, the `default` Problem excluded (R3-01, A2). `status`
  *  is the refusal's own status: a schema shared by several statuses carries it in its body (R3-02). */
-export type Refusal<Op extends ReadOp> = {
+export type Refusal<Op extends RefusingOp> = {
   [S in RefusalStatus<Op>]: operations[Op]['responses'][S] extends { content: { 'application/problem+json': infer B } }
     ? { status: number; body: B }
     : never;
@@ -47,11 +50,20 @@ export type ConnectionState = 'connected' | 'reconnecting' | 'degraded: service-
 export const CONNECTION_STATES = ['connected', 'reconnecting', 'degraded: service-missing', 'degraded: contract-mismatch'] as const;
 
 /** One change of the stream. `cursor` mirrors the SSE `id:`: a string for status-transition and mission-lifecycle on a
- *  mission-scoped subscription, null on an unscoped one, and always null for log-truncated (R2-05). */
+ *  mission-scoped subscription, null on an unscoped one, and always null for log-truncated (R2-05).
+ *
+ *  `refused` is the refusal channel of the stream: the contract refuses a stream request before any event (400 and 409
+ *  StreamRefusal, 404 Problem for an unknown Mission). A refused subscription delivers exactly one `refused` change, in the
+ *  `{ status, body }` shape of a read's `Result` refusal, and nothing after it. It is a kind of `Change`, not a second
+ *  callback, so one listener sees everything the stream can say and an exhaustive switch over `kind` cannot forget it. */
 export type Change =
   | { kind: 'status-transition'; cursor: string | null; data: StatusChangeEvent }
   | { kind: 'mission-lifecycle'; cursor: string | null; data: LifecycleEvent }
-  | { kind: 'log-truncated'; cursor: null; data: TruncationEvent };
+  | { kind: 'log-truncated'; cursor: null; data: TruncationEvent }
+  | { kind: 'refused'; cursor: null; refusal: Refusal<'streamEvents'> };
+
+/** The kinds of `Change` as a runtime list; a type test asserts it equals `Change['kind']` exactly. */
+export const CHANGE_KINDS = ['status-transition', 'mission-lifecycle', 'log-truncated', 'refused'] as const;
 
 /** A `cursor` is valid only together with `missionId` (the contract's stream cursor rule). */
 export interface SubscriptionScope {

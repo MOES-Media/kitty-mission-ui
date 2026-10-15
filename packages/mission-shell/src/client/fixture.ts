@@ -6,7 +6,15 @@
 import routesJson from '../../../../contracts/fixtures/mission-status.routes.json' with { type: 'json' };
 import examplesJson from '../../../../contracts/fixtures/mission-status.examples.json' with { type: 'json' };
 import changesJson from '../../../../contracts/fixtures/mission-status.changes.json' with { type: 'json' };
-import { CONNECTION_STATES, type Change, type ConnectionState, type MissionStatusClient, type ReadOp, type Result } from './port';
+import {
+  CONNECTION_STATES,
+  type Change,
+  type ConnectionState,
+  type MissionStatusClient,
+  type ReadOp,
+  type Refusal,
+  type Result,
+} from './port';
 
 /** The timer pair the adapter schedules replayed changes with. */
 export interface Scheduler {
@@ -33,8 +41,10 @@ export interface ChangesEnvelope {
 }
 
 export interface FixtureClientOptions {
-  /** Example key per read, instead of the route's default example. A refusal example resolves as a refusal. */
-  examples?: Partial<Record<ReadOp, string>>;
+  /** Example key per read, instead of the route's default example. A refusal example resolves as a refusal. For
+   *  `streamEvents` (whose route has no default) a refusal example refuses every subscription with one `refused` change,
+   *  as the stub serves it on `/events` under `X-Kitty-Stub-Example`. */
+  examples?: Partial<Record<ReadOp | 'streamEvents', string>>;
   /** Replacement data sets; each defaults to the file of contracts/fixtures. */
   fixtures?: { routes?: readonly RouteEntry[]; examples?: ExampleTable; changes?: ChangesEnvelope };
   scheduler?: Scheduler;
@@ -53,7 +63,8 @@ const READ_OPS = [
   'listOpsInvocations',
 ] as const satisfies readonly ReadOp[];
 
-const CHANGE_KINDS: readonly string[] = ['status-transition', 'mission-lifecycle', 'log-truncated'] satisfies Change['kind'][];
+/** The change kinds an item of changes.json may carry: every kind but `refused`, which is a response, not an event. */
+const EVENT_KINDS: readonly string[] = ['status-transition', 'mission-lifecycle', 'log-truncated'] satisfies Exclude<Change['kind'], 'refused'>[];
 
 const defaultScheduler: Scheduler = {
   setTimeout: (fn, ms) => setTimeout(fn, ms),
@@ -84,7 +95,7 @@ function resolveOutcome(route: RouteEntry, key: string, table: ExampleTable): Ou
 }
 
 function toChange(item: ChangesEnvelope['items'][number], scoped: boolean): Change {
-  if (!CHANGE_KINDS.includes(item.event)) throw new Error(`fixture client: unknown change event ${item.event}`);
+  if (!EVENT_KINDS.includes(item.event)) throw new Error(`fixture client: unknown change event ${item.event}`);
   const kind = item.event as Change['kind'];
   const cursor = kind === 'log-truncated' || !scoped ? null : (item.scopedId ?? null);
   return { kind, cursor, data: structuredClone(item.data) } as Change;
@@ -106,6 +117,14 @@ export function createFixtureClient(options: FixtureClientOptions = {}): Mission
     if (key === null) throw new Error(`fixture client: ${op} has no default example`);
     outcomes.set(op, resolveOutcome(route, key, table));
   }
+
+  // The stream's route has no success example, so a selection can only be one of its declared refusals.
+  const streamRoute = routes.find((entry) => entry.operationId === 'streamEvents');
+  if (!streamRoute) throw new Error('fixture client: routes have no operation streamEvents');
+  const streamKey = options.examples?.streamEvents ?? streamRoute.defaultExample;
+  const streamOutcome = streamKey === null ? null : resolveOutcome(streamRoute, streamKey, table);
+  if (streamOutcome?.ok) throw new Error(`fixture client: example ${String(streamKey)} is not a refusal of streamEvents`);
+  const streamRefusal = streamOutcome === null ? null : (streamOutcome.refusal as Refusal<'streamEvents'>);
 
   const read = <Op extends ReadOp>(op: Op): Promise<Result<Op>> => {
     const outcome = outcomes.get(op) as Outcome;
@@ -131,6 +150,12 @@ export function createFixtureClient(options: FixtureClientOptions = {}): Mission
       let index = 0;
       let handle: unknown = null;
       let active = true;
+      const refuse = (refusal: Refusal<'streamEvents'>): void => {
+        handle = scheduler.setTimeout(() => {
+          handle = null;
+          if (active) listener({ kind: 'refused', cursor: null, refusal: structuredClone(refusal) });
+        }, 0);
+      };
       const scheduleNext = (): void => {
         const item = changes.items[index];
         if (!item) {
@@ -144,7 +169,8 @@ export function createFixtureClient(options: FixtureClientOptions = {}): Mission
           listener(toChange(item, scoped));
         }, item.delayMs);
       };
-      scheduleNext();
+      if (streamRefusal) refuse(streamRefusal);
+      else scheduleNext();
       return () => {
         active = false;
         if (handle !== null) scheduler.clearTimeout(handle);
