@@ -2,7 +2,7 @@
 
 **Mission Branch**: `feat/mission-shell-18`
 **Created**: 2026-10-15
-**Status**: Specified, three operator decisions open (see Open Questions)
+**Status**: Specified (operator ruled on the three open questions on 2026-10-15; see Clarifications)
 **Input**: GitHub issue moes-media/kitty-mission-ui#18 ("M2 mission-shell: shared Svelte 5 shell over the MissionStatusClient port"), mission 2 of 6 under the Phase 0 epic #16. It builds on mission `phase0-bootstrap-01M4V5KK` (#17, PR #32), which delivered the workspace, the `mission-shell` package, the `MissionStatusClient` port, the fixture adapter and the stub. It also takes in the carry-over comment on #18 and the landing-review design notes on #19, #20 and #21.
 
 ## Intent Summary
@@ -30,6 +30,14 @@ The mission screens in `@moes-media/mission-ui` exist, and #17 proved that a Sve
   - any write path.
 
 ## Clarifications
+
+### Operator rulings, 2026-10-15
+
+The operator chose the recommended option for each question; the decision moments are resolved.
+
+- **Dashboard and desktop-only intents** (decision `01M50D473W8G8W763Y116F3DE9`, option A). The dashboard has no picker. It opens straight into its one project, and the picker and the open-project dialog are never mounted there. A stray desktop-only intent (`sk-request-open-project`, `sk-browse-folder`, `sk-confirm-open-project`) is ignored and never throws. No new UI is added for it.
+- **Explicit refresh triggers** (decision `01M50D491TSVP2DCY0HF9F940W`, option A). Artifact and Ops are re-read on navigation, when the host signals that the window became visible or focused again, and from a shell-owned Refresh button in the `top-bar-actions` slot of the `sk-mission-shell` element. The button is flagged for design review.
+- **Visual verification** (decision `01M50D4B5MVFZEQNG9XV20BK6K`, option A). Storybook stories cover every connection-banner state and each layout composition, with approved baselines in the existing visual gate. The new UI is flagged for design review, because the banners and the Refresh button are not in the prototype.
 
 ### Binding decisions (from the operator and the #17 landing review, PR #32)
 
@@ -141,7 +149,7 @@ A user starts a host before the service is reachable. They see that the app is c
 
 ### User Story 5 - Host actions and desktop-only intents (Priority: P2)
 
-A user copies a suggested drift repair command. They follow an external link in an artifact, and it opens outside the app. On the desktop they pick a recent project or browse for a project folder. Each of these needs the host, not the shell, because each is I/O. On the dashboard, which serves exactly one project and cannot browse folders, the desktop-only intents are handled as the operator rules (Open Question 1).
+A user copies a suggested drift repair command. They follow an external link in an artifact, and it opens outside the app. On the desktop they pick a recent project or browse for a project folder. Each of these needs the host, not the shell, because each is I/O. On the dashboard, which serves exactly one project and cannot browse folders, there is no picker, and the desktop-only intents are ignored (operator ruling, 2026-10-15).
 
 **Why this priority**: the drift, artifact and projects screens emit these intents today, but they only matter once a host exists. Leaving them unmapped would make those screens dead ends.
 
@@ -154,13 +162,14 @@ A user copies a suggested drift repair command. They follow an external link in 
 3. **Given** the desktop host with no project open, **When** the shell is mounted without a client, **Then** it shows the picker layout with the Projects screen, filled from the host's recent-project entries.
 4. **Given** the Projects screen on the desktop, **When** the user opens a project (`sk-open-project`) or confirms a folder (`sk-confirm-open-project`), **Then** the shell asks the host to open that project. Opening it remounts the shell with a new client (SO-DES-013).
 5. **Given** the open-project dialog on the desktop, **When** the user browses (`sk-browse-folder`), **Then** the shell asks the host for that location's folders and passes them to the dialog.
-6. **Given** the dashboard host, **When** a desktop-only intent is involved, **Then** the shell behaves as the operator's ruling on Open Question 1 specifies (awaiting the operator).
+6. **Given** the shell mounted as the dashboard mounts it, **When** it starts, **Then** it opens straight into the project layout, and neither the Projects screen nor the open-project dialog is ever mounted.
+7. **Given** the dashboard, **When** a desktop-only intent (`sk-request-open-project`, `sk-browse-folder`, `sk-confirm-open-project`) reaches the shell, **Then** the shell ignores it: no host call, no state change, nothing thrown.
 
 ---
 
 ### User Story 6 - Explicit refresh of views the stream does not cover (Priority: P2)
 
-A user reads an artifact or the Ops list while files change on disk. The change stream never announces those changes, so the views are refreshed explicitly. Rescan on the Drift screen is one such trigger already. The other triggers depend on the operator's ruling (Open Question 2).
+A user reads an artifact or the Ops list while files change on disk. The change stream never announces those changes, so the views are refreshed explicitly. Rescan on the Drift screen is one such trigger already. Artifact and Ops are also refreshed when the window becomes visible or focused again, and from a Refresh button in the top bar (operator ruling, 2026-10-15).
 
 **Why this priority**: without it, artifact, drift and ops data would be read once and could silently grow stale.
 
@@ -170,7 +179,9 @@ A user reads an artifact or the Ops list while files change on disk. The change 
 
 1. **Given** the Drift screen, **When** the user presses Rescan (`sk-rescan-drift`), **Then** the shell re-reads the drift report for the intent's scope, `rescanning` is true until the read completes, and the old report stays visible meanwhile.
 2. **Given** the Artifact, Drift or Ops screen, **When** the user navigates to it, including re-selecting it, **Then** the shell reads its data fresh.
-3. **Given** the Artifact or Ops screen, **When** any further trigger fires that the operator's ruling on Open Question 2 keeps (host visibility or focus, or a Refresh control), **Then** the shell re-reads that destination's data once.
+3. **Given** the Artifact or Ops screen, **When** the host signals that the window became visible or focused again, **Then** the shell re-reads that destination's data once.
+4. **Given** the Artifact or Ops screen, **When** the user presses the shell's Refresh button in the top bar, **Then** the shell re-reads that destination's data once.
+5. **Given** any other destination, **When** the shell renders, **Then** the Refresh button is not shown, and a visibility or focus signal causes no read.
 
 ---
 
@@ -220,12 +231,13 @@ A user reads an artifact or the Ops list while files change on disk. The change 
 | FR-009 | Latest read wins | As a user, I want a screen to show only the result of the most recently issued read of its resource, whatever order the reads complete in, so that a slow earlier read never overwrites newer data. | High | Open | [build] | no — the test resolves two reads out of order and asserts the later-issued value is shown |
 | FR-010 | Refused stream | As a user, I want a `refused` change to show a notice that live updates are off, while reads keep working, so that a refused stream never breaks the app. | Medium | Open | [build] | no — the fixture adapter's selected stream refusal must yield the notice and no thrown error |
 | FR-011 | Connection presentation | As a user, I want a defined presentation for each of the five connection states: `connecting` shows loading and an informational notice, and no reads are issued before the first `connected`; `reconnecting` shows a warning banner and keeps the last data; each degraded state shows its own danger banner, keeps any data and puts screens without data in `error`; `connected` shows no banner. The banners are built from design-library elements and announced to assistive technology. | High | Open | [build] | no — each state is forced and its presentation asserted (5 of 5) |
-| FR-012 | Host interface | As a host developer, I want the shell to take, besides the client, one host interface whose members are all optional: copy text (answers `copied` or `manual`); open an external link; list recent projects; open a project; list a location's folders; signal visibility or focus; receive route changes. Each member has a defined fallback when absent (copy yields `manual`, the others do nothing), so that each host supplies only what it can, and the port stays unchanged. | High | Open | [build] | no — the test mounts with a recording host interface and with an empty one, and asserts the calls and the fallbacks |
+| FR-012 | Host interface | As a host developer, I want the shell to take, besides the client, one host interface whose members are all optional: copy text (answers `copied` or `manual`); open an external link; list recent projects; open a project; list a location's folders; signal that the window became visible or focused again; receive route changes. Each member has a defined fallback when absent (copy yields `manual`, the others do nothing), so that each host supplies only what it can, and the port stays unchanged. | High | Open | [build] | no — the test mounts with a recording host interface and with an empty one, and asserts the calls and the fallbacks |
 | FR-013 | Copy and external links | As a user, I want Copy on the Drift screen to copy exactly the shown command through the host and report `copied` or `manual`, and external links to open through the host only when their scheme is exactly `http`, `https` or `mailto` (case-insensitive), so that the screens' contract obligations hold. | High | Open | [build] | no — on one fixture, an `https:` link must produce exactly one host call (positive control), while a `javascript:` link and an `httpx:` link produce none |
 | FR-014 | Desktop projects picker | As a desktop user, I want the picker layout with the Projects screen and the open-project dialog, filled from the host's entries and folder listings, with open and confirm passed to the host, so that I can open another project (a new client, a remounted shell). | Medium | Open | [build] | no — the test drives open, browse and confirm against a recording host interface |
-| FR-015 | Dashboard and desktop-only intents | As a dashboard user, I want the desktop-only intents (`sk-request-open-project`, `sk-browse-folder`, `sk-confirm-open-project`) and the picker handled as the operator rules, never throwing, so that the dashboard has no dead or broken controls. Wording follows the ruling on Open Question 1. | Medium | Open | [build] | no — the test mounts the shell as the dashboard would and triggers each intent |
-| FR-016 | Explicit refresh | As a user, I want Artifact, Drift and Ops data read fresh on navigation, Drift re-read on Rescan with `rescanning` set and the old report kept, and any further trigger the operator keeps (Open Question 2), so that views the stream does not cover can be brought up to date. | Medium | Open | [build] | no — each trigger must cause exactly one re-read of its destination and none of others |
+| FR-015 | Dashboard and desktop-only intents | As a dashboard user, I want the shell to open straight into the project layout with no picker, never mounting the Projects screen or the open-project dialog, and to ignore the desktop-only intents (`sk-request-open-project`, `sk-browse-folder`, `sk-confirm-open-project`) without a host call or a thrown error, so that the dashboard has no dead or broken controls (operator ruling, 2026-10-15). | Medium | Open | [build] | no — on one fixture, the desktop mounting must show the picker and pass each intent to the recording host interface (positive control), while the dashboard mounting shows no picker and makes 0 host calls for the same intents |
+| FR-016 | Explicit refresh | As a user, I want Artifact, Drift and Ops data read fresh on navigation, and Drift re-read on Rescan with `rescanning` set and the old report kept. I also want Artifact and Ops re-read when the host signals that the window became visible or focused again, and when I press a shell-owned Refresh button in the `top-bar-actions` slot of the `sk-mission-shell` element, shown only on those two destinations and flagged for design review. Together these let me bring views the stream does not cover up to date (operator ruling, 2026-10-15). | Medium | Open | [build] | no — each trigger must cause exactly one re-read of its destination and none of others, and the button must be absent elsewhere |
 | FR-017 | Gate extensions carry plants | As the operator, I want every gate this mission extends or adds (at least the intent-coverage check and the refresh-policy test) to carry a planted-defect proof in the existing gate-proof mechanism, so that each new check is shown to fail when it should. | High | Open | [build] | no — each plant must turn its proof red |
+| FR-018 | Stories and visual baselines | As a reviewer, I want a Storybook story with an approved visual baseline in the existing visual gate for every connection-banner state (connecting, reconnecting, degraded: service-missing, degraded: contract-mismatch, live updates off) and for each layout composition (project, mission, picker; with and without the Refresh button), all flagged for design review, so that the shell's new UI is reviewed visually like the screens (operator ruling, 2026-10-15). | Medium | Open | [build] | no — a planted change to a banner's appearance must fail the visual gate |
 
 ### Non-Functional Requirements
 
@@ -235,7 +247,7 @@ A user reads an artifact or the Ops list while files change on disk. The change 
 | NFR-002 | Coalescing | For any burst of changes that affect the same resource and arrive within a 100 ms window, the shell issues at most 2 reads of that resource: one in flight and one trailing. Verified with a burst of 5 changes. | Performance | High | Open |
 | NFR-003 | No needless reads | 0 reads are issued for resources not displayed, across the full scripted sequence replayed on each destination. The same recording must show at least one read of each affected displayed resource (the positive control of SC-002), so a shell that reads nothing cannot pass. | Performance | High | Open |
 | NFR-004 | Banner timing | A degraded banner appears within 100 ms of the state change. A `reconnecting` banner appears only when the state has lasted at least 1 s, so a shorter drop shows no banner. The banner disappears within 100 ms of `connected`. | Usability | Medium | Open |
-| NFR-005 | Gate budget and stability | The shell's tests run inside the existing `unit-tests` gate within its 8-minute budget on the standard runner. All existing gates pass with 0 findings on the mission's pull request. | Quality | High | Open |
+| NFR-005 | Gate budget and stability | The shell's tests run inside the existing `unit-tests` gate within its 8-minute budget on the standard runner. The new stories and baselines keep the `visual` gate within its existing 28-minute budget. All existing gates pass with 0 findings on the mission's pull request. | Quality | High | Open |
 | NFR-006 | Pins | 100% of new dependencies are pinned to an exact version, and every new dependency version was published at least 14 days before it is added. | Maintainability | High | Open |
 | NFR-007 | Robustness | Across every connection state, every declared refusal example and every change kind, the shell throws 0 uncaught errors (asserted by the test harness failing on any uncaught error or unhandled rejection). | Reliability | High | Open |
 
@@ -247,7 +259,7 @@ A user reads an artifact or the Ops list while files change on disk. The change 
 | C-002 | Screens unchanged | No mission-ui screen, element, story, manifest entry or event is changed to suit the shell. A gap is solved in the shell or filed as an issue against the screens. | Technical | High | Open |
 | C-003 | Frozen port and bootstrap surface (SC-004 of #17) | 0 changes to the port types (`MissionStatusClient`, `Result`, `Refusal`, `ConnectionState`, `Change`, `SubscriptionScope`, `CLIENT_OPERATIONS`, `CONNECTION_STATES`), the workspace members, the gate wiring and the shapes in `contracts/fixtures/*`, as merged by #17 including `connecting`, `resync` and `refused`. Additive options of the fixture adapter are allowed. A needed port change stops the mission and goes back to the operator. | Technical | High | Open |
 | C-004 | Ownership boundary | The shell decides which re-reads a change triggers. It does no reconnecting, backoff or cursor bookkeeping, and it never maps transport errors to connection states (SO-DES-001). | Technical | High | Open |
-| C-005 | Elements over CSS | Banners, notices and any control the shell adds use `@spec-kitty/elements` (`sk-*`) primitives. Shell CSS is layout only, with `--sk-*` tokens (charter, "Elements over CSS"). | Technical | High | Open |
+| C-005 | Elements over CSS | Banners, notices and the Refresh button use `@spec-kitty/elements` (`sk-*`) primitives. Shell CSS is layout only, with `--sk-*` tokens (charter, "Elements over CSS"). | Technical | High | Open |
 | C-006 | Hygiene | No local paths, OS usernames, secrets or tokens in any tracked file (hygiene gate). | Security | High | Open |
 | C-007 | Gates offline, plants required | Merge gates stay offline. Every gate the mission extends or adds has a planted-defect proof (FR-017). | Technical | High | Open |
 | C-008 | Scope boundary | Adapters and transport (#20, #21), supervision, discovery and the digest check (#19), the real service (#22), any write path and new screen work are out of scope. | Business | High | Open |
@@ -289,6 +301,7 @@ A user reads an artifact or the Ops list while files change on disk. The change 
 - **SC-004**: The mission's pull request changes 0 lines of the frozen port and bootstrap surface of C-003, checked by a diff against the #17 merge on the pull request. — [ratchet] · no-op passable: yes — paired with SC-001 to SC-003 on the same pull request, so a do-nothing change cannot satisfy all of them
 - **SC-005**: #20 and #21 can mount the shell with only their adapter and host interface, with 0 changes to the shell's public surface. This is checked when those missions' plans are reviewed. — [build] · no-op passable: no
 - **SC-006**: The pull request passes every existing gate with 0 findings, and mission-ui's sources, stories and manifest are byte-unchanged. — [ratchet] · no-op passable: yes — paired with SC-001 on the same pull request
+- **SC-007**: Every connection-banner state and every layout composition has a story with an approved baseline in the visual gate, and the design-review flag is recorded on the pull request. — [build] · no-op passable: no
 
 ## Assumptions
 
@@ -303,24 +316,8 @@ A user reads an artifact or the Ops list while files change on disk. The change 
 
 ## Open Questions
 
-Each question is **awaiting the operator**. The decision moments are deferred and have not been decided.
+None open. The three questions raised at specify were ruled by the operator on 2026-10-15. Each took the recommended option, and each decision moment is resolved:
 
-1. **Dashboard and desktop-only intents** (decision `01M50D473W8G8W763Y116F3DE9`). Kitty Dashboard serves exactly one project and cannot browse folders. What does the shell do there with the Projects picker and with `sk-request-open-project`, `sk-browse-folder` and `sk-confirm-open-project`?
-   - **A (recommended).** The dashboard has no picker. It opens straight into its one project, the picker and the folder dialog are never mounted, and a stray desktop-only intent is ignored without error. *Changes:* FR-015 reduces to "ignored, never throws". No new UI.
-   - **B.** The dashboard shows the picker with its one project. Open project shows a notice explaining how to open another project: use Kitty Desktop, or restart the dashboard on another project root. *Changes:* adds a notice to FR-015 and a picker route to the dashboard.
-   - **C.** As B, and the notice also offers the restart command to copy through the host's copy capability. *Changes:* as B, plus a copy flow and its wording.
-
-   [NEEDS CLARIFICATION: dashboard handling of the Projects picker and the desktop-only intents] <!-- decision_id: 01M50D473W8G8W763Y116F3DE9 -->
-
-2. **Explicit refresh triggers** (decision `01M50D491TSVP2DCY0HF9F940W`). The stream never covers Artifact and Ops (Drift has Rescan). What re-reads them besides navigation?
-   - **A (recommended).** Host-signalled visibility or focus, and a shell-owned Refresh button in the top bar's `top-bar-actions` slot on Artifact and Ops destinations. *Changes:* FR-016 gains both triggers, FR-012 keeps the visibility member, and the shell adds one new control, which needs design review.
-   - **B.** Host-signalled visibility or focus only, with no new button. *Changes:* no new UI. A side-by-side window that keeps focus never refreshes.
-   - **C.** The Refresh button only, with no focus trigger. *Changes:* FR-012 drops the visibility member, and the user must always refresh by hand.
-
-   [NEEDS CLARIFICATION: which explicit refresh triggers the Artifact and Ops destinations get] <!-- decision_id: 01M50D491TSVP2DCY0HF9F940W -->
-
-3. **Visual verification of shell-owned UI** (decision `01M50D4B5MVFZEQNG9XV20BK6K`). The banners, any Refresh control and the composed layouts are new UI that is not in the prototype. How are they verified?
-   - **A (recommended).** Storybook stories for every connection-banner state and each layout composition, with approved baselines in the existing visual gate, flagged for design review. *Changes:* adds stories and baselines, which means more visual-gate time and a design-review step. It matches the charter's "Storybook is the visual source of truth".
-   - **B.** Interaction tests only, in browser mode against the fixture adapter, with visual baselines deferred to #20 and #21. *Changes:* a faster mission, but the banners merge without visual review.
-
-   [NEEDS CLARIFICATION: how the shell's own UI is visually verified] <!-- decision_id: 01M50D4B5MVFZEQNG9XV20BK6K -->
+1. **Dashboard and desktop-only intents** (decision `01M50D473W8G8W763Y116F3DE9`). Ruling: option A, no picker on the dashboard, and stray desktop-only intents are ignored. Applied in User Story 5 and FR-015.
+2. **Explicit refresh triggers** (decision `01M50D491TSVP2DCY0HF9F940W`). Ruling: option A, host-signalled visibility or focus plus a shell-owned Refresh button in `top-bar-actions`, flagged for design review. Applied in User Story 6, FR-012, FR-016 and C-005.
+3. **Visual verification of shell-owned UI** (decision `01M50D4B5MVFZEQNG9XV20BK6K`). Ruling: option A, Storybook stories with approved baselines in the existing visual gate, flagged for design review. Applied in FR-018, NFR-005 and SC-007.

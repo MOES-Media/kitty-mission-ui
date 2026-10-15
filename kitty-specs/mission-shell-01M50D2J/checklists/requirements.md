@@ -13,7 +13,7 @@
 
 ## Requirement Completeness
 
-- [ ] No [NEEDS CLARIFICATION] markers remain. Three remain; each is deferred to the operator through its decision moment (`01M50D473W8G8W763Y116F3DE9`, `01M50D491TSVP2DCY0HF9F940W`, `01M50D4B5MVFZEQNG9XV20BK6K`). `decision verify` is clean.
+- [x] No [NEEDS CLARIFICATION] markers remain. The operator ruled on all three deferred decisions on 2026-10-15, each option A (`01M50D473W8G8W763Y116F3DE9`, `01M50D491TSVP2DCY0HF9F940W`, `01M50D4B5MVFZEQNG9XV20BK6K`); they are resolved and `decision verify` is clean with 0 markers.
 - [x] Requirements are testable and unambiguous
 - [x] Requirement types are separated (Functional / Non-Functional / Constraints)
 - [x] IDs are unique across FR-###, NFR-###, C-### and SC-### entries, and match the requirement-ID grammar
@@ -36,5 +36,5 @@
 
 ## Notes
 
-- Before `/spec-kitty.plan`, the operator must rule on Open Questions 1 to 3. FR-015, FR-016 and the visual-verification scope depend on those rulings.
+- The operator rulings were applied to User Story 5, User Story 6, FR-012, FR-015, FR-016, the new FR-018, NFR-005, C-005 and the new SC-007.
 - Plan review applies the SC-004 check carried from #17 (C-003). It also requires the #17 port additions (`connecting`, `resync`) to be merged.
