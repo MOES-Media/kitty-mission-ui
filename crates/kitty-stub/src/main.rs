@@ -101,46 +101,72 @@ async fn main() -> ExitCode {
 }
 
 async fn run(args: Args, fixtures: Fixtures) -> Result<(), String> {
+    // The handlers exist before `listening` is written: a signal that follows the line closely is never lost to the
+    // default action (death by signal).
+    let mut shutdown = Shutdown::install()?;
     let listener = tokio::net::TcpListener::bind((Ipv4Addr::LOCALHOST, args.port))
         .await
         .map_err(|e| format!("bind: {e}"))?;
     let addr = listener
         .local_addr()
         .map_err(|e| format!("local_addr: {e}"))?;
-    let mut stdout = std::io::stdout().lock();
-    writeln!(stdout, "listening {addr}")
-        .and_then(|()| stdout.flush())
-        .map_err(|e| format!("stdout: {e}"))?;
-    drop(stdout);
     let options = Options {
         port: addr.port(),
         heartbeat: Duration::from_millis(args.heartbeat_ms),
         time_scale: args.time_scale,
     };
     let header_timeout = Duration::from_millis(args.header_timeout_ms);
-    let server = run_server(listener, app(fixtures, options), header_timeout);
+    // The router exists before the stub announces itself: nothing that can still fail runs after `listening`.
+    let router = app(fixtures, options);
+    let mut stdout = std::io::stdout().lock();
+    writeln!(stdout, "listening {addr}")
+        .and_then(|()| stdout.flush())
+        .map_err(|e| format!("stdout: {e}"))?;
+    drop(stdout);
+    let server = run_server(listener, router, header_timeout);
     // An open SSE stream never ends on its own, so a signal stops the server outright rather than draining:
     // returning drops the listener, and the runtime's shutdown closes every connection.
     tokio::select! {
-        () = server => Ok(()),
-        signal = shutdown_signal() => signal,
+        served = server => served,
+        () = shutdown.wait() => Ok(()),
     }
 }
 
+/// SIGINT and SIGTERM, registered up front.
 #[cfg(unix)]
-async fn shutdown_signal() -> Result<(), String> {
-    use tokio::signal::unix::{signal, SignalKind};
-    let mut term = signal(SignalKind::terminate()).map_err(|e| format!("SIGTERM handler: {e}"))?;
-    let mut int = signal(SignalKind::interrupt()).map_err(|e| format!("SIGINT handler: {e}"))?;
-    tokio::select! {
-        _ = term.recv() => Ok(()),
-        _ = int.recv() => Ok(()),
+struct Shutdown {
+    term: tokio::signal::unix::Signal,
+    int: tokio::signal::unix::Signal,
+}
+
+#[cfg(unix)]
+impl Shutdown {
+    fn install() -> Result<Self, String> {
+        use tokio::signal::unix::{signal, SignalKind};
+        Ok(Shutdown {
+            term: signal(SignalKind::terminate()).map_err(|e| format!("SIGTERM handler: {e}"))?,
+            int: signal(SignalKind::interrupt()).map_err(|e| format!("SIGINT handler: {e}"))?,
+        })
+    }
+
+    async fn wait(&mut self) {
+        tokio::select! {
+            _ = self.term.recv() => {}
+            _ = self.int.recv() => {}
+        }
     }
 }
 
 #[cfg(not(unix))]
-async fn shutdown_signal() -> Result<(), String> {
-    tokio::signal::ctrl_c()
-        .await
-        .map_err(|e| format!("Ctrl-C handler: {e}"))
+struct Shutdown;
+
+#[cfg(not(unix))]
+impl Shutdown {
+    fn install() -> Result<Self, String> {
+        Ok(Shutdown)
+    }
+
+    async fn wait(&mut self) {
+        let _ = tokio::signal::ctrl_c().await;
+    }
 }
