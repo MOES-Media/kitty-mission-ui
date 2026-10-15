@@ -57,11 +57,11 @@
     {
       "criterion_id": "FR-006",
       "description": "Verify FR-006 is satisfied",
-      "proof_type": "automated_test",
-      "evidence": null,
-      "pass_fail": "pending",
-      "verified_by": null,
-      "verified_at": null,
+      "proof_type": "gate_proof",
+      "evidence": "18 new plants across rust 3, typecheck 3, eslint 1, stylelint 1, no-io 1, data-driven 1, unit-tests 3, manifest 1, contract 2, hygiene 2, counted with equality against merge-base 9c9d83c; every proof leg ok; gate-proof coverage ok",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-15T11:48:22.760463+00:00",
       "notes": "TODO: replace with a real acceptance criterion"
     },
     {
