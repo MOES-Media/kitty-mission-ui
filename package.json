@@ -16,7 +16,7 @@
     "test:no-io": "vitest run --config gates/vitest.config.ts gates/no-io.selftest.ts gates/markdown-lint.selftest.ts",
     "lint:data-driven": "eslint -c eslint.data-driven.config.mjs packages/*/src",
     "test:data-driven": "vitest run --config gates/vitest.config.ts gates/data-driven.selftest.ts",
-    "manifest:generate": "pnpm --filter @moes-media/mission-ui manifest:generate",
+    "manifest:generate": "pnpm --filter @moes-media/mission-ui manifest:generate && node scripts/typings.mjs",
     "manifest:check": "node scripts/check-manifest.mjs && node scripts/typings.mjs --check",
     "hygiene": "node scripts/check-hygiene.mjs",
     "test": "pnpm -r --no-bail --workspace-concurrency=1 test",

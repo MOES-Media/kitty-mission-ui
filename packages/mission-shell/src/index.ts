@@ -5,3 +5,5 @@
  * `@moes-media/mission-shell/testing` (./testing), so this entry carries no fixture data.
  */
 export * from './client/port';
+export { toStreamCursorString } from './contract/stream';
+export type { StreamPosition } from './contract/stream';
