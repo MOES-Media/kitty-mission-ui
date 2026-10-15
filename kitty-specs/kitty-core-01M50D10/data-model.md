@@ -1,18 +1,19 @@
 # Data Model: kitty-core
 
-These are Rust types, owned by `crates/kitty-core`. The exact public signatures are in `contracts/kitty-core-api.md`.
+These are Rust types owned by `crates/kitty-core`. The exact public signatures are in `contracts/kitty-core-api.md`.
 
-None of these types appears in the TypeScript port. Adapters map them onto it (C-002, C-003).
+None of them appears in the TypeScript port. Adapters map them onto it (C-002, C-003). This document is revised for squad fix round 1 and the spec Amendments A-01 to A-09.
 
 ## Value objects
 
 | Type | Fields | Invariants |
 |---|---|---|
-| `ServiceEndpoint` | `port: u16` | Always `127.0.0.1:<port>`. It can only be built by `ServiceEndpoint::loopback(port)`. `TryFrom<SocketAddr>` refuses any IP other than `127.0.0.1` (`EndpointError::NotLoopback`) before any I/O (FR-005). Port 0 is refused. |
-| `Digest` | 32 bytes; shown as 64 lowercase hex characters | It is the SHA-256 of the canonical form (`contracts/bundled-document.md`). |
-| `RouteEntry` | `operation_id`, `path_template`, `kind: Read \| Stream`, `refusals: BTreeMap<Schema, Vec<u16>>` | It is parsed once from the embedded `routes.json`. `path_template` placeholders are `{name}`. |
-| `ReadRequest` | `operation_id: &str`, `path: [(name, value)]`, `query: [(name, value)]` | `operation_id` must be a `Read` route, or the result is `ReadOutcome::Transport(UnknownOperation)` with no I/O. Every placeholder must be filled, or the result is `Transport(MissingParameter)` with no I/O. Values are percent-encoded (FR-006). Query pairs keep the caller's order. |
-| `StreamScope` | `All`, or `Mission { mission_id: String, cursor: Option<String> }` | A `Mission` with an empty `mission_id` is refused before I/O (`StreamOpenError::CursorWithoutMission` when a cursor is present, `EmptyMission` otherwise). The cursor is sent as `streamCursor`, never as `Last-Event-ID`. |
+| `ServiceEndpoint` | `port: u16`, `generation: u64` | Always `127.0.0.1:<port>`. Built only by kitty-core: from the supervisor (Ready) or `ServiceEndpoint::loopback(port)` (tests and lower-level use, `generation = 0`). `TryFrom<SocketAddr>` refuses any IP other than `127.0.0.1`, and refuses port 0, before any I/O (FR-005). An endpoint from the supervisor is valid only until the next status transition (R3-07). |
+| `Digest` | 32 bytes; shown as 64 lowercase hex characters | SHA-256 of the canonical form (`contracts/bundled-document.md`). |
+| `ContractPin` | `document: Cow<'static, [u8]>`, plus the digest computed once | `ContractPin::embedded()` is the generated bundle. Tests may build `ContractPin::from_document(..)` (R4-08). |
+| `RouteEntry` | `operation_id`, `path_template`, `kind: Read \| Stream`, `refusals: BTreeMap<Schema, Vec<u16>>` | Parsed once from the embedded `routes.json`. |
+| `ReadRequest` | `operation_id`, `path: [(name, value)]`, `query: [(name, value)]` | Refused with no I/O in four cases: an unknown or non-read operation is `Transport(UnknownOperation)`; a placeholder left unfilled is `Transport(MissingParameter)`; a path value that is empty, `.` or `..`, or that contains `/`, `\` or a control character is `Transport(InvalidParameter)` (R2-04). Other path values percent-encode everything except unreserved characters. Query values are encoded in the same way. |
+| `StreamScope` | `All`, or `Mission { mission_id, cursor: Option<String> }` | An empty `mission_id` is refused before I/O: `StreamOpenError::CursorWithoutMission` when a cursor is present, `EmptyMission` otherwise. The cursor is sent as `streamCursor`. |
 
 ## Read relay
 
@@ -20,36 +21,54 @@ None of these types appears in the TypeScript port. Adapters map them onto it (C
 ReadOutcome =
   | Answer { status: u16, content_type: Option<HeaderValue>, body: Bytes }   // any HTTP answer, every status (FR-002, FR-003)
   | Transport(TransportFailure)                                             // no HTTP answer
-  | NotReady(CoreStatus)                                                    // Core only: state ≠ ready; no I/O
+  | NotReady(CoreStatus)                                                    // Core only: state ≠ Ready; no I/O
   | ContractMismatch(Mismatch)                                              // Core only: no I/O (FR-013)
 
-TransportFailure = ConnectRefused | Timeout | BodyTooLarge { limit: 16 MiB } | Io(String)
-                 | UnknownOperation(String) | MissingParameter(String)
+TransportFailure = ConnectRefused | Timeout | BodyTooLarge { limit } | Io(String)
+                 | UnknownOperation(String) | MissingParameter(String) | InvalidParameter(String)
 ```
 
-Rule: `Answer` is returned for **every** status, including 503, the `default` Problem and undeclared codes. Deciding refusal versus transport is the adapter's job, under the port's read error contract. kitty-core never retries a read.
+- **Every status is an `Answer`.** That includes 503, the `default` Problem and undeclared codes.
+- **No retries.** kitty-core never retries a read.
+- **Deadline.** `read_timeout` is a total deadline, covering the connection, the headers and the body (R3-08).
+- **Body cap.** A body over 16 MiB is `BodyTooLarge`, and nothing partial is returned.
 
 ## Change stream
 
 ```
-RawChange  { event: String, cursor: Option<String>, data: Bytes }      // data = joined data-line bytes, unchanged
+open_stream(scope) -> Result<ChangeStream, StreamOpenError>      // R1-04, R2-12
+StreamOpenError = NotReady(CoreStatus) | ContractMismatch(Mismatch) | CursorWithoutMission | EmptyMission
+
+RawChange  { event: String, cursor: Option<String>, data: Bytes }
 StreamEvent =
   | Change(RawChange)                                   // event ∈ {status-transition, mission-lifecycle, log-truncated}
-  | Diagnostic(StreamDiagnostic::UnknownEvent { event }) // not a failure; the stream continues
+  | Diagnostic(StreamDiagnostic::UnknownEvent { event })
   | Refused { status: u16, content_type: Option<HeaderValue>, body: Bytes }          // terminal (FR-009)
   | Unavailable { reason: UnavailableReason, status: Option<u16>, body: Option<Bytes> } // terminal (FR-010)
 
 UnavailableReason = Status | ConnectRefused | Dropped | Idle { limit } | MalformedFrame | MalformedData
-                  | FrameTooLarge { limit: 1 MiB } | NotReady(CoreStatus) | ContractMismatch(Mismatch)
+                  | FrameTooLarge { limit: 1 MiB }
 ```
 
 **Rules.**
-- A stream yields any number of `Change` and `Diagnostic` items, then at most one terminal item, then `None`. Dropping the `ChangeStream` closes the connection.
-- **Refused.** It is reported only when the status is declared for `streamEvents` in `routes.json` `refusals` (400, 404 or 409), and only before any event.
-- **Unavailable.** Any other non-200 at open is `Unavailable(Status)`.
-- **Idle reset.** Every received byte resets the idle timer, heartbeats included. The default limit is 90 s.
-- **Not relayed.** Heartbeats (comment lines), `retry:` and an empty dispatch are never relayed.
-- **The cursor.** `cursor` is the `id:` line exactly as received. kitty-core stores none of them.
+- **Order.** Any number of `Change` and `Diagnostic` items, then at most one terminal item, then `None` forever (the stream is fused).
+- **Cancel safety.** `next()` is cancel-safe. `ChangeStream: Send + 'static` (R2-13).
+- **Refused.** Only a status declared for `streamEvents` in `routes.json` `refusals` (400, 404, 409), before any event.
+- **Unavailable.**
+  - Any other non-200 is `Unavailable(Status)`.
+  - So is a 200 with no `content-type`, or one other than `text/event-stream`.
+  - A clean end of stream is `Dropped`.
+- **Idle.** Every byte resets the idle timer, heartbeats included.
+- **FrameTooLarge.** It counts every byte since the last dispatched frame, including a pending line with no newline and comment lines.
+- **MalformedFrame.** A line that is not valid UTF-8. The checks run in this order: the cap, then UTF-8, then field parsing (R2-06).
+- **MalformedData.** Joined `data` that is not one JSON value.
+- **Field handling, as in the SSE specification.**
+  - A bare `data` line (no colon) adds empty data.
+  - An empty `id:` clears the cursor.
+  - An `id` containing NUL is ignored.
+  - `retry:` and comments are never relayed.
+  - A leading BOM is honoured only at the start of the stream.
+- **No cursor store.** kitty-core keeps no cursor.
 
 ## Contract check
 
@@ -59,8 +78,11 @@ Mismatch { expected: Digest, actual: Actual }
 Actual = Digest(Digest) | Status { status: u16 } | Unparseable { detail: String } | Transport(TransportFailure)
 ```
 
-- `expected` is always `pinned_digest()`: the digest of the embedded bundle, computed once.
-- Every outcome other than `Match` is a mismatch. Nothing is ever "assumed compatible" (FR-011).
+- `expected` is the digest of `CoreConfig.contract`, which defaults to the embedded bundle.
+- **Parse order.** `serde_json` first, then `yaml_serde` (R3-11).
+- **Size cap.** The fetched document is capped at 4 MiB (A-09).
+- **Fail closed.** Every outcome other than `Match` is a mismatch.
+- **Not authentication.** The digest is not a trust boundary (R2-01).
 
 ## Discovery
 
@@ -72,72 +94,77 @@ DefaultDiscovery { configured: Option<PathBuf>, env: EnvSnapshot, binary_name: O
 EnvSnapshot { service_var: Option<OsString>, path_var: Option<OsString> }   // KITTY_MISSION_STATUS_SERVICE, PATH
 ```
 
-The default lookup rules, in order (decision `01M50D403EEYQYEPSSMAV732DF`):
+The lookup runs in this order:
 
-1. `configured` wins. It must be an existing regular file, or the result is `NotFound` with no fallback.
-2. Otherwise, `service_var`, when it is set and non-empty, follows the same rule, also with no fallback.
-3. Otherwise, the PATH is searched for `binary_name`: the first regular file that is executable on Unix.
-4. Nothing found is `NotFound`.
+1. **Configured path.** It must be absolute and resolve, following symlinks, to an executable regular file. Otherwise the result is `NotFound`, with no fallback.
+2. **Environment variable.** When `service_var` is set and non-empty, it follows the same rule, with no fallback.
+3. **PATH search.** Only absolute entries are searched; the rest are skipped. The first executable regular file named `binary_name` wins.
+4. **Nothing found** is `NotFound`.
 
-`CannotExecute` comes from spawn, not from discovery. `Crashing` comes from the restart policy.
+`CannotExecute` comes from spawn or from a project root that cannot be canonicalised. `Crashing` comes from the policy. Its `detail` carries the last exit status or signal (R1-06).
 
 ## Supervision
 
 ```
 SupervisionState = Starting | Ready { endpoint: ServiceEndpoint } | Crashed | Backoff { delay: Duration } | Stopped
 DegradedReason   = None | ServiceMissing(ServiceMissing) | ContractMismatch(Mismatch)
-CoreStatus       { state: SupervisionState, degraded: DegradedReason, attempt: u32 }
-Timings          { poll_interval: 50 ms, start_timeout: 10 s, stop_grace: 5 s, read_timeout: 30 s, idle_limit: 90 s }
-RestartPolicy    { initial: 0.5 s, factor: 2, cap: 30 s, reset_after_ready: 60 s, give_up: 5 crashes within 300 s }
+CoreStatus       { state, degraded, generation: u64, attempt: u32, left_initial_start: bool }
+Timings          { poll_interval: 50 ms, start_timeout: 10 s (per start), stop_grace: 5 s, read_timeout: 30 s, idle_limit: 90 s }
+RestartPolicy    { delays: [0.5 s, 1 s, 2 s, 4 s], give_up: 5th crash within 300 s, reset_after_ready: 60 s }
 ```
+
+- **Initial status.** `Starting`, `generation 0`, degraded `None`, `attempt 0`, `left_initial_start = false` (R5-02).
+- **`left_initial_start`** becomes `true` at the first transition to `Ready`, `Crashed` or `Stopped`, and never goes back.
+- **`generation`** increments at each launch.
 
 ### State transitions
 
-These follow the spec's lifecycle diagram. Every arrow is one `broadcast` message, in order.
+Every arrow is one `broadcast` message, in order. A send with no receivers is ignored.
 
 | From | Event | To | Degraded |
 |---|---|---|---|
-| (initial) | discovery found a binary | `Starting` | None |
+| (initial) | discovery found a binary and the root canonicalised | `Starting` | None |
 | (initial) | discovery `NotFound` | `Stopped` | ServiceMissing(not-found) |
-| `Starting` | spawn fails (EACCES, ENOEXEC, ENOENT) | `Stopped` | ServiceMissing(cannot-execute, OS error) |
-| `Starting` | child exits before ready, attempt < 3 | `Starting` (new port, attempt + 1) | None |
-| `Starting` | digest equal | `Ready { endpoint }` | None |
-| `Starting` | digest unequal, non-200 or unparseable | `Stopped` (child stopped) | ContractMismatch |
-| `Starting` | start timeout, or 3 exits before ready | `Crashed` | None |
+| `Starting` | spawn fails, or the root cannot be canonicalised | `Stopped` | ServiceMissing(cannot-execute, OS error) |
+| `Starting` | child exits before ready (wins a biased select), attempt < 3, budget left | `Starting` (port not yet tried, attempt + 1, generation + 1) | None |
+| `Starting` | 200 + digest equal + `try_wait() == None` | `Ready { endpoint }` | None |
+| `Starting` | first final answer not 200, unparseable, or unequal digest | `Stopped` (group stopped) | ContractMismatch |
+| `Starting` | start budget spent, or 3 exits before ready | `Crashed` (after the full stop sequence) | None |
 | `Ready` | child exits | `Crashed` | None |
-| `Crashed` | policy: another try | `Backoff { delay }` | None |
-| `Crashed` | policy: 5th crash within 300 s | `Stopped` | ServiceMissing(crashing) |
+| `Crashed` | policy: crash *n* within the window, *n* ≤ 4 | `Backoff { delay = delays[n-1] }` | None |
+| `Crashed` | policy: the 5th crash within 300 s | `Stopped` | ServiceMissing(crashing, last exit status or signal) |
 | `Backoff` | delay elapsed | `Starting` | None |
-| `Starting`, `Ready`, `Backoff` | `stop()` or drop | `Stopped` (SIGTERM, grace, SIGKILL) | unchanged |
-| `Stopped` | `retry()` | `Starting` (runs discovery again; crash history cleared) | None |
+| any but `Stopped` | `stop()` | `Stopped` (SIGTERM to the group, grace, SIGKILL to the group) | unchanged |
+| any | last host handle dropped | (task aborted; SIGKILL to the group; no further message) | — |
+| `Stopped` | `retry()` | `Starting` (discovery again; crash history cleared) | None |
 
 **Invariants.**
-- A supervisor owns at most one child, and only one it started itself (decision `01M50D3XMBS9DD3AEWP1F66RRS`).
-- No process outlives `stop()` or drop.
-- The backoff delay for crash *n* is `min(0.5 s × 2^(n-1), 30 s)`, where *n* counts crashes since the last 60 s of uninterrupted `Ready`.
-- Captured output is at most 64 KiB per child, newest kept, in memory only.
+- A supervisor owns at most one child process group, and only one it started.
+- Only the supervisor task signals, and only while `child.id()` is `Some` (R2-09).
+- No process of the group outlives `stop()` or the drop of the last handle.
+- Captured output is at most 64 KiB, newest kept. The most recent child's output is kept after it exits.
 
-### `ConnectionState` hint (FR-024)
+### `ConnectionState` hint (FR-024, R1-08)
 
-`connection_state_hint(&CoreStatus, first_contact_done: bool) -> Option<&'static str>`
+`connection_state_hint(&CoreStatus) -> Option<&'static str>`
 
-| CoreStatus | Hint (port string) |
-|---|---|
-| `Starting` before any `Ready` | `connecting` |
-| `Ready` | `connected` |
-| `Crashed`, `Backoff`, or `Starting` after a `Ready` | `reconnecting` |
-| `Stopped` + ServiceMissing(any reason) | `degraded: service-missing` |
-| `Stopped` + ContractMismatch | `degraded: contract-mismatch` |
-| `Stopped` + None (host asked to stop) | `None`: the adapter is closing, so no state is reported |
+| `state` | `left_initial_start` | `degraded` | Hint |
+|---|---|---|---|
+| `Starting` | false | None | `connecting` |
+| `Starting` | true | None | `reconnecting` (including after a host `retry()`: the port never returns to `connecting`) |
+| `Ready` | any | None | `connected` |
+| `Crashed`, `Backoff` | true (always) | None | `reconnecting` |
+| `Stopped` | true | ServiceMissing(any) | `degraded: service-missing` |
+| `Stopped` | true | ContractMismatch | `degraded: contract-mismatch` |
+| `Stopped` | true | None (host stopped) | `None`, because the adapter is closing |
 
-The hint table is total over the `CoreStatus` space. A test enumerates every combination, and also parses `CONNECTION_STATES` from `packages/mission-shell/src/client/port.ts` to assert that the five strings are exactly the port's strings.
-
-This mapping is a hint for adapters. A stream drop while the service is `Ready` is still the adapter's own `reconnecting` (SO-DES-001).
+- **Total over the status space.** Combinations that cannot occur are `None`.
+- **Test.** It enumerates the space and asserts that the five strings equal `CONNECTION_STATES` in `packages/mission-shell/src/client/port.ts`.
 
 ## Stub additions
 
 | Item | Shape |
 |---|---|
 | `Fixtures::with_openapi_document(Bytes)` | The document served at `GET /api/v1/openapi.yaml`, byte for byte, as `application/yaml`. When it is absent, the route answers 404 `{"code":"no-openapi-document"}`. |
-| `Fixtures::with_selections(Selections)` | `operationId → Example(<Schema.name>) \| Fixture(<name>)`. It is validated by the header rule at build time, and an invalid selection is an `Err`. |
-| CLI | `--openapi <file>` (default `<fixtures>/mission-status.openapi.json`), plus `--select op=Schema.name` and `--select-fixture op=name`, both repeatable. Invalid input exits 2 before `listening`. |
+| `Fixtures::with_selections(Selections) -> Result` | `operationId → Example(<Schema.name>) \| Fixture(<name>)`. It is checked by the header rule. |
+| CLI | `--openapi <file>` (missing default → 404; unreadable explicit file → exit 1). `--select` and `--select-fixture`. `--mission-status.port=<n>` and `--mission-status.project-root=<dir>`. The fixtures directory is `--fixtures`, else `<project-root>/fixtures`, else the compile-time workspace `contracts/fixtures`. Load order: arguments, fixtures, selections, document, `listening`. |

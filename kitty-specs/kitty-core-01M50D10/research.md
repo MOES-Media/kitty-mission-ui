@@ -70,12 +70,12 @@ Each entry gives the Decision, the Rationale, and the Alternatives considered.
 ## R-03 — The canonical form and digest
 
 - **Decision.** `digest_of(bytes)` works in four steps:
-  1. Parse the bytes as YAML with `yaml_serde` into `serde_json::Value`. JSON is a YAML subset, so the pinned JSON bundle goes through the same parser as the served document.
+  1. Parse the bytes with `serde_json::from_slice` into `serde_json::Value`. Only if that fails, parse them with `yaml_serde` (R3-11). The pinned JSON bundle never touches the YAML parser; a served YAML document does.
   2. Write the value canonically:
      - objects with keys sorted by UTF-8 byte order;
      - arrays in order;
      - strings with `serde_json`'s escaping;
-     - numbers: if finite with an integral value and a magnitude below 2^53, as a decimal integer; otherwise `serde_json`'s float text;
+     - numbers (R2-10): converted to `f64` first, as JavaScript does; `-0` becomes `0`; an integral value with magnitude ≤ 2^53 is written as a decimal integer; anything else is written by **one** shortest round-trip formatter (`serde_json`'s `f64` output);
      - `true`, `false` and `null` as is;
      - no whitespace.
   3. Hash the result with SHA-256.
@@ -86,6 +86,8 @@ Each entry gives the Decision, the Rationale, and the Alternatives considered.
   - Spec FR-011 fixes "parsed, references inlined, keys sorted, JSON form, SHA-256". This plan adds only the number rule, which the spec leaves open.
 - **Tests.**
   - The same document gives the same digest in JSON flow, in YAML block style and with permuted keys.
+  - `-0` and `0` agree, `2^53 + 1` and `2^53` agree (as in JavaScript), and `1.0` and `1` agree.
+  - The real bundle and its YAML re-serialisation give the same digest (R5-12).
   - One changed scalar changes the digest.
   - Garbage input is a parse error.
 - **Alternatives.**
@@ -107,7 +109,12 @@ Each entry gives the Decision, the Rationale, and the Alternatives considered.
 
 - **Rationale.**
   - The route the service answers is `openapi.yaml`, so the real service will most likely send YAML. JSON-only parsing would make every real service a contract-mismatch.
-  - `yaml_serde` follows `serde_yaml` 0.9's YAML 1.2 core resolution for plain scalars, matching the `yaml` npm package the generator uses.
+  - **Correction (R2-10).** The earlier claim that `yaml_serde` follows YAML 1.2 core resolution was too strong:
+    - `libyaml-rs` is libyaml, a **YAML 1.1** parser;
+    - `yaml_serde` keeps `serde_yaml` 0.9's own scalar resolution, which is close to 1.2 core for booleans and nulls but not identical (for example `0o`, `0x` and `.inf` handling);
+    - the npm `yaml` package defaults to 1.2 core.
+
+    That gap matters only for a served YAML document. The pinned side is JSON and parsed by `serde_json` (R3-11). Any difference then surfaces as contract-mismatch, which fails closed.
 - **Alternative.** **B: JSON only now.** No crates, and fail-closed against real YAML until #22. This is cheaper for the gate budget, but it knowingly ships a check that the real service cannot pass.
 
 ## R-05 — SHA-256
@@ -133,6 +140,13 @@ Each entry gives the Decision, the Rationale, and the Alternatives considered.
   - `ring` or `aws-lc-rs`: rejected for heavy build scripts and C or assembly.
 
 ## R-06 — Process supervision on tokio
+
+> **Superseded in part by fix round 1.** The process group, the spawner thread, PDEATHSIG = SIGKILL, the signal discipline and the immediate kill on drop are specified in plan IC-08 and IC-09 and in decision `01M50M42PBSJ806A432AP7M13S`. The text below is kept for history where it does not conflict.
+>
+> **Platform notes.**
+> - **Windows (#20).** Job Objects are the equivalent of a process group plus PDEATHSIG.
+> - **macOS.** It has no PDEATHSIG, so `kill_on_drop` and the group SIGKILL on drop cover every orderly exit.
+> - **#22 asks upstream** for "exit on parent death", and for a liveness endpoint (R4-09).
 
 - **Decision.**
   - **Spawn.** `tokio::process::Command` with `kill_on_drop(true)` and piped stdout and stderr, drained into a 64 KiB ring buffer per child.
@@ -172,9 +186,16 @@ New direct crates are `yaml_serde` and `sha2`. `percent-encoding` and `libc` are
 | want | 0.3.1 | 2023-06-14 | no | no | hyper (`client`) |
 | try-lock | 0.2.5 | 2023-12-07 | no | no | want |
 
-**Resolution notes.**
-- `want 0.3.2` was published 2026-10-05, which is too young. Online resolution would pick it, so IC-01 pins the lock with `cargo update -p want --precise 0.3.1`.
-- `cfg-if 1.0.5` (2026-09-16) is old enough too, but the lock keeps `1.0.4` to match this table.
+**Resolution notes (R3-10, R4-10; crates.io re-checked 2026-10-15).** Online resolution differs from this table on three entries, and IC-01 runs `--precise` on each:
+
+| Crate | Online pick | Table | Command |
+|---|---|---|---|
+| `want` | 0.3.2 (2026-10-05, too young) | 0.3.1 | `cargo update -p want --precise 0.3.1` |
+| `cfg-if` | 1.0.5 (2026-09-16) | 1.0.4 | `cargo update -p cfg-if --precise 1.0.4` |
+| `generic-array` | 0.14.9 (2025-10-13) | 0.14.7 | `cargo update -p generic-array --precise 0.14.7` |
+
+- `typenum` does **not** differ: 1.20.1 is the newest release and the table's version.
+- IC-01 then compares the lock with this table.
 - No new crate raises a shared crate's minimum:
   - `yaml_serde` needs serde 1.0.195 or later (1.0.229 is locked);
   - it also needs indexmap 2.2.1 or later (2.14.2 is locked) and itoa 1 (1.0.18 is locked);
@@ -189,11 +210,29 @@ New direct crates are `yaml_serde` and `sha2`. `percent-encoding` and `libc` are
 | S-4 Lockfile installs | `Cargo.lock` is committed. CI runs `cargo fetch --locked`, then `--frozen`, as today. |
 | S-5 Incident and IoC posture | The WP runs `cargo install --locked cargo-audit@=<exact>` once on a developer machine, runs `cargo audit` and records the result and the tool version. Not in CI, as in #17. |
 
+**Maintainers and `unsafe` (R3-11).** Owners are from the crates.io API; `unsafe` counts are a grep of the cached sources.
+
+| Crate | Owners | Repository | Downloads | Facts |
+|---|---|---|---|---|
+| `yaml_serde` 0.10.7 | one: `ingydotnet` (YAML Organization) | `github.com/yaml/yaml-serde` | about 3.4 M | about 60 `unsafe` occurrences in `src` |
+| `libyaml-rs` 0.3.0 | one: `ingydotnet` | `github.com/yaml/libyaml-rs` | about 3.4 M | libyaml **translated from C to unsafe Rust with c2rust**, a fork of the archived `dtolnay/unsafe-libyaml`; about 222 `unsafe` occurrences |
+| `generic-array` 0.14.7 | `fizyk20`, `novacrazy` | `github.com/fizyk20/generic-array` | about 980 M | one build script |
+| `typenum` 1.20.1 | `paholg` | `github.com/paholg/typenum` | about 990 M | — |
+
+- **Mitigation.** The YAML path is reached only by a served document that is not JSON (R3-11). The served document is capped at 4 MiB (A-09). Its only consumer is the digest.
+- **For the WP.** The WP records `cargo audit` for both crates.
+
 **npm.** No change. `@apidevtools/json-schema-ref-parser 16.0.3` and `yaml 2.9.1` are already pinned dev-dependencies.
 
-**Adversarial evidence.** These dependency decisions are challenged by the plan-phase R1–R6 squad, which the orchestrator runs next and records in `reviews/plan.squad.md`. Each contested finding gets a disposition there, with none dropped silently. The squad was not run inside this command, and the deferral is recorded here explicitly, as the procedure requires.
+**Adversarial evidence.** The plan-phase R1–R6 squad challenged these decisions. Every finding has a verdict and a disposition in `reviews/plan.squad.md` (R3-10, R3-11, R3-12 and R4-10 for supply chain).
 
 ## R-08 — Testing without the stub binary, and the fake service
+
+> **Fix round 1 (R4-01, decision `01M50M47K1PNKP9KHCGGDBQZ0A`).**
+> - The stub also accepts the upstream launch options, and the real stub binary is supervised through `Core` in `crates/kitty-stub/tests/supervised.rs`, with kitty-core as a dev-dependency of kitty-stub.
+> - **Verified at plan time.** `cargo tree` resolves the mutual dev-dependency graph, and `cargo check --offline --workspace --all-targets` compiles it in 6.6 s.
+> - **Not chosen.** A `stub` mode inside `kitty-fake-service`. A binary target cannot use dev-dependencies, so it would need `kitty-stub` (and axum) as a normal dependency of kitty-core, shipping both to the hosts.
+> - **Per-launch fake behaviour.** It uses a `launches` list and a launch counter file (R5-04).
 
 - **Decision.**
   - kitty-core dev-depends on `kitty-stub` and runs it in-process: `Fixtures::load(contracts/fixtures)`, then `.with_openapi_document(..)` and `.with_selections(..)`, then `app(..)`, then `run_server` on `127.0.0.1:0` in a spawned task.
@@ -208,6 +247,12 @@ New direct crates are `yaml_serde` and `sha2`. `percent-encoding` and `libc` are
   - A self-exec harness with `harness = false`: rejected for its custom runner.
 
 ## R-09 — Determinism and the time budget
+
+> **Fix round 1.**
+> - The test `Timings` table is in plan IC-08.
+> - `tokio/test-util` is dropped, because nothing uses `pause`.
+> - The rust proof leg follows the #17 formula (A-04, decision `01M50M453N70QGMXHK8AJX1E1H`).
+> - The `Clock` is a monotonic `Instant` in production (decision `01M50M407F65T4SQA9TNWQYCQT`).
 
 - **Decision.** Supervision separates two kinds of time:
   - **Policy time.** This is `Clock` plus `Sleeper`: the crash window, the 60 s reset and the backoff delays. Tests use a virtual clock that advances only by recorded sleeps, so the delays and states are exact and repeatable (NFR-006).
@@ -233,6 +278,12 @@ New direct crates are `yaml_serde` and `sha2`. `percent-encoding` and `libc` are
 
 ## R-11 — Discovery details
 
+> **Fix round 1 (R2-14, R3-09).**
+> - The configured path and the environment value must be absolute.
+> - PATH entries that are not absolute are skipped.
+> - Symlinks are followed, and the target must be an executable regular file.
+> - A macOS GUI app gets launchd's minimal PATH, so #20 should prefer the configured path.
+
 - **Decision.**
   - **Configured path.** It must exist and be a file; otherwise the result is `not-found`, with detail and no fallback.
   - **Environment variable.** `KITTY_MISSION_STATUS_SERVICE` follows the same rule when set and non-empty, also with no fallback.
@@ -254,6 +305,18 @@ New direct crates are `yaml_serde` and `sha2`. `percent-encoding` and `libc` are
   - Two flags avoid ambiguity between example keys (`Schema.name`) and fixture names.
   - The rules equal the header rules, so the selectable set stays 57 of 77 examples.
 
+## R-13 — The coordination branch and the decision ledger (R6-08)
+
+- **Finding.** spec-kitty writes the decision **ledger** (`decisions/index.json`, `DM-*.md`) to the primary checkout. In `specify_cli/decisions/service.py`, `_ledger_dir` resolves to `PRIMARY_METADATA`. It writes decision **events** to the coordination worktree's `status.events.jsonl` (`_events_path` resolves to `STATUS_STATE`).
+- **The stale copy.** The coordination branch's own `decisions/` folder is a leftover from mission creation that holds the five specify decisions. No tool reads it.
+- **Check.** `spec-kitty doctor decisions` compares the event log with the primary index, and reports `clean`.
+- **Rule.** Nobody hand-edits either side. The coordination branch is never merged into `feat/kitty-core-19`.
+
+## R-14 — #21's pass-through (R3-07, R4-03)
+
+- **Decision.** `forward(endpoint, path_and_query, accept)` enforces FR-004 and FR-005 and returns the response body untouched. `upstream_request_headers()` is exported.
+- **For #21.** #21's proxy uses pass-through for reads and for the stream, not `open_stream`. It re-reads `ready_endpoint()` on each status transition, because an endpoint carries a `generation` and is valid only until the next transition.
+
 ## Adversarial challenge
 
-This is to be filled by the R1–R6 plan squad (`reviews/plan.squad.md`). The four plan decisions were resolved A by the operator on 2026-10-15. The squad may still challenge their consequences.
+Done: round 1 of the R1–R6 plan squad is recorded in `reviews/plan.squad.md`, with every finding verified and given a disposition.

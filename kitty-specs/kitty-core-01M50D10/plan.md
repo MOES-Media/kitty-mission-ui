@@ -1,68 +1,112 @@
 # Implementation Plan: kitty-core: shared Rust core (contract client, change stream, supervision)
 
-**Branch**: `feat/kitty-core-19` | **Date**: 2026-10-15 | **Spec**: [spec.md](spec.md)
+**Branch**: `feat/kitty-core-19` | **Date**: 2026-10-15 | **Spec**: [spec.md](spec.md) (including its 2026-10-15 Amendments)
 **Input**: Mission specification from `kitty-specs/kitty-core-01M50D10/spec.md`; mission-ui issue 19 under epic 16, with the design notes on issues 19, 20 and 21 from the PR #32 landing review.
-**Branch contract**: planning starts on `feat/kitty-core-19`, which is also the planning base and the merge target of every work package; the mission PR goes from `feat/kitty-core-19` into `main`.
-**Plan decisions**: the operator resolved all four plan forks on 2026-10-15, choosing option A each time (see "Plan decisions").
+**Branch contract**:
+- Planning starts on `feat/kitty-core-19`, which is the planning base and the merge target of every work package.
+- `feat/kitty-core-19` contains `origin/main` with #17 merged (squash `39a51a6`). Every probe uses `origin/main`, because the local `main` ref is stale (R6-01).
+- The mission PR goes from `feat/kitty-core-19` into `main`.
+- The coordination branch `kitty/mission-kitty-core-01M50D10` carries status and event logs only. It is never merged into `feat/kitty-core-19`, and lanes are based on `feat/kitty-core-19` (see "Branches and merge order").
+
+**Revision**: plan-squad fix round 1. All R1–R6 findings are folded in; see `reviews/plan.squad.md`.
+**Plan decisions**: every decision is resolved. The four forks were each resolved as A on 2026-10-15, and four operator rulings from the squad round are recorded as decisions (see "Plan decisions").
 
 ## Summary
 
-`crates/kitty-core` becomes the one Rust core that both hosts use. It does five things for one project at a time:
+`crates/kitty-core` becomes the one Rust core that both hosts use, for one project at a time. It covers five concerns:
 
-1. **Discovery.** A replaceable lookup finds the service binary. The default rules are: a configured path, then one environment variable, then a PATH search. If nothing is found, the result is service-missing.
-2. **Supervision.** It starts the binary with `--mission-status.project-root` and `--mission-status.port` on a port it picks. It detects readiness through the contract check, retries a busy port on a new port, restarts after a crash with capped backoff, gives up after 5 crashes in 5 minutes, and stops the child with SIGTERM, then a 5 s grace period, then SIGKILL.
-3. **Contract check.** It fetches `/api/v1/openapi.yaml`, parses it, writes it in a canonical form (sorted keys, JSON, integral numbers as integers) and compares the SHA-256 with the pinned digest. The pinned digest is computed by the same code from the bundled document that `contract:generate` derives from the vendored pin, so there is no hand-maintained value.
-4. **Relay.** Reads use a route table built from `routes.json` over a hyper HTTP/1.1 client connection. They come back as status, content type and raw body bytes. The change stream is parsed by kitty-core's own SSE frame reader and handed on as raw changes (event name, cursor, data bytes) with one terminal outcome: refused or unavailable.
-5. **Degraded signal.** There is one `CoreStatus`: the supervision state plus a degraded reason. A documented mapping to the port's five `ConnectionState` strings is checked by a test against `port.ts`.
+1. **Discovery.** A replaceable lookup finds the service binary. It tries, in order:
+   - a configured absolute path;
+   - then one environment variable holding an absolute path;
+   - then a PATH search over absolute entries only.
 
-The stub gains three things:
-- the `GET /api/v1/openapi.yaml` route, serving the bundled document by default;
-- `--openapi <file>`, to serve a modified document instead;
-- `--select` and `--select-fixture`, to choose a scenario at start-up.
+   If nothing is found, the result is service-missing.
+2. **Supervision.**
+   - **Launch.** The binary runs exactly as `--mission-status.project-root=<canonical root> --mission-status.port=<n>`, in its own process group, with a cleared, allowlisted environment, stdin set to null and the working directory set to the project root.
+   - **Readiness.** It is the contract check.
+   - **Busy port.** A busy port is retried on a port not yet tried.
+   - **Crashes.** A crash restarts after 0.5, 1, 2, then 4 s. The 5th crash within 5 minutes gives up.
+   - **`stop()`.** SIGTERM to the group, a 5 s grace period, then SIGKILL to the group.
+   - **Dropping the last handle.** An immediate SIGKILL to the group.
+3. **Contract check.** It fetches `/api/v1/openapi.yaml` (capped at 4 MiB) and parses it as JSON first, falling back to YAML. The parsed document is written in canonical form: sorted keys, JSON numbers with JavaScript semantics, no whitespace. Its SHA-256 is compared with the pinned digest, which is computed by the same code from the bundled document that `contract:generate` derives from the vendored pin.
+4. **Relay.**
+   - **Reads.** They use a route table built from `routes.json` over a hyper `conn::http1` connection, and return status, content type and raw body bytes.
+   - **The change stream.** kitty-core's own SSE frame reader turns it into raw changes, with one terminal outcome (refused or unavailable).
+   - **`forward()`.** A pass-through, so that #21's proxy enforces the same loopback and header rules.
+5. **Degraded signal.** One `CoreStatus` carries the state, the degraded reason, a launch `generation`, and whether the initial start is over. A total mapping to the port's five `ConnectionState` strings is tested against `port.ts`.
 
-The existing stub tests run unchanged. The port, the workspace members, the CI jobs and the four existing fixture files do not change (SC-004).
+**The stub** gains:
+- the `GET /api/v1/openapi.yaml` route;
+- `--openapi <file>`;
+- `--select` and `--select-fixture`;
+- the two upstream launch options. With these the real stub can be **supervised** by `Core`, which a test proves end to end.
+
+The port, the workspace members, the CI jobs and the four #17 fixture files do not change (SC-004, amended by A-01).
 
 ## Technical Context
 
-**Language/Version**: Rust 1.98.1, pinned in `rust-toolchain.toml` and unchanged; edition 2021, inherited from the workspace. Node 22.22.2 and pnpm 11.18.0 only for the contract generator (IC-02).
-**Primary Dependencies**:
-- **Already pinned in the workspace.** `hyper =1.11.1` (kitty-core adds the `client` Cargo option at member level) and `hyper-util =0.1.21` (`tokio` option, for `TokioIo`), plus `http-body-util =0.1.5`, `tokio =1.53.1` (member level adds `process`, `io-util` and `sync`; dev adds `test-util`), `serde =1.0.229` and `serde_json =1.0.151` (`preserve_order`).
-- **Newly direct, already in `Cargo.lock`.** `percent-encoding =2.3.2` and `libc =0.2.189`.
-- **New.** `yaml_serde =0.10.7` and `sha2 =0.10.9`.
-- **Dev-only.** `kitty-stub` as a path dependency, to run the stub in-process.
-- **New lock entries.** There are 14: see "Supply chain" and research R-07.
-- **Node.** The existing `@apidevtools/json-schema-ref-parser 16.0.3` and `yaml 2.9.1` produce the bundle. No npm change.
+**Language/Version**: Rust 1.98.1, pinned in `rust-toolchain.toml` and unchanged; edition 2021. Node 22.22.2 and pnpm 11.18.0, for the contract generator only (IC-02).
 
-**Storage**: none. There is one new generated, committed file: `contracts/fixtures/mission-status.openapi.json`.
+**Primary Dependencies**:
+- **Already pinned, used through member-level additions.**
+  - `hyper =1.11.1`, adding `client` (with `http1`).
+  - `hyper-util =0.1.21`, using `tokio` for `TokioIo`.
+  - `http-body-util =0.1.5`.
+  - `tokio =1.53.1`, adding `process`, `io-util` and `sync` at member level. There is no `test-util`: virtual time is kitty-core's own `Clock`.
+  - `serde =1.0.229`.
+  - `serde_json =1.0.151`, with `preserve_order`.
+- **Newly direct, already locked.** `percent-encoding =2.3.2` and `libc =0.2.189` (Unix only, behind `cfg`).
+- **New.** `yaml_serde =0.10.7` and `sha2 =0.10.9`.
+- **Dev-only.** kitty-core uses `kitty-stub` as a dev-dependency, and kitty-stub uses kitty-core as one. Mutual dev-dependencies resolve and compile, as checked with `cargo tree` and `cargo check --all-targets`.
+- **Lock.** 14 new entries (research R-07).
+- **npm.** No change.
+
+**Storage**: none. One new generated, committed file: `contracts/fixtures/mission-status.openapi.json`.
+
 **Testing**:
-- **`cargo test`** under `Gate: rust`:
-  - kitty-core integration tests run the stub **in-process** (`kitty_stub::app` + `run_server` on `127.0.0.1:0`);
-  - a raw-TCP fake server sends byte-exact faults: 503, malformed or oversized SSE, a stall and a drop;
-  - the supervision tests run `kitty-fake-service`, a `[[bin]]` target of kitty-core.
-- **`node --test`** under `Gate: contract`, for the bundle generator.
-- **Gate-proof**: one new contract plant.
-**Target Platform**: CI is ubuntu-24.04 (Linux only, as today). Development is on macOS and Linux. Windows and macOS process behaviour is covered when the multi-OS matrix arrives with #20.
-**Project Type**: a pnpm + Cargo monorepo. All the work is in `crates/kitty-core` and `crates/kitty-stub`, plus one generator change under `scripts/contract/`.
+- **`cargo test` under `Gate: rust`.** kitty-core's integration tests run against three kinds of peer:
+  - the stub **in-process**: `kitty_stub::app` plus `run_server` on `127.0.0.1:0`, using `Fixtures::load` or `from_values`;
+  - a **raw-TCP fake** that writes byte-exact faults and records every request (path, query and headers) for the header and encoding assertions;
+  - **`kitty-fake-service`**, a `[[bin]]` of kitty-core, for supervision.
+- **`crates/kitty-stub/tests/supervised.rs`.** It supervises the real `kitty-stub` binary through `Core`.
+- **`node --test` under `Gate: contract`.** This covers the bundle generator.
+
+**Target Platform**: CI is ubuntu-24.04, Linux only. Development is on macOS and Linux. Every libc use is behind `cfg(unix)`, and every `prctl` use behind `cfg(target_os = "linux")`. Windows and macOS behaviour is the business of #20's multi-OS matrix (Job Objects and launchd notes in research R-06 and R-11).
+
+**Project Type**: a pnpm and Cargo monorepo. The work lives in `crates/kitty-core` and `crates/kitty-stub`, plus one generator change under `scripts/contract/`.
+
 **Performance Goals**:
-- **NFR-003.** A change is relayed in 10 ms p95 or less after its last byte. This is measured over 200 events and recorded as evidence, not asserted.
-- **NFR-001.** kitty-core's tests take 60 s or less. The `Gate: rust` step must stay at 45 s or less on CI, so that the rust proof-leg formula still yields 5 minutes (it measured 34 s on run 38794142800; see Gates).
+- NFR-003: 10 ms p95 or less, measured by the method in IC-05 and recorded as evidence.
+- NFR-001 as amended by A-04:
+  - kitty-core's tests take 60 s or less in total;
+  - no single real-time wait in a test exceeds 1 s;
+  - the `Gate: rust` job stays at 8 minutes or less (a hard limit);
+  - the rust proof leg follows the #17 formula.
+
 **Constraints**:
-- SC-004 and C-002 freeze the port types, the members, the gate jobs and the existing fixture shapes;
-- I/O only in `crates/*` (C-001);
-- `127.0.0.1` only (FR-005, C-004);
-- exact, aged pins (NFR-002);
-- bounded memory: 1 MiB per frame, 16 MiB per body, 64 KiB of output per child (NFR-004);
-- no panics (NFR-005);
-- deterministic supervision (NFR-006);
-- offline tests (NFR-007);
-- no new gate (C-007).
+- **Frozen.** SC-004 and C-002 (as amended by A-01).
+- **Placement.** I/O only in `crates/*`.
+- **Address.** `127.0.0.1` only.
+- **Pins.** Exact, aged pins (NFR-002).
+- **Bounded memory.**
+  - SSE: 1 MiB since the last dispatched frame.
+  - Bodies: 16 MiB.
+  - Contract document: 4 MiB.
+  - Output: 64 KiB per child.
+  - Transitions: 64 queued.
+- **No panics** (NFR-005).
+- **Deterministic supervision** (NFR-006).
+- **Offline** (NFR-007).
+- **No new gate** (C-007).
+
 **Scale/Scope**:
 - 9 reads and 1 stream;
 - 3 event names;
 - 5 supervision states;
-- 3 degraded reasons for service-missing;
-- one bundled document of about 630 KB (two-space JSON, as `jsonText` writes it);
-- 14 new crates in `Cargo.lock`, of which 1 has a build script and 0 are procedural macros.
+- 3 service-missing reasons;
+- one bundle of about 630 KB;
+- 14 new lock entries, 1 with a build script and 0 procedural macros;
+- 1 new plant.
 
 ## Charter Check
 
@@ -70,20 +114,21 @@ The existing stub tests run unchanged. The port, the workspace members, the CI j
 
 | Charter rule | Verdict | Note |
 |---|---|---|
-| Screens: no I/O; data via properties | PASS | No change under `packages/*` (C-001). |
-| Hosts: I/O only in `apps/*` and `crates/*` | PASS | All I/O is in `crates/kitty-core` and `crates/kitty-stub`. The Node generator runs only at development time and in a gate, like the existing contract scripts. |
-| Hosts read spec-kitty only through published contracts | PASS | The route table and the pinned digest come from the vendored pin (C-005). kitty-core reads nothing under `kitty-specs/` or `.kittify/`. |
-| Host servers bind 127.0.0.1; own Host and Origin checks | PASS | kitty-core is a client. It addresses only `127.0.0.1:<port>` and refuses any other address before I/O (FR-005). It sends `Host: 127.0.0.1:<port>` and no `Origin` or forwarding header (FR-004). The stub and `kitty-fake-service` bind `127.0.0.1` only. |
-| Never ask the service to loosen its protections | PASS | No flag beyond the two upstream launch flags (FR-017). |
-| Quality gates: `cargo fmt --check`, clippy `-D warnings`, `cargo test` | PASS | The existing `Gate: rust` command is unchanged. |
-| Hosts tested against a local stub; one test per host security rule | PASS | Host, Origin, forwarding and loopback each have their own test (IC-04). |
-| Review: separate reviewer per WP; squad after plan; operator merges | PASS | The R1–R6 plan squad runs next and is recorded in `reviews/plan.squad.md`. |
-| Risk boundaries: no secrets, paths or usernames in tracked files | PASS | Captured child output lives only in memory (C-006). Tests write only to temp directories. |
-| Exact version pins | PASS | Every new crate is `=x.y.z` in `[workspace.dependencies]`, with its publish date in a comment (NFR-002). |
-| Distribution: never bundle the service; discover it | PASS | Discovery only (FR-023). `kitty-fake-service` is a test binary in a `publish = false` crate. It is never packaged by #20 or #21, which build only their own binaries. |
-| Exceptions are documented in the PR | PASS | No exception is planned. Proof-leg timeouts are formula-tuned values, not frozen wiring (DM `01M50HVPJ9CDBB7405T9K0645R`, resolved A). |
+| Screens: no I/O; data via properties | PASS | No change under `packages/*` (C-001). The IC-10 probe diffs `packages/`. |
+| Hosts: I/O only in `apps/*` and `crates/*` | PASS | All I/O is in `crates/kitty-core` and `crates/kitty-stub`. The Node generator runs at development time and in a gate, like the existing contract scripts. |
+| Hosts read spec-kitty only through published contracts | PASS | The route table and the pinned digest come from the vendored pin (C-005). |
+| Host servers bind 127.0.0.1; own Host and Origin checks | PASS | kitty-core addresses only `127.0.0.1:<port>`. It sends `Host: 127.0.0.1:<port>` and no `Origin` or forwarding headers, and `forward()` enforces the same for #21. The stub and the fake bind `127.0.0.1` only. |
+| Never ask the service to loosen its protections | PASS | Only the two upstream launch arguments are passed (FR-017, as amended by A-06). |
+| Least privilege for the launched service (R3-02, R3-03) | PASS | `env_clear()` plus an allowlist of `PATH`, `HOME`, `LANG`, `LC_*` and `TMPDIR`. `stdin` is null, and the working directory is the canonical project root. A test reads the environment the fake recorded. |
+| Quality gates: `cargo fmt --check`, clippy `-D warnings`, `cargo test` | PASS | The `Gate: rust` command is unchanged. |
+| Hosts tested against a local stub; one test per host security rule | PASS | Host, Origin, forwarding and loopback each have a test (IC-04). The supervised stand-in test runs the real stub binary (IC-09). |
+| Review: separate reviewer per WP; squad after plan; operator merges | PASS | `reviews/plan.squad.md` (round 1). |
+| Risk boundaries: no secrets, paths or usernames in tracked files | PASS | Captured output stays in memory. Tests write only to temp directories. The stub's compile-time fixtures fallback ends up in the built binary, never in a tracked file. |
+| Exact version pins | PASS | `=x.y.z`, each with a `# published YYYY-MM-DD` comment (R3-12). |
+| Distribution: never bundle the service | PASS | `kitty-fake-service` and `kitty-stub` are test binaries in `publish = false` crates. |
+| Exceptions are documented in the PR | PASS | None planned. Proof-leg timeouts are formula-tuned (decision `01M50HVPJ9CDBB7405T9K0645R`; A-04). |
 
-Re-checked after Phase 1 design: no new conflicts.
+Re-checked after fix round 1: no new conflicts.
 
 ## Architecture
 
@@ -98,39 +143,53 @@ flowchart LR
   V --> GEN
   subgraph core["crates/kitty-core (I/O)"]
     DISC[Discovery trait<br/>DefaultDiscovery]
-    SUP["Supervisor task<br/>policy · process · ports"]
-    DIG["contract: canonical digest"]
-    CLI["client: route table + hyper http1<br/>read relay · SSE reader"]
-    FAC["Core facade<br/>CoreStatus (watch + broadcast)"]
+    SPAWN["spawner thread<br/>(long-lived std::thread)"]
+    SUP["Supervisor task<br/>policy · process group · ports"]
+    DIG["contract: canonical digest<br/>ContractPin"]
+    CLI["client: route table + hyper http1<br/>read · SSE reader · forward()"]
+    FAC["Core facade + HandleGuard<br/>CoreStatus (watch + broadcast)"]
   end
   R -- include_str --> CLI
   B -- include_str --> DIG
   DISC --> SUP
-  SUP -- "spawn --mission-status.*" --> SVC[(service binary<br/>127.0.0.1:port)]
+  SUP --> SPAWN
+  SPAWN -- "fork: setpgid, PDEATHSIG" --> SVC[(service group<br/>127.0.0.1:port)]
   SUP --> DIG
   DIG -- "GET /api/v1/openapi.yaml" --> SVC
   CLI -- "reads + /events" --> SVC
   FAC --> SUP
   FAC --> CLI
-  HOST["hosts: desktop (Tauri, a later issue) · dashboard (a later issue)"] --> FAC
+  HOST["hosts: desktop (#20) · dashboard (#21)"] --> FAC
   subgraph stub["crates/kitty-stub (test stand-in)"]
-    ST["+ /api/v1/openapi.yaml<br/>+ --openapi · --select · --select-fixture"]
+    ST["+ /api/v1/openapi.yaml · --openapi<br/>+ --select · --select-fixture<br/>+ --mission-status.port= · --mission-status.project-root="]
   end
   B --> ST
 ```
 
-- **One canonical-digest function, two inputs.** `contract::digest_of(text)` parses YAML (JSON is a subset), writes it in canonical form and hashes it.
-  - The pinned digest is `digest_of(BUNDLE)`, where `BUNDLE` is `include_str!` of the generated file, computed once (`OnceLock`).
-  - The served digest is `digest_of(body)`.
-  - There is no hand-typed digest anywhere (FR-012).
-- **Relay, never interpret.**
-  - A read returns `ReadOutcome::Answer { status, content_type, body: Bytes }`, or one of `Transport`, `NotReady` or `ContractMismatch`.
-  - A stream yields `StreamEvent::Change(RawChange)` and `StreamEvent::Diagnostic(..)`, then at most one terminal `Refused` or `Unavailable`, then `None`.
-  - There is no reconnect, no cursor store and no `resync` (C-003).
-- **Supervision is pure policy plus thin I/O.**
-  - `RestartPolicy` is a pure function of a `Clock` and the crash history, unit-tested under a manual clock.
-  - The process layer (`spawn`, readiness poll, stop) uses real tokio timers with durations that tests can configure. No supervision test waits on a real timer for more than 1 s (NFR-001).
-  - The backoff sleep goes through an injectable `Sleeper`. The test sleeper records each delay, advances the virtual clock and returns at once, so the delays and states are identical across runs (NFR-006).
+### Pinned and served digests
+
+- `ContractPin::embedded()` holds the bundle (`include_str!`). Its digest is computed once.
+- `digest_of(bytes)` parses with `serde_json::from_slice` first and falls back to `yaml_serde` only when that fails (R3-11). It then writes the canonical form and takes its SHA-256 (`contracts/bundled-document.md`).
+- `CoreConfig.contract` defaults to `ContractPin::embedded()`. Tests can inject another pin (R4-08).
+- **The digest is not a trust boundary** (R2-01). Any local process could serve the same document. It detects a different contract; it does not authenticate a binary.
+
+### Relay, never interpret
+
+- Reads return `ReadOutcome`. Streams yield `StreamEvent` and end with one terminal item.
+- `open_stream` refuses before any I/O with `Err(StreamOpenError)` when:
+  - the status is not `Ready`;
+  - the contract does not match;
+  - the scope is invalid.
+- There is no reconnect, no cursor store and no `resync` (C-003).
+
+### Supervision: pure policy and thin I/O
+
+- **Policy time.** It is driven by `Clock` (monotonic `Instant` in production) and `Sleeper`. In tests, `ManualClock` and `RecordingSleeper` make delays exact.
+- **I/O time.** It uses real tokio timers with durations from `Timings`. Every test value is in the table in IC-08.
+- **Process ownership.**
+  - The supervisor task is the **only** owner of the child's `Child` (inside a `ChildGuard`). Signals are sent only from that task, only while `child.id()` is `Some`, and never after a `wait()` has completed (R2-09).
+  - `HandleGuard` is the host-handle count, held by every `Core` clone. When the last one drops, it aborts the supervisor task. The `ChildGuard` drop then sends SIGKILL to the group, still from the owning task's stack, and `kill_on_drop` fires as a backstop (R1-03, R3-05, R2-07).
+  - **Forking** happens on one long-lived `std::thread` (the *spawner*) owned by kitty-core, which enters the runtime handle before calling `Command::spawn`. `PR_SET_PDEATHSIG` is tied to the forking thread, and this thread lives as long as any `Core` (R4-05).
 
 ### Supervision sequence (one start)
 
@@ -138,27 +197,34 @@ flowchart LR
 sequenceDiagram
   participant H as Host
   participant C as Core
-  participant S as Supervisor
-  participant P as service child
-  H->>C: Core::start(config)
-  C->>S: spawn task (state: starting)
-  S->>S: discovery.locate()  (miss → stopped + service-missing:not-found)
-  loop up to 3 attempts per start (FR-019)
-    S->>S: ports.pick() on 127.0.0.1
-    S->>P: spawn bin --mission-status.project-root R --mission-status.port N
-    alt child exits before ready
-      S->>S: next attempt on a new port
-    else poll GET /api/v1/openapi.yaml until answered (≤ start timeout)
+  participant S as Supervisor task
+  participant T as Spawner thread
+  participant P as service group
+  H->>C: Core::start(config) → (Core, Subscription{initial, rx})
+  C->>S: spawn task (Starting, generation 0)
+  S->>S: discovery.locate()  (miss → Stopped + service-missing:not-found)
+  Note over S: one start budget = start_timeout (A-03)
+  loop up to 3 attempts, ports never repeated (FR-019, R2-17)
+    S->>T: spawn bin --mission-status.project-root=R --mission-status.port=N
+    T->>P: fork: setpgid(0,0); prctl(PDEATHSIG,SIGKILL); getppid check
+    loop poll (each poll ≤ budget left)
       S->>P: GET /api/v1/openapi.yaml
-      P-->>S: 200 + document
-      S->>S: digest_of(body) == pinned?
+      Note over S: biased select: child exit wins (R2-01)
+      alt refused / reset / 503
+        S->>S: keep polling
+      else first other answer
+        S->>S: final: digest or mismatch
+      end
     end
   end
-  alt digest equal
-    S-->>C: ready (port N)
-  else unequal / non-200 / unparseable
-    S->>P: stop (SIGTERM, 5 s grace, SIGKILL)
-    S-->>C: stopped + contract-mismatch{expected, actual}
+  alt digest equal and try_wait() == None
+    S-->>C: Ready{endpoint(port N, generation g)}
+  else mismatch
+    S->>P: stop sequence (group)
+    S-->>C: Stopped + contract-mismatch{expected, actual}
+  else budget spent
+    S->>P: full stop sequence (group)
+    S-->>C: Crashed → policy
   end
 ```
 
@@ -168,428 +234,465 @@ sequenceDiagram
 
 ```
 kitty-specs/kitty-core-01M50D10/
-├── spec.md
+├── spec.md                 # + Amendments (2026-10-15)
 ├── plan.md                 # this file
 ├── research.md
 ├── data-model.md
 ├── quickstart.md
 ├── contracts/
-│   ├── kitty-core-api.md   # the Rust public surface hosts build on (SC-005)
+│   ├── kitty-core-api.md   # public Rust surface (SC-005), supervised stand-in route for #20/#21
 │   ├── bundled-document.md # the generated bundle and the canonical digest form
-│   └── stub-http-delta.md  # the stub's new route and options (extends #17's stub-http.md)
-├── decisions/              # specify rulings + the four resolved plan decisions
+│   └── stub-http-delta.md  # the stub's new route and options
+├── decisions/              # 5 specify rulings, 4 plan forks, 4 squad-round operator rulings (all resolved)
+├── reviews/plan.squad.md
 └── checklists/requirements.md
 ```
 
 ### Source Code (repository root)
 
 ```
-Cargo.toml                          # EXTENDED [workspace.dependencies]: yaml_serde, sha2, percent-encoding, libc (exact, dated)
-Cargo.lock                          # EXTENDED: 14 new entries (research R-07), resolved with --precise where needed
+Cargo.toml                          # EXTENDED [workspace.dependencies]: yaml_serde, sha2, percent-encoding, libc (exact, "# published" comments)
+Cargo.lock                          # EXTENDED: the 14 entries of research R-07, nothing else
 crates/kitty-core/
-├── Cargo.toml                      # real deps; [[bin]] kitty-fake-service (test = false, doc = false); dev-dep kitty-stub (path)
+├── Cargo.toml                      # IC-01: deps; IC-04: dev-dep kitty-stub; IC-08: [[bin]] kitty-fake-service (test = false, doc = false)
 ├── src/
-│   ├── lib.rs                      # module tree + re-exports; KEEPS version() and its single top-level #[cfg(test)] (rust plant anchors)
-│   ├── routes.rs                   # RouteTable from include_str!(routes.json); path/query filling, percent-encoding
-│   ├── endpoint.rs                 # ServiceEndpoint: 127.0.0.1:<port> only
-│   ├── client.rs                   # hyper conn::http1 request execution, header rules, body cap, timeouts
-│   ├── sse.rs                      # SSE frame reader (pure, byte-fed) + ChangeStream
-│   ├── contract.rs                 # canonical form, digest_of, pinned_digest, check()
-│   ├── discovery.rs                # Discovery trait, DefaultDiscovery, EnvSnapshot
-│   ├── supervisor/{mod,policy,process,ports,output}.rs
-│   ├── status.rs                   # SupervisionState, DegradedReason, CoreStatus, connection_state_hint
-│   ├── core.rs                     # Core facade: start/stop/retry/status/read/open_stream/ready_endpoint
-│   └── bin/kitty-fake-service.rs   # test-only service stand-in (std + libc), modes read from <project-root>/kitty-fake-service.json
+│   ├── lib.rs                      # IC-04: every module pre-declared (empty stubs); KEEPS version() + single top-level #[cfg(test)]
+│   ├── routes.rs  endpoint.rs  client.rs  forward.rs     # IC-04
+│   ├── sse.rs                      # IC-05
+│   ├── contract.rs                 # IC-06
+│   ├── discovery.rs                # IC-07
+│   ├── supervisor/{mod,policy,process,spawner,ports,output}.rs   # IC-08
+│   ├── status.rs  core.rs          # IC-09
+│   └── bin/kitty-fake-service.rs   # IC-08 (modes in contracts/kitty-core-api.md)
 └── tests/
     ├── workspace.rs                # UNCHANGED
-    ├── common/mod.rs               # in-process stub, raw-TCP fault server, temp dirs, fake-service mode writer
-    ├── reads.rs                    # FR-001..006, SC-001
-    ├── stream.rs                   # FR-007..010
-    ├── contract_check.rs           # FR-011..013, SC-002
-    ├── discovery.rs                # FR-023, FR-022 (not-found)
-    ├── supervision.rs              # FR-016..022, NFR-005/006, SC-003
-    ├── status_mapping.rs           # FR-024 (incl. cross-check against packages/mission-shell/src/client/port.ts)
+    ├── common/mod.rs               # IC-04 owner: in-process stub, raw-TCP fake + request log, panic counter, temp dirs, fake scenario writer
+    ├── reads.rs  stream.rs  contract_check.rs  discovery.rs  supervision.rs  status_mapping.rs
+    ├── panic_probe.rs              # proves the panic counter catches a panic (own binary, so the counter is not shared)
     └── latency.rs                  # NFR-003 measurement, #[ignore]
-crates/kitty-stub/src/{lib.rs,main.rs}   # EXTENDED: openapi route, --openapi, --select/--select-fixture (Options struct unchanged)
-crates/kitty-stub/tests/openapi.rs, select.rs   # NEW tests; existing tests untouched
-scripts/contract/generate.mjs       # EXTENDED: FIXTURE_FILES.openapi + bundle emitter (dereference, jsonText)
-scripts/contract/bundle.test.mjs    # NEW: determinism, every $ref inlined, a one-file edit changes the bundle
-contracts/fixtures/mission-status.openapi.json   # NEW, generated
-.gitattributes                      # EXTENDED: one LF + linguist-generated line for the bundle
-gates/plants/contract/plant.json    # EXTENDED: stale-bundle plant
-.github/workflows/ci.yml            # timeout values only, and per DM 01M50HVPJ9CDBB7405T9K0645R, resolved A (contract 19→21)
-README.md, CHANGELOG.md             # EXTENDED
+crates/kitty-stub/
+├── Cargo.toml                      # IC-09 requests: dev-dep kitty-core (path)
+├── src/{lib.rs,main.rs}            # IC-03: openapi route, --openapi, --select, --select-fixture, upstream options, fixtures default
+└── tests/openapi.rs  select.rs  upstream_flags.rs   # IC-03;  tests/supervised.rs  # IC-09
+scripts/contract/generate.mjs       # IC-02: FIXTURE_FILES.openapi + bundle emitter
+scripts/contract/bundle.test.mjs    # IC-02
+contracts/fixtures/mission-status.openapi.json   # IC-02, generated
+.gitattributes                      # IC-02: one LF + linguist-generated line (untested by design, see IC-02)
+gates/plants/contract/plant.json    # IC-02: stale-bundle plant
+.github/workflows/ci.yml            # IC-10: proof-matrix timeout values only
+README.md, CHANGELOG.md             # IC-10
 ```
 
 **Structure Decision**:
-- **No new member (C-002).** The fake service is a `[[bin]]` of kitty-core, because integration tests only get `CARGO_BIN_EXE_*` for binaries of their own package. It uses only `std` and `libc`, and reads its scenario from a file in the project root it is given. It therefore needs neither an extra flag nor an extra environment variable, and FR-017's argument assertion stays exact.
-- **The stub runs in-process.** kitty-core's relay tests run it through a dev-dependency (`kitty_stub::app`), not as a binary. Cargo exposes no other package's binary to a test.
-- **No cycle.** The stub never depends on kitty-core.
+- **No new workspace member (C-002).** The fake service is a `[[bin]]` of kitty-core, because tests get `CARGO_BIN_EXE_*` only for binaries of their own package.
+- **The supervised-stub test lives in kitty-stub's tests (R4-01).** That is the only package whose tests can reach the `kitty-stub` binary. kitty-stub takes kitty-core as a dev-dependency.
+- **The operator's suggested `stub` mode of `kitty-fake-service` is not possible.** A binary target cannot use dev-dependencies, so kitty-core would need `kitty-stub` (and axum) as a *normal* dependency, which would ship them to both hosts.
+- **The stub never depends on kitty-core outside its tests.**
 
 ## Complexity Tracking
 
 | Violation | Why Needed | Simpler Alternative Rejected Because |
 |---|---|---|
-| A generated bundle of about 630 KB committed under `contracts/fixtures/` | The stub must serve the pinned document, and the pinned digest must come from one bundling that already exists in the contract scripts (C-005) | A bundler in Rust would be a second, hand-written reference resolver (decision `01M50HVKZ0D1C5HBMB1J1P99E1`, option B, not chosen). Bundling at stub start-up would make the stub depend on a parser stack it does not need. |
-| A test-only `[[bin]]` inside a production crate | C-002 forbids a new member, and cargo exposes only a package's own binaries to its tests | A self-exec of the test harness would need `harness = false` and a hand-made runner. A binary in kitty-stub cannot be reached from kitty-core's tests. |
-| One `unsafe` block family (`libc::kill`, `prctl` in `pre_exec`) | SIGTERM before SIGKILL (FR-021), and tying the child to its parent on Linux (spec edge case) | tokio only offers SIGKILL. `nix` would be a new crate for two calls. |
+| A generated bundle of about 630 KB committed under `contracts/fixtures/` | The stub must serve the pinned document. The pinned digest must come from the bundling the contract scripts already have (C-005). | A Rust inliner would be a second resolver (decision `01M50HVKZ0D1C5HBMB1J1P99E1`, option B, not chosen). |
+| A test-only `[[bin]]` in a production crate | C-002 forbids a new member. Cargo exposes only a package's own binaries to its tests. | A self-exec harness would need `harness = false` and a hand-written runner. |
+| Mutual dev-dependencies (kitty-core ⇄ kitty-stub) | kitty-core's relay tests need the stub library. The supervised test needs the stub binary next to `Core`. | Making the stub a normal dependency would ship axum to the hosts. |
+| A dedicated spawner thread | `PR_SET_PDEATHSIG` fires when the *forking thread* exits. Runtime workers and blocking-pool threads do not have guaranteed lifetimes. | Forking on a runtime worker would leave the tie to the parent as an accident of thread lifetime. |
+| `unsafe` limited to libc calls (`kill`; `setpgid`, `prctl` and `getppid` in `pre_exec`) | Group signalling and the parent-death tie | tokio offers neither. `nix` would be a new crate. |
 
 ## Implementation Concern Map
 
 ### IC-01 — Dependencies and exact pins
 
-- **Purpose**: kitty-core gains its real dependencies with exact, aged pins, and with the lock entries proven.
-- **Relevant requirements**: NFR-002, NFR-007, C-002 (kitty-core's dependencies are the only workspace change), SC-004.
+- **Purpose**: kitty-core gains its dependencies with exact, aged pins and a proven lock.
+- **Relevant requirements**: NFR-002, NFR-007, C-002, SC-004.
 - **Affected surfaces**:
   - root `Cargo.toml` `[workspace.dependencies]`:
-    - `yaml_serde = "=0.10.7"`, published 2026-08-18;
-    - `sha2 = "=0.10.9"`, published 2025-04-30;
-    - `percent-encoding = "=2.3.2"`, already locked;
-    - `libc = "=0.2.189"`, already locked;
-    - each with a date comment, in the style of the existing pins;
-  - `crates/kitty-core/Cargo.toml`:
-    - member-level features `hyper/client` and `http1`, `hyper-util/tokio`, and `tokio/{process,io-util,sync}`;
-    - the dev-dependency `tokio/test-util`;
-    - the dev-dependency `kitty-stub = { path = "../kitty-stub" }`;
-    - the `[[bin]]` declaration requested by IC-08;
+    - `yaml_serde = "=0.10.7"   # published 2026-08-18`;
+    - `sha2 = "=0.10.9"   # published 2025-04-30`;
+    - `percent-encoding = "=2.3.2"   # published <date from crates.io, recorded by the WP>`;
+    - `libc = "=0.2.189"   # published <date>`.
+
+    Each line carries a `# published YYYY-MM-DD` comment, which is a new style the reviewer checks (R3-12).
+  - `crates/kitty-core/Cargo.toml`: the dependencies and member-level options above. No `[[bin]]` stanza here: IC-08 adds it with the file (R6-03).
   - `Cargo.lock`.
 - **Sequencing/depends-on**: none. This IC goes first.
 - **Risks**:
-  - Online resolution picks `want 0.3.2`, published 2026-10-05, which is younger than 14 days. The WP runs `cargo update -p want --precise 0.3.1` and checks the lock against the 14 entries in research R-07, by name and version.
-  - Any further drift from that list needs a dated justification in the WP.
-  - No workspace pin rises: every new crate's minimum of a shared crate is already met (serde 1.0.195 or later, indexmap 2.2.1 or later, itoa 1). The WP re-verifies this with `cargo tree -i`.
-  - Build scripts and procedural macros are listed from `cargo metadata`, not predicted. The only new build script is `generic-array 0.14.7`, built with `version_check 0.9.5`.
+  - **Lock resolution (R3-10, R4-10).** Online resolution differs from the evidence set on three entries: `want` (0.3.2, published 2026-10-05, too young), `cfg-if` (1.0.5) and `generic-array` (0.14.9). The WP adds the dependencies, then runs `cargo update -p want --precise 0.3.1`, `cargo update -p cfg-if --precise 1.0.4` and `cargo update -p generic-array --precise 0.14.7`. It then compares the 14 new `[[package]]` entries with research R-07 by name, version and checksum source. `typenum` does not differ: 1.20.1 is both the newest release and the one in the table.
+  - **No shared minimum rises**, so no workspace pin is bumped. The WP shows this with `cargo tree -i`.
+  - **Build scripts and procedural macros** are re-derived from `cargo metadata`.
 
 ### IC-02 — The bundled contract document
 
-- **Purpose**: one generated document with every reference inlined, derived from the vendored pin and kept current by `Gate: contract`.
-- **Relevant requirements**: FR-012, FR-014 (the source of the document), C-005, C-007.
+- **Purpose**: one generated document with every reference inlined, kept current by `Gate: contract`.
+- **Relevant requirements**: FR-012, FR-014, C-005, C-007, A-01.
 - **Affected surfaces**:
-  - `scripts/contract/generate.mjs`:
-    - `FIXTURE_FILES.openapi = 'contracts/fixtures/mission-status.openapi.json'`;
-    - `buildBundle(root)`: `new $RefParser().dereference(openapi, { dereference: { circular: false } })`, then `jsonText`;
-    - an entry in `generateJsonSources`, so `checkJsonFresh` covers it unchanged;
-  - `scripts/contract/bundle.test.mjs`, which checks that:
-    - generating twice gives identical bytes;
-    - no `$ref` key remains;
-    - a temp copy of the vendored tree with one schema edited yields a different bundle;
-    - a circular reference fails generation loudly;
-  - `contracts/fixtures/mission-status.openapi.json`;
-  - `.gitattributes`;
+  - `scripts/contract/generate.mjs`: `FIXTURE_FILES.openapi`, `buildBundle(root)` (`$RefParser.dereference` with `circular: false`, then `jsonText`), and an entry in `generateJsonSources`.
+  - `scripts/contract/bundle.test.mjs`, which covers:
+    - determinism;
+    - no `$ref` left;
+    - a one-file edit in a temp copy changes the bundle;
+    - a cycle fails loudly;
+    - plus the R6-09 rule: the test never prints the plant's token string and never uses it as a test title.
+  - `contracts/fixtures/mission-status.openapi.json`.
+  - `.gitattributes`.
   - `gates/plants/contract/plant.json`.
-- **Sequencing/depends-on**: none. It can run in parallel with IC-01.
+- **Sequencing/depends-on**: none.
 - **Risks**:
-  - `circular: false` must throw on a cycle rather than emit a partial document. The current pin has none, as verified at plan time.
-  - The existing four fixture files must stay byte-identical (SC-004). The WP runs `git diff --exit-code` on them.
-  - Any test that counts `FIXTURE_FILES` or the generator's output line is updated in the same WP.
-  - Decision `01M50HVKZ0D1C5HBMB1J1P99E1` was resolved A, so this IC stands as written.
+  - The four #17 files stay byte-identical.
+  - `scripts/hygiene/gitattributes.test.mjs` is **not** changed (R5-14, R6-06), so the bundle's LF and `linguist-generated` attribute is untested. Extending that test would extend `Gate: hygiene`, which would need a hygiene plant and a hygiene leg timeout change for a one-line attribute. A diff of the `.gitattributes` line is a reviewer check instead.
+  - `Gate: contract`'s job cap is 5 minutes (`ci.yml`). The gate step is 113 s today, and the bundle adds about 1 s of dereferencing.
 
 ### IC-03 — Stub extensions
 
-- **Purpose**: the stub serves the contract document, can serve a modified one, and can pick a scenario at start-up without request headers.
-- **Relevant requirements**: FR-014, FR-015, C-008, NFR-008.
+- **Purpose**: the stub serves the contract document, can pick a scenario at start-up, and can be launched like the service.
+- **Relevant requirements**: FR-014, FR-015, C-008, NFR-008, A-07, A-08.
 - **Affected surfaces**:
   - `crates/kitty-stub/src/lib.rs`:
-    - a new route `GET /api/v1/openapi.yaml` under the same guard and record layers;
-    - builder methods `Fixtures::with_openapi_document(Bytes)` and `Fixtures::with_selections(..)`;
-    - the `Options` struct and the `app`, `from_values` and `load` signatures stay unchanged;
+    - the route `GET /api/v1/openapi.yaml`;
+    - `Fixtures::with_openapi_document(Bytes)` and `Fixtures::with_selections(..) -> Result`;
+    - `Options`, `app`, `load` and `from_values` stay unchanged.
   - `crates/kitty-stub/src/main.rs`:
-    - `--openapi <file>`, defaulting to `<fixtures>/mission-status.openapi.json`, read once before `listening`;
-    - `--select <operationId>=<Schema.name>` and `--select-fixture <operationId>=<fixture>`, both repeatable;
-    - every invalid value is exit 2 with the usage text, before `listening`;
-  - new tests `tests/openapi.rs` and `tests/select.rs`;
-  - `contracts/stub-http-delta.md` in this mission.
-- **Sequencing/depends-on**: IC-02, for the default document file.
+    - **`--openapi <file>`.** An explicit file that cannot be read is exit 1. A missing *default* file serves 404 `no-openapi-document` (R4-07).
+    - **`--select` and `--select-fixture`.** Repeatable, with exit 2 on invalid input.
+    - **Upstream options.** `--mission-status.port=<n>` and `--mission-status.project-root=<dir>`, in `--name=value` form. Giving both `--port` and `--mission-status.port` is a usage error.
+    - **Fixtures directory.** `--fixtures` wins. Otherwise it is `<project-root>/fixtures` when that is a directory. Otherwise it is the compile-time workspace path `concat!(env!("CARGO_MANIFEST_DIR"), "/../../contracts/fixtures")`. The stub is a `publish = false` test stand-in run from this workspace, so a path relative to the working directory would break whenever a host starts it from elsewhere. The baked path exists only in the built binary.
+    - **Pinned load order.** Arguments first, then the fixtures, then selections are checked against them, then the document, then `listening`.
+  - New tests `openapi.rs`, `select.rs` and `upstream_flags.rs`.
+  - `contracts/stub-http-delta.md`.
+- **Sequencing/depends-on**: IC-02.
 - **Risks**:
-  - The existing tests must pass unchanged, so `Options` gains no field (it is built by struct literal in `tests/common/mod.rs`).
-  - A start-up selection is checked by the same schema-fit rule as the headers, and the request header still wins.
-  - A route in `routes.json` whose path is `/openapi.yaml` would collide, so it is refused at load, as conflicts already are.
-  - Without a document (lib use without the builder), the route answers 404 `{"code":"no-openapi-document"}`. kitty-core's "no contract route" test uses that answer.
-  - The document is served byte for byte with `content-type: application/yaml`.
+  - Every existing stub test must stay unchanged, so `Options` gains no field.
+  - A `routes.json` path of `/openapi.yaml` is refused at load.
 
-### IC-04 — Contract client and read relay
+### IC-04 — Contract client, read relay and `forward()`
 
-- **Purpose**: relay the nine reads byte for byte, with loopback and header rules and safe encoding.
+- **Purpose**: relay the nine reads byte for byte, and give #21 a pass-through that enforces the same rules.
 - **Relevant requirements**: FR-001 to FR-006, NFR-004, NFR-005, NFR-007, SC-001.
 - **Affected surfaces**:
-  - `src/{routes,endpoint,client}.rs`;
-  - `src/lib.rs` (owner);
+  - `src/{routes,endpoint,client,forward}.rs`;
+  - `src/lib.rs` (owner), which **pre-declares every module of the crate as an empty stub file**, so later ICs fill files instead of editing `lib.rs` (R6-04);
   - `tests/common/mod.rs` (owner);
   - `tests/reads.rs`.
-- **Sequencing/depends-on**: IC-01 and IC-03 (the tests use `with_selections` in-process).
+- **Sequencing/depends-on**: IC-01 and IC-03.
 - **Risks**:
-  - **Oracle.** The coverage test reads `routes.json` from disk on its own, not through kitty-core's embedded table. It compares each relayed answer with a direct raw-TCP request the test makes itself. A missing operation names itself.
-  - **Body fixture.** The stub writes `serde_json::to_vec`, so a body with `null`s, an unknown field and a non-alphabetical key order is served by the raw-TCP fake for the byte test (FR-002).
-  - **Encoding.** Every path segment percent-encodes everything except `ALPHA`, `DIGIT`, `-`, `_` and `~`. `.` is encoded too, so a value of `..` cannot become a dot-segment. Query values use the same set.
-  - **Headers.** `Host` is set explicitly. The request carries `Accept`, plus `Host`, and nothing else.
+  - **Oracle.** The coverage test reads `routes.json` from disk, independently of kitty-core, and compares each answer with the test's own raw-TCP request. A missing operation names itself.
+  - **Path values (R2-04).**
+    - An empty value, `.`, `..`, a value containing `/` or `\`, or any control character is refused before I/O with `Transport(InvalidParameter)`.
+    - Other values percent-encode everything except `ALPHA`, `DIGIT`, `-`, `_`, `.` and `~`.
+    - Query values encode everything except those unreserved characters (`/` included).
+    - FR-006's query encoding is asserted on the raw-TCP fake's request log, because `/__stub/last-request` drops the query (R5-01).
+  - **Headers.** Reads send exactly `Host` and `Accept`. `forward()` sends exactly `Host` and the caller's `Accept`, refuses a path outside `/api/v1/`, and returns the hyper response with its body untouched. The helper `upstream_request_headers(&ServiceEndpoint, accept)` is exported (R3-07, R4-03).
   - **Limits.**
-    - A body over 16 MiB is a transport failure, and nothing partial is returned.
-    - The read timeout is 30 s by default and configurable.
-  - **Plant anchors.** The rust plants in `lib.rs` (`    env!("CARGO_PKG_VERSION")\n` and the single `\n#[cfg(test)]\n`) must survive. The reviewer checks both by `grep -c`.
+    - `read_timeout` is a **total** deadline (connect, headers and body) (R3-08).
+    - A body of 16 MiB + 1 byte is `BodyTooLarge`, with nothing partial (R5-10).
+  - **Plant anchors.** The rust plants' anchors in `lib.rs` must survive. The reviewer checks both with `grep -c`.
+  - **Terminology.** The terminology gate scans every `.rs` file in `crates/*/src` and `crates/*/tests` for the banned whole word.
 
 ### IC-05 — Change-stream relay
 
-- **Purpose**: open scoped or unscoped streams and relay raw changes in order, with exactly one terminal outcome.
-- **Relevant requirements**: FR-007 to FR-010, NFR-003, NFR-004, NFR-005.
-- **Affected surfaces**:
-  - `src/sse.rs`:
-    - a pure `FrameReader::feed(&[u8]) -> Vec<Frame>`;
-    - `ChangeStream`;
-  - `tests/stream.rs`;
-  - `tests/latency.rs`.
+- **Purpose**: raw changes in order, with exactly one terminal outcome.
+- **Relevant requirements**: FR-007 to FR-010, NFR-003, NFR-004, NFR-005, A-08.
+- **Affected surfaces**: `src/sse.rs`, `tests/stream.rs` and `tests/latency.rs`.
 - **Sequencing/depends-on**: IC-04.
 - **Risks**:
-  - **Line handling.** LF, CR and CRLF line ends are handled, and a leading BOM is ignored. `data:` lines join with `\n`, and one optional space after the colon is stripped. `retry:` is ignored. A comment line resets the idle timer and is never relayed.
-  - **Unknown events.** An event name outside the three is a `Diagnostic`, not a failure. The list of three is cross-checked by a test against `paths/events.yaml`.
-  - **Invalid data.** Data that is not one JSON value (checked with `serde_json::from_slice::<IgnoredAny>`) ends the stream as `Unavailable(MalformedData)`.
-  - **Refused or not.** The stream is `Refused` only when the status is declared in `routes.json` `refusals` for `streamEvents` (400, 404 or 409). Every other non-200 is `Unavailable(Status)`, with the body read up to 16 MiB.
-  - **Idle limit.** It is 90 s by default and configurable. Tests use 200 ms against a fake that stalls.
-  - **Cursor rule.** A cursor without a non-empty mission is refused before any I/O.
-  - **No `Problem` entry to select (spec deviation, for the squad).** FR-009 asks for "the 404 at stub start-up", but neither `examples.json` nor `fixtures.json` holds a `Problem` entry, and C-002 freezes both. The 404 `Problem` refusal is therefore produced by the raw-TCP fake, with a body built in the test. The five `StreamRefusal` examples are selected on the stub with `--select`.
-  - **Terminology.** The terminology gate scans every `.rs` file under `crates/*/src` and `crates/*/tests` for the banned whole word. A Rust source must never contain it, not even in a `cfg(...)` or a comment.
+  - **FrameReader edge cases (R2-06).** Each case is fed byte by byte *and* whole:
+    - a CRLF split across chunks; a BOM split across chunks, honoured only at stream start;
+    - the 1 MiB cap counting **all bytes since the last dispatched frame**, including a pending line with no newline and comment lines (R3-08), with a no-newline test;
+    - `MalformedFrame`, meaning a line that is not valid UTF-8. Checks run in this order: cap, UTF-8, then field parse;
+    - a bare `data` line (no colon) counts as empty data;
+    - several `data:` lines are joined with `\n`;
+    - an empty `id:` sets the cursor to none, and an `id` containing NUL is ignored, both as in the SSE specification;
+    - a response with no or non-SSE `content-type` on 200 is `Unavailable(Status)` with the body;
+    - a clean EOF is `Dropped`;
+    - after the terminal item the stream is fused, and `next()` returns `None` forever.
+  - **Opening (R1-04, R2-12).** `open_stream` returns `Result<ChangeStream, StreamOpenError>`. A test asserts nothing reached the fake's request log.
+  - **Async contract (R2-13).** `next()` is cancel-safe: dropping its future loses no byte, because the buffered state lives in the stream. `ChangeStream` is `Send + 'static`.
+  - **The 404 refusal (R1-01, A-08).** The in-process stub is built with `from_values(...)` with one in-memory `Problem` example (status 404) added to the examples value, plus `with_selections(streamEvents → that example)`. The raw-TCP 404 is a second case. The five `StreamRefusal` examples are selected with `with_selections`.
+  - **Idle (R5-09).** A heartbeat every 100 ms keeps a stream with a 300 ms idle limit alive for 600 ms. A stall then ends it as `Idle`.
+  - **NFR-003 method (R5-15).**
+    - The raw-TCP fake writes 200 `status-transition` frames, one every 5 ms. It records an `Instant` right after each frame's last byte is flushed.
+    - The consumer records an `Instant` when `next()` returns the change.
+    - Latency is the receipt time minus the flush time, and p95 is over the 200 events.
+    - It is run with `--ignored` in release and debug, and recorded in the evidence. It is not a gate.
 
 ### IC-06 — Contract digest check
 
 - **Purpose**: the pinned digest follows the pin, and an unknown contract never reaches a screen.
-- **Relevant requirements**: FR-011, FR-012 (Rust side), FR-013, SC-002.
-- **Affected surfaces**:
-  - `src/contract.rs`:
-    - `canonical_json(&Value) -> Vec<u8>`;
-    - `digest_of(&[u8]) -> Result<Digest, ParseError>`;
-    - `pinned_digest()`;
-    - `check(endpoint) -> CheckOutcome`;
-  - `tests/contract_check.rs`.
-- **Sequencing/depends-on**: IC-01, IC-02, IC-03 and IC-04.
+- **Relevant requirements**: FR-011 to FR-013, SC-002, A-09.
+- **Affected surfaces**: `src/contract.rs` (`ContractPin`, `canonical_json`, `digest_of`, `check`) and `tests/contract_check.rs`.
+- **Sequencing/depends-on**: IC-01 to IC-04.
 - **Risks**:
-  - **Canonical form.** It is defined in `contracts/bundled-document.md`:
-    - keys are sorted by UTF-8 bytes;
-    - numbers with an integral value of magnitude below 2^53 are written as integers;
-    - other numbers use `serde_json`'s float form;
-    - strings use `serde_json`'s escaping;
-    - there is no whitespace.
-  - **Why integral numbers matter.** The Node bundle writes `1.0` as `1`, while a real YAML document parsed in Rust keeps `1.0`. A test asserts that the same document gives the same digest in JSON-flow and in YAML block form.
-  - **Fail closed.** A non-200 answer, a parse error and an unequal digest all give `contract-mismatch`, with an `actual` that says which.
-  - **No request after a mismatch.** The FR-013 test reads `/__stub/last-request` after a mismatch and asserts that it is still the `openapi.yaml` fetch.
+  - **Numbers (R2-10).** Every number is converted to `f64` first (JavaScript semantics), and `-0` becomes `0`. An integral value with magnitude ≤ 2^53 is written as an integer, and anything else with **one** shortest round-trip formatter (`serde_json`'s `f64` output). Tests cover `-0`, `2^53`, `2^53 + 1` (which rounds to `2^53` in both the Node and Rust paths), `1.0` against `1`, and `0.1`.
+  - **Parse order (R3-11).** `serde_json::from_slice` first, then `yaml_serde` only when JSON fails. The pinned bundle never touches the YAML parser.
+  - **Real bundle (R5-12).** `digest_of(bundle) == digest_of(yaml_serde::to_string(parse(bundle)))`.
+  - **Cap.** The fetched document is capped at 4 MiB. Anything over is `Mismatch { actual: Transport(BodyTooLarge) }`.
+  - **Cost (R5-06).** The WP first measures `digest_of(bundle)` in the dev profile (about 80 ms locally) and records it. Readiness budgets include it: the 2 s test start timeout leaves at least 10× margin.
+  - **FR-013 at `Core` level (R5-01, R2-05).**
+    - A `serve-modified` fake leads to `Stopped` with `ContractMismatch`, and the child is gone.
+    - `core.read(..)` then returns `ContractMismatch`, not a transport error, and `core.open_stream(..)` returns `Err(ContractMismatch)`.
+    - The fake's request log holds only the `openapi.yaml` fetch.
+    - The client-level variant asserts `/__stub/last-request` is still the `openapi.yaml` fetch.
 
 ### IC-07 — Discovery
 
 - **Purpose**: a replaceable lookup with the three ruled rules.
 - **Relevant requirements**: FR-023, FR-022 (`not-found`), US5, US6.
-- **Affected surfaces**:
-  - `src/discovery.rs`:
-    - `trait Discovery: Send + Sync { fn locate(&self) -> Result<PathBuf, ServiceMissing>; }`;
-    - `DefaultDiscovery { configured: Option<PathBuf>, env: EnvSnapshot, binary_name: OsString }`;
-    - `EnvSnapshot::from_process()`;
-  - `tests/discovery.rs`.
-- **Sequencing/depends-on**: IC-01.
-- **Risks**:
-  - **No global environment in tests.** Tests never mutate the process environment: `EnvSnapshot` is built explicitly.
-  - **Explicit choices never fall through.** An invalid configured path fails with no fallback. An environment variable that is set but invalid also fails with no fallback.
-  - **PATH search.** It skips entries that are not executable files (on Unix, by the execute bit), as a shell does.
-  - **Names.** The environment variable is `KITTY_MISSION_STATUS_SERVICE`. The default binary name is `mission-status-api` and is configurable.
-  - **Windows.** `PATHEXT` is documented for #20 and not tested here (CI is Linux only).
+- **Affected surfaces**: `src/discovery.rs` and `tests/discovery.rs`.
+- **Sequencing/depends-on**: IC-04 (module pre-declared).
+- **Risks (R2-14, R3-09).**
+  - The configured path and the environment value must be **absolute**. A relative one is `NotFound` with that detail, and there is no fallback.
+  - PATH entries that are not absolute (including empty ones) are skipped.
+  - Symlinks are followed (documented). The resolved target must be a regular file with an execute bit (Unix).
+  - Each rule, and each skip, has a test built on an `EnvSnapshot` and temp directories.
+  - A macOS GUI app launched from launchd gets a minimal PATH. That note is for #20, which should prefer the configured path.
 
 ### IC-08 — Supervision
 
-- **Purpose**: start, watch, restart and stop one child per project, deterministically.
-- **Relevant requirements**: FR-016 to FR-022, NFR-001, NFR-004, NFR-005, NFR-006, SC-003.
+- **Purpose**: start, watch, restart and stop one child process group per project, deterministically.
+- **Relevant requirements**: FR-016 to FR-022 (as amended by A-02, A-03, A-05 and A-06), NFR-001, NFR-004 to NFR-006, SC-003.
 - **Affected surfaces**:
-  - `src/supervisor/policy.rs`: the pure `RestartPolicy`, with `Clock`;
-  - `src/supervisor/ports.rs`: the `PortPicker` trait, whose default binds `127.0.0.1:0` and releases it;
-  - `src/supervisor/process.rs`:
-    - spawn with `kill_on_drop(true)`;
-    - on Linux, `pre_exec` with `prctl(PR_SET_PDEATHSIG, SIGTERM)` plus a `getppid` re-check;
-    - stop with SIGTERM, the grace period, then SIGKILL;
-  - `src/supervisor/output.rs`: a 64 KiB ring buffer per child;
-  - `src/supervisor/mod.rs`: the state machine task;
+  - `src/supervisor/{mod,policy,process,spawner,ports,output}.rs`;
   - `src/bin/kitty-fake-service.rs`;
+  - the `[[bin]]` stanza in `crates/kitty-core/Cargo.toml`, requested from IC-01;
   - `tests/supervision.rs`.
-- **Sequencing/depends-on**: IC-06 (readiness is the digest check) and IC-07.
+- **Sequencing/depends-on**: IC-06 and IC-07.
 - **Risks**:
-  - **Restart policy (FR-020).**
-    - The backoff runs 0.5 s, 1, 2, 4, 8, 16, then 30 s and stays there. It resets after 60 s of uninterrupted `ready`.
-    - The crash window slides: the 5th crash within 300 s of virtual time gives up.
-    - A start failure (timeout, or 3 busy-port attempts used up) counts as a crash.
-    - The policy is unit-tested under a manual clock, with the exact sequences.
-  - **Test timing.** Readiness polling (every 50 ms, timeout 10 s), the stop grace (5 s) and the idle limit are real-time durations set through `Timings`. Tests use 10 ms, 400 ms and 300 ms, so no test waits more than 1 s.
-  - **Process lifetime.**
-    - **Parent death.** PDEATHSIG fires when the thread that forked the child exits. Spawning therefore happens on the supervisor's runtime worker, never inside `spawn_blocking`.
-    - **Host exit.** A Linux-only test runs `kitty-fake-service host …`: the binary acts as a host, starts a supervised child, then calls `exit` without stopping it. The test asserts that the grandchild is gone within 1 s.
-    - **macOS.** It has no PDEATHSIG. This is a documented limit (spec Assumptions).
-  - **Output capture.** Pipes are drained continuously, so a chatty child never blocks. Output is never written to disk (C-006).
-  - **Fake scenarios.** `kitty-fake-service` reads `<project-root>/kitty-fake-service.json`, which holds `{ mode, recordArgs, crashAfterMs }`. The modes are `ready`, `crash-after`, `exit-at-start`, `never-ready`, `ignore-term`, `serve-modified` and `host`.
-  - **Contract-mismatch is final.** The child is stopped and the state is `stopped` with contract-mismatch. There is no restart until the host retries.
+  - **Restart policy** (decision `01M50M407F65T4SQA9TNWQYCQT`).
+    - The delays are exactly 0.5, 1, 2 and 4 s. The 5th crash within 300 s of `Clock` time gives up with `Crashing`.
+    - The backoff restarts at 0.5 s after 60 s of uninterrupted `Ready`.
+    - A start failure (the budget spent, or 3 exits before ready) is a crash.
+    - The pure-policy test runs each sequence 10 times in a loop (R5-08).
+    - Scenario tests assert the `RecordingSleeper` log as well as the states (R5-13).
+  - **Start budget (A-03, R2-03).**
+    - One `start_timeout` budget covers every attempt of a start. Each poll is bounded by the budget left.
+    - Before the first HTTP answer, a refused or reset connection means *keep polling*. A 503 while starting also means keep polling.
+    - Any other first answer is final: a 200 goes to the digest, anything else is a mismatch.
+    - A child whose budget runs out goes through the **full stop sequence** before `Crashed`.
+  - **Readiness race (R2-01, R3-06).**
+    - The poll loop uses a `biased` `select!` in which the child's exit wins.
+    - After a digest match, `try_wait()` must return `None` before `Ready`.
+    - The busy-port test adds a *squatter* case: the chosen port is held by a listener that answers HTTP with the pinned document, and the fake exits because the port is busy. The exit must win, and the next attempt runs on a new port.
+  - **Ports (R2-17).** The picker never returns a port already tried in the same start.
+  - **Launch (A-06, R3-01, R3-02, R3-03).**
+    - The argv is exactly the two `=` strings. The project root is canonicalised (`std::fs::canonicalize`), or the start is refused as `cannot-execute`.
+    - `env_clear()` plus the allowlist `PATH`, `HOME`, `LANG`, `LC_*` and `TMPDIR`.
+    - `stdin(Stdio::null())`, and `current_dir(<canonical root>)`.
+    - The fake records its argv and environment, and the test asserts both.
+  - **Process group (decision `01M50M42PBSJ806A432AP7M13S`).**
+    - `pre_exec` makes only these calls: `setpgid(0, 0)`, `prctl(PR_SET_PDEATHSIG, SIGKILL)` (Linux), and `getppid()`.
+    - If `getppid()` differs from the parent pid captured before the fork, `pre_exec` returns `Err(io::Error::from_raw_os_error(ESRCH))`, so `spawn` fails cleanly. There is no `_exit` (R2-09, R3-04).
+    - SIGTERM and SIGKILL go to `-pgid`.
+    - **Forking test.** The `fork-child` fake mode starts a grandchild that writes its pid. After `stop()`, both are gone.
+  - **Signal discipline (R2-09).** Signals are sent only by the task that owns the `ChildGuard`, only while `child.id()` is `Some`, and never after `wait()` has returned.
+  - **PDEATHSIG is SIGKILL (R4-05).** A dying host cannot run a grace period. It reaches only the direct child; a grandchild relies on the service handling its own group, which goes on #22's asks ("exit on parent death"). Windows Job Objects are named for #20.
+  - **Host exit (R5-05, R4-06).**
+    - In `host` mode the fake runs `kitty_core::Core` on its own runtime. The grandchild writes its pid, and the host exits through `std::process::exit` without `stop()`.
+    - The test asserts the grandchild is gone within 1 s.
+    - The WP shows the test failing with `prctl` removed.
+    - Unix-only modes are gated with `cfg`.
+  - **Output (R1-06, R2-16).**
+    - Pipes are drained continuously.
+    - The **most recent child's** output is kept after it exits.
+    - The `Crashing` detail carries the last exit status or signal.
+    - A macOS-quarantined binary killed by the OS shows as a signal exit, so 5 of them give `crashing`. That note goes to #20.
+  - **Fake behaviour per launch (R5-04, R2-15).**
+    - The scenario file has `launches: [mode, ...]`. The fake picks the entry at its launch index, kept in `<root>/kitty-fake-service.count`. Read, increment and write is safe because the supervisor never runs two children at once.
+    - `crashAfterMs` counts from the first `openapi.yaml` GET served.
+  - **No liveness probe (R4-09).** A service that hangs while its process stays alive stays `Ready` in #19. A liveness probe goes on #22's notes.
+  - **Test `Timings` (R1-08, R2-11, R2-15).**
 
-### IC-09 — Core facade and the degraded signal
+    | Field | Production | Tests |
+    |---|---|---|
+    | `poll_interval` | 50 ms | 10 ms |
+    | `start_timeout` | 10 s | 2 s; 300 ms in the never-ready test only |
+    | `stop_grace` | 5 s | 300 ms |
+    | `read_timeout` | 30 s | 1 s |
+    | `idle_limit` | 90 s | 300 ms |
 
-- **Purpose**: the one public surface the hosts build on.
-- **Relevant requirements**: FR-013, FR-016, FR-024, SC-005, C-003.
+    A test may wait in real time for at most 1 s, so a 2 s start timeout is never actually reached except in the never-ready test, which uses 300 ms. Reviewers check every test against this table (R5-07).
+
+### IC-09 — Core facade, the degraded signal and the supervised stand-in
+
+- **Purpose**: the one public surface the hosts build on, proven against the real stub.
+- **Relevant requirements**: FR-013, FR-016, FR-024, SC-005, C-003, A-05, A-07.
 - **Affected surfaces**:
   - `src/{core,status}.rs`;
-  - the `src/lib.rs` re-exports (requested from IC-04);
   - `tests/status_mapping.rs`;
+  - `tests/panic_probe.rs`;
+  - `crates/kitty-stub/tests/supervised.rs` and the dev-dependency on kitty-core in `crates/kitty-stub/Cargo.toml` (both requested from IC-03);
   - `contracts/kitty-core-api.md`.
-- **Sequencing/depends-on**: IC-04, IC-05, IC-06 and IC-08.
+- **Sequencing/depends-on**: IC-04 to IC-08.
 - **Risks**:
-  - **Status delivery.** The current status is held in a `watch`. Each transition is also sent on a `broadcast` with a capacity of 64. A slow subscriber gets `Lagged(n)`, never blocks the supervisor, and can read `status()`.
-  - **Gating.** A read or a stream answers `NotReady` or `ContractMismatch` at once, before any I/O, unless the state is `ready`.
-  - **`ready_endpoint()`** is exposed for #21's pass-through proxy. It is `Some` only while the state is `ready`.
-  - **Mapping test.** It parses the five strings out of `packages/mission-shell/src/client/port.ts` (`CONNECTION_STATES`), so the Rust hint table cannot drift from the port.
+  - **Start (R4-02, R5-02, R4-04).**
+    - `Core::start(config) -> Result<(Core, Subscription), StartError>` uses `config.runtime`, or `Handle::try_current()`. It never panics outside a runtime.
+    - The `Subscription` is pre-subscribed. `Core::subscribe()` returns the current status and a receiver atomically, under the lock that publishes.
+    - The initial status is `Starting`, generation 0, degraded `None`, `left_initial_start = false`.
+    - A `SendError` (no receivers) is ignored.
+  - **Generation (R3-07).** `generation` increments on every launch. A `ServiceEndpoint` carries it and is valid only until the next transition. `ready_endpoint()` returns it, and #21's proxy re-reads it on every transition.
+  - **Drop (A-05).** As in "Architecture". The test drops the last handle and asserts the process group is gone within 1 s.
+  - **Panic check (R5-03).**
+    - `tests/common` installs a panic hook that counts panics (chained to the default hook). Every scenario asserts the count is 0.
+    - `stop()` returns `Err(SupervisorPanicked)` when the supervisor task's `JoinError` is a panic.
+    - `panic_probe.rs`, as its own test binary, proves the counter catches a deliberate panic.
+  - **Hint (R1-08).** `connection_state_hint(&CoreStatus) -> Option<&'static str>` uses the status's own `left_initial_start` flag; there is no second parameter. The full table is in data-model.md. The test enumerates every combination and parses `CONNECTION_STATES` from `packages/mission-shell/src/client/port.ts`.
+  - **Supervised stand-in (decision `01M50M47K1PNKP9KHCGGDBQZ0A`).** `supervised.rs` builds a `Core` whose `Discovery` returns `CARGO_BIN_EXE_kitty-stub`, with a temp project root. It reaches `Ready`, does one read, and streams the scripted sequence through `Core`, then `stop()`s. The stub serves the default bundle from the workspace fixtures, so the digest matches.
 
 ### IC-10 — Documentation, evidence and wrap-up
 
-- **Purpose**: the documentation, the measured budgets, the SC-004 probe and the timeout values.
-- **Relevant requirements**: NFR-001, NFR-003, NFR-008, SC-004, SC-006, C-006.
-- **Affected surfaces**:
-  - `README.md`: the kitty-core section, discovery configuration, the stub's new options;
-  - `CHANGELOG.md`;
-  - `.github/workflows/ci.yml`: the proof-matrix `timeout` values only, as decision `01M50HVPJ9CDBB7405T9K0645R` (resolved A) allows;
-  - the mission evidence: NFR-003 p95, local and CI gate times.
+- **Purpose**: documentation, measured budgets, the SC-004 probe and the timeouts.
+- **Relevant requirements**: NFR-001, NFR-003, NFR-008, SC-004 to SC-006, A-04.
+- **Affected surfaces**: `README.md`, `CHANGELOG.md`, `.github/workflows/ci.yml` (timeout values only) and the mission evidence.
 - **Sequencing/depends-on**: all.
 - **Risks**:
-  - **SC-004 probe.** It is `git diff --exit-code "$(git merge-base HEAD main)" -- packages/mission-shell/src/client contracts/fixtures/mission-status.{routes,examples,fixtures,changes}.json`. It also checks that `Cargo.toml` `members` and the job and matrix lists of `ci.yml` are unchanged. The reviewer repeats it.
+  - **SC-004 probe (R1-07).**
+    - `git diff --exit-code "$base" -- packages/`;
+    - the four #17 fixture files;
+    - `Cargo.toml` `members`;
+    - the job list and `matrix.gate` list in `ci.yml`.
+
+    Here `base="$(git merge-base HEAD origin/main)"`, after a `git fetch`, which contains #17 (`39a51a6`). It must not be the local `main`: in this checkout local `main` is stale at `9c9d83c`, where the merge-base predates #17 (R6-01). The reviewer repeats the probe.
+  - **Timings (R5-07).** The WP sums kitty-core's `finished in` lines from the CI log of `Gate: rust` and records the total, which must be 60 s or less.
+  - **Determinism (R5-08).** The process-level supervision scenarios are run 10 times locally, with the state sequences and sleeper logs recorded. The reviewer repeats one run.
+  - **Timeouts (R5-11, R6-05).** Both are re-derived from the PR's first CI run:
+    - the contract leg as `max(21, (1 + 9) × T_contract + 2)`;
+    - the rust leg as `(1 + 3) × T_rust + 2`, by A-04.
 
 ## Shared-file ownership
 
-Each shared file has exactly one owning IC. Other ICs request their changes through the owner's WP, or land after it, rebased on it.
-
 | File | Owner | Requested by |
 |---|---|---|
-| root `Cargo.toml` (`[workspace.dependencies]` only; `members` untouched) | IC-01 | none expected beyond IC-01's list |
+| root `Cargo.toml` (`[workspace.dependencies]` only) | IC-01 | — |
 | `Cargo.lock` | IC-01 | — |
-| `crates/kitty-core/Cargo.toml` | IC-01 | IC-08 (`[[bin]] kitty-fake-service`), IC-04 (dev-dep `kitty-stub`) |
-| `crates/kitty-core/src/lib.rs` | IC-04 | IC-05, IC-06, IC-07, IC-08, IC-09 (one `pub mod` or `pub use` line each; the plant anchors stay) |
-| `crates/kitty-core/tests/common/mod.rs` | IC-04 | IC-05 (stall and drop fault modes), IC-06, IC-08 (fake-service scenario writer), IC-09 |
-| `crates/kitty-stub/src/lib.rs`, `crates/kitty-stub/src/main.rs` | IC-03 | — |
-| `scripts/contract/generate.mjs`, `contracts/fixtures/mission-status.openapi.json`, `.gitattributes` | IC-02 | — |
-| `gates/plants/contract/plant.json` | IC-02 | — |
-| `gates/plants/rust/plant.json` | not touched (anchors preserved by IC-04) | — |
-| `.github/workflows/ci.yml` (timeout values only) | IC-10 | IC-02 (contract leg 19→21) |
+| `crates/kitty-core/Cargo.toml` | IC-01 | IC-04 (dev-dep `kitty-stub`), IC-08 (`[[bin]]` with its file) |
+| `crates/kitty-core/src/lib.rs` | IC-04 (pre-declares every module) | IC-09 (re-exports only) |
+| `crates/kitty-core/tests/common/mod.rs` | IC-04 | IC-05 (fault modes), IC-06, IC-08 (scenario writer), IC-09 (panic counter) |
+| `crates/kitty-stub/Cargo.toml`, `crates/kitty-stub/src/{lib,main}.rs` | IC-03 | IC-09 (dev-dep `kitty-core`, `tests/supervised.rs`) |
+| `scripts/contract/generate.mjs`, `contracts/fixtures/mission-status.openapi.json`, `.gitattributes`, `gates/plants/contract/plant.json` | IC-02 | — |
+| `gates/plants/rust/plant.json`, `scripts/hygiene/gitattributes.test.mjs` | not touched | — |
+| `.github/workflows/ci.yml` (timeout values only) | IC-10 | IC-02 |
 | `README.md`, `CHANGELOG.md` | IC-10 | all |
 
 ## Gates
 
-The aggregate `Gate: all` must be green. No gate, job or matrix entry is added or removed (C-002, C-007).
+No gate, job or matrix entry is added or removed.
 
-**Canonical gate strings.** These are byte-identical to `ci.yml` and `gates/plants/*/plant.json`:
+**Canonical gate strings** (byte-identical to `ci.yml` and `plant.json`):
 
 - `rust`: `cargo fmt --all --check && cargo clippy --workspace --all-targets --frozen -- -D warnings && cargo test --workspace --frozen`
 - `contract`: `pnpm contract:check && pnpm test:contract`
 
-**Gates touched.**
-
 | Gate | Change | New plants |
 |---|---|---|
-| `rust` | new tests only: kitty-core's integration tests and the stub's `openapi.rs` and `select.rs`. Exempt from plants (C-007) | 0 |
-| `contract` | `checkJsonFresh` now covers a fourth generated JSON file; `bundle.test.mjs` joins `test:contract` | 1 |
-| `hygiene` | no change. Its existing `cargo-pins` and tracked-file scans judge the new pins and files | 0 |
-| every other gate | no change | 0 |
+| `rust` | New tests only: kitty-core's tests and the stub's `openapi.rs`, `select.rs`, `upstream_flags.rs` and `supervised.rs`. Exempt from plants (C-007). | 0 |
+| `contract` | `checkJsonFresh` now covers a fourth generated JSON file, and `bundle.test.mjs` is added. | 1 |
+| `hygiene` | No change. `gitattributes.test.mjs` is deliberately untouched (IC-02). | 0 |
+| others | No change. | 0 |
 
-**Plants.** There is one new plant. Its `expectFailPattern` is one string that appears only when the check fails:
+**Plants**: 1 new plant, with a single, failure-only token.
 
 | Gate | Plant | Overlay | `expectFailPattern` |
 |---|---|---|---|
-| `contract` | stale bundled document | `contracts/fixtures/mission-status.openapi.json`: `"version": "1.0.0-SNAPSHOT"` → `"version": "1.0.0-PLANTED"` (the WP verifies the find string occurs exactly once) | `stale generated file: contracts/fixtures/mission-status.openapi.json differs` |
+| `contract` | stale bundled document | `contracts/fixtures/mission-status.openapi.json`: `"version": "1.0.0-SNAPSHOT"` → `"version": "1.0.0-PLANTED"` (occurs exactly once; verified at plan time) | `stale generated file: contracts/fixtures/mission-status.openapi.json differs` |
 
-This brings the mission-level total to 1 new plant. The contract leg goes from 8 plants to 9, and rust stays at 3.
+`bundle.test.mjs` never prints this token and never uses it as a test title (R6-09). Only the gate's own staleness check can produce it.
 
-**Proof-leg timeouts** use NFR-002's formula from #17: (1 + plants in the leg) × the measured gate time + 2 minutes. The gate times come from CI run 38794142800, on the #17 landing head.
+**Proof-leg timeouts.** The formula is (1 + plants) × the measured gate time + 2 minutes (decision `01M50HVPJ9CDBB7405T9K0645R`; A-04).
 
-| Leg | Measured gate step | Plants after | Formula | Timeout now → planned |
-|---|---|---|---|---|
-| `contract` | 113 s (1.88 min) | 9 | 10 × 1.88 + 2 = 20.8 | 19 → **21** (allowed: `01M50HVPJ9CDBB7405T9K0645R` resolved A) |
-| `rust` | 34 s (0.57 min) today | 3 | 4 × T + 2 ≤ 5 ⇔ T ≤ 45 s | 5 → 5 if T ≤ 45 s on the PR's first CI run; otherwise 4 × T + 2, rounded up (allowed by the same ruling) |
+| Leg | Measured today (run 38794142800) | Plants | Planned timeout |
+|---|---|---|---|
+| `contract` | gate step 113 s | 8 → 9 | 19 → `max(21, 10 × T + 2)` from the PR's first CI run |
+| `rust` | gate step 34 s (proof leg 35 s) | 3 → 3 | `4 × T + 2` from the PR's first CI run. It stays 5 while T ≤ 45 s, and is about 6 if T is about 60 s |
 
-The rust leg's real cost is smaller than the formula: the plants fail at fmt, at clippy and early in test, and they share the build (the leg measured 35 s against a 34 s gate). The formula is still the rule.
-
-**Rust budget.**
-- The `Gate: rust` job stays within 8 minutes. It measures about 50 s today; about 1.5 min is planned.
-- kitty-core's tests take 60 s or less (NFR-001). The planned running time is under 10 s:
-  - the stub runs in-process;
-  - the fake service starts in milliseconds;
-  - each wait is 1 s or less;
-  - backoff is virtual.
-- The extra compile is 14 small crates. A local cold `cargo check` of the whole set took 6.7 s.
-- Every WP records `cargo test -p kitty-core` wall time. IC-10 records the CI step time, which decides the rust leg value.
+The 8-minute `Gate: rust` job budget and the 5-minute `Gate: contract` job cap are hard limits.
 
 ## Plan decisions
 
-Each one is a recorded Decision Moment (`--flow plan`). The operator resolved all four on 2026-10-15, choosing option A each time. The ruling was relayed by the coordinator. The last column records what option B would have changed.
+All are resolved, and `decision verify` is clean.
 
-| Decision | Question | Ruled (A) | Option B, not chosen |
-|---|---|---|---|
-| `01M50HVKZ0D1C5HBMB1J1P99E1` | Where is the bundle produced and checked? | A: `contract:generate` plus the `Gate: contract` staleness check, +1 plant | B: IC-02 becomes a Rust inliner in kitty-core (a build script embeds the vendored files). The stub binary serves the document only with `--openapi <file>`. No contract plant, no contract timeout change. |
-| `01M50HVNACZ8T6XM1XKJ68TR8J` | Parse the served document as YAML now? | A: `yaml_serde =0.10.7` | B: JSON only, 3 fewer crates. The real service's YAML is contract-mismatch until #22. |
-| `01M50HVPJ9CDBB7405T9K0645R` | Are proof-leg timeouts frozen wiring? | A: no; they are set by formula | B: forces bundle option B, and kitty-core must keep the rust step at 45 s or less. |
-| `01M50HVQZBYA7M58WD1ABFMF8K` | Which hyper client layer? | A: `conn::http1` + `TokioIo`, no pool | B: the `client-legacy` pool, +3 crates (`tracing`, `tracing-core`, `once_cell`). |
+| Decision | Subject | Ruling |
+|---|---|---|
+| `01M50HVKZ0D1C5HBMB1J1P99E1` | bundle source | A: `contract:generate` + `Gate: contract` |
+| `01M50HVNACZ8T6XM1XKJ68TR8J` | YAML parser | A: `yaml_serde =0.10.7`, used only after a JSON parse fails (R3-11) |
+| `01M50HVPJ9CDBB7405T9K0645R` | timeouts frozen? | A: no, they are formula-tuned |
+| `01M50HVQZBYA7M58WD1ABFMF8K` | hyper layer | A: `conn::http1` + `TokioIo`, no pool |
+| `01M50M407F65T4SQA9TNWQYCQT` | restart policy (R2-02) | 0.5, 1, 2, 4 s, then give up at the 5th crash in 5 min. The start timeout is per start. The clock is monotonic `Instant` |
+| `01M50M42PBSJ806A432AP7M13S` | process group (R2-08) | `setpgid(0,0)`, signals to `-pgid`, a forking-fake test |
+| `01M50M453N70QGMXHK8AJX1E1H` | rust budget (R6-02, R1-05) | NFR-001 and SC-006 amended: the formula for the proof leg, and the 8-minute job stays hard |
+| `01M50M47K1PNKP9KHCGGDBQZ0A` | supervised stand-in (R4-01) | upstream options on the stub, a fixtures default, a supervised test through `Core`, documented for #20 and #21 |
 
 ## Supply chain (DIRECTIVE_051)
 
-The full table is research R-07.
+The 14 new lock entries are unchanged by this round. There are no others. Details are in research R-07:
 
-- **New `Cargo.lock` entries (14).** Each was published at least 14 days before 2026-10-15. Publish dates are from the crates.io API.
+| Crate | Version | Published |
+|---|---|---|
+| `yaml_serde` | 0.10.7 | 2026-08-18 |
+| `libyaml-rs` | 0.3.0 | 2026-03-11 |
+| `ryu` | 1.0.23 | 2026-02-08 |
+| `sha2` | 0.10.9 | 2025-04-30 |
+| `digest` | 0.10.7 | 2023-05-19 |
+| `block-buffer` | 0.10.4 | 2023-03-09 |
+| `crypto-common` | 0.1.7 | 2025-11-12 |
+| `generic-array` | 0.14.7 | 2023-03-28 (has a build script) |
+| `typenum` | 1.20.1 | 2026-05-29 |
+| `version_check` | 0.9.5 | 2024-07-25 |
+| `cpufeatures` | 0.2.17 | 2025-01-25 |
+| `cfg-if` | 1.0.4 | 2025-10-15 |
+| `want` | 0.3.1 | 2023-06-14 |
+| `try-lock` | 0.2.5 | 2023-12-07 |
 
-  | Crate | Version | Published |
-  |---|---|---|
-  | `yaml_serde` | 0.10.7 | 2026-08-18 |
-  | `libyaml-rs` | 0.3.0 | 2026-03-11 |
-  | `ryu` | 1.0.23 | 2026-02-08 |
-  | `sha2` | 0.10.9 | 2025-04-30 |
-  | `digest` | 0.10.7 | 2023-05-19 |
-  | `block-buffer` | 0.10.4 | 2023-03-09 |
-  | `crypto-common` | 0.1.7 | 2025-11-12 |
-  | `generic-array` | 0.14.7 | 2023-03-28 |
-  | `typenum` | 1.20.1 | 2026-05-29 |
-  | `version_check` | 0.9.5 | 2024-07-25 |
-  | `cpufeatures` | 0.2.17 | 2025-01-25 |
-  | `cfg-if` | 1.0.4 | 2025-10-15 |
-  | `want` | 0.3.1 | 2023-06-14 |
-  | `try-lock` | 0.2.5 | 2023-12-07 |
+- No new procedural macros.
+- The mutual dev-dependency adds no crate.
+- Dropping `tokio/test-util` adds none.
 
-- **Newly direct but already locked.** `percent-encoding 2.3.2` and `libc 0.2.189`.
-- **Build scripts among the new entries.** Only `generic-array 0.14.7`, which uses `version_check`.
-- **Procedural macros among the new entries.** None.
-- **Workspace pin bumps.** None.
-- **Hyper client features.** The ruling's `client`, `client-legacy`, `http1` and `tokio` set is **not** fully covered by the current lock:
-  - `hyper/client` adds `want` and `try-lock`;
-  - `hyper-util/client` adds `tracing`, `tracing-core` and `once_cell`;
-  - `http1` and `tokio` are already covered.
-  - `01M50HVQZBYA7M58WD1ABFMF8K` was resolved A, so only `hyper/client` is taken.
+## Branches and merge order
+
+- **The coordination branch** `kitty/mission-kitty-core-01M50D10` (worktree `.worktrees/kitty-core-01M50D10-coord`):
+  - It carries `status.events.jsonl`, the status log, including the `DecisionPointOpened` and `DecisionPointResolved` events.
+  - It is never merged into `feat/kitty-core-19`.
+  - WP lanes are based on `feat/kitty-core-19`.
+- **The decision ledger.** `decisions/index.json` and the `DM-*.md` files are written by the CLI to the **primary** checkout (`feat/kitty-core-19`), by design (spec-kitty `decisions/service.py`, `_ledger_dir` → `PRIMARY_METADATA`). The coordination branch still holds a stale copy of the five specify decisions from mission creation, which no tool reads.
+- **Divergence check.** `spec-kitty doctor decisions --mission kitty-core-01M50D10` reports `clean`: 13 decision ids appear in both the event log and the primary index. Nobody hand-edits either side.
+- **Uncommitted events.** The coordination worktree's `status.events.jsonl` has uncommitted event lines appended by the CLI. Committing them is left to the spec-kitty tooling and the orchestrator, not to plan edits (R6-08).
+- **Merge order with #18 (R6-07).** Whichever of #18 and #19 is green first merges first. The other then:
+  - merges `main`;
+  - re-runs its SC-004 probe and its timeout derivation;
+  - resolves `CHANGELOG.md` and `README.md`.
 
 ## PR shape
 
-There is one PR from `feat/kitty-core-19` into `main`, opened by the orchestrator after the WPs. A separate reviewer agent reviews each WP, and the pre-merge R1–R3 squad runs before hand-off. The operator merges. Agents never push, merge or post without the operator.
+There is one PR from `feat/kitty-core-19` into `main`. A separate reviewer reviews each WP, and the pre-merge R1–R3 squad runs before hand-off. The operator merges.
 
 ## Traceability
 
 | Requirement | IC |
 |---|---|
-| FR-001, FR-002, FR-003, FR-004, FR-005, FR-006 | IC-04 |
-| FR-007, FR-008, FR-009, FR-010 | IC-05 |
+| FR-001 to FR-006 | IC-04 |
+| FR-007 to FR-010 | IC-05 |
 | FR-011 | IC-06 |
 | FR-012 | IC-02, IC-06 |
 | FR-013 | IC-06, IC-09 |
-| FR-014 | IC-02, IC-03 |
-| FR-015 | IC-03 |
-| FR-016, FR-017, FR-018, FR-019, FR-020, FR-021 | IC-08 |
+| FR-014, FR-015 | IC-02, IC-03, IC-09 (supervised stand-in) |
+| FR-016 to FR-021 | IC-08 |
 | FR-022 | IC-07, IC-08 |
 | FR-023 | IC-07 |
 | FR-024 | IC-09 |
 | NFR-001 | IC-08, IC-10 |
 | NFR-002 | IC-01 |
 | NFR-003 | IC-05, IC-10 |
-| NFR-004 | IC-04, IC-05, IC-08 |
-| NFR-005, NFR-006 | IC-08 (and every test) |
+| NFR-004 | IC-04, IC-05, IC-06, IC-08 |
+| NFR-005, NFR-006 | IC-08, IC-09, IC-10 |
 | NFR-007 | IC-01, IC-04 |
 | NFR-008 | IC-03, IC-10 |
-| C-001, C-004, C-006, C-009 | scope (all ICs) |
+| C-001, C-004, C-006, C-009 | all ICs |
 | C-002 | IC-01, IC-08, IC-10 |
 | C-003 | IC-05, IC-09 |
 | C-005 | IC-02 |
-| C-007 | IC-02 (the plant) |
+| C-007 | IC-02 |
 | C-008 | IC-03 |
 | SC-001 | IC-04 |
 | SC-002 | IC-06 |
 | SC-003 | IC-08 |
 | SC-004, SC-006 | IC-10 |
 | SC-005 | IC-09 |
+| Amendments A-01 to A-09 | A-01 IC-02, IC-10 · A-02, A-03, A-05, A-06 IC-08 · A-04 IC-10 · A-07 IC-03, IC-09 · A-08 IC-05 · A-09 IC-06 |

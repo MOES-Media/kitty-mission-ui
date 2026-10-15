@@ -27,16 +27,17 @@
 | object | `{` + members sorted by key (UTF-8 byte order), each `"key":value`, separated by `,` + `}` |
 | array | `[` + items in order, separated by `,` + `]` |
 | string | `serde_json` string escaping |
-| number | if finite, integral and with a magnitude below 2^53: a decimal integer with no fraction or exponent; otherwise `serde_json`'s float text |
+| number | converted to `f64` first (JavaScript semantics); `-0` becomes `0`; if integral with magnitude ≤ 2^53, a decimal integer with no fraction or exponent; otherwise one shortest round-trip formatter (`serde_json`'s `f64` text) (R2-10) |
 | `true`, `false`, `null` | as is |
 
 There is no whitespace anywhere.
 
 ## The digest
 
-`digest_of(bytes) = lowercase_hex(SHA-256(canonical(parse_yaml(bytes))))`
+`digest_of(bytes) = lowercase_hex(SHA-256(canonical(parse(bytes))))`
 
-- `parse_yaml` is `yaml_serde` into `serde_json::Value`. JSON is accepted, because JSON is a subset of YAML.
+- `parse` is `serde_json::from_slice` first. Only if that fails is it `yaml_serde` into `serde_json::Value` (R3-11). The pinned bundle is JSON, so it never reaches the YAML parser.
+- A served document over 4 MiB is not parsed: it is contract-mismatch (A-09).
 - A parse failure is an error, never a digest.
 - **Pinned digest.** It is `digest_of(include_str!(bundle))`. There is no stored constant.
 - **Served digest.** It is `digest_of(body of GET /api/v1/openapi.yaml)`, for a 200 answer only.
@@ -44,7 +45,12 @@ There is no whitespace anywhere.
 **Equality cases** (tested):
 - the same document in JSON and in YAML block style;
 - key order permuted;
-- `1.0` and `1`.
+- `1.0` and `1`;
+- `-0` and `0`;
+- `2^53 + 1` and `2^53`;
+- the real bundle and its YAML re-serialisation (R5-12).
+
+**Not a trust boundary** (R2-01). Equal digests mean "the same contract". They do not mean "the binary we launched". Any local process can serve the same document.
 
 **Inequality cases** (tested):
 - one changed scalar;

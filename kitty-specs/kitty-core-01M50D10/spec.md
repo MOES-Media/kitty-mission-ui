@@ -326,3 +326,37 @@ None. The operator ruled on all five questions on 2026-10-15, choosing the recom
 | Q3: restart policy | `01M50D3W9ZS4VHP9K4CWQQW4Q4` | Capped backoff; give up after 5 crashes within 5 minutes and go to `stopped`, degraded service-missing (`crashing`), until the host retries |
 | Q4: service lifetime | `01M50D3XMBS9DD3AEWP1F66RRS` | Each host starts its own child per project, on a port it picks, and stops it on exit |
 | Q5: discovery lookup rules | `01M50D403EEYQYEPSSMAV732DF` | A configured path wins and fails loudly with no fallback; otherwise one environment variable; otherwise a PATH search for a configurable binary name |
+
+## Amendments
+
+### 2026-10-15: plan-phase squad (`reviews/plan.squad.md`)
+
+Each amendment is from an operator ruling, recorded as a Decision Moment, or from an orchestrator decision on a squad finding. Where an amendment and the text above disagree, the amendment wins.
+
+- **A-01 — C-002 and SC-004: what "fixture shapes" covers (R1-02).** The frozen shapes are those of the four files delivered by #17 (`mission-status.{routes,examples,fixtures,changes}.json`). Adding the generated bundle `contracts/fixtures/mission-status.openapi.json` (decision `01M50HVKZ0D1C5HBMB1J1P99E1`) is not a shape change.
+- **A-02 — FR-020: the reachable restart policy (operator, R2-02; decision `01M50M407F65T4SQA9TNWQYCQT`).**
+  - After a crash, the backoff is 0.5 s, 1 s, 2 s, then 4 s.
+  - The 5th crash within 5 minutes gives up: the state is `stopped`, degraded service-missing (`crashing`).
+  - The backoff restarts at 0.5 s after 60 s of uninterrupted `ready`.
+  - The 30 s cap is removed, because the give-up rule makes it unreachable.
+  - The policy reads a monotonic clock (`Instant`) in production.
+- **A-03 — FR-018: start timeout (operator, R2-02; decision `01M50M407F65T4SQA9TNWQYCQT`).** The start timeout (10 s by default) is one budget per start. It covers every busy-port attempt of that start (FR-019).
+- **A-04 — NFR-001 and SC-006: rust budget (operator, R6-02 and R1-05; decision `01M50M453N70QGMXHK8AJX1E1H`).**
+  - The `Gate: rust` job stays within its hard 8-minute budget.
+  - The rust proof leg no longer has a fixed 5-minute limit. Its timeout follows the #17 formula: (1 + plants in the leg) × the measured gate time + 2 minutes, set from the mission PR's first CI run.
+  - kitty-core's own tests stay within 60 s.
+- **A-05 — FR-021: shutdown (R1-03, R3-05, R2-07; operator, R2-08, decision `01M50M42PBSJ806A432AP7M13S`).**
+  - Only `stop()` is graceful: SIGTERM, a 5 s grace period, then SIGKILL. Hosts must `await stop()` before they exit.
+  - Dropping the last host handle is an immediate kill (SIGKILL), with no grace period.
+  - The service is started in its own process group (`setpgid(0, 0)`). Every signal goes to the whole group, so a service that forks leaves nothing behind.
+- **A-06 — FR-017: launch arguments (R3-01).** The service is launched with exactly two arguments:
+  - `--mission-status.project-root=<canonical absolute path>`;
+  - `--mission-status.port=<n>`.
+
+  The project root is canonicalised before launch. A root that cannot be canonicalised is refused as service-missing (`cannot-execute`), with the OS error.
+- **A-07 — FR-014 and FR-015: the stub as a supervised stand-in (operator, R4-01, decision `01M50M47K1PNKP9KHCGGDBQZ0A`; R4-07).**
+  - `kitty-stub` also accepts `--mission-status.port=<n>` and `--mission-status.project-root=<dir>`.
+  - Without `--fixtures`, it reads `<project-root>/fixtures` when that directory exists, and otherwise the workspace's `contracts/fixtures`.
+  - A missing *default* contract document makes the route answer 404 `no-openapi-document`. Only an unreadable *explicit* `--openapi <file>` is exit 1.
+- **A-08 — FR-009: the 404 stream refusal (R1-01).** Neither `examples.json` nor `fixtures.json` holds a `Problem` entry, and C-002 freezes both files. The 404 `Problem` refusal is therefore selected on an in-process stub built from in-memory fixture values that add one `Problem` example. A raw-TCP fake covers the same case a second time.
+- **A-09 — NFR-004: contract document cap (R3-08).** The fetched contract document is capped at 4 MiB. A larger one is contract-mismatch.
