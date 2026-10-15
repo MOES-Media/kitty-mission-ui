@@ -16,6 +16,7 @@ import {
   type Params,
   type Refusal,
   type Result,
+  type SubscriptionScope,
 } from '../src/client/port';
 import { operationCoverage } from '../src/client/coverage';
 import { createFixtureClient } from '../src/client/fixture';
@@ -188,6 +189,17 @@ describe('port types', () => {
     // @ts-expect-error a status at the top level drifts from the contract shape
     const topLevel: Result<'getArtifactContent'> = { ok: false, status: 404, refusal: { status: 404, body } };
     expect([nested.ok, topLevel.ok]).toEqual([false, false]);
+  });
+
+  it('make a cursor without a missionId unrepresentable (CODE-BOUNDARY-002)', () => {
+    const resumed: SubscriptionScope = { missionId: 'm', cursor: '1:a' };
+    const scoped: SubscriptionScope = { missionId: 'm' };
+    const unscoped: SubscriptionScope = {};
+    // @ts-expect-error a cursor needs the Mission whose log it belongs to (the contract refuses it: cursor_without_mission)
+    const orphan: SubscriptionScope = { cursor: '1:a' };
+    // @ts-expect-error an explicit undefined missionId does not make a cursor valid either
+    const undefinedMission: SubscriptionScope = { missionId: undefined, cursor: '1:a' };
+    expect([resumed.cursor, scoped.missionId, unscoped.missionId, orphan.cursor, undefinedMission.cursor]).toEqual(['1:a', 'm', undefined, '1:a', '1:a']);
   });
 
   it('tie the operation table to the interface', () => {

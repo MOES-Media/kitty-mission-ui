@@ -66,6 +66,9 @@ const READ_OPS = [
 /** The change kinds an item of changes.json may carry: every kind but `refused`, which is a response, not an event. */
 const EVENT_KINDS: readonly string[] = ['status-transition', 'mission-lifecycle', 'log-truncated'] satisfies Exclude<Change['kind'], 'refused'>[];
 
+/** The shared example of the stream's 400 `cursor_without_mission` refusal. */
+const CURSOR_WITHOUT_MISSION = 'StreamRefusal.cursor-without-mission';
+
 const defaultScheduler: Scheduler = {
   setTimeout: (fn, ms) => setTimeout(fn, ms),
   clearTimeout: (handle) => clearTimeout(handle as ReturnType<typeof setTimeout>),
@@ -126,6 +129,14 @@ export function createFixtureClient(options: FixtureClientOptions = {}): Mission
   if (streamOutcome?.ok) throw new Error(`fixture client: example ${String(streamKey)} is not a refusal of streamEvents`);
   const streamRefusal = streamOutcome === null ? null : (streamOutcome.refusal as Refusal<'streamEvents'>);
 
+  // A cursor sent without a missionId: the refusal the contract (and the upstream service) answers, from the shared
+  // examples, resolved only when a JavaScript caller makes that request (the type forbids it).
+  const cursorWithoutMission = (): Refusal<'streamEvents'> => {
+    const outcome = resolveOutcome(streamRoute, CURSOR_WITHOUT_MISSION, table);
+    if (outcome.ok) throw new Error(`fixture client: example ${CURSOR_WITHOUT_MISSION} is not a refusal of streamEvents`);
+    return outcome.refusal as Refusal<'streamEvents'>;
+  };
+
   const read = <Op extends ReadOp>(op: Op): Promise<Result<Op>> => {
     const outcome = outcomes.get(op) as Outcome;
     return Promise.resolve(structuredClone(outcome) as Result<Op>);
@@ -145,8 +156,12 @@ export function createFixtureClient(options: FixtureClientOptions = {}): Mission
     getDriftReport: () => read('getDriftReport'),
     listOpsInvocations: () => read('listOpsInvocations'),
     subscribe(listener, scope) {
-      // The fixture replays from the start; resuming from scope.cursor belongs to the real adapters.
-      const scoped = scope?.missionId !== undefined;
+      // The fixture replays from the start; resuming from scope.cursor belongs to the real adapters. A missionId scopes
+      // the stream; the same test decides whether a cursor has a Mission (a JavaScript caller can send one without).
+      const missionId: unknown = scope?.missionId;
+      const cursor: unknown = scope?.cursor;
+      const scoped = typeof missionId === 'string';
+      const orphanCursor = !scoped && typeof cursor === 'string' && cursor !== '';
       let index = 0;
       let handle: unknown = null;
       let active = true;
@@ -169,7 +184,9 @@ export function createFixtureClient(options: FixtureClientOptions = {}): Mission
           listener(toChange(item, scoped));
         }, item.delayMs);
       };
+      // A selected refusal wins, as the stub serves a selected example whatever the query; otherwise the cursor rule.
       if (streamRefusal) refuse(streamRefusal);
+      else if (orphanCursor) refuse(cursorWithoutMission());
       else scheduleNext();
       return () => {
         active = false;

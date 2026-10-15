@@ -65,11 +65,10 @@ export type Change =
 /** The kinds of `Change` as a runtime list; a type test asserts it equals `Change['kind']` exactly. */
 export const CHANGE_KINDS = ['status-transition', 'mission-lifecycle', 'log-truncated', 'refused'] as const;
 
-/** A `cursor` is valid only together with `missionId` (the contract's stream cursor rule). */
-export interface SubscriptionScope {
-  missionId?: string;
-  cursor?: string;
-}
+/** The scope of a subscription. A `cursor` is valid only together with `missionId` (the contract refuses a cursor without
+ *  one as 400 `cursor_without_mission`), so the union makes that request unrepresentable: either a Mission, optionally
+ *  with a cursor to resume after, or neither. */
+export type SubscriptionScope = { missionId: string; cursor?: string } | { missionId?: undefined; cursor?: undefined };
 
 export interface MissionStatusClient {
   getProject(params: Params<'getProject'>): Promise<Result<'getProject'>>;

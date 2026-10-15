@@ -48,7 +48,9 @@ export type Change =
 /** The kinds as a runtime list; a type test asserts it equals `Change['kind']` exactly. */
 export const CHANGE_KINDS = ['status-transition', 'mission-lifecycle', 'log-truncated', 'refused'] as const;
 
-export interface SubscriptionScope { missionId?: string; cursor?: string }
+/** A cursor is valid only with a missionId; the union makes a cursor without one unrepresentable (pre-merge R1,
+ *  CODE-BOUNDARY-002). The contract refuses that request as 400 `cursor_without_mission`. */
+export type SubscriptionScope = { missionId: string; cursor?: string } | { missionId?: undefined; cursor?: undefined };
 // cursor: string on a mission-scoped subscription for status-transition and mission-lifecycle;
 // null on an unscoped subscription, and always null for log-truncated (contract paths/events.yaml).
 
@@ -102,6 +104,11 @@ The fixture adapter refuses when `options.examples.streamEvents` selects one of 
 serves it on `/events` under `X-Kitty-Stub-Example`); a selection that is not a declared refusal of `streamEvents` throws
 when the client is created. The refusal is delivered through the scheduler, never during `subscribe`, and unsubscribing
 first cancels it.
+
+A JavaScript caller can still send a cursor without a missionId, which the type forbids. The fixture adapter then refuses
+the subscription as the upstream service does: one `refused` change with 400 and the shared example
+`StreamRefusal.cursor-without-mission`. A selected refusal example takes precedence, as the stub serves a selected example
+whatever the query.
 
 ## Rules
 

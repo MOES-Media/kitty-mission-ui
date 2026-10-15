@@ -301,6 +301,22 @@ describe('stream refusals', () => {
     expect(() => createFixtureClient({ examples: { streamEvents: 'StreamRefusal.negative' } })).not.toThrow();
   });
 
+  it('a cursor without a missionId is refused with 400 cursor_without_mission, as upstream does (JS callers)', () => {
+    const example = exampleTable['StreamRefusal.cursor-without-mission'];
+    expect((example?.value as { code: string }).code).toBe('cursor_without_mission');
+    const expected = [{ kind: 'refused', cursor: null, refusal: { status: 400, body: example?.value } }];
+    // A JavaScript caller can pass what the type forbids.
+    for (const scope of [{ cursor: '1:a' }, { missionId: undefined, cursor: '1:a' }]) {
+      const { seen, pending } = heardWith({}, scope as unknown as SubscriptionScope);
+      expect(seen, JSON.stringify(scope)).toEqual(expected);
+      expect(pending).toBe(0);
+    }
+    // Positive control: the same cursor with a missionId replays the scoped sequence.
+    const { seen } = heardWith({}, { missionId: changes.missionId, cursor: '1:a' });
+    expect(seen.length).toBe(changes.items.length);
+    expect(seen.filter((change) => change.kind === 'refused')).toEqual([]);
+  });
+
   it('without a selection the stream is not refused', () => {
     const { seen } = heardWith({}, { missionId: changes.missionId });
     expect(seen.length).toBe(changes.items.length);

@@ -37,7 +37,9 @@ pnpm --filter @moes-media/mission-shell test        # Vitest browser mode (Chrom
 - `CLIENT_OPERATIONS` maps each method to its operationId. A mapped type with `satisfies` makes a missing or extra key a
   type error, and `test/port-coverage.test.ts` fails, naming the read, when the table and the contract's routes differ.
 
-**The cursor rule.** On a subscription scoped to a Mission (`scope.missionId`), status transitions and lifecycle events
+**The cursor rule.** `SubscriptionScope` is `{ missionId, cursor? }` or `{}`: a `cursor` without a `missionId` does not
+type-check, because the contract refuses it (400 `cursor_without_mission`), and the fixture adapter refuses it the same
+way when a JavaScript caller sends one. On a subscription scoped to a Mission (`scope.missionId`), status transitions and lifecycle events
 carry a string cursor. On an unscoped subscription every cursor is `null`, and a log-truncated marker always has a `null`
 cursor. A log-truncated marker is its own kind, never a status change.
 
