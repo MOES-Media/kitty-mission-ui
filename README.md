@@ -367,6 +367,11 @@ about 1096 s for the job (973 x 330/293) and about 2367 s for the proof leg (210
 leaves the job estimate at about 65% of the limit (1096 s of 1680 s), and the 60-minute proof leg timeout leaves its
 estimate at about 66% (2367 s of 3600 s). `unit-tests` (150 s, 396 s in the same run) keeps its job timeout of 8 minutes. Its proof leg rises from 10 to 11 minutes for the merged suite: the pull request run 38151797285 took 435 s, which is 72.5% of the old 600 s limit and 66% of the new 660 s (435 / 660).
 
+Proof-leg timeouts of the gates that issue `#17` extended start from the formula (1 + the plants in the leg) x the
+measured gate time + 2 minutes, rounded up, and never drop below their earlier value. The times are a local proxy
+(`gate-proof local`), so they are re-measured on the first CI run of a pull request that changes a leg. The local proxy
+raised only `contract`, from 10 to 12 minutes (7 plants, a 68 s gate run).
+
 ### Installs are frozen
 
 CI installs with `pnpm install --frozen-lockfile`. The credential check is skipped only when pnpm runs with both
