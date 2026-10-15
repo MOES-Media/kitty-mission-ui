@@ -334,7 +334,7 @@ The existing gates reach the new code too: `typecheck` runs `svelte-check` over 
 `no-io` and `data-driven` read `.svelte` files, `manifest` checks the generated element typings, `contract` checks the
 shared JSON files, `unit-tests` runs every workspace package's tests, and `hygiene` checks Cargo pins, the exact
 toolchain pin (the `rust-toolchain.toml` `channel` is an `x.y.z` release, never `stable`) and the action pins,
-permissions and checkout credentials of every workflow. Each extension has its own plant: 19 new plants in all.
+permissions and checkout credentials of every workflow. Each extension has its own plant: 21 new plants in all.
 
 ## Gates
 
@@ -378,9 +378,11 @@ leaves the job estimate at about 65% of the limit (1096 s of 1680 s), and the 60
 estimate at about 66% (2367 s of 3600 s). `unit-tests` (150 s, 396 s in the same run) keeps its job timeout of 8 minutes. Its proof leg rises from 10 to 11 minutes for the merged suite: the pull request run 38151797285 took 435 s, which is 72.5% of the old 600 s limit and 66% of the new 660 s (435 / 660).
 
 Proof-leg timeouts of the gates that issue `#17` extended start from the formula (1 + the plants in the leg) x the
-measured gate time + 2 minutes, rounded up, and never drop below their value before that issue. The times are a local proxy
-(`gate-proof local`), so they are re-measured on the first CI run of a pull request that changes a leg. The local proxy
-raised only `contract`, from 10 to 12 minutes (7 plants, a 68 s gate run).
+measured gate time + 2 minutes, rounded up, and never drop below their value before that issue. Against `main` before
+#17 they change as follows: `stylelint` 6 to 9, `data-driven` 6 to 8, `contract` 6 to 12 (7 plants, a 68 s local gate
+run), `unit-tests` 11 to 25 (8 plants; the formula on the 150 s CI gate time above, (1 + 8) x 2.5 + 2 = 24.5), and the
+new `rust` leg 20. The other times are a local proxy (`gate-proof local`), so every changed leg is re-measured on the
+first CI run of the #17 pull request and its timeout set from that measurement.
 
 ### Installs are frozen
 

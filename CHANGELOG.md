@@ -23,7 +23,7 @@ All user-visible changes to this repository. Per-package notes live in `packages
   - The existing gates reach the new code: `svelte-check` in `typecheck`, Svelte files in `eslint`, `stylelint`,
     `no-io` and `data-driven`, stale typings in `manifest`, and `unit-tests` running every workspace package. `hygiene`
     gains a Cargo exact-pin check and checks the action pins, permissions and checkout credentials of every workflow.
-    18 new planted-defect proofs; the proof-leg timeouts start from local measurements and are
+    21 new planted-defect proofs; the proof-leg timeouts start from local measurements and are
     re-measured on the first CI run.
   - A scheduled `Contract drift` workflow (daily and on demand, not a gate, no secrets) reports upstream contract files
     that differ from `PIN.json`.
