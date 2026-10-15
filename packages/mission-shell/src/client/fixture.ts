@@ -145,6 +145,8 @@ export function createFixtureClient(options: FixtureClientOptions = {}): Mission
   };
 
   let state: ConnectionState = options.initialState ?? 'connected';
+  /** The open, non-refused subscriptions, which the connection drives: they pause, start and resynchronise with it. */
+  const subscriptions = new Set<(next: ConnectionState) => void>();
   const stateListeners = new Set<(state: ConnectionState) => void>();
 
   const client: MissionStatusClient = {
@@ -173,13 +175,26 @@ export function createFixtureClient(options: FixtureClientOptions = {}): Mission
           if (active) listener({ kind: 'refused', cursor: null, refusal: structuredClone(refusal) });
         }, 0);
       };
+      // `pending` and `generation` keep the replay to one timer even when a scheduler runs its callback at once or a
+      // listener changes the connection while it is being called.
+      let pending = false;
+      let generation = 0;
+      const cancel = (): void => {
+        generation += 1;
+        pending = false;
+        if (handle !== null) scheduler.clearTimeout(handle);
+        handle = null;
+      };
       const scheduleNext = (): void => {
         const item = changes.items[index];
-        if (!item) {
+        // Changes flow only while the connection is up; a reconnect schedules the next one again (see `reconnected`).
+        if (!item || !active || pending || state !== 'connected') return;
+        pending = true;
+        const mine = ++generation;
+        const timer = scheduler.setTimeout(() => {
+          if (mine !== generation) return;
+          pending = false;
           handle = null;
-          return;
-        }
-        handle = scheduler.setTimeout(() => {
           if (!active) return;
           index += 1;
           // Deliver first, schedule the next change after: a scheduler that runs its callback at once (a test's, say) would
@@ -190,15 +205,40 @@ export function createFixtureClient(options: FixtureClientOptions = {}): Mission
             if (active) scheduleNext();
           }
         }, item.delayMs);
+        if (mine === generation && pending) handle = timer;
       };
-      // A selected refusal wins, as the stub serves a selected example whatever the query; otherwise the cursor rule.
+      // Set once the replay has started while connected: only a subscription that was live can be resynchronised.
+      let live = false;
+      const start = (): void => {
+        live = true;
+        scheduleNext();
+      };
+      // The connection drives the replay: it pauses while the connection is down (`index` stays the last change delivered),
+      // starts at first contact, and on a return to `connected` delivers one `resync` before the replay continues.
+      const connectionChanged = (next: ConnectionState): void => {
+        if (!active) return;
+        if (next !== 'connected') cancel();
+        else if (!live) start(); // first contact: nothing to resynchronise
+        else {
+          try {
+            listener({ kind: 'resync', cursor: null, reason: 'reconnected' });
+          } finally {
+            if (active) scheduleNext();
+          }
+        }
+      };
+      // A selected refusal wins, as the stub serves a selected example whatever the query; otherwise the cursor rule. A
+      // refusal is delivered whatever the connection state and ends the subscription: it is never resynchronised.
       if (streamRefusal) refuse(streamRefusal);
       else if (orphanCursor) refuse(cursorWithoutMission());
-      else scheduleNext();
+      else {
+        subscriptions.add(connectionChanged);
+        if (state === 'connected') start();
+      }
       return () => {
         active = false;
-        if (handle !== null) scheduler.clearTimeout(handle);
-        handle = null;
+        subscriptions.delete(connectionChanged);
+        cancel();
       };
     },
     connection: {
@@ -219,6 +259,8 @@ export function createFixtureClient(options: FixtureClientOptions = {}): Mission
     if (next === state) return;
     state = next;
     for (const listener of [...stateListeners]) listener(next);
+    // The subscriptions follow the connection after its own listeners have heard it.
+    for (const follow of [...subscriptions]) follow(next);
   });
   return client;
 }

@@ -156,7 +156,7 @@ describe('subscriptions', () => {
     changes.items.forEach((item, index) => {
       const change = seen[index];
       expect(change?.kind).toBe(item.event);
-      expect(change && change.kind !== 'refused' ? change.data : undefined).toEqual(item.data);
+      expect(change && change.kind !== 'refused' && change.kind !== 'resync' ? change.data : undefined).toEqual(item.data);
       const scopedId = (item as { scopedId?: string }).scopedId;
       expect(change?.cursor).toBe(item.event === 'log-truncated' ? null : scopedId);
       checked += 1;
@@ -413,5 +413,129 @@ describe('connection state', () => {
     expect(second.connection.state).toBe('connected');
     expect(heardFirst).toEqual(['degraded: service-missing']);
     expect(heardSecond).toEqual([]);
+  });
+});
+
+describe('resync (SO-DES-002)', () => {
+  const RESYNC: Change = { kind: 'resync', cursor: null, reason: 'reconnected' };
+  const kinds = changes.items.map((item) => item.event);
+  const scope: SubscriptionScope = { missionId: changes.missionId };
+
+  /** A client with one open subscription; `log` records the state changes and the changes in the order they happen. */
+  function open(subscription?: SubscriptionScope, options: Parameters<typeof createFixtureClient>[0] = {}) {
+    const scheduler = fakeScheduler();
+    const client = createFixtureClient({ ...options, scheduler });
+    const log: string[] = [];
+    const seen: Change[] = [];
+    client.connection.onChange((state) => log.push(`state:${state}`));
+    const stop = client.subscribe((change) => {
+      seen.push(change);
+      log.push(change.kind);
+    }, subscription);
+    return { client, scheduler, log, seen, stop };
+  }
+
+  it('is delivered when the connection returns from reconnecting to connected, before any later change', () => {
+    const { client, scheduler, log, seen } = open(scope);
+    scheduler.advance(0);
+    expect(log).toEqual([kinds[0]]);
+    setConnectionState(client, 'reconnecting');
+    scheduler.advance(totalDelay);
+    expect(seen.length).toBe(1); // nothing flows while the connection is down
+    setConnectionState(client, 'connected');
+    expect(seen[1]).toEqual(RESYNC);
+    scheduler.advance(totalDelay);
+    // The state change is heard first, then the resync, then the rest of the sequence in order, none twice.
+    expect(log).toEqual([kinds[0], 'state:reconnecting', 'state:connected', 'resync', ...kinds.slice(1)]);
+    expect(seen.filter((change) => change.kind === 'resync').length).toBe(1);
+  });
+
+  it('is delivered on an unscoped subscription too, and after a degraded state', () => {
+    const unscoped = open();
+    unscoped.scheduler.advance(0);
+    setConnectionState(unscoped.client, 'degraded: service-missing');
+    setConnectionState(unscoped.client, 'connected');
+    expect(unscoped.seen.map((change) => change.kind)).toEqual([kinds[0], 'resync']);
+    expect(unscoped.seen[1]).toEqual(RESYNC);
+  });
+
+  it('is delivered once per reconnect', () => {
+    const { client, scheduler, seen } = open(scope);
+    for (let round = 0; round < 3; round += 1) {
+      setConnectionState(client, 'reconnecting');
+      setConnectionState(client, 'connected');
+    }
+    expect(seen.map((change) => change.kind)).toEqual(['resync', 'resync', 'resync']);
+    scheduler.advance(totalDelay);
+    expect(seen.slice(3).map((change) => change.kind)).toEqual(kinds);
+  });
+
+  it('is also delivered after the replay has finished, to a subscription that is still open', () => {
+    const { client, scheduler, seen } = open(scope);
+    scheduler.advance(totalDelay);
+    expect(seen.length).toBe(changes.items.length);
+    setConnectionState(client, 'reconnecting');
+    setConnectionState(client, 'connected');
+    expect(seen.at(-1)).toEqual(RESYNC);
+  });
+
+  it('is not delivered at first contact, on leaving connected, or to a subscription that has ended', () => {
+    const starting = open(scope, { initialState: 'connecting' });
+    starting.scheduler.advance(totalDelay);
+    expect(starting.seen).toEqual([]); // events wait for the connection
+    setConnectionState(starting.client, 'connected');
+    starting.scheduler.advance(totalDelay);
+    expect(starting.seen.map((change) => change.kind)).toEqual(kinds); // first contact is not a reconnect
+
+    const leaving = open(scope);
+    setConnectionState(leaving.client, 'reconnecting');
+    expect(leaving.seen).toEqual([]);
+
+    const ended = open(scope);
+    ended.stop();
+    setConnectionState(ended.client, 'reconnecting');
+    setConnectionState(ended.client, 'connected');
+    ended.scheduler.advance(totalDelay);
+    expect(ended.seen).toEqual([]);
+    expect(ended.scheduler.pending()).toBe(0);
+  });
+
+  it('is not delivered to a refused subscription, which ends with its one refusal', () => {
+    const { client, scheduler, seen } = open(scope, { examples: { streamEvents: 'StreamRefusal.content-mismatch' } });
+    scheduler.advance(0);
+    setConnectionState(client, 'reconnecting');
+    setConnectionState(client, 'connected');
+    scheduler.advance(totalDelay);
+    expect(seen.map((change) => change.kind)).toEqual(['refused']);
+  });
+
+  it('reaches every open subscription of the client, and no other client', () => {
+    const scheduler = fakeScheduler();
+    const client = createFixtureClient({ scheduler });
+    const other = createFixtureClient({ scheduler });
+    const a: Change[] = [];
+    const b: Change[] = [];
+    const c: Change[] = [];
+    client.subscribe((change) => a.push(change));
+    client.subscribe((change) => b.push(change), scope);
+    other.subscribe((change) => c.push(change));
+    setConnectionState(client, 'reconnecting');
+    setConnectionState(client, 'connected');
+    expect([a, b, c].map((seen) => seen.map((change) => change.kind))).toEqual([['resync'], ['resync'], []]);
+  });
+
+  it('survives a listener that changes the connection while a change is being delivered', () => {
+    const scheduler = fakeScheduler();
+    const client = createFixtureClient({ scheduler });
+    const kindsHeard: string[] = [];
+    client.subscribe((change) => {
+      kindsHeard.push(change.kind);
+      if (kindsHeard.length === 1) {
+        setConnectionState(client, 'reconnecting');
+        setConnectionState(client, 'connected');
+      }
+    });
+    scheduler.advance(totalDelay);
+    expect(kindsHeard).toEqual([kinds[0], 'resync', ...kinds.slice(1)]);
   });
 });

@@ -68,12 +68,14 @@ A discriminated union by `kind`:
 - `{ kind: 'status-transition'; cursor: string | null; data: StatusTransitionEvent }`
 - `{ kind: 'mission-lifecycle'; cursor: string | null; data: MissionLifecycleEvent }`
 - `{ kind: 'log-truncated'; cursor: null; data: LogTruncatedEvent }`
+- `{ kind: 'refused'; cursor: null; refusal: Refusal<'streamEvents'> }`: the stream's refusal channel; ends the subscription
+- `{ kind: 'resync'; cursor: null; reason: 'reconnected' }`: delivered after each reconnect, before any further event; means "refetch everything" (SO-DES-002; `contracts/client-port.md`, "Subscription lifecycle")
 
 `cursor` mirrors the SSE `id:`. It is a string for `status-transition` and `mission-lifecycle` on a mission-scoped subscription, `null` for every kind on an unscoped subscription, and always `null` for `log-truncated` (contract `paths/events.yaml`; R2-05).
 
 ## SubscriptionScope (TypeScript, `mission-shell`)
 
-`{ missionId?: string; cursor?: string }`. A `cursor` is valid only together with `missionId`, matching the contract's `streamCursor`/`Last-Event-ID` rule. The fixture adapter ignores `cursor` and replays from the start; resume belongs to #19.
+`{ missionId?: string; cursor?: string }`. A `cursor` is valid only together with `missionId`, matching the contract's `streamCursor`/`Last-Event-ID` rule. The fixture adapter ignores `cursor` and replays from the start (a replay needs no stored position). `cursor` is the text form of the contract's `streamCursor` parameter (`toStreamCursorString`); resume is the adapters' job (see "Ownership").
 
 ## MissionStatusClient (TypeScript port)
 

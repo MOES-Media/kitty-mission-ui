@@ -63,15 +63,23 @@ export const CONNECTION_STATES = ['connecting', 'connected', 'reconnecting', 'de
  *  `refused` is the refusal channel of the stream: the contract refuses a stream request before any event (400 and 409
  *  StreamRefusal, 404 Problem for an unknown Mission). A refused subscription delivers exactly one `refused` change, in the
  *  `{ status, body }` shape of a read's `Result` refusal, and nothing after it. It is a kind of `Change`, not a second
- *  callback, so one listener sees everything the stream can say and an exhaustive switch over `kind` cannot forget it. */
+ *  callback, so one listener sees everything the stream can say and an exhaustive switch over `kind` cannot forget it.
+ *
+ *  `resync` is the in-band reconnect marker (SO-DES-002): after each reconnect of the transport the adapter delivers
+ *  exactly one `resync` to every open subscription, before any further event. It says "what you hold may be stale, refetch
+ *  everything": events sent while the connection was down are not replayed, so the consumer reads again what it shows. It
+ *  has no cursor (`null`): it is not a position to resume from. `reason` has one value today, `reconnected`; the field
+ *  keeps the kind open to a second cause without a new kind. Unlike `refused`, it does not end the subscription. See
+ *  "Subscription lifecycle" in contracts/client-port.md. */
 export type Change =
   | { kind: 'status-transition'; cursor: string | null; data: StatusChangeEvent }
   | { kind: 'mission-lifecycle'; cursor: string | null; data: LifecycleEvent }
   | { kind: 'log-truncated'; cursor: null; data: TruncationEvent }
-  | { kind: 'refused'; cursor: null; refusal: Refusal<'streamEvents'> };
+  | { kind: 'refused'; cursor: null; refusal: Refusal<'streamEvents'> }
+  | { kind: 'resync'; cursor: null; reason: 'reconnected' };
 
 /** The kinds of `Change` as a runtime list; a type test asserts it equals `Change['kind']` exactly. */
-export const CHANGE_KINDS = ['status-transition', 'mission-lifecycle', 'log-truncated', 'refused'] as const;
+export const CHANGE_KINDS = ['status-transition', 'mission-lifecycle', 'log-truncated', 'refused', 'resync'] as const;
 
 /** The scope of a subscription. A `cursor` is valid only together with `missionId` (the contract refuses a cursor without
  *  one as 400 `cursor_without_mission`), so a cursor without a `missionId` key is a type error: either a Mission,
