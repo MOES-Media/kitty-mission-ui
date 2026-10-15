@@ -280,11 +280,12 @@ curl -sN http://127.0.0.1:<port>/api/v1/events      # the scripted sequence, the
 curl -s http://127.0.0.1:<port>/__stub/last-request
 ```
 
-- Options: `--port <n>` (0 picks a free port), `--heartbeat-ms <ms>` (default 30000) and `--time-scale <f>` (scales the
+- Options: `--fixtures <dir>` (required; the `contracts/fixtures` directory), `--port <n>` (0 picks a free port), `--heartbeat-ms <ms>` (default 30000) and `--time-scale <f>` (scales the
   delays of the scripted sequence; 0 plays it at once). SIGINT or SIGTERM stops it.
 - It binds `127.0.0.1` only; no option changes the address.
 - **Host rule.** Like the real service, every route answers 403 with `{"code": ...}` when the `Host` header is not exactly
-  one `127.0.0.1:<port>` or `localhost:<port>` (`host`), when an `Origin` is present and not that same origin (`origin`),
+  one `127.0.0.1:<port>` or `localhost:<port>` (`host`), when an `Origin` is repeated or present and not the stub's own
+  origin, `http://127.0.0.1:<port>` or `http://localhost:<port>` (`origin`),
   or when any `Forwarded` or `X-Forwarded-*` header is present (`forwarded`).
 - **Selection headers.** A read serves its route's default example. `X-Kitty-Stub-Example: <Schema>.<name>` selects a
   vendored example and `X-Kitty-Stub-Fixture: <name>` a valid fixture (the fixture header wins when both are sent). A
@@ -300,7 +301,7 @@ curl -s http://127.0.0.1:<port>/__stub/last-request
 
 `.github/workflows/contract-drift.yml` runs once a day and on demand (`workflow_dispatch`). It is not a gate and never
 runs on pull requests. It runs `node scripts/contract/drift.mjs` (also `pnpm contract:drift`), which fetches upstream
-spec-kitty `main` with Node built-ins only, and compares each file below the pinned contract paths with its sha256 in
+spec-kitty `main` with Node built-ins and the `git` binary, and compares each file below the pinned contract paths with its sha256 in
 `contracts/spec-kitty/PIN.json`, reporting added, removed and changed files. Exit codes: 0 in sync, 1 drift (the files
 are listed), 2 upstream unreachable (never reported as "no drift"), 3 any other error. Exit 1 to 3 turn the run red, so
 GitHub notifies. It needs no install and no secret and has a read-only token.
@@ -368,7 +369,7 @@ leaves the job estimate at about 65% of the limit (1096 s of 1680 s), and the 60
 estimate at about 66% (2367 s of 3600 s). `unit-tests` (150 s, 396 s in the same run) keeps its job timeout of 8 minutes. Its proof leg rises from 10 to 11 minutes for the merged suite: the pull request run 38151797285 took 435 s, which is 72.5% of the old 600 s limit and 66% of the new 660 s (435 / 660).
 
 Proof-leg timeouts of the gates that issue `#17` extended start from the formula (1 + the plants in the leg) x the
-measured gate time + 2 minutes, rounded up, and never drop below their earlier value. The times are a local proxy
+measured gate time + 2 minutes, rounded up, and never drop below their value before that issue. The times are a local proxy
 (`gate-proof local`), so they are re-measured on the first CI run of a pull request that changes a leg. The local proxy
 raised only `contract`, from 10 to 12 minutes (7 plants, a 68 s gate run).
 
