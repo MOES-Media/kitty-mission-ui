@@ -18,10 +18,10 @@
       "criterion_id": "FR-002",
       "description": "Verify FR-002 is satisfied",
       "proof_type": "automated_test",
-      "evidence": null,
-      "pass_fail": "pending",
-      "verified_by": null,
-      "verified_at": null,
+      "evidence": "packages/mission-shell/test/binding.test.ts 'delivers the declared events': all 4 declared intents from custom-elements.json, toHaveBeenCalledTimes(4), sk-open-mission via real click; plant 'binding: intent sk-search not delivered'",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-15T11:48:11.862904+00:00",
       "notes": "TODO: replace with a real acceptance criterion"
     },
     {
