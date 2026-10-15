@@ -1,0 +1,131 @@
+{
+  "entries": [
+    {
+      "created_at": "2026-10-15T18:27:40.043459Z",
+      "decision_id": "01M50D3SCB6ZG0PDWCEBGVAG7T",
+      "final_answer": null,
+      "input_key": "client_transport",
+      "mission_id": "01M50D10J2DWR9J76F7APJQJDP",
+      "mission_slug": "kitty-core-01M50D10",
+      "opened_by": "cli",
+      "options": [
+        "Route table from the generated routes.json over the already-pinned hyper/hyper-util client, with kitty-core's own SSE frame reader (no typed models, fewest new crates)",
+        "reqwest plus eventsource-stream for SSE, driven by the same routes.json table (more ergonomic, larger new dependency tree)",
+        "A client generated from openapi.yaml (for example progenitor) with typed models, capturing raw bytes before deserialising",
+        "Other"
+      ],
+      "origin_flow": "specify",
+      "other_answer": false,
+      "question": "How should kitty-core speak HTTP and SSE to the service, given that reads are relayed verbatim (status plus raw body) and reconnect belongs to the adapters?",
+      "rationale": null,
+      "resolved_at": null,
+      "resolved_by": null,
+      "slot_key": "specify.client.transport",
+      "status": "open",
+      "step_id": null,
+      "summary_json": null
+    },
+    {
+      "created_at": "2026-10-15T18:27:43.039166Z",
+      "decision_id": "01M50D3W9ZS4VHP9K4CWQQW4Q4",
+      "final_answer": null,
+      "input_key": "supervision_restart_policy",
+      "mission_id": "01M50D10J2DWR9J76F7APJQJDP",
+      "mission_slug": "kitty-core-01M50D10",
+      "opened_by": "cli",
+      "options": [
+        "Restart with capped exponential backoff, and give up after 5 crashes inside 5 minutes: stop and report degraded service-missing (reason: crashing) until the host asks to retry",
+        "Restart forever with capped exponential backoff; the host shows reconnecting throughout",
+        "Never restart automatically: a crash stops the service and reports degraded until the host asks to retry",
+        "Other"
+      ],
+      "origin_flow": "specify",
+      "other_answer": false,
+      "question": "What should the supervisor do when the service crashes repeatedly?",
+      "rationale": null,
+      "resolved_at": null,
+      "resolved_by": null,
+      "slot_key": "specify.supervision.restart-policy",
+      "status": "open",
+      "step_id": null,
+      "summary_json": null
+    },
+    {
+      "created_at": "2026-10-15T18:27:44.395779Z",
+      "decision_id": "01M50D3XMBS9DD3AEWP1F66RRS",
+      "final_answer": null,
+      "input_key": "service_lifetime_ownership",
+      "mission_id": "01M50D10J2DWR9J76F7APJQJDP",
+      "mission_slug": "kitty-core-01M50D10",
+      "opened_by": "cli",
+      "options": [
+        "kitty-core always spawns its own child process per host and project, on a port it picks, and stops it when the host stops; two hosts run two services",
+        "kitty-core spawns, but first attaches to a service another host already started for the same project, through a lock or port file kitty-core writes",
+        "kitty-core never spawns: it attaches to a service the user started, at a configured port, and only watches its health",
+        "Other"
+      ],
+      "origin_flow": "specify",
+      "other_answer": false,
+      "question": "Does kitty-core start the service itself, and who owns its lifetime when Kitty Desktop and Kitty Dashboard both run for the same project?",
+      "rationale": null,
+      "resolved_at": null,
+      "resolved_by": null,
+      "slot_key": "specify.supervision.ownership",
+      "status": "open",
+      "step_id": null,
+      "summary_json": null
+    },
+    {
+      "created_at": "2026-10-15T18:27:46.926758Z",
+      "decision_id": "01M50D403EEYQYEPSSMAV732DF",
+      "final_answer": null,
+      "input_key": "discovery_lookup_rules",
+      "mission_id": "01M50D10J2DWR9J76F7APJQJDP",
+      "mission_slug": "kitty-core-01M50D10",
+      "opened_by": "cli",
+      "options": [
+        "An explicit binary path from host configuration wins and fails loudly if invalid; otherwise one environment variable; otherwise a PATH search for the configured binary name; nothing found means service-missing",
+        "Explicit path only: no environment variable and no PATH search until upstream defines an install location",
+        "Explicit path, environment variable, PATH, then a list of per-OS default install directories",
+        "Other"
+      ],
+      "origin_flow": "specify",
+      "other_answer": false,
+      "question": "Which lookup rules should the discovery trait implement and test while upstream has no install convention?",
+      "rationale": null,
+      "resolved_at": null,
+      "resolved_by": null,
+      "slot_key": "specify.discovery.lookup-rules",
+      "status": "open",
+      "step_id": null,
+      "summary_json": null
+    },
+    {
+      "created_at": "2026-10-15T18:27:54.561022Z",
+      "decision_id": "01M50D47J1Q1P03XASV69C4J5X",
+      "final_answer": null,
+      "input_key": "contract_digest_document",
+      "mission_id": "01M50D10J2DWR9J76F7APJQJDP",
+      "mission_slug": "kitty-core-01M50D10",
+      "opened_by": "cli",
+      "options": [
+        "Canonical digest of the parsed document: the pinned multi-file contract bundled into one document (refs inlined), both sides parsed and canonicalised (sorted keys, JSON form) before SHA-256; the stub serves that bundled document",
+        "Byte digest of the served file against the existing PIN.json entry for mission-status/openapi.yaml (the root index file only)",
+        "Byte digest of the served file against a new pinned served-document digest recorded by contract:update",
+        "Other"
+      ],
+      "origin_flow": "specify",
+      "other_answer": false,
+      "question": "Over which document, and in which form, is the contract digest taken that is compared with the service's GET /api/v1/openapi.yaml?",
+      "rationale": null,
+      "resolved_at": null,
+      "resolved_by": null,
+      "slot_key": "specify.contract.digest-document",
+      "status": "open",
+      "step_id": null,
+      "summary_json": null
+    }
+  ],
+  "mission_id": "01M50D10J2DWR9J76F7APJQJDP",
+  "version": 1
+}
