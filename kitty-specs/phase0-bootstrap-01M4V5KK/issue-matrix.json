@@ -13,7 +13,7 @@
       "wp": null
     },
     "#17": {
-      "evidence_ref": "This mission implements issue #17 (M1 Bootstrap); closed by the mission PR after WP09.",
+      "evidence_ref": "All 9 WPs approved and consolidated into feat/phase0-bootstrap-17; FR-001..FR-012 acceptance verdicts pass; closed by the mission PR.",
       "fr": null,
       "nfr": null,
       "repo": null,
@@ -21,7 +21,7 @@
       "scope": null,
       "source_file": null,
       "title": null,
-      "verdict": "in-mission",
+      "verdict": "fixed",
       "wp": "WP09"
     },
     "#18": {
