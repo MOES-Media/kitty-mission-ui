@@ -346,7 +346,7 @@ packages, never only the changed files.
 |---|---|---|
 | `Gate: preflight` | `pnpm preflight` | the registry credential is present and accepted (CI: `node scripts/preflight.mjs --ci`) |
 | `Gate: typecheck` | `pnpm typecheck` | strict TypeScript over every workspace package; `svelte-check` over `packages/mission-shell`, against the generated element typings |
-| `Gate: eslint` | `pnpm lint` | elements-over-CSS template rules, Lit rules, no warnings allowed |
+| `Gate: eslint` | `pnpm lint` | elements-over-CSS template rules, Lit rules, no warnings allowed. The shell's `.svelte` sources get the typed TypeScript rules, the template and markdown-renderer rules and `noInlineConfig`, as `.ts` sources do |
 | `Gate: stylelint` | `pnpm lint:styles` | layout-only CSS, `--sk-*` tokens, no colour, font or size literals; the operator-approved exceptions E-04 and E-08 to E-16 are scoped to named element files in `stylelint.config.mjs`, token values only (each sunsets on a spec-kitty-design issue) |
 | `Gate: no-io` | `pnpm lint:no-io` and `pnpm test:no-io` | no network, desktop-bridge or browser-storage I/O in `packages/*/src`; the self-test asserts one fixture per rule |
 | `Gate: manifest` | `pnpm manifest:check` | `custom-elements.json` equals a fresh regeneration and declares every property and event |

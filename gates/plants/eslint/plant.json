@@ -85,5 +85,16 @@
         "source": "PlantEslint.svelte.plant"
       }
     ]
+  },
+  {
+    "gate": "eslint",
+    "ciCommand": "pnpm lint",
+    "expectFailPattern": "@typescript-eslint/no-explicit-any",
+    "overlays": [
+      {
+        "target": "packages/mission-shell/src/PlantSvelteAny.svelte",
+        "source": "PlantSvelteAny.svelte.plant"
+      }
+    ]
   }
 ]

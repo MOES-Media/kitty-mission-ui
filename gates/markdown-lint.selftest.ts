@@ -469,3 +469,59 @@ describe('scanTemplate: raw-text end tags and empty comments', () => {
     expect(scan(['<p><!---><a href=', ''])).toContain('name:href');
   });
 });
+
+describe('global ignores of the main configuration', () => {
+  it('ignore the Cargo build output under target/ (CODE-BOUNDARY-006), and nothing beside it', async () => {
+    expect(await eslint.isPathIgnored(`${ROOT}target/debug/build/out.ts`)).toBe(true);
+    expect(await eslint.isPathIgnored(`${ROOT}target/release/bundle.js`)).toBe(true);
+    // Positive controls: a source file and a script beside target/ are still linted.
+    expect(await eslint.isPathIgnored(OUTSIDE)).toBe(false);
+    expect(await eslint.isPathIgnored(`${ROOT}scripts/typings.mjs`)).toBe(false);
+  });
+
+  it('lint the generated element typings of the shell (E-46 withdrawn 2026-10-15)', async () => {
+    expect(await eslint.isPathIgnored(`${ROOT}packages/mission-shell/src/generated/elements.d.ts`)).toBe(false);
+  });
+});
+
+describe('the shell .svelte sources get the rule set of the .ts sources (CODE-TEST-001)', () => {
+  const SVELTE_FILE = `${ROOT}packages/mission-shell/src/Shell.svelte`;
+  const svelte = (script: string): string => `<script lang="ts">\n${script}</script>\n`;
+  const rules = async (code: string): Promise<string[]> => {
+    const [result] = await eslint.lintText(code, { filePath: SVELTE_FILE });
+    return (result?.messages ?? []).map((message) => `${message.ruleId ?? 'fatal'}: ${message.message}`);
+  };
+
+  it('reports an explicit any (the TypeScript rules)', async () => {
+    expect((await rules(svelte('  export const x: any = 1;\n'))).filter((m) => m.startsWith('@typescript-eslint/no-explicit-any: Unexpected any'))).toHaveLength(1);
+  });
+
+  it('reports a floating promise (the typed TypeScript rules)', async () => {
+    const found = await rules(svelte('  const later = async (): Promise<void> => {};\n  later();\n'));
+    expect(found.filter((m) => m.startsWith('@typescript-eslint/no-floating-promises:'))).toHaveLength(1);
+  });
+
+  it('ignores an inline disable directive (noInlineConfig)', async () => {
+    const found = await rules(svelte('  // eslint-disable-next-line @typescript-eslint/no-explicit-any\n  export const x: any = 1;\n'));
+    expect(found.filter((m) => m.startsWith('@typescript-eslint/no-explicit-any: Unexpected any'))).toHaveLength(1);
+  });
+
+  it('knows the browser globals', async () => {
+    expect(await rules(svelte('  export const w = document.title + navigator.language + String(customElements.get("sk-x") === undefined);\n'))).toEqual([]);
+  });
+
+  it('applies the markdown renderer rules R1 and R3', async () => {
+    const r1 = await rules(svelte("  import MarkdownIt from 'markdown-it';\n  export const md = new MarkdownIt();\n"));
+    expect(r1.some((m) => m.includes('markdown-renderer: R1 '))).toBe(true);
+    const r3 = await rules(svelte('  export const f = (e: HTMLElement): void => {\n    e.innerHTML = "x";\n  };\n'));
+    expect(r3.some((m) => m.includes('markdown-renderer: R3 '))).toBe(true);
+  });
+
+  it('keeps prefer-const, and allows the `let { … } = $props()` idiom (svelte/prefer-const)', async () => {
+    expect(await rules(svelte('  let n = 1;\n  export const m = n;\n'))).toEqual(["svelte/prefer-const: 'n' is never reassigned. Use 'const' instead."]);
+  });
+
+  it('reports nothing on a clean component (positive control)', async () => {
+    expect(await rules(svelte("  import type { Snippet } from 'svelte';\n  let { children }: { children?: Snippet } = $props();\n") + '{@render children?.()}\n')).toEqual([]);
+  });
+});

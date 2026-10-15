@@ -157,6 +157,11 @@ describe('no-io gate self-test: the shell, .svelte and .ts (FR-007, C-001)', () 
     });
   }
 
+  it('lints the generated element typings of the shell like every other source (E-46 withdrawn 2026-10-15)', async () => {
+    const messages = await lint("export declare const f: typeof fetch;\nfetch('x');\n", 'packages/mission-shell/src/generated/elements.d.ts');
+    expect(messages.filter((m) => m.includes('no-io: fetch is forbidden')).length).toBe(1);
+  });
+
   it('parses a .svelte file: a syntax error is a fatal parse message, not a rule message (the plant cannot pass on it)', async () => {
     const messages = await lint('<script lang="ts">const = ;</script>\n', SHELL_SVELTE_FILENAME);
     expect(messages.length).toBe(1);

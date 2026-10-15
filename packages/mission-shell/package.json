@@ -5,8 +5,15 @@
   "license": "AGPL-3.0-or-later",
   "type": "module",
   "main": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./testing": "./src/testing.ts"
+  },
   "dependencies": {
     "@moes-media/mission-ui": "workspace:*"
+  },
+  "peerDependencies": {
+    "svelte": "5.57.1"
   },
   "scripts": {
     "typecheck": "svelte-check --tsconfig ./tsconfig.json --fail-on-warnings --output human-verbose",

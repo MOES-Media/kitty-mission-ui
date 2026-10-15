@@ -23,7 +23,8 @@ type Ok<Op extends ReadOp> = operations[Op]['responses'][200]['content']['applic
  *  `status` is a number: a schema shared by several statuses (for example ArtifactRefusal) carries
  *  its own `status` field, which is the authority (R3-02). The `default` Problem response is excluded,
  *  as in `routes.json` (A2, C2). */
-type Refusal<Op extends ReadOp> = {
+type RefusingOp = ReadOp | 'streamEvents';
+type Refusal<Op extends RefusingOp> = {
   [S in Exclude<keyof operations[Op]['responses'], 'default'>]: operations[Op]['responses'][S] extends { content: { 'application/problem+json': infer B } } ? { status: number; body: B } : never
 }[Exclude<keyof operations[Op]['responses'], 'default'>];
 
@@ -41,9 +42,15 @@ export const CONNECTION_STATES = ['connected', 'reconnecting', 'degraded: servic
 export type Change =
   | { kind: 'status-transition'; cursor: string | null; data: Schemas['StatusTransitionEvent'] }
   | { kind: 'mission-lifecycle'; cursor: string | null; data: Schemas['MissionLifecycleEvent'] }
-  | { kind: 'log-truncated'; cursor: null; data: Schemas['LogTruncatedEvent'] };
+  | { kind: 'log-truncated'; cursor: null; data: Schemas['LogTruncatedEvent'] }
+  | { kind: 'refused'; cursor: null; refusal: Refusal<'streamEvents'> };
 
-export interface SubscriptionScope { missionId?: string; cursor?: string }
+/** The kinds as a runtime list; a type test asserts it equals `Change['kind']` exactly. */
+export const CHANGE_KINDS = ['status-transition', 'mission-lifecycle', 'log-truncated', 'refused'] as const;
+
+/** A cursor is valid only with a missionId; the union makes a cursor without one unrepresentable (pre-merge R1,
+ *  CODE-BOUNDARY-002). The contract refuses that request as 400 `cursor_without_mission`. */
+export type SubscriptionScope = { missionId: string; cursor?: string } | { missionId?: undefined; cursor?: undefined };
 // cursor: string on a mission-scoped subscription for status-transition and mission-lifecycle;
 // null on an unscoped subscription, and always null for log-truncated (contract paths/events.yaml).
 
@@ -72,6 +79,36 @@ export const CLIENT_OPERATIONS = {
 ```
 
 The helper types above are the design. The WP adjusts their spelling to whatever openapi-typescript 7.13.0 actually generates (for example, the response key may be a numeric or a string literal), without changing the port's surface.
+
+## The stream's refusal channel (pre-merge R1, CODE-BOUNDARY-001)
+
+`streamEvents` declares three refusals, all answered before any event is sent: 400 `StreamRefusal` (for example
+`cursor_without_mission`), 404 `Problem` (an unknown Mission) and 409 `StreamRefusal` (for example `content_mismatch`).
+`Refusal<'streamEvents'>` derives them from the generated `operations['streamEvents']['responses']`, exactly as for a read;
+nothing is hand-written.
+
+A refused subscription delivers exactly one change `{ kind: 'refused', cursor: null, refusal: { status, body } }` to the
+subscription's listener, and nothing after it. The choice of a `Change` kind over a separate `onRefusal` callback:
+
+- It reuses the port's existing refusal shape: `refusal: { status, body }` is the same object a read's `Result` carries in
+  `{ ok: false, refusal }`, so a consumer handles a refused read and a refused stream with the same code.
+- One listener sees everything the stream can say. An optional callback can be left out silently; a `Change` kind cannot,
+  because a `switch` over `kind` with an exhaustive `never` default fails to type-check when `refused` is not handled
+  (a type test asserts this).
+- `subscribe`'s signature does not change, so the Tauri (#20) and HTTP (#21) adapters, and the shell in #18 and #19,
+  implement or consume the refusal with no port change (SC-004).
+
+`cursor` is always `null` on a refusal: no event was sent, so there is nothing to resume from.
+
+The fixture adapter refuses when `options.examples.streamEvents` selects one of the route's refusal examples (as the stub
+serves it on `/events` under `X-Kitty-Stub-Example`); a selection that is not a declared refusal of `streamEvents` throws
+when the client is created. The refusal is delivered through the scheduler, never during `subscribe`, and unsubscribing
+first cancels it.
+
+A JavaScript caller can still send a cursor without a missionId, which the type forbids. The fixture adapter then refuses
+the subscription as the upstream service does: one `refused` change with 400 and the shared example
+`StreamRefusal.cursor-without-mission`. A selected refusal example takes precedence, as the stub serves a selected example
+whatever the query.
 
 ## Rules
 

@@ -1,0 +1,4 @@
+<script lang="ts">
+  // Plant (CODE-TEST-001): an explicit any in a .svelte source must fail the TypeScript rules.
+  export const plantSvelteTs: any = 1;
+</script>

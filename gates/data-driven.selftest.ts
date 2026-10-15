@@ -63,7 +63,6 @@ interface ConfigModule {
   OPS_KEYED_ENTRIES: SelectorEntry[];
   OPS_UNKEYED_ENTRIES: SelectorEntry[];
   OPS_KEYED_RULE: string;
-  GENERATED_IGNORES: string[];
   SOURCE_FILES: string[];
 }
 
@@ -209,16 +208,16 @@ describe('data-driven gate self-test: configuration', () => {
   it('turns inline configuration off', async () => {
     const cfg = await loadConfig();
     // all three blocks: the gate, the Ops bare-word block (BOUNDARY-001) and the Ops keyed-lookup block; each is unsilenceable on its own
-    // plus the Svelte parser block (B3), which sets no rule of its own, and the global-ignores block of exception E-46
+    // plus the Svelte parser block (B3), which sets no rule of its own. No global-ignores block: exception E-46 is withdrawn.
     const scoped = cfg.default.filter((c) => c.linterOptions?.noInlineConfig === true);
     expect(scoped.length).toBe(4);
-    expect(cfg.default.length).toBe(5);
-    const [gate, ops, keyed, svelteBlock, ignoresOnly] = cfg.default;
+    expect(cfg.default.length).toBe(4);
+    const [gate, ops, keyed, svelteBlock] = cfg.default;
     for (const block of [gate, ops, keyed]) expect(block?.files).toEqual(['**/*.ts', '**/*.svelte']);
     expect(svelteBlock?.files).toEqual(['**/*.svelte']);
     expect(svelteBlock?.rules).toBeUndefined();
-    expect(ignoresOnly).toEqual({ ignores: ['packages/mission-shell/src/generated/elements.d.ts'] });
-    expect(cfg.GENERATED_IGNORES).toEqual(['packages/mission-shell/src/generated/elements.d.ts']);
+    expect(cfg.default.filter((c) => c.ignores !== undefined && c.files === undefined)).toEqual([]);
+    expect('GENERATED_IGNORES' in cfg).toBe(false);
   });
 });
 
@@ -1126,7 +1125,6 @@ describe('data-driven gate self-test: the real sources', () => {
     const scanned = sources.filter(
       (f) =>
         (f.endsWith('.ts') || f.endsWith('.svelte')) &&
-        !f.endsWith('/mission-shell/src/generated/elements.d.ts') &&
         !f.includes('/src/defaults/') &&
         !f.includes('/src/contract/') &&
         !f.includes('/src/story-support/') &&
@@ -1200,9 +1198,9 @@ describe('data-driven gate self-test: Svelte components (B3)', () => {
     expect(selectorIds(await lint(`<script lang="ts">${code}</script>\n`, SVELTE_FILE))).toEqual(['S1']);
   });
 
-  it('exempts the generated element typings by exact path only (E-46), and scans a sibling .d.ts (positive control)', async () => {
+  it('scans the generated element typings like every other source (E-46 withdrawn 2026-10-15)', async () => {
     const eslint = new ESLint({ cwd: ROOT, overrideConfigFile: CONFIG_PATH });
-    expect(await eslint.isPathIgnored('packages/mission-shell/src/generated/elements.d.ts')).toBe(true);
+    expect(await eslint.isPathIgnored('packages/mission-shell/src/generated/elements.d.ts')).toBe(false);
     expect(await eslint.isPathIgnored('packages/mission-shell/src/generated/other.d.ts')).toBe(false);
     expect(await eslint.isPathIgnored('packages/mission-shell/src/Shell.svelte')).toBe(false);
   });
