@@ -46,10 +46,11 @@ gate-proof legs always go through it.
 base="$(git merge-base HEAD main)"
 git merge-base --is-ancestor 39a51a6 "$base"         # the base contains #17 (PR #32's squash commit)
 git diff --exit-code "$base" -- \
-  packages/mission-shell/src/client/port.ts packages/mission-shell/src/contract/stream.ts \
+  packages/mission-shell/src/index.ts packages/mission-shell/src/testing.ts packages/mission-shell/src/client \
+  packages/mission-shell/src/contract/stream.ts packages/mission-shell/src/harness packages/mission-shell/src/Shell.svelte \
   pnpm-workspace.yaml contracts/fixtures packages/mission-ui \
   scripts/gate-proof.mjs scripts/gate-proof scripts/visual.sh \
-  apps/storybook/playwright.config.ts apps/storybook/tests/visual/stories.visual.spec.ts \
+  apps/storybook/playwright.config.ts apps/storybook/tests/visual ':(exclude)apps/storybook/tests/visual/__snapshots__' \
   eslint.no-io.config.mjs eslint-rules/svelte.mjs gates/no-io.selftest.ts \
   scripts/check-hygiene.mjs scripts/hygiene
 git diff --exit-code --diff-filter=MDR "$base" -- apps/storybook/tests/visual/__snapshots__/   # only shell-*.png added

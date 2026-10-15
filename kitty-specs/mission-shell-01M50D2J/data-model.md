@@ -49,7 +49,7 @@ A discriminated union by `screen`:
 | `drift:{M or *}` | `getDriftReport` | Drift `report`, `rescanning` |
 | `ops` | `listOpsInvocations` pages 1..n (a page chain) | Ops `items`, `pageInfo`, `loadingMore`, `loadMoreError` |
 
-| Destination | Stream-refreshed | Explicit-refreshed (the destination's own data, FR-016) |
+| Destination | Re-read by `status-transition` and `mission-lifecycle` (per the policy)¹ | Explicit-refreshed (the destination's own data, FR-016)¹ |
 |---|---|---|
 | Missions | `project`, `missions` | none |
 | Drift (scope S) | `project` | `drift:{S}`, `mission-names` |
@@ -60,6 +60,10 @@ A discriminated union by `screen`:
 | Artifacts M, P | `mission:{M}` | `artifacts:{M}`, `artifact:{M}:{P}` |
 | Artifacts M, none | `mission:{M}` | `artifacts:{M}` |
 | Projects | none (host data) | none |
+
+¹ FS-12. The column names only the two status changes. `log-truncated` (M) re-reads every displayed key of M, including
+explicit-refreshed ones such as `drift:M`, `artifacts:M` and `artifact:M:P`. `resync` re-reads every displayed key of
+both columns.
 
 - A key is "of Mission M" exactly when its read parameters carry `missionId = M`.
 - **Navigation**:
@@ -107,11 +111,16 @@ Stream changes (the first three rows) coalesce. `resync` and every other trigger
 | bypass trigger (navigation, `resync`, Refresh, refocus, retry, Rescan) | issue at once with a new generation, clear `trailing`, re-arm the window |
 | slot removed | the timer is cleared and the slot discarded; later results find no slot |
 
-### Connection gate
+### Connection gate (FS-01, FS-02; spec FR-011, US4-1, US4-2)
 
-- While `connecting`, nothing is issued.
-- The first transition out of `connecting`, to any state, issues the current displayed set as bypass reads.
-- The first `connected` ever triggers no read of its own when it is not that transition.
+- Nothing is issued until the first `connected` ever, so `connecting`, and any `degraded` or `reconnecting` state
+  before that, issue nothing.
+- A degraded state before the first `connected` sets the no-value slots of the displayed set to `error`, without
+  reads.
+- The first `connected`, whatever came before it, issues the current displayed set itself, as bypass reads. It is not
+  a `resync`: there is no `resync` at first contact.
+- Later `connected` transitions are reconnects, re-read by the adapter's `resync` (or a shell-side resync while
+  refused).
 
 ### Page chain (`missions`, `ops`)
 
@@ -123,7 +132,8 @@ Stream changes (the first three rows) coalesce. `resync` and every other trigger
   - it appends one page with `loadingMore` set;
   - a stream request during it becomes `trailing` and re-reads n + 1 pages;
   - a bypass during it supersedes it;
-  - a load-more during a chain is queued, and issued with the new last cursor.
+  - a load-more during a chain is queued, and issued with the new last cursor;
+  - **a cursor retry is a load-more** (FS-08): an Ops `sk-retry-load` with a `cursor` appends; it is not a bypass.
 
 ## Applying a result
 
@@ -135,8 +145,8 @@ Stream changes (the first three rows) coalesce. `resync` and every other trigger
 
 - **Stale-while-revalidate**: a slot with a value keeps its view while a re-read runs. `loading` appears only without a
   value.
-- **Entering a degraded state** sets every slot without a value to `error` at once. Gated reads are kept and issued
-  (research R-06).
+- **While degraded**, every displayed slot without a value shows `error`, even with a read in flight (FS-05). Before
+  the first `connected`, there are no reads at all (see "Connection gate").
 - "Empty" follows each screen's definition: Missions has no items on page 1, Ops has no items, and Drift has no
   findings. The others have no `empty`.
 - A refused load-more cursor (400, `PageCursorRefusal.invalid`) drops the loaded pages and re-reads page 1.
@@ -153,7 +163,12 @@ Stream changes (the first three rows) coalesce. `resync` and every other trigger
 | `degraded: contract-mismatch` | danger banner, assertive, in the same render | normal | keep data; no data means `error` |
 | subscription refused | neutral notice "live updates are off", until remount | normal | unchanged; each non-first `connected` is a shell-side resync |
 
-Copy and tones are in `contracts/connection-presentation.md`. Every banner is an `sk-notice` (C-005).
+**One home for each part** (FS-06):
+- **core** (`src/core/connection.ts`) owns the state → condition mapping, including the refused flag and the 1 s grace
+  timer, and the copy;
+- **the view** (`src/ui/ConnectionBanner.svelte`) owns the tone and announce table, one line per condition.
+
+Values are in `contracts/connection-presentation.md`. Every banner is an `sk-notice` (C-005).
 
 ## SessionState
 
