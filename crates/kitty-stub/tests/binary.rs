@@ -1,5 +1,6 @@
 //! R2-08, F-31, R3-07: the real binary binds loopback only, announces the bound address from the listener, serves a
-//! read, refuses connections on a non-loopback local address, and exits cleanly on SIGTERM. std only.
+//! read, refuses connections on a non-loopback local address, and exits cleanly on SIGTERM. std only, plus serde_json
+//! to read the `changes.json` oracle.
 
 use std::io::{BufRead, BufReader, Read, Write};
 use std::net::{IpAddr, SocketAddr, TcpStream, UdpSocket};
@@ -233,4 +234,92 @@ fn rejects_an_unusable_time_scale_with_the_usage_exit() {
     let (_stub, addr) = start_with(&["--time-scale", "0.001"]);
     let ok = http_get(addr, "/api/v1/project", &addr.to_string());
     assert!(ok.starts_with("HTTP/1.1 200 "), "{ok}");
+}
+
+/// Reads `GET /api/v1/events<query>` from a running stub until the first heartbeat and returns the event bytes before
+/// it (the heartbeat excluded). HTTP/1.0 keeps the body unchunked, so chunk boundaries (timing) cannot leak in.
+fn capture_events(addr: SocketAddr, query: &str) -> Vec<u8> {
+    let mut stream = TcpStream::connect_timeout(&addr, Duration::from_secs(5)).unwrap();
+    stream
+        .set_read_timeout(Some(Duration::from_secs(10)))
+        .unwrap();
+    write!(
+        stream,
+        "GET /api/v1/events{query} HTTP/1.0\r\nHost: {addr}\r\n\r\n"
+    )
+    .unwrap();
+    let mut bytes = Vec::new();
+    let mut buf = [0u8; 4096];
+    let heartbeat = b": heartbeat\n\n";
+    let end = loop {
+        let n = stream
+            .read(&mut buf)
+            .expect("the stream reaches a heartbeat");
+        assert!(n > 0, "the stream closed before a heartbeat");
+        bytes.extend_from_slice(&buf[..n]);
+        if let Some(at) = bytes.windows(heartbeat.len()).position(|w| w == heartbeat) {
+            break at;
+        }
+    };
+    let text = String::from_utf8(bytes[..end].to_vec()).expect("UTF-8");
+    let (head, body) = text.split_once("\r\n\r\n").expect("response head");
+    assert!(
+        head.starts_with("HTTP/1.0 200 ") || head.starts_with("HTTP/1.1 200 "),
+        "{head}"
+    );
+    assert!(
+        head.to_ascii_lowercase()
+            .contains("content-type: text/event-stream"),
+        "{head}"
+    );
+    body.as_bytes().to_vec()
+}
+
+/// The number of items in `changes.json`, read independently of the stub.
+fn script_len() -> usize {
+    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../../contracts/fixtures/mission-status.changes.json");
+    let changes: serde_json::Value =
+        serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap();
+    changes["items"]
+        .as_array()
+        .expect("changes.json items")
+        .len()
+}
+
+/// CODE-TEST-003, NFR-004: three separate `kitty-stub` processes, playing the script with real (scaled) delays, write
+/// byte-identical event streams, heartbeats excluded, both mission-scoped and unscoped. Unlike the in-process test,
+/// each run builds its own router, fixtures and serialiser state in a fresh process, so nondeterminism that varies by
+/// process (hash seeds, timing) shows up as a difference.
+#[test]
+fn separate_processes_stream_identical_bytes() {
+    let stubs: Vec<_> = (0..3)
+        .map(|_| start_with(&["--time-scale", "0.02"]))
+        .collect();
+    for query in ["?missionId=01JZAB3C4D5E6F7G8H9JKMNPQR", ""] {
+        let captures: Vec<Vec<u8>> = stubs
+            .iter()
+            .map(|(_, addr)| capture_events(*addr, query))
+            .collect();
+        let first = &captures[0];
+        let text = std::str::from_utf8(first).unwrap();
+        // Positive control: the capture holds the whole script, not an empty or truncated prefix.
+        assert_eq!(
+            text.matches("event: ").count(),
+            script_len(),
+            "{query}: {text}"
+        );
+        assert_eq!(
+            text.contains("\nid: "),
+            !query.is_empty(),
+            "{query}: id lines only when scoped"
+        );
+        for (i, other) in captures.iter().enumerate().skip(1) {
+            assert_eq!(
+                std::str::from_utf8(other).unwrap(),
+                text,
+                "{query}: process {i} differs from process 0"
+            );
+        }
+    }
 }

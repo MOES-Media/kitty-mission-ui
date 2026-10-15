@@ -73,7 +73,7 @@ data: <JSON of data, one line>
 
 After the last item, the stream stays open and sends `: heartbeat` every `--heartbeat-ms` until the client disconnects.
 
-The test runs with `--time-scale 0 --heartbeat-ms 50` and captures up to the first heartbeat. It parses the captured stream and asserts that the event names, the `id:` lines and the `data` equal the items of `changes.json` in order, once for a mission-scoped request and once for an unscoped one (no `id:` lines) (R3-04). Determinism (NFR-004) is checked on top: the captured bytes are identical across 10 runs.
+The test runs with `--time-scale 0 --heartbeat-ms 50` and captures up to the first heartbeat. It parses the captured stream and asserts that the event names, the `id:` lines and the `data` equal the items of `changes.json` in order, once for a mission-scoped request and once for an unscoped one (no `id:` lines) (R3-04). Determinism (NFR-004) is checked on top: the captured bytes are identical across 10 runs in one process, and, at the binary level, across three separate `kitty-stub` processes run with `--time-scale 0.02` (real, scaled delays), compared byte for byte up to the first heartbeat, scoped and unscoped (CODE-TEST-003). The cross-process test reads HTTP/1.0 so chunk boundaries cannot differ with timing.
 
 ## Test support
 
