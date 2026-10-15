@@ -325,8 +325,9 @@ cargo fmt --all --check && cargo clippy --workspace --all-targets --frozen -- -D
 ```
 
 There is no Cargo build cache in CI. Its three plants under `gates/plants/rust/` are an unformatted line
-(`plant_fmt_rust`), a clippy `bool_comparison` (`plant_clippy_rust`) and a failing test (`plant_test_rust`), each an
-anchored edit of, or a test file in, `crates/kitty-core`, so none can be skipped by the compiler.
+(`plant_fmt_rust`), a clippy `bool_comparison` (`plant_clippy_rust`) and a failing test (token
+`test plant_test_rust ... FAILED`, a line cargo prints only when that test fails), each an anchored edit of, or a test
+file in, `crates/kitty-core`, so none can be skipped by the compiler.
 
 The existing gates reach the new code too: `typecheck` runs `svelte-check` over the shell, `eslint`, `stylelint`,
 `no-io` and `data-driven` read `.svelte` files, `manifest` checks the generated element typings, `contract` checks the
