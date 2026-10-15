@@ -127,7 +127,7 @@ async fn run(args: Args, fixtures: Fixtures) -> Result<(), String> {
     // An open SSE stream never ends on its own, so a signal stops the server outright rather than draining:
     // returning drops the listener, and the runtime's shutdown closes every connection.
     tokio::select! {
-        () = server => Ok(()),
+        served = server => served,
         () = shutdown.wait() => Ok(()),
     }
 }
