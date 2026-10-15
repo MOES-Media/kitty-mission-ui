@@ -1,0 +1,3 @@
+import { createFixtureClient } from './client/fixture';
+
+export const plantShellBoundary = createFixtureClient;

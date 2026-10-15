@@ -60,7 +60,7 @@
 import { readFileSync } from 'node:fs';
 import { parse } from 'yaml';
 import tseslint from 'typescript-eslint';
-import svelteParser from 'svelte-eslint-parser';
+import { SVELTE_GLOB, svelteLanguageOptions } from './eslint-rules/svelte.mjs';
 import { builtinRules } from 'eslint/use-at-your-own-risk';
 
 // The vocabulary is read from the vendored contract schemas (pinned and hash-checked by `contract:check`), so a contract
@@ -266,7 +266,7 @@ export const OPS_KEYED_RULE = 'data-driven-ops-keyed/no-restricted-syntax';
 const opsPlugin = { rules: { 'no-restricted-syntax': builtinRules.get('no-restricted-syntax') } };
 
 /** The scanned sources: TypeScript and, since the shell (B3), Svelte components. */
-export const SOURCE_FILES = ['**/*.ts', '**/*.svelte'];
+export const SOURCE_FILES = ['**/*.ts', SVELTE_GLOB];
 
 export default [
   {
@@ -295,8 +295,8 @@ export default [
   {
     // Svelte components (B3): the same three rule blocks above apply unchanged; only the parser differs. svelte-eslint-parser
     // hands `<script lang="ts">` to the TypeScript parser.
-    files: ['**/*.svelte'],
-    languageOptions: { parser: svelteParser, parserOptions: { parser: tseslint.parser } },
+    files: [SVELTE_GLOB],
+    languageOptions: svelteLanguageOptions({ typed: false }),
     linterOptions: { noInlineConfig: true },
   },
 ];

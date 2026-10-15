@@ -25,3 +25,10 @@ kitty-specs/**/canary-evidence/** linguist-generated=true
 
 # Vendored Mission Status contract: bytes must never be rewritten (hash-checked by gate contract).
 contracts/spec-kitty/** text eol=lf linguist-vendored
+
+# Mission Status fixtures read by the shell's fixture adapter and by kitty-stub: LF everywhere. Brace globs are not
+# supported here, so one line per file. The first three are generated; the changes script is written by hand.
+contracts/fixtures/mission-status.examples.json text eol=lf linguist-generated=true
+contracts/fixtures/mission-status.fixtures.json text eol=lf linguist-generated=true
+contracts/fixtures/mission-status.routes.json text eol=lf linguist-generated=true
+contracts/fixtures/mission-status.changes.json text eol=lf
