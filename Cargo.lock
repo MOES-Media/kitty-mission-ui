@@ -230,6 +230,8 @@ version = "0.0.0"
 dependencies = [
  "axum",
  "http-body-util",
+ "hyper",
+ "hyper-util",
  "serde",
  "serde_json",
  "tokio",

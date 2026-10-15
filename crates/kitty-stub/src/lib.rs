@@ -26,6 +26,8 @@ use axum::response::{IntoResponse, Response};
 use axum::routing::{get, MethodRouter};
 use axum::Router;
 use http_body_util::channel::Channel;
+use hyper_util::rt::{TokioIo, TokioTimer};
+use hyper_util::service::TowerToHyperService;
 use serde::Deserialize;
 use serde_json::{json, Value};
 
@@ -38,6 +40,14 @@ const EXAMPLE_HEADER: &str = "x-kitty-stub-example";
 const JSON: &str = "application/json";
 const PROBLEM_JSON: &str = "application/problem+json";
 const HEARTBEAT: &[u8] = b": heartbeat\n\n";
+/// Headers whose values `/__stub/last-request` never echoes (CODE-SEC-002): the name is kept, the value is replaced.
+const REDACTED_HEADERS: [&str; 4] = [
+    "authorization",
+    "proxy-authorization",
+    "cookie",
+    "set-cookie",
+];
+const REDACTED: &str = "[redacted]";
 
 /// One `routes.json` entry (data-model RouteEntry).
 #[derive(Debug, Clone, Deserialize)]
@@ -160,6 +170,25 @@ impl Fixtures {
     }
 }
 
+impl Fixtures {
+    /// CODE-SEC-003: a time scale is usable when it is finite, not negative, and every scaled scripted delay still fits
+    /// in a `Duration` (checked on the largest delay), so a stream task can never panic on it.
+    pub fn check_time_scale(&self, time_scale: f64) -> Result<(), String> {
+        if !(time_scale.is_finite() && time_scale >= 0.0) {
+            return Err("--time-scale must be a finite number >= 0".into());
+        }
+        let largest = self.frames.iter().map(|f| f.delay_ms).max().unwrap_or(0);
+        scaled_delay(largest, time_scale).map(|_| ()).ok_or_else(|| {
+            format!("--time-scale {time_scale} scales the {largest} ms delay beyond the longest duration")
+        })
+    }
+}
+
+/// `delay_ms × time_scale` as a `Duration`, or `None` when it is not representable.
+fn scaled_delay(delay_ms: u64, time_scale: f64) -> Option<Duration> {
+    Duration::try_from_secs_f64(delay_ms as f64 * time_scale / 1000.0).ok()
+}
+
 impl Frame {
     fn render(item: &ChangeItem) -> Result<Frame, String> {
         let data = serde_json::to_string(&item.data).map_err(|e| format!("changes: {e}"))?;
@@ -214,13 +243,42 @@ pub fn app(fixtures: Fixtures, options: Options) -> Router {
         router = router.route(&path, route_handler(index));
     }
     router
-        .route(
-            LAST_REQUEST_PATH,
-            get(last_request).head(method_not_allowed),
-        )
+        .route(LAST_REQUEST_PATH, get_only(get(last_request)))
         .layer(middleware::from_fn_with_state(stub.clone(), record))
         .layer(middleware::from_fn_with_state(stub.clone(), guard))
         .with_state(stub)
+}
+
+/// Serves `router` on `listener`, one HTTP/1.1 connection per task, until the future is dropped.
+///
+/// `axum::serve` gives hyper no timer, so hyper's header-read timeout never fires and a client that sends half a
+/// request header holds its connection forever (CODE-SEC-001). This loop serves through hyper directly with a Tokio
+/// timer, so a connection whose request header is not complete within `header_read_timeout` is closed. The timeout
+/// covers the request header only: an open event stream is not affected.
+pub async fn run_server(
+    listener: tokio::net::TcpListener,
+    router: Router,
+    header_read_timeout: Duration,
+) {
+    loop {
+        let stream = match listener.accept().await {
+            Ok((stream, _peer)) => stream,
+            // Accept errors such as EMFILE are transient: back off briefly instead of spinning or stopping.
+            Err(_) => {
+                tokio::time::sleep(Duration::from_millis(50)).await;
+                continue;
+            }
+        };
+        let service = TowerToHyperService::new(router.clone());
+        tokio::spawn(async move {
+            // A connection error (a reset, a malformed request, the header timeout) only ends that connection.
+            let _ = hyper::server::conn::http1::Builder::new()
+                .timer(TokioTimer::new())
+                .header_read_timeout(header_read_timeout)
+                .serve_connection(TokioIo::new(stream), service)
+                .await;
+        });
+    }
 }
 
 /// `/api/v1` plus the contract's template. Axum 0.8 uses the same `{param}` syntax, so each segment is checked to
@@ -240,14 +298,19 @@ fn axum_path(template: &str) -> Result<String, String> {
     }
 }
 
-/// GET only: axum answers other methods with 405, and HEAD (which axum would route to GET) is refused here too.
+/// GET only: every other method, HEAD included (axum would route it to GET), is a 405 that advertises `GET` alone.
 fn route_handler(index: usize) -> MethodRouter<Arc<Stub>> {
-    get(
+    get_only(get(
         move |State(stub): State<Arc<Stub>>, req: Request| async move {
             serve(&stub, index, req.headers(), req.uri().query())
         },
-    )
-    .head(method_not_allowed)
+    ))
+}
+
+/// Refuses HEAD and every unrouted method with [`method_not_allowed`]. Axum's own 405 would advertise `GET,HEAD`, but
+/// HEAD is refused (CODE-CONTRACT-003).
+fn get_only(router: MethodRouter<Arc<Stub>>) -> MethodRouter<Arc<Stub>> {
+    router.head(method_not_allowed).fallback(method_not_allowed)
 }
 
 async fn method_not_allowed() -> Response {
@@ -324,7 +387,8 @@ fn stream(stub: &Stub, scoped: bool) -> Response {
         .frames
         .iter()
         .map(|f| {
-            let delay = Duration::from_secs_f64(f.delay_ms as f64 * stub.time_scale / 1000.0);
+            // `Fixtures::check_time_scale` rejects a scale that overflows; an unchecked caller waits "forever".
+            let delay = scaled_delay(f.delay_ms, stub.time_scale).unwrap_or(Duration::MAX);
             (
                 delay,
                 if scoped {
@@ -390,12 +454,17 @@ async fn guard(State(stub): State<Arc<Stub>>, req: Request, next: Next) -> Respo
 }
 
 /// F-28: remembers `{ method, path, headers }` of the most recent `/api/v1` request that passed the guard. Header
-/// names are lower-case (the `http` crate normalises them); repeated headers are joined with `, `.
+/// names are lower-case (the `http` crate normalises them); repeated headers are joined with `, `. Credential headers
+/// ([`REDACTED_HEADERS`]) keep their name, but their value is reported as `[redacted]`.
 async fn record(State(stub): State<Arc<Stub>>, req: Request, next: Next) -> Response {
     let path = req.uri().path();
     if path == API_PREFIX || path.starts_with(&format!("{API_PREFIX}/")) {
         let mut headers = serde_json::Map::new();
         for name in req.headers().keys() {
+            if REDACTED_HEADERS.contains(&name.as_str()) {
+                headers.insert(name.as_str().to_owned(), Value::from(REDACTED));
+                continue;
+            }
             let values: Vec<String> = req
                 .headers()
                 .get_all(name)

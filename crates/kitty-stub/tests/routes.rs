@@ -299,16 +299,20 @@ async fn a_null_default_example_is_501() {
 
 #[tokio::test]
 async fn only_get_is_routed_and_unknown_paths_are_404() {
-    for method in ["POST", "PUT", "DELETE", "PATCH", "HEAD"] {
-        let req = get("/api/v1/project")
-            .method(method)
-            .body(Body::empty())
-            .unwrap();
-        assert_eq!(
-            send(stub(), req).await.status,
-            StatusCode::METHOD_NOT_ALLOWED,
-            "{method}"
-        );
+    // CODE-CONTRACT-003: every non-GET method is a 405 that advertises exactly `GET` (HEAD is refused, so it is not
+    // advertised), on a contract route and on the test-support route alike.
+    for path in ["/api/v1/project", "/api/v1/events", "/__stub/last-request"] {
+        for method in ["POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS", "TRACE"] {
+            let req = get(path).method(method).body(Body::empty()).unwrap();
+            let reply = send(stub(), req).await;
+            assert_eq!(
+                reply.status,
+                StatusCode::METHOD_NOT_ALLOWED,
+                "{method} {path}"
+            );
+            let allow: Vec<_> = reply.headers.get_all("allow").iter().collect();
+            assert_eq!(allow, ["GET"], "{method} {path}");
+        }
     }
     assert_eq!(
         send(stub(), get("/api/v1/nope").body(Body::empty()).unwrap())

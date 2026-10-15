@@ -13,6 +13,7 @@ import {
   checkWorkflowTriggers, forbiddenNames, scanText,
 } from './hygiene/rules.mjs';
 import { checkCargoPins } from './hygiene/cargo-pins.mjs';
+import { checkRustToolchainPin } from './hygiene/rust-toolchain.mjs';
 
 const SNAPSHOTS = 'apps/storybook/tests/visual/__snapshots__';
 const DEFAULT_STATIC = 'apps/storybook/storybook-static';
@@ -165,6 +166,8 @@ function configFindings(root, files) {
   findings.push(...checkPlantFiles(files));
   // Cargo requirements are exact `=x.y.z` (F-09, NFR-003); parse-only, nothing is built.
   if (existsSync(join(root, 'Cargo.toml'))) findings.push(...checkCargoPins(root));
+  // The toolchain is an exact x.y.z release, never a floating channel (NFR-003, CODE-TEST-005).
+  findings.push(...checkRustToolchainPin(root));
   return findings;
 }
 

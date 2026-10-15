@@ -159,6 +159,36 @@ async fn last_request_records_the_previous_api_call() {
     assert_eq!(body, again);
 }
 
+/// CODE-SEC-002: credential headers are reported by name only; their values are replaced with `[redacted]`, so a
+/// proxy test can assert that a credential was (or was not) forwarded without the stub echoing it back.
+#[tokio::test]
+async fn last_request_redacts_credential_values() {
+    let router = stub();
+    let req = get("/api/v1/project")
+        .header("Authorization", "Bearer secret-token")
+        .header("proxy-authorization", "Basic c2VjcmV0")
+        .header("cookie", "session=secret")
+        .header("cookie", "other=secret")
+        .header("set-cookie", "id=secret")
+        .header("x-trace-id", "kept");
+    let (code, _) = status(router.clone(), req).await;
+    assert_eq!(code, StatusCode::OK);
+    let (code, body) = status(router, get("/__stub/last-request")).await;
+    assert_eq!(code, StatusCode::OK);
+    assert_eq!(
+        body["headers"],
+        json!({
+            "host": HOST,
+            "authorization": "[redacted]",
+            "proxy-authorization": "[redacted]",
+            "cookie": "[redacted]",
+            "set-cookie": "[redacted]",
+            "x-trace-id": "kept"
+        })
+    );
+    assert!(!body.to_string().contains("secret"), "{body}");
+}
+
 /// A second Host or Origin header cannot smuggle a foreign value past the first one.
 #[tokio::test]
 async fn repeated_host_or_origin_headers_are_403() {

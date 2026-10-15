@@ -3,3 +3,4 @@
 // `node --test scripts/hygiene/` run the suite.
 import('./hygiene.test.mjs');
 import('./cargo-pins.test.mjs');
+import('./rust-toolchain.test.mjs');

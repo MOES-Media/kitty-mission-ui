@@ -1,5 +1,6 @@
 //! R2-08, F-31, R3-07: the real binary binds loopback only, announces the bound address from the listener, serves a
-//! read, refuses connections on a non-loopback local address, and exits cleanly on SIGTERM. std only.
+//! read, refuses connections on a non-loopback local address, and exits cleanly on SIGTERM. std only, plus serde_json
+//! to read the `changes.json` oracle.
 
 use std::io::{BufRead, BufReader, Read, Write};
 use std::net::{IpAddr, SocketAddr, TcpStream, UdpSocket};
@@ -18,17 +19,16 @@ impl Drop for Running {
 }
 
 fn start() -> (Running, SocketAddr) {
+    start_with(&["--time-scale", "0"])
+}
+
+/// Starts the binary on an ephemeral port with a 50 ms heartbeat and the given extra arguments.
+fn start_with(extra: &[&str]) -> (Running, SocketAddr) {
     let fixtures = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../contracts/fixtures");
     let mut child = Command::new(env!("CARGO_BIN_EXE_kitty-stub"))
-        .args([
-            "--port",
-            "0",
-            "--heartbeat-ms",
-            "50",
-            "--time-scale",
-            "0",
-            "--fixtures",
-        ])
+        .args(["--port", "0", "--heartbeat-ms", "50"])
+        .args(extra)
+        .arg("--fixtures")
         .arg(&fixtures)
         .stdout(Stdio::piped())
         .stderr(Stdio::inherit())
@@ -143,5 +143,183 @@ fn exits_cleanly_on_sigterm_with_a_stream_open() {
             "the stub did not exit within 10 s of SIGTERM"
         );
         std::thread::sleep(Duration::from_millis(20));
+    }
+}
+
+/// CODE-SEC-001: a client that never finishes its request header is disconnected once the header-read timeout runs
+/// out, instead of holding the connection forever (slowloris). The timeout is shortened for the test.
+#[test]
+fn closes_a_connection_whose_header_never_completes() {
+    let (_stub, addr) = start_with(&["--time-scale", "0", "--header-timeout-ms", "300"]);
+    // Positive control: a complete request on a fresh connection is still served.
+    let ok = http_get(addr, "/api/v1/project", &addr.to_string());
+    assert!(ok.starts_with("HTTP/1.1 200 "), "{ok}");
+
+    let mut stream = TcpStream::connect_timeout(&addr, Duration::from_secs(5)).unwrap();
+    stream
+        .set_read_timeout(Some(Duration::from_secs(5)))
+        .unwrap();
+    write!(
+        stream,
+        "GET /api/v1/project HTTP/1.1\r\nHost: {addr}\r\nX-Slow: "
+    )
+    .unwrap();
+    let sent = Instant::now();
+    let mut rest = Vec::new();
+    // The server closes the socket: EOF (possibly after a 408) or a reset, not the 5 s read timeout.
+    let result = stream.read_to_end(&mut rest);
+    let waited = sent.elapsed();
+    if let Err(e) = &result {
+        assert!(
+            !matches!(
+                e.kind(),
+                std::io::ErrorKind::WouldBlock | std::io::ErrorKind::TimedOut
+            ),
+            "the half-sent header was still open after {waited:?}"
+        );
+    }
+    let text = String::from_utf8_lossy(&rest);
+    assert!(
+        rest.is_empty() || text.starts_with("HTTP/1.1 408 "),
+        "no response but a timeout is expected: {text}"
+    );
+    assert!(
+        waited < Duration::from_secs(3),
+        "closed after {waited:?}, expected about 300 ms"
+    );
+}
+
+/// CODE-SEC-003: a `--time-scale` that is not finite, is negative, or would push the largest scripted delay past what a
+/// `Duration` can hold is a usage error (exit 2) before the stub listens, never a panic in a stream task later.
+#[test]
+fn rejects_an_unusable_time_scale_with_the_usage_exit() {
+    let fixtures = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../contracts/fixtures");
+    for scale in [
+        "NaN",
+        "inf",
+        "-inf",
+        "-1",
+        "-0.5",
+        "1e300",
+        "1.7976931348623157e308",
+    ] {
+        let mut child = Command::new(env!("CARGO_BIN_EXE_kitty-stub"))
+            .args(["--port", "0", "--time-scale", scale, "--fixtures"])
+            .arg(&fixtures)
+            .stdin(Stdio::null())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .expect("kitty-stub starts");
+        let deadline = Instant::now() + Duration::from_secs(10);
+        while child.try_wait().unwrap().is_none() {
+            if Instant::now() >= deadline {
+                let _ = child.kill();
+                let _ = child.wait();
+                panic!("--time-scale {scale} was accepted: the stub was still running after 10 s");
+            }
+            std::thread::sleep(Duration::from_millis(20));
+        }
+        let out = child.wait_with_output().unwrap();
+        assert_eq!(out.status.code(), Some(2), "--time-scale {scale}: {out:?}");
+        assert!(
+            out.stdout.is_empty(),
+            "--time-scale {scale} must not listen"
+        );
+        let stderr = String::from_utf8_lossy(&out.stderr);
+        assert!(stderr.contains("--time-scale"), "{scale}: {stderr}");
+        assert!(stderr.contains("usage: kitty-stub"), "{scale}: {stderr}");
+    }
+    // Positive control: a small positive scale starts and serves.
+    let (_stub, addr) = start_with(&["--time-scale", "0.001"]);
+    let ok = http_get(addr, "/api/v1/project", &addr.to_string());
+    assert!(ok.starts_with("HTTP/1.1 200 "), "{ok}");
+}
+
+/// Reads `GET /api/v1/events<query>` from a running stub until the first heartbeat and returns the event bytes before
+/// it (the heartbeat excluded). HTTP/1.0 keeps the body unchunked, so chunk boundaries (timing) cannot leak in.
+fn capture_events(addr: SocketAddr, query: &str) -> Vec<u8> {
+    let mut stream = TcpStream::connect_timeout(&addr, Duration::from_secs(5)).unwrap();
+    stream
+        .set_read_timeout(Some(Duration::from_secs(10)))
+        .unwrap();
+    write!(
+        stream,
+        "GET /api/v1/events{query} HTTP/1.0\r\nHost: {addr}\r\n\r\n"
+    )
+    .unwrap();
+    let mut bytes = Vec::new();
+    let mut buf = [0u8; 4096];
+    let heartbeat = b": heartbeat\n\n";
+    let end = loop {
+        let n = stream
+            .read(&mut buf)
+            .expect("the stream reaches a heartbeat");
+        assert!(n > 0, "the stream closed before a heartbeat");
+        bytes.extend_from_slice(&buf[..n]);
+        if let Some(at) = bytes.windows(heartbeat.len()).position(|w| w == heartbeat) {
+            break at;
+        }
+    };
+    let text = String::from_utf8(bytes[..end].to_vec()).expect("UTF-8");
+    let (head, body) = text.split_once("\r\n\r\n").expect("response head");
+    assert!(
+        head.starts_with("HTTP/1.0 200 ") || head.starts_with("HTTP/1.1 200 "),
+        "{head}"
+    );
+    assert!(
+        head.to_ascii_lowercase()
+            .contains("content-type: text/event-stream"),
+        "{head}"
+    );
+    body.as_bytes().to_vec()
+}
+
+/// The number of items in `changes.json`, read independently of the stub.
+fn script_len() -> usize {
+    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../../contracts/fixtures/mission-status.changes.json");
+    let changes: serde_json::Value =
+        serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap();
+    changes["items"]
+        .as_array()
+        .expect("changes.json items")
+        .len()
+}
+
+/// CODE-TEST-003, NFR-004: three separate `kitty-stub` processes, playing the script with real (scaled) delays, write
+/// byte-identical event streams, heartbeats excluded, both mission-scoped and unscoped. Unlike the in-process test,
+/// each run builds its own router, fixtures and serialiser state in a fresh process, so nondeterminism that varies by
+/// process (hash seeds, timing) shows up as a difference.
+#[test]
+fn separate_processes_stream_identical_bytes() {
+    let stubs: Vec<_> = (0..3)
+        .map(|_| start_with(&["--time-scale", "0.02"]))
+        .collect();
+    for query in ["?missionId=01JZAB3C4D5E6F7G8H9JKMNPQR", ""] {
+        let captures: Vec<Vec<u8>> = stubs
+            .iter()
+            .map(|(_, addr)| capture_events(*addr, query))
+            .collect();
+        let first = &captures[0];
+        let text = std::str::from_utf8(first).unwrap();
+        // Positive control: the capture holds the whole script, not an empty or truncated prefix.
+        assert_eq!(
+            text.matches("event: ").count(),
+            script_len(),
+            "{query}: {text}"
+        );
+        assert_eq!(
+            text.contains("\nid: "),
+            !query.is_empty(),
+            "{query}: id lines only when scoped"
+        );
+        for (i, other) in captures.iter().enumerate().skip(1) {
+            assert_eq!(
+                std::str::from_utf8(other).unwrap(),
+                text,
+                "{query}: process {i} differs from process 0"
+            );
+        }
     }
 }

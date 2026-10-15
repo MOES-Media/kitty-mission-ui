@@ -247,12 +247,13 @@ cargo build --workspace --locked
 | `crates/kitty-core` | the shared Rust core, a skeleton for now (`#19`). Its `tests/workspace.rs` asserts the exact set of workspace members. |
 | `crates/kitty-stub` | `kitty-stub`, the loopback HTTP and SSE stand-in for the Mission Status service. `publish = false`. |
 | `apps/desktop/src-tauri` | the Kitty Desktop placeholder: a compile-only binary crate in Tauri's layout, so `#20` adds Tauri without moving files. |
-| `apps/dashboard` | the Kitty Dashboard placeholder: a compile-only binary crate (`#21`). |
+| `apps/dashboard/server` | the Kitty Dashboard placeholder: a compile-only binary crate (`#21`), below the app root so the dashboard's web frontend can live at `apps/dashboard/`. |
 | `contracts/fixtures/` | the contract data that the shell's fixture adapter and the stub both read (below). |
 
-`Cargo.toml` at the root is the workspace (`crates/*`, `apps/desktop/src-tauri`, `apps/dashboard`). Every dependency is
-pinned exactly (`=x.y.z`) in `[workspace.dependencies]`, and `Cargo.lock` is committed. The hygiene gate's `cargo-pins`
-check rejects a range in any `Cargo.toml`. I/O is allowed only under `apps/*` and `crates/*`, never under `packages/*`.
+`Cargo.toml` at the root is the workspace (`crates/*`, `apps/desktop/src-tauri`, `apps/dashboard/server`). Every
+dependency is pinned exactly (`=x.y.z`) in `[workspace.dependencies]`, and `Cargo.lock` is committed. The hygiene gate's
+`cargo-pins` check rejects a range in any `Cargo.toml`. I/O is allowed only under `apps/*` and `crates/*`, never under
+`packages/*`.
 
 ### Shared contract data
 
@@ -280,8 +281,12 @@ curl -sN http://127.0.0.1:<port>/api/v1/events      # the scripted sequence, the
 curl -s http://127.0.0.1:<port>/__stub/last-request
 ```
 
-- Options: `--fixtures <dir>` (required; the `contracts/fixtures` directory), `--port <n>` (0 picks a free port), `--heartbeat-ms <ms>` (default 30000) and `--time-scale <f>` (scales the
-  delays of the scripted sequence; 0 plays it at once). SIGINT or SIGTERM stops it.
+- Options: `--fixtures <dir>` (required; the `contracts/fixtures` directory), `--port <n>` (0 picks a free port), `--heartbeat-ms <ms>` (default 30000), `--time-scale <f>` (scales the
+  delays of the scripted sequence; 0 plays it at once) and `--header-timeout-ms <ms>` (default 10000). SIGINT or SIGTERM
+  stops it.
+- **Header-read timeout.** A connection that has not sent a complete request header within `--header-timeout-ms` is
+  closed, so a half-sent header cannot hold a connection forever. It covers the header only; an open event stream is
+  not cut. There is no connection cap.
 - It binds `127.0.0.1` only; no option changes the address.
 - **Host rule.** Like the real service, every route answers 403 with `{"code": ...}` when the `Host` header is not exactly
   one `127.0.0.1:<port>` or `localhost:<port>` (`host`), when an `Origin` is repeated or present and not the stub's own
@@ -292,10 +297,12 @@ curl -s http://127.0.0.1:<port>/__stub/last-request
   selection of the route's success schema is served `200 application/json`; one of the route's refusal schemas is served
   as `application/problem+json` with the example's own `status`, which must be one the route allows. Anything else is a
   400 `schema-mismatch`; an unknown name is a 404 (`no-example`, `no-fixture`), and a read with no default example is a
-  501 `no-example`. Only `GET` is served.
+  501 `no-example`. Only `GET` is served: any other method, HEAD included, is a 405 with `Allow: GET`.
 - `GET /api/v1/events` replays `changes.json`, byte for byte the same on every run. A stream scoped with `missionId`
   carries `id:` lines on status transitions and lifecycle events; an unscoped stream carries none, and a log-truncated
   marker never does.
+- `GET /__stub/last-request` returns the method, path and headers of the most recent `/api/v1` request. The values of
+  `authorization`, `proxy-authorization`, `cookie` and `set-cookie` are reported as `"[redacted]"`; the names are kept.
 
 ### Upstream drift alert
 
@@ -319,13 +326,15 @@ cargo fmt --all --check && cargo clippy --workspace --all-targets --frozen -- -D
 ```
 
 There is no Cargo build cache in CI. Its three plants under `gates/plants/rust/` are an unformatted line
-(`plant_fmt_rust`), a clippy `bool_comparison` (`plant_clippy_rust`) and a failing test (`plant_test_rust`), each an
-anchored edit of, or a test file in, `crates/kitty-core`, so none can be skipped by the compiler.
+(`plant_fmt_rust`), a clippy `bool_comparison` (`plant_clippy_rust`) and a failing test (token
+`test plant_test_rust ... FAILED`, a line cargo prints only when that test fails), each an anchored edit of, or a test
+file in, `crates/kitty-core`, so none can be skipped by the compiler.
 
 The existing gates reach the new code too: `typecheck` runs `svelte-check` over the shell, `eslint`, `stylelint`,
 `no-io` and `data-driven` read `.svelte` files, `manifest` checks the generated element typings, `contract` checks the
-shared JSON files, `unit-tests` runs every workspace package's tests, and `hygiene` checks Cargo pins and the action
-pins, permissions and checkout credentials of every workflow. Each extension has its own plant: 18 new plants in all.
+shared JSON files, `unit-tests` runs every workspace package's tests, and `hygiene` checks Cargo pins, the exact
+toolchain pin (the `rust-toolchain.toml` `channel` is an `x.y.z` release, never `stable`) and the action pins,
+permissions and checkout credentials of every workflow. Each extension has its own plant: 19 new plants in all.
 
 ## Gates
 
@@ -341,7 +350,7 @@ packages, never only the changed files.
 | `Gate: stylelint` | `pnpm lint:styles` | layout-only CSS, `--sk-*` tokens, no colour, font or size literals; the operator-approved exceptions E-04 and E-08 to E-16 are scoped to named element files in `stylelint.config.mjs`, token values only (each sunsets on a spec-kitty-design issue) |
 | `Gate: no-io` | `pnpm lint:no-io` and `pnpm test:no-io` | no network, desktop-bridge or browser-storage I/O in `packages/*/src`; the self-test asserts one fixture per rule |
 | `Gate: manifest` | `pnpm manifest:check` | `custom-elements.json` equals a fresh regeneration and declares every property and event |
-| `Gate: hygiene` | `pnpm hygiene` and `pnpm test:scripts` | no token, no absolute user path (CLI state files included), no agent scratchpad path, no tooling-ledger id, no username of the running account, no e-mail address in the contract and fixture paths, pinned dependencies and actions, safe workflow triggers, baseline PNG checks; then the `node:test` suites of the gate scripts (hygiene, gate-proof, preflight, manifest-screen, settle, the stylelint exception scope proofs, the story-catalogue and visual-tag tests and the terminology scan: the word "feature" never appears in `packages/*/src` or the mission quickstart, the canonical term is "mission") |
+| `Gate: hygiene` | `pnpm hygiene` and `pnpm test:scripts` | no token, no absolute user path (CLI state files included), no agent scratchpad path, no tooling-ledger id, no username of the running account, no e-mail address in the contract and fixture paths, pinned dependencies and actions, an exact `x.y.z` Rust toolchain channel, safe workflow triggers, baseline PNG checks; then the `node:test` suites of the gate scripts (hygiene, gate-proof, preflight, manifest-screen, settle, the stylelint exception scope proofs, the story-catalogue and visual-tag tests and the terminology scan: the word "feature" never appears in `packages/*/src` or the mission quickstart, the canonical term is "mission") |
 | `Gate: contract` | `pnpm contract:check` and `pnpm test:contract` | the vendored Mission Status contract equals its pin, the generated types and fixtures are fresh, every fixture is a valid and coherent contract document (closed shapes), no event-stream identifier in `packages/*/src` |
 | `Gate: data-driven` | `pnpm lint:data-driven` and `pnpm test:data-driven` | no phase name, status lane or other contract status word (`pending`, `complete`, `draft`, `discarded`) hard-coded in `packages/*/src` outside `src/defaults/`, `src/contract/`, stories, fixtures and `src/story-support/`; the selector list is `SELECTOR_ENTRIES` in `eslint.data-driven.config.mjs` (it reads the phase, lane, review, change-state, staleness, project health, artifact, Drift and Ops vocabularies from the vendored schemas), with a self-test over positive fixtures in `gates/fixtures/data-driven/` and inline `eslint-disable` comments ignored |
 | `Gate: storybook-build` | `pnpm build-storybook` | the static Storybook builds (330 stories), then the output is scanned for tokens |
