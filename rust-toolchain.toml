@@ -1,0 +1,6 @@
+# Exact pin (NFR-003, research R-01): the newest stable release at least 14 days old when WP01 started.
+# 1.98.1 was released 2026-09-03; 1.99.0 (2026-10-01) was younger than 14 days. Never "stable".
+[toolchain]
+channel = "1.98.1"
+components = ["rustfmt", "clippy"]
+profile = "minimal"

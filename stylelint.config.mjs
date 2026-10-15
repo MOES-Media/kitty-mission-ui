@@ -1197,6 +1197,9 @@ export default {
   plugins: ['stylelint-declaration-strict-value'],
   overrides: [
     { files: ['**/*.{ts,mts,cts,tsx,js,mjs,cjs,jsx}'], customSyntax: 'postcss-lit' },
+    // Svelte components of the shell (B2): postcss-html reads their <style> blocks, and the token-only rules apply unchanged.
+    // A component with no <style> block yields no CSS and lints clean.
+    { files: ['**/*.svelte'], customSyntax: 'postcss-html' },
     {
       // Operator-approved exception (2026-10-01): shell chrome paint, token values only; sunset when
       // @spec-kitty/elements ships top bar / flat nav row / rail-without-720-flip equivalents (design-library issues:
