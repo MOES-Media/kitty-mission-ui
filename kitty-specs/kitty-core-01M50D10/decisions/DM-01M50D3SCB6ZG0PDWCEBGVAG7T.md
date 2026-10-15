@@ -4,8 +4,10 @@
 - **Origin flow:** `specify`
 - **Slot key:** `specify.client.transport`
 - **Input key:** `client_transport`
-- **Status:** `open`
+- **Status:** `resolved`
 - **Created:** `2026-10-15T18:27:40.043459+00:00`
+- **Resolved:** `2026-10-15T19:25:13.176915+00:00`
+- **Resolved by:** `operator`
 - **Opened by:** `cli`
 - **Other answer:** `false`
 
@@ -22,12 +24,13 @@ How should kitty-core speak HTTP and SSE to the service, given that reads are re
 
 ## Final answer
 
-_(none)_
+Route table from the generated routes.json over the already-pinned hyper/hyper-util client, with kitty-core's own SSE frame reader (no typed models, fewest new crates)
 
 ## Rationale
 
-_(none)_
+Operator ruling 2026-10-15, relayed by the coordinator
 
 ## Change log
 
 - `2026-10-15T18:27:40.043459+00:00` — opened
+- `2026-10-15T19:25:13.176915+00:00` — resolved (final_answer="Route table from the generated routes.json over the already-pinned hyper/hyper-util client, with kitty-core's own SSE frame reader (no typed models, fewest new crates)")
