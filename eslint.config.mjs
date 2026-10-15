@@ -69,12 +69,15 @@ export const GENERATED_SHELL_TYPINGS = 'packages/mission-shell/src/generated/ele
 
 export default tseslint.config(
   {
-    // Plants are non-source overlays; nothing lintable lives there. No other broad ignores.
+    // Plants are non-source overlays and target/ is build output; nothing lintable lives there. No other broad ignores.
     ignores: [
       'gates/plants/**',
       '**/storybook-static/**',
       '**/test-results/**',
       '.worktrees/**',
+      // Cargo build output (gitignored, but ESLint does not read .gitignore): build scripts and Tauri write generated
+      // .js and .ts files there.
+      'target/**',
       // Exception E-05: openapi-typescript emits `unknown & unknown`, which the type rules reject; gate contract C2
       // regenerates and byte-compares this one file, so it is ignored by exact path and nothing else.
       'packages/mission-ui/src/contract/types.generated.ts',

@@ -469,3 +469,13 @@ describe('scanTemplate: raw-text end tags and empty comments', () => {
     expect(scan(['<p><!---><a href=', ''])).toContain('name:href');
   });
 });
+
+describe('global ignores of the main configuration', () => {
+  it('ignore the Cargo build output under target/ (CODE-BOUNDARY-006), and nothing beside it', async () => {
+    expect(await eslint.isPathIgnored(`${ROOT}target/debug/build/out.ts`)).toBe(true);
+    expect(await eslint.isPathIgnored(`${ROOT}target/release/bundle.js`)).toBe(true);
+    // Positive controls: a source file and a script beside target/ are still linted.
+    expect(await eslint.isPathIgnored(OUTSIDE)).toBe(false);
+    expect(await eslint.isPathIgnored(`${ROOT}scripts/typings.mjs`)).toBe(false);
+  });
+});
