@@ -61,11 +61,9 @@ const svelteRecommended = svelte.configs.recommended
   .filter((block) => block.name !== 'svelte:base:setup-for-svelte-script')
   .map((block) => (block.name === 'svelte:base:setup-plugin' ? block : { ...block, files: [SVELTE_SOURCES] }));
 
-// Exception E-46 (phase0-bootstrap, F-45): scripts/typings.mjs (WP04) emits this declaration file from the manifest and the
-// manifest gate regenerates and byte-compares it, so it is ignored by exact path in this config, eslint.no-io.config.mjs and
-// eslint.data-driven.config.mjs, and nothing else is. Sunset: the generator emits lint-clean output, or the lint configs gain
-// a generated-file allowance.
-export const GENERATED_SHELL_TYPINGS = 'packages/mission-shell/src/generated/elements.d.ts';
+// Exception E-46 (the generated element typings of the shell, ignored by exact path) was withdrawn on 2026-10-15: its sunset
+// was met, because scripts/typings.mjs emits output that is lint-clean under this config, eslint.no-io.config.mjs and
+// eslint.data-driven.config.mjs. The file is linted like every other source.
 
 export default tseslint.config(
   {
@@ -81,7 +79,6 @@ export default tseslint.config(
       // Exception E-05: openapi-typescript emits `unknown & unknown`, which the type rules reject; gate contract C2
       // regenerates and byte-compares this one file, so it is ignored by exact path and nothing else.
       'packages/mission-ui/src/contract/types.generated.ts',
-      GENERATED_SHELL_TYPINGS,
     ],
   },
   js.configs.recommended,

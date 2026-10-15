@@ -168,10 +168,6 @@ const ioRules = {
 
 export default [
   {
-    // Exception E-46 (see eslint.config.mjs): the generated element typings of the shell, by exact path only.
-    ignores: ['packages/mission-shell/src/generated/elements.d.ts'],
-  },
-  {
     files: ['**/*.{ts,mts,cts,tsx,js,mjs,cjs,jsx}'],
     languageOptions: { parser: tseslint.parser, sourceType: 'module', parserOptions: { ecmaFeatures: { jsx: true } } },
     // E-07 (P-10): an inline eslint-disable comment must not silence this gate (reproduced: it did).

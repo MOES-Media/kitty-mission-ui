@@ -79,5 +79,5 @@ request). Shell code follows the same rules:
    from `packages/mission-ui/custom-elements.json` by `scripts/typings.mjs`; never edit it. After a mission-ui manifest
    change run `node scripts/typings.mjs`, then `pnpm manifest:check`, which fails when the file is stale.
 
-The generated file is excluded, by exact path, from the three ESLint configurations (exception E-46, pending operator
-approval). It is lint-clean today, so the exception can be withdrawn.
+The generated file is linted like every other source by the three ESLint configurations. Exception E-46, which ignored it
+by exact path, was withdrawn on 2026-10-15 because its sunset was met: the generator's output is lint-clean under all three.

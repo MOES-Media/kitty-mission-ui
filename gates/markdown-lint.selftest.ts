@@ -478,4 +478,8 @@ describe('global ignores of the main configuration', () => {
     expect(await eslint.isPathIgnored(OUTSIDE)).toBe(false);
     expect(await eslint.isPathIgnored(`${ROOT}scripts/typings.mjs`)).toBe(false);
   });
+
+  it('lint the generated element typings of the shell (E-46 withdrawn 2026-10-15)', async () => {
+    expect(await eslint.isPathIgnored(`${ROOT}packages/mission-shell/src/generated/elements.d.ts`)).toBe(false);
+  });
 });

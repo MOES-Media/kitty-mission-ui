@@ -50,8 +50,8 @@
 //    them, as a quoted or computed object key and as a computed read (S19.5 to S19.11); a bare word
 //    as a plain identifier key stays clean. Also: a template computed read, an array of them searched with some, every, find,
 //    findIndex, findLast, findLastIndex or filter, and the left side of the `in` operator.
-//  - Vocabulary in a JSON file, and code outside packages/*/src (tests), is not scanned. A .d.ts file is scanned, except the
-//    generated element typings of the shell (exception E-46, GENERATED_IGNORES).
+//  - Vocabulary in a JSON file, and code outside packages/*/src (tests), is not scanned. A .d.ts file is scanned, the
+//    generated element typings of the shell included (exception E-46 was withdrawn on 2026-10-15).
 //  - In a .svelte file (B3) the selectors see the <script> blocks and the template expressions. Plain markup text and a static
 //    attribute value (<p>planned</p>, data-lane="done") are Svelte markup nodes, not Literal or TemplateElement nodes, so they
 //    are not seen; the shell takes every such word from the contract data, never from markup.
@@ -265,8 +265,6 @@ export const OPS_BARE_RULE = 'data-driven-ops/no-restricted-syntax';
 export const OPS_KEYED_RULE = 'data-driven-ops-keyed/no-restricted-syntax';
 const opsPlugin = { rules: { 'no-restricted-syntax': builtinRules.get('no-restricted-syntax') } };
 
-/** Exception E-46 (see eslint.config.mjs): the generated element typings of the shell, by exact path and nothing else. */
-export const GENERATED_IGNORES = ['packages/mission-shell/src/generated/elements.d.ts'];
 /** The scanned sources: TypeScript and, since the shell (B3), Svelte components. */
 export const SOURCE_FILES = ['**/*.ts', '**/*.svelte'];
 
@@ -301,6 +299,4 @@ export default [
     languageOptions: { parser: svelteParser, parserOptions: { parser: tseslint.parser } },
     linterOptions: { noInlineConfig: true },
   },
-  // Global ignores (a block with nothing but `ignores`), last so the three rule blocks keep their positions.
-  { ignores: GENERATED_IGNORES },
 ];
