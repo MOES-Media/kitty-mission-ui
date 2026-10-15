@@ -33,11 +33,13 @@ export type Result<Op extends ReadOp> =
   | { ok: false; refusal: Refusal<Op> }
   | { ok: false; unavailable: 'service-missing' | 'contract-mismatch' | 'transport' };
 
+/** `connecting` is the initial state, before first contact (SO-DES-003). It amends FR-008, which names four states; the
+ *  amendment is recorded in spec.md by the orchestrator. */
 export type ConnectionState =
-  | 'connected' | 'reconnecting' | 'degraded: service-missing' | 'degraded: contract-mismatch';
+  | 'connecting' | 'connected' | 'reconnecting' | 'degraded: service-missing' | 'degraded: contract-mismatch';
 
-/** The four states as a runtime list; a type test asserts it equals `ConnectionState` exactly (B8, C14). */
-export const CONNECTION_STATES = ['connected', 'reconnecting', 'degraded: service-missing', 'degraded: contract-mismatch'] as const;
+/** The five states as a runtime list; a type test asserts it equals `ConnectionState` exactly (B8, C14). */
+export const CONNECTION_STATES = ['connecting', 'connected', 'reconnecting', 'degraded: service-missing', 'degraded: contract-mismatch'] as const;
 
 export type Change =
   | { kind: 'status-transition'; cursor: string | null; data: Schemas['StatusTransitionEvent'] }
@@ -113,10 +115,18 @@ whatever the query. The stub differs here: it provides no conditional refusals (
 `/api/v1/events?streamCursor=…` without a `missionId` streams unscoped with 200. Tests that compare the fixture adapter
 with the stub must not rely on this case.
 
+## Connection state (SO-DES-003)
+
+`connecting` is the state of an adapter before first contact with its service. Without it a start-up would be reported as
+`reconnecting`, which claims a connection that never existed, or as `connected`, which is not yet true. A real adapter
+(#20, #21) starts in `connecting` and leaves it for `connected` or a `degraded` state; it never returns to `connecting`
+(a lost connection is `reconnecting`). The fixture adapter defaults to `connected` instead, a documented test convenience
+(most tests want a live connection); `initialState: 'connecting'` tests the start-up.
+
 ## Rules
 
 - `CLIENT_OPERATIONS` covers exactly the interface's methods (enforced by type), and its values equal the set of `routes.json` operationIds. The coverage test fails and names the read when either side is missing one (FR-008, FR-009).
 - The coverage test also asserts that the fixture adapter's own methods are exactly the keys of `CLIENT_OPERATIONS`.
 - A unit-tests plant deletes one entry together with its interface method, and the coverage test must fail.
-- The connection state is a closed set of exactly the four spec strings.
+- The connection state is a closed set of exactly five strings: the four of FR-008 and `connecting` (SO-DES-003).
 - The port imports no I/O API (the no-io gate covers it).

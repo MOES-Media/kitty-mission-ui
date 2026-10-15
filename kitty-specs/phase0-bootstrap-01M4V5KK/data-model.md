@@ -54,13 +54,13 @@ The file is an envelope `{ "missionId": <the one mission id of the sequence>, "i
 
 ## ConnectionState (TypeScript, `mission-shell`)
 
-A closed union, exactly the spec's strings:
+A closed union: the four strings of FR-008 plus `connecting`, the initial state before first contact (SO-DES-003):
 
-`'connected' | 'reconnecting' | 'degraded: service-missing' | 'degraded: contract-mismatch'`
+`'connecting' | 'connected' | 'reconnecting' | 'degraded: service-missing' | 'degraded: contract-mismatch'`
 
-The port also exports `CONNECTION_STATES`, the same four strings as a `const` tuple, and a type test proves the union and the tuple are equal both ways (B8, D10).
+The port also exports `CONNECTION_STATES`, the same five strings as a `const` tuple, and a type test proves the union and the tuple are equal both ways (B8, D10).
 
-The fixture adapter starts in `connected`, and tests can force any state. Real transition rules belong to `kitty-core` (#19).
+A real adapter starts in `connecting`. The fixture adapter starts in `connected` by default (a documented test convenience), and tests can force any state. The mapping of transport events to states is the adapter's (see "Ownership" below).
 
 ## Change (TypeScript, `mission-shell`)
 

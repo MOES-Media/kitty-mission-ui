@@ -338,12 +338,13 @@ describe('stream refusals', () => {
 });
 
 describe('connection state', () => {
-  it('starts connected, or in the initial state given', () => {
+  it('starts connected (a documented test convenience), or in the initial state given, connecting included', () => {
     expect(createFixtureClient().connection.state).toBe('connected');
+    expect(createFixtureClient({ initialState: 'connecting' }).connection.state).toBe('connecting');
     expect(createFixtureClient({ initialState: 'reconnecting' }).connection.state).toBe('reconnecting');
   });
 
-  it('notifies exactly once per change, for each of the four states', () => {
+  it('notifies exactly once per change, for each of the five states', () => {
     const client = createFixtureClient({ initialState: 'degraded: contract-mismatch' });
     const heard: ConnectionState[] = [];
     const stop = client.connection.onChange((state) => heard.push(state));
@@ -353,14 +354,14 @@ describe('connection state', () => {
       expect(client.connection.state).toBe(state);
       assigned += 1;
     }
-    expect(assigned).toBe(4);
+    expect(assigned).toBe(5);
     expect(heard).toEqual([...CONNECTION_STATES]);
     // Setting the current state again is not a change.
     setConnectionState(client, 'degraded: contract-mismatch');
-    expect(heard.length).toBe(4);
+    expect(heard.length).toBe(5);
     stop();
     setConnectionState(client, 'connected');
-    expect(heard.length).toBe(4);
+    expect(heard.length).toBe(5);
     expect(client.connection.state).toBe('connected');
   });
 

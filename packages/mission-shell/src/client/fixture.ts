@@ -48,6 +48,8 @@ export interface FixtureClientOptions {
   /** Replacement data sets; each defaults to the file of contracts/fixtures. */
   fixtures?: { routes?: readonly RouteEntry[]; examples?: ExampleTable; changes?: ChangesEnvelope };
   scheduler?: Scheduler;
+  /** The starting connection state. Default `connected`, unlike a real adapter (which starts in `connecting`): the fixture
+   *  is for tests, which mostly want a live connection, and pass `connecting` to test the start-up. */
   initialState?: ConnectionState;
 }
 

@@ -67,9 +67,9 @@ describe('operation table against the contract routes', () => {
 });
 
 describe('connection states', () => {
-  it('are exactly the four spec strings', () => {
-    expect(CONNECTION_STATES.length).toBe(4);
-    expect([...CONNECTION_STATES]).toEqual(['connected', 'reconnecting', 'degraded: service-missing', 'degraded: contract-mismatch']);
+  it('are exactly the five strings: connecting before first contact, then the four of the spec', () => {
+    expect(CONNECTION_STATES.length).toBe(5);
+    expect([...CONNECTION_STATES]).toEqual(['connecting', 'connected', 'reconnecting', 'degraded: service-missing', 'degraded: contract-mismatch']);
     const exact: Expect<Equal<ConnectionState, (typeof CONNECTION_STATES)[number]>> = true;
     // @ts-expect-error a widened union (a fifth value) is not equal to the runtime list
     const widened: Expect<Equal<ConnectionState | 'extra', (typeof CONNECTION_STATES)[number]>> = true;

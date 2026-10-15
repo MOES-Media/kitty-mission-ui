@@ -1,6 +1,6 @@
 /**
  * The `MissionStatusClient` port (contracts/client-port.md, FR-008): every read of the pinned mission-status contract, a
- * change subscription and a closed four-value connection state. The port is transport-free and performs no I/O; adapters
+ * change subscription and a closed five-value connection state. The port is transport-free and performs no I/O; adapters
  * implement it (the fixture adapter here, the desktop and HTTP adapters later). Contract types come from mission-ui's
  * generated file by deep import (mission-ui has no `exports` field, C-002); the provisional stream schemas are reached
  * through the aliases of ../contract/stream (contract gate C7).
@@ -44,10 +44,18 @@ export type Result<Op extends ReadOp> =
   | { ok: false; refusal: Refusal<Op> }
   | { ok: false; unavailable: 'service-missing' | 'contract-mismatch' | 'transport' };
 
-export type ConnectionState = 'connected' | 'reconnecting' | 'degraded: service-missing' | 'degraded: contract-mismatch';
+/** The connection of an adapter. `connecting` is the initial state, before first contact (SO-DES-003): an adapter that has
+ *  not yet reached its service is neither `connected` nor `reconnecting`, and a shell must not show "reconnecting" on
+ *  start-up. The other four are the states of FR-008. */
+export type ConnectionState =
+  | 'connecting'
+  | 'connected'
+  | 'reconnecting'
+  | 'degraded: service-missing'
+  | 'degraded: contract-mismatch';
 
-/** The four states as a runtime list; a type test asserts it equals `ConnectionState` exactly (B8). */
-export const CONNECTION_STATES = ['connected', 'reconnecting', 'degraded: service-missing', 'degraded: contract-mismatch'] as const;
+/** The states as a runtime list; a type test asserts it equals `ConnectionState` exactly (B8). */
+export const CONNECTION_STATES = ['connecting', 'connected', 'reconnecting', 'degraded: service-missing', 'degraded: contract-mismatch'] as const;
 
 /** One change of the stream. `cursor` mirrors the SSE `id:`: a string for status-transition and mission-lifecycle on a
  *  mission-scoped subscription, null on an unscoped one, and always null for log-truncated (R2-05).
