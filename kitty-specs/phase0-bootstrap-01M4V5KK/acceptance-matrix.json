@@ -88,10 +88,10 @@
       "criterion_id": "FR-009",
       "description": "Verify FR-009 is satisfied",
       "proof_type": "automated_test",
-      "evidence": null,
-      "pass_fail": "pending",
-      "verified_by": null,
-      "verified_at": null,
+      "evidence": "packages/mission-shell/test/port-coverage.test.ts 'covers exactly the ten operationIds of routes.json'; plant 'coverage: missing operation getDriftReport' red in the unit-tests leg",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-15T11:48:52.288037+00:00",
       "notes": "TODO: replace with a real acceptance criterion"
     },
     {
