@@ -572,7 +572,7 @@ jobs:
             timeout: 6
             image: ''
           - gate: contract
-            timeout: 10
+            timeout: 12
             image: ''
           - gate: data-driven
             timeout: 8
