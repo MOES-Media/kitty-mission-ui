@@ -1,0 +1,20 @@
+[workspace]
+resolver = "2"
+members = ["crates/kitty-core", "crates/kitty-stub", "apps/desktop/src-tauri", "apps/dashboard/server"]
+
+[workspace.package]
+edition = "2021"
+license = "AGPL-3.0-or-later"
+publish = false
+
+[workspace.dependencies]
+# exact pins only ("=x.y.z"): the newest release at least 14 days old when WP07 started (2026-10-14).
+axum = { version = "=0.8.9", default-features = false, features = ["http1", "tokio"] }
+tokio = { version = "=1.53.1", features = ["rt-multi-thread", "macros", "net", "time", "signal"] }
+serde = { version = "=1.0.229", features = ["derive"] }
+serde_json = { version = "=1.0.151", features = ["preserve_order"] }
+http-body-util = { version = "=0.1.5", features = ["channel"] }
+tower = { version = "=0.5.3", features = ["util"] }
+# Already in Cargo.lock through axum: serving with them directly gives hyper a timer, so the header-read timeout works.
+hyper = { version = "=1.11.1", features = ["http1", "server"] }
+hyper-util = { version = "=0.1.21", features = ["http1", "server", "service", "tokio"] }

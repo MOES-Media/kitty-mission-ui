@@ -1,0 +1,7 @@
+<script lang="ts">
+  const path: string = '/missions';
+</script>
+
+{#await fetch(path)}
+  <p>loading</p>
+{/await}

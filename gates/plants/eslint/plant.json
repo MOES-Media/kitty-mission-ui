@@ -74,5 +74,38 @@
         "source": "plant-css-alias.ts.plant"
       }
     ]
+  },
+  {
+    "gate": "eslint",
+    "ciCommand": "pnpm lint",
+    "expectFailPattern": "plantEslintSvelte",
+    "overlays": [
+      {
+        "target": "packages/mission-shell/src/PlantEslint.svelte",
+        "source": "PlantEslint.svelte.plant"
+      }
+    ]
+  },
+  {
+    "gate": "eslint",
+    "ciCommand": "pnpm lint",
+    "expectFailPattern": "@typescript-eslint/no-explicit-any",
+    "overlays": [
+      {
+        "target": "packages/mission-shell/src/PlantSvelteAny.svelte",
+        "source": "PlantSvelteAny.svelte.plant"
+      }
+    ]
+  },
+  {
+    "gate": "eslint",
+    "ciCommand": "pnpm lint",
+    "expectFailPattern": "Shell sources must not import the fixture adapter",
+    "overlays": [
+      {
+        "target": "packages/mission-shell/src/plant-shell-boundary.ts",
+        "source": "plant-shell-boundary.ts.plant"
+      }
+    ]
   }
 ]

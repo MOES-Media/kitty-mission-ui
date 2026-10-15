@@ -7,6 +7,16 @@ const FIXTURE_DIR = fileURLToPath(new URL('./fixtures/no-io/', import.meta.url))
 const CONFIG_URL = new URL('../eslint.no-io.config.mjs', import.meta.url).href;
 const FILENAME = 'packages/sample/src/fixture.ts';
 const ELEMENT_FILENAME = 'packages/sample/src/elements/sk-sample/fixture.ts';
+// The shell (FR-007, C-001): its .ts files and its .svelte components are linted as package sources.
+const SHELL_TS_FILENAME = 'packages/mission-shell/src/client/fixture.ts';
+const SHELL_SVELTE_FILENAME = 'packages/mission-shell/src/Fixture.svelte';
+// The fixtures linted under a shell file name, each with the fragment it must report, or none for the positive control.
+const SHELL_FIXTURES: Readonly<Record<string, { filename: string; fragment: string | null }>> = {
+  'svelte-fetch.svelte.txt': { filename: SHELL_SVELTE_FILENAME, fragment: 'no-io: fetch is forbidden (network I/O)' },
+  'svelte-template-fetch.svelte.txt': { filename: SHELL_SVELTE_FILENAME, fragment: 'no-io: fetch is forbidden (network I/O)' },
+  'svelte-clean.svelte.txt': { filename: SHELL_SVELTE_FILENAME, fragment: null },
+  'shell-eventsource.ts.txt': { filename: SHELL_TS_FILENAME, fragment: 'no-io: EventSource is forbidden (network I/O)' },
+};
 
 // One fixture per rule: fixture name -> fragment of the message that rule must report.
 const EXPECTED: Readonly<Record<string, string>> = {
@@ -97,7 +107,7 @@ async function lint(code: string, filename: string = FILENAME): Promise<string[]
   return linter.verify(code, loaded.default, { filename }).map((m) => m.message);
 }
 
-const fixtures = readdirSync(FIXTURE_DIR).filter((f) => f.endsWith('.ts.txt'));
+const fixtures = readdirSync(FIXTURE_DIR).filter((f) => f.endsWith('.ts.txt') && !(f in SHELL_FIXTURES));
 
 describe('no-io gate self-test', () => {
   it('has exactly one expectation per fixture', () => {
@@ -129,5 +139,34 @@ describe('no-io gate self-test', () => {
 
   it('reports nothing on a clean element sample', async () => {
     expect(await lint(CLEAN)).toEqual([]);
+  });
+});
+
+describe('no-io gate self-test: the shell, .svelte and .ts (FR-007, C-001)', () => {
+  it('has exactly the four shell fixtures on disk, and no other non-.ts fixture', () => {
+    const onDisk = readdirSync(FIXTURE_DIR).filter((f) => !f.endsWith('.ts.txt') || f in SHELL_FIXTURES).sort();
+    expect(onDisk).toEqual(Object.keys(SHELL_FIXTURES).sort());
+    expect(onDisk.length).toBe(4);
+  });
+
+  for (const [name, { filename, fragment }] of Object.entries(SHELL_FIXTURES)) {
+    it(fragment === null ? `reports nothing on ${name} (positive control)` : `flags ${name} as a shell source`, async () => {
+      const messages = await lint(readFileSync(`${FIXTURE_DIR}${name}`, 'utf8'), filename);
+      if (fragment === null) expect(messages).toEqual([]);
+      else expect(messages.filter((m) => m.includes(fragment)).length).toBe(1);
+    });
+  }
+
+  it('lints the generated element typings of the shell like every other source (E-46 withdrawn 2026-10-15)', async () => {
+    const messages = await lint("export declare const f: typeof fetch;\nfetch('x');\n", 'packages/mission-shell/src/generated/elements.d.ts');
+    expect(messages.filter((m) => m.includes('no-io: fetch is forbidden')).length).toBe(1);
+  });
+
+  it('parses a .svelte file: a syntax error is a fatal parse message, not a rule message (the plant cannot pass on it)', async () => {
+    const messages = await lint('<script lang="ts">const = ;</script>\n', SHELL_SVELTE_FILENAME);
+    expect(messages.length).toBe(1);
+    expect(messages[0]?.startsWith('no-io:')).toBe(false);
+    // positive control: the same file, well formed and with fetch, is reported by the rule
+    expect(await lint("<script lang=\"ts\">fetch('x');</script>\n", SHELL_SVELTE_FILENAME)).toEqual(['Unexpected use of \'fetch\'. no-io: fetch is forbidden (network I/O)']);
   });
 });

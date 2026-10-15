@@ -62,5 +62,82 @@
         ]
       }
     ]
+  },
+  {
+    "gate": "unit-tests",
+    "ciCommand": "pnpm test",
+    "expectFailPattern": "binding: loadingMore not set as property",
+    "overlays": [
+      {
+        "target": "packages/mission-shell/src/harness/BindingHarness.svelte",
+        "edits": [
+          {
+            "find": "  import '@moes-media/mission-ui';\n",
+            "replace": "  import { onMount } from 'svelte';\n  // Plant (registration order): the side-effect import runs only after the element is in the DOM.\n  onMount(() => {\n    void import('@moes-media/mission-ui');\n  });\n"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "gate": "unit-tests",
+    "ciCommand": "pnpm test",
+    "expectFailPattern": "binding: intent sk-search not delivered",
+    "overlays": [
+      {
+        "target": "packages/mission-shell/src/harness/BindingHarness.svelte",
+        "edits": [
+          {
+            "find": "  onsk-search={onSearch}\n",
+            "replace": ""
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "gate": "unit-tests",
+    "ciCommand": "pnpm test",
+    "expectFailPattern": "coverage: missing operation getDriftReport",
+    "overlays": [
+      {
+        "target": "packages/mission-shell/src/client/port.ts",
+        "edits": [
+          {
+            "find": "  getDriftReport: 'getDriftReport',\n",
+            "replace": ""
+          },
+          {
+            "find": "  getDriftReport(params: Params<'getDriftReport'>): Promise<Result<'getDriftReport'>>;\n",
+            "replace": ""
+          }
+        ]
+      },
+      {
+        "target": "packages/mission-shell/src/client/fixture.ts",
+        "edits": [
+          {
+            "find": "    getDriftReport: () => read('getDriftReport'),\n",
+            "replace": ""
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "gate": "unit-tests",
+    "ciCommand": "pnpm test",
+    "expectFailPattern": "coverage: missing operation getNewThing",
+    "overlays": [
+      {
+        "target": "contracts/fixtures/mission-status.routes.json",
+        "edits": [
+          {
+            "find": "  {\n    \"operationId\": \"getArtifactContent\",\n",
+            "replace": "  {\n    \"operationId\": \"getNewThing\",\n    \"method\": \"GET\",\n    \"path\": \"/new-thing\",\n    \"kind\": \"read\",\n    \"responseSchema\": \"Project\",\n    \"defaultExample\": \"Project.example\",\n    \"refusals\": {}\n  },\n  {\n    \"operationId\": \"getArtifactContent\",\n"
+          }
+        ]
+      }
+    ]
   }
 ]

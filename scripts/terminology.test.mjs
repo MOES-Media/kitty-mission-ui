@@ -63,3 +63,57 @@ test('test:scripts runs the Ops and Work Package story-catalogue tests and the v
   // positive control: a file that is listed is found by the same check
   assert.ok(listed.includes('scripts/terminology.test.mjs'));
 });
+
+// F-48: the scan covers Svelte components of every package and the Rust sources and tests of every crate; build output under
+// target/ is skipped. Each banned-word file is paired with a clean twin of the same kind (positive control).
+test('the scan reports a planted word in a .svelte source and in a crate .rs source and test, and skips target/', () => {
+  const root = mkdtempSync(join(tmpdir(), 'sk-terminology-'));
+  const word = ['fea', 'ture'].join('');
+  try {
+    const shellSrc = join(root, 'packages', 'shell', 'src');
+    const crate = join(root, 'crates', 'core');
+    for (const dir of [shellSrc, join(crate, 'src', 'nested'), join(crate, 'tests'), join(crate, 'target', 'debug'), join(root, 'crates', 'target', 'src'), join(crate, 'benches')]) {
+      mkdirSync(dir, { recursive: true });
+    }
+    writeFileSync(join(shellSrc, 'Bad.svelte'), `<p>A ${word} list</p>\n`);
+    writeFileSync(join(shellSrc, 'Clean.svelte'), '<p>A mission list</p>\n');
+    writeFileSync(join(crate, 'src', 'nested', 'bad.rs'), `// the ${word} flag\n`);
+    writeFileSync(join(crate, 'src', 'clean.rs'), '// the mission flag\n');
+    writeFileSync(join(crate, 'tests', 'bad.rs'), `// a ${word} test\n`);
+    writeFileSync(join(crate, 'tests', 'clean.rs'), '// a mission test\n');
+    writeFileSync(join(crate, 'target', 'debug', 'skipped.rs'), `// ${word}\n`);
+    writeFileSync(join(root, 'crates', 'target', 'src', 'skipped.rs'), `// ${word}\n`);
+    writeFileSync(join(crate, 'benches', 'outside.rs'), `// ${word}\n`);
+    writeFileSync(join(crate, 'src', 'notes.txt'), `${word}\n`);
+    const found = scan(root).map((f) => f.file).sort();
+    assert.deepEqual(found, [
+      join('crates', 'core', 'src', 'nested', 'bad.rs'),
+      join('crates', 'core', 'tests', 'bad.rs'),
+      join('packages', 'shell', 'src', 'Bad.svelte'),
+    ].sort());
+    // positive control: the clean twins are scanned, the skipped files are not
+    const scanned = scannedFiles(root).map((f) => f.slice(root.length + 1)).sort();
+    assert.deepEqual(scanned, [
+      join('crates', 'core', 'src', 'clean.rs'),
+      join('crates', 'core', 'src', 'nested', 'bad.rs'),
+      join('crates', 'core', 'tests', 'bad.rs'),
+      join('crates', 'core', 'tests', 'clean.rs'),
+      join('packages', 'shell', 'src', 'Bad.svelte'),
+      join('packages', 'shell', 'src', 'Clean.svelte'),
+    ].sort());
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('a tree without crates/ scans its packages only (the crates walk is optional)', () => {
+  const root = mkdtempSync(join(tmpdir(), 'sk-terminology-'));
+  try {
+    mkdirSync(join(root, 'packages', 'p', 'src'), { recursive: true });
+    writeFileSync(join(root, 'packages', 'p', 'src', 'A.svelte'), '<p>mission</p>\n');
+    assert.equal(scannedFiles(root).length, 1);
+    assert.deepEqual(scan(root), []);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});

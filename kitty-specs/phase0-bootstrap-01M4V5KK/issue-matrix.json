@@ -1,0 +1,149 @@
+{
+  "rows": {
+    "#16": {
+      "evidence_ref": "Context-only: epic #16 is the parent of this mission; it owes the epic no separate work.",
+      "fr": null,
+      "nfr": null,
+      "repo": null,
+      "sc": null,
+      "scope": null,
+      "source_file": "spec.md",
+      "title": "<auto-classified: context_only>",
+      "verdict": "not-applicable",
+      "wp": null
+    },
+    "#17": {
+      "evidence_ref": "All 9 WPs approved and consolidated into feat/phase0-bootstrap-17; FR-001..FR-012 acceptance verdicts pass; closed by the mission PR.",
+      "fr": null,
+      "nfr": null,
+      "repo": null,
+      "sc": null,
+      "scope": null,
+      "source_file": null,
+      "title": null,
+      "verdict": "fixed",
+      "wp": "WP09"
+    },
+    "#18": {
+      "evidence_ref": "Context-only: #18 is a later Phase 0 mission under epic #16 that consumes this mission's output; out of scope here (spec C-006).",
+      "fr": null,
+      "nfr": null,
+      "repo": null,
+      "sc": null,
+      "scope": null,
+      "source_file": "spec.md",
+      "title": "<fill at WP-implementation time>",
+      "verdict": "not-applicable",
+      "wp": null
+    },
+    "#19": {
+      "evidence_ref": "Context-only: #19 is a later Phase 0 mission under epic #16 that consumes this mission's output; out of scope here (spec C-006).",
+      "fr": null,
+      "nfr": null,
+      "repo": null,
+      "sc": null,
+      "scope": null,
+      "source_file": "spec.md",
+      "title": "<fill at WP-implementation time>",
+      "verdict": "not-applicable",
+      "wp": null
+    },
+    "#20": {
+      "evidence_ref": "Context-only: #20 is a later Phase 0 mission under epic #16 that consumes this mission's output; out of scope here (spec C-006).",
+      "fr": null,
+      "nfr": null,
+      "repo": null,
+      "sc": null,
+      "scope": null,
+      "source_file": "spec.md",
+      "title": "<fill at WP-implementation time>",
+      "verdict": "not-applicable",
+      "wp": null
+    },
+    "#21": {
+      "evidence_ref": "Context-only: #21 is a later Phase 0 mission under epic #16 that consumes this mission's output; out of scope here (spec C-006).",
+      "fr": null,
+      "nfr": null,
+      "repo": null,
+      "sc": null,
+      "scope": null,
+      "source_file": "spec.md",
+      "title": "<fill at WP-implementation time>",
+      "verdict": "not-applicable",
+      "wp": null
+    },
+    "#22": {
+      "evidence_ref": "Context-only: #22 is a later Phase 0 mission under epic #16 that consumes this mission's output; out of scope here (spec C-006).",
+      "fr": null,
+      "nfr": null,
+      "repo": null,
+      "sc": null,
+      "scope": null,
+      "source_file": "spec.md",
+      "title": "<fill at WP-implementation time>",
+      "verdict": "not-applicable",
+      "wp": null
+    },
+    "#27": {
+      "evidence_ref": "Context-only: PR #27 (charter amendment) merged before this mission; precondition, not work owed.",
+      "fr": null,
+      "nfr": null,
+      "repo": null,
+      "sc": null,
+      "scope": null,
+      "source_file": "spec.md",
+      "title": "<auto-classified: pr_or_commit_ref>",
+      "verdict": "not-applicable",
+      "wp": null
+    },
+    "#28": {
+      "evidence_ref": "Follow-up: #28 is the deferred F-29 supply-chain follow-up filed by the orchestrator; tracked separately.",
+      "fr": null,
+      "nfr": null,
+      "repo": null,
+      "sc": null,
+      "scope": null,
+      "source_file": null,
+      "title": null,
+      "verdict": "not-applicable",
+      "wp": null
+    },
+    "#5529": {
+      "evidence_ref": "Context-only: spec-kitty/spec-kitty#5529 is upstream work this mission builds against via the pinned contract and stub; owes it no work.",
+      "fr": null,
+      "nfr": null,
+      "repo": null,
+      "sc": null,
+      "scope": null,
+      "source_file": null,
+      "title": null,
+      "verdict": "not-applicable",
+      "wp": null
+    },
+    "#5533": {
+      "evidence_ref": "Context-only: spec-kitty/spec-kitty#5533 is upstream work this mission builds against via the pinned contract and stub; owes it no work.",
+      "fr": null,
+      "nfr": null,
+      "repo": null,
+      "sc": null,
+      "scope": null,
+      "source_file": "spec.md",
+      "title": "<fill at WP-implementation time>",
+      "verdict": "not-applicable",
+      "wp": null
+    },
+    "#957": {
+      "evidence_ref": "Context-only: spec-kitty/spec-kitty#957 is upstream work this mission builds against via the pinned contract and stub; owes it no work.",
+      "fr": null,
+      "nfr": null,
+      "repo": null,
+      "sc": null,
+      "scope": null,
+      "source_file": "spec.md",
+      "title": "<fill at WP-implementation time>",
+      "verdict": "not-applicable",
+      "wp": null
+    }
+  },
+  "schema_version": 1
+}

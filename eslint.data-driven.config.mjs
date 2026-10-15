@@ -50,12 +50,17 @@
 //    them, as a quoted or computed object key and as a computed read (S19.5 to S19.11); a bare word
 //    as a plain identifier key stays clean. Also: a template computed read, an array of them searched with some, every, find,
 //    findIndex, findLast, findLastIndex or filter, and the left side of the `in` operator.
-//  - Vocabulary in a .d.ts or JSON file, and code outside packages/*/src (tests), is not scanned.
+//  - Vocabulary in a JSON file, and code outside packages/*/src (tests), is not scanned. A .d.ts file is scanned, the
+//    generated element typings of the shell included (exception E-46 was withdrawn on 2026-10-15).
+//  - In a .svelte file (B3) the selectors see the <script> blocks and the template expressions. Plain markup text and a static
+//    attribute value (<p>planned</p>, data-lane="done") are Svelte markup nodes, not Literal or TemplateElement nodes, so they
+//    are not seen; the shell takes every such word from the contract data, never from markup.
 //  - An element that imports the vocabulary from defaults/ and then compares with a different literal it never
 //    imports is covered only by the behavioural test with a foreign vocabulary.
 import { readFileSync } from 'node:fs';
 import { parse } from 'yaml';
 import tseslint from 'typescript-eslint';
+import { SVELTE_GLOB, svelteLanguageOptions } from './eslint-rules/svelte.mjs';
 import { builtinRules } from 'eslint/use-at-your-own-risk';
 
 // The vocabulary is read from the vendored contract schemas (pinned and hash-checked by `contract:check`), so a contract
@@ -260,16 +265,19 @@ export const OPS_BARE_RULE = 'data-driven-ops/no-restricted-syntax';
 export const OPS_KEYED_RULE = 'data-driven-ops-keyed/no-restricted-syntax';
 const opsPlugin = { rules: { 'no-restricted-syntax': builtinRules.get('no-restricted-syntax') } };
 
+/** The scanned sources: TypeScript and, since the shell (B3), Svelte components. */
+export const SOURCE_FILES = ['**/*.ts', SVELTE_GLOB];
+
 export default [
   {
-    files: ['**/*.ts'],
+    files: SOURCE_FILES,
     ignores: ALLOW_LIST,
     languageOptions: { parser: tseslint.parser, sourceType: 'module' },
     linterOptions: { noInlineConfig: true },
     rules: { 'no-restricted-syntax': ['error', ...BASE_ENTRIES] },
   },
   {
-    files: ['**/*.ts'],
+    files: SOURCE_FILES,
     ignores: [...ALLOW_LIST, ...OPS_BARE_IGNORES],
     languageOptions: { parser: tseslint.parser, sourceType: 'module' },
     linterOptions: { noInlineConfig: true },
@@ -277,11 +285,18 @@ export default [
     rules: { [OPS_BARE_RULE]: ['error', ...OPS_UNKEYED_ENTRIES] },
   },
   {
-    files: ['**/*.ts'],
+    files: SOURCE_FILES,
     ignores: [...ALLOW_LIST, ...OPS_KEYED_IGNORES],
     languageOptions: { parser: tseslint.parser, sourceType: 'module' },
     linterOptions: { noInlineConfig: true },
     plugins: { 'data-driven-ops-keyed': opsPlugin },
     rules: { [OPS_KEYED_RULE]: ['error', ...OPS_KEYED_ENTRIES] },
+  },
+  {
+    // Svelte components (B3): the same three rule blocks above apply unchanged; only the parser differs. svelte-eslint-parser
+    // hands `<script lang="ts">` to the TypeScript parser.
+    files: [SVELTE_GLOB],
+    languageOptions: svelteLanguageOptions({ typed: false }),
+    linterOptions: { noInlineConfig: true },
   },
 ];

@@ -9,9 +9,11 @@ import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   ALLOW_LIST, checkBaselines, checkGateJobNames, checkGateScripts, checkLockfile, checkNpmrc, checkPackageJson, checkPlantFiles,
-  checkPlaywrightTag, checkPng, checkTypecheckScripts, checkVitestFamily, checkWorkflow, checkWorkflowTriggers,
-  forbiddenNames, scanText,
+  checkPlaywrightTag, checkPng, checkTypecheckScripts, checkVitestFamily, checkWorkflow, checkWorkflowSecurity,
+  checkWorkflowTriggers, forbiddenNames, scanText,
 } from './hygiene/rules.mjs';
+import { checkCargoPins } from './hygiene/cargo-pins.mjs';
+import { checkRustToolchainPin } from './hygiene/rust-toolchain.mjs';
 
 const SNAPSHOTS = 'apps/storybook/tests/visual/__snapshots__';
 const DEFAULT_STATIC = 'apps/storybook/storybook-static';
@@ -106,7 +108,9 @@ async function workflowFindings(root, files) {
         : [];
       findings.push(...checkWorkflow(f, doc, plantDirs));
     } else {
-      findings.push(...checkGateJobNames(f, doc));
+      // Every other workflow gets the security rules (F-27); the gate structure and the main-only trigger rule stay
+      // ci.yml's (A10), so a scheduled workflow is never judged by them.
+      findings.push(...checkWorkflowSecurity(f, doc), ...checkGateJobNames(f, doc));
     }
   }
   return findings;
@@ -160,6 +164,10 @@ function configFindings(root, files) {
     if (text !== null) findings.push(...checkGateScripts(f, { [f]: text }));
   }
   findings.push(...checkPlantFiles(files));
+  // Cargo requirements are exact `=x.y.z` (F-09, NFR-003); parse-only, nothing is built.
+  if (existsSync(join(root, 'Cargo.toml'))) findings.push(...checkCargoPins(root));
+  // The toolchain is an exact x.y.z release, never a floating channel (NFR-003, CODE-TEST-005).
+  findings.push(...checkRustToolchainPin(root));
   return findings;
 }
 

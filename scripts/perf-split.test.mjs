@@ -2,7 +2,7 @@
 // measured while other test files share the browser. This guard keeps the split honest in both directions: a test file that
 // reads `performance.now()` and asserts a ceiling must be a `*.perf.test.ts`, and a `*.perf.test.ts` must hold one.
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -28,7 +28,8 @@ function testFiles(root) {
   };
   const packages = join(root, 'packages');
   for (const pkg of readdirSync(packages, { withFileTypes: true })) {
-    if (pkg.isDirectory()) walk(join(packages, pkg.name, 'test'));
+    // A package with no test/ directory yet (the shell until its first test) has no test file to audit.
+    if (pkg.isDirectory() && existsSync(join(packages, pkg.name, 'test'))) walk(join(packages, pkg.name, 'test'));
   }
   return found.sort();
 }
@@ -67,6 +68,7 @@ test('the classifier sees every clock, and needs a real matcher rather than the 
   const root = mkdtempSync(join(tmpdir(), 'perf-split-'));
   try {
     mkdirSync(join(root, 'packages/p/test'), { recursive: true });
+    mkdirSync(join(root, 'packages/no-tests/src'), { recursive: true });
     writeFileSync(join(root, 'packages/p/test/a.test.ts'), 'const t = Date.now();\nexpect(Date.now() - t).toBeLessThan(200);\n');
     writeFileSync(join(root, 'packages/p/test/b.perf.test.ts'), commentOnly);
     writeFileSync(join(root, 'packages/p/test/c.perf.test.ts'), 'const t = performance.now();\nexpect(performance.now() - t).toBeLessThan(200);\n');

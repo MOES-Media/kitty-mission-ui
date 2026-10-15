@@ -95,3 +95,18 @@ export function buildPin({ root = ROOT, sha, committerDate, retrievedAt, provena
 }
 
 export const stringifyPin = (pin) => `${JSON.stringify(pin, null, 2)}\n`;
+
+/**
+ * Pure, per file: the fetched upstream files (contracts/-relative path -> bytes) against PIN.json `files` (the same
+ * keys -> sha256 hex). Each list is sorted: `added` upstream only, `removed` pinned only, `changed` a different hash.
+ */
+export function comparePinnedFiles(pinFiles, fetchedFiles) {
+  const added = [];
+  const changed = [];
+  for (const [rel, bytes] of Object.entries(fetchedFiles)) {
+    if (!Object.hasOwn(pinFiles, rel)) added.push(rel);
+    else if (sha256(bytes) !== pinFiles[rel]) changed.push(rel);
+  }
+  const removed = Object.keys(pinFiles).filter((rel) => !Object.hasOwn(fetchedFiles, rel));
+  return { added: added.sort(), removed: removed.sort(), changed: changed.sort() };
+}

@@ -1,0 +1,174 @@
+{
+  "event_count": 68,
+  "last_event_id": "01M4ZPDV4E2XSG7YEYRDQG2MP0",
+  "materialized_at": "2026-10-15T11:51:12.270755+00:00",
+  "mission_number": "",
+  "mission_slug": "phase0-bootstrap-01M4V5KK",
+  "mission_type": "",
+  "summary": {
+    "approved": 0,
+    "blocked": 0,
+    "canceled": 0,
+    "claimed": 0,
+    "done": 9,
+    "for_review": 0,
+    "in_progress": 0,
+    "in_review": 0,
+    "planned": 0
+  },
+  "work_packages": {
+    "WP01": {
+      "actor": "merge",
+      "agent": "claude",
+      "force_count": 0,
+      "implementer_of_record": "claude",
+      "lane": "done",
+      "last_event_id": "01M4ZPDMZGX269PJGH9AT6FX3V",
+      "last_transition_at": "2026-10-15T11:51:05.968874+00:00",
+      "review_result": {
+        "feedback_path": "<workspace>/ui17/kitty-specs/phase0-bootstrap-01M4V5KK/tasks/WP01-rust-workspace-and-rust-gate/review-cycle-1.md",
+        "reference": "review-cycle://phase0-bootstrap-01M4V5KK/WP01-rust-workspace-and-rust-gate/review-cycle-1.md",
+        "reviewer": "claude",
+        "verdict": "approved"
+      },
+      "shell_pid": 3412651,
+      "shell_pid_created_at": "1791924538.69"
+    },
+    "WP02": {
+      "actor": "merge",
+      "agent": "claude",
+      "force_count": 0,
+      "implementer_of_record": "claude",
+      "lane": "done",
+      "last_event_id": "01M4ZPDNX977XDRTGZMAWF7M91",
+      "last_transition_at": "2026-10-15T11:51:06.921213+00:00",
+      "review_result": {
+        "feedback_path": "<workspace>/ui17/kitty-specs/phase0-bootstrap-01M4V5KK/tasks/WP02-mission-shell-package-and-svelte-gates/review-cycle-1.md",
+        "reference": "review-cycle://phase0-bootstrap-01M4V5KK/WP02-mission-shell-package-and-svelte-gates/review-cycle-1.md",
+        "reviewer": "claude",
+        "verdict": "approved"
+      },
+      "shell_pid": 3409568,
+      "shell_pid_created_at": "1791924507.08"
+    },
+    "WP03": {
+      "actor": "merge",
+      "agent": "claude",
+      "force_count": 0,
+      "implementer_of_record": "claude",
+      "lane": "done",
+      "last_event_id": "01M4ZPDPT3GANPJ6D83K4JNYSC",
+      "last_transition_at": "2026-10-15T11:51:07.843206+00:00",
+      "review_result": {
+        "feedback_path": "<workspace>/ui17/kitty-specs/phase0-bootstrap-01M4V5KK/tasks/WP03-shared-fixture-and-change-files/review-cycle-1.md",
+        "reference": "review-cycle://phase0-bootstrap-01M4V5KK/WP03-shared-fixture-and-change-files/review-cycle-1.md",
+        "reviewer": "claude",
+        "verdict": "approved"
+      },
+      "shell_pid": 3409568,
+      "shell_pid_created_at": "1791924507.08"
+    },
+    "WP04": {
+      "actor": "merge",
+      "agent": "claude",
+      "force_count": 1,
+      "implementer_of_record": "claude",
+      "lane": "done",
+      "last_event_id": "01M4ZPDQJZMY4PNC0HGKSVYSJM",
+      "last_transition_at": "2026-10-15T11:51:08.639035+00:00",
+      "review_result": {
+        "feedback_path": "<workspace>/ui17/kitty-specs/phase0-bootstrap-01M4V5KK/tasks/WP04-element-typings-from-manifest/review-cycle-2.md",
+        "reference": "review-cycle://phase0-bootstrap-01M4V5KK/WP04-element-typings-from-manifest/review-cycle-2.md",
+        "reviewer": "claude",
+        "verdict": "approved"
+      },
+      "shell_pid": 48804,
+      "shell_pid_created_at": "1791939918.17"
+    },
+    "WP05": {
+      "actor": "merge",
+      "agent": "claude",
+      "force_count": 0,
+      "implementer_of_record": "claude",
+      "lane": "done",
+      "last_event_id": "01M4ZPDRAJWGEJNSHCSQ5BM5P7",
+      "last_transition_at": "2026-10-15T11:51:09.394974+00:00",
+      "review_result": {
+        "feedback_path": "<workspace>/ui17/kitty-specs/phase0-bootstrap-01M4V5KK/tasks/WP05-client-port-and-fixture-adapter/review-cycle-1.md",
+        "reference": "review-cycle://phase0-bootstrap-01M4V5KK/WP05-client-port-and-fixture-adapter/review-cycle-1.md",
+        "reviewer": "claude",
+        "verdict": "approved"
+      },
+      "shell_pid": 4151327,
+      "shell_pid_created_at": "1791938790.93"
+    },
+    "WP06": {
+      "actor": "merge",
+      "agent": "claude",
+      "force_count": 0,
+      "implementer_of_record": "claude",
+      "lane": "done",
+      "last_event_id": "01M4ZPDTE992M3ZXQHPT6MFV9Z",
+      "last_transition_at": "2026-10-15T11:51:11.561400+00:00",
+      "review_result": {
+        "feedback_path": "<workspace>/ui17/kitty-specs/phase0-bootstrap-01M4V5KK/tasks/WP06-permanent-binding-check/review-cycle-1.md",
+        "reference": "review-cycle://phase0-bootstrap-01M4V5KK/WP06-permanent-binding-check/review-cycle-1.md",
+        "reviewer": "claude",
+        "verdict": "approved"
+      },
+      "shell_pid": 73023,
+      "shell_pid_created_at": "1791940283.84"
+    },
+    "WP07": {
+      "actor": "merge",
+      "agent": "claude",
+      "force_count": 0,
+      "implementer_of_record": "claude",
+      "lane": "done",
+      "last_event_id": "01M4ZPDS09GHEFHKY8JH6YDG9D",
+      "last_transition_at": "2026-10-15T11:51:10.089200+00:00",
+      "review_result": {
+        "feedback_path": "<workspace>/ui17/kitty-specs/phase0-bootstrap-01M4V5KK/tasks/WP07-kitty-stub-crate/review-cycle-1.md",
+        "reference": "review-cycle://phase0-bootstrap-01M4V5KK/WP07-kitty-stub-crate/review-cycle-1.md",
+        "reviewer": "claude",
+        "verdict": "approved"
+      },
+      "shell_pid": 3939765,
+      "shell_pid_created_at": "1791936360.46"
+    },
+    "WP08": {
+      "actor": "merge",
+      "agent": "claude",
+      "force_count": 0,
+      "implementer_of_record": "claude",
+      "lane": "done",
+      "last_event_id": "01M4ZPDSQ2E5J79APPSDA4MEK8",
+      "last_transition_at": "2026-10-15T11:51:10.818766+00:00",
+      "review_result": {
+        "feedback_path": "<workspace>/ui17/kitty-specs/phase0-bootstrap-01M4V5KK/tasks/WP08-hygiene-and-drift-alert/review-cycle-1.md",
+        "reference": "review-cycle://phase0-bootstrap-01M4V5KK/WP08-hygiene-and-drift-alert/review-cycle-1.md",
+        "reviewer": "claude",
+        "verdict": "approved"
+      },
+      "shell_pid": 4152187,
+      "shell_pid_created_at": "1791938800.97"
+    },
+    "WP09": {
+      "actor": "merge",
+      "agent": "claude",
+      "force_count": 0,
+      "implementer_of_record": "claude",
+      "lane": "done",
+      "last_event_id": "01M4ZPDV4E2XSG7YEYRDQG2MP0",
+      "last_transition_at": "2026-10-15T11:51:12.270755+00:00",
+      "review_result": {
+        "feedback_path": "<workspace>/ui17/kitty-specs/phase0-bootstrap-01M4V5KK/tasks/WP09-docs-timings-and-wrap-up/review-cycle-1.md",
+        "reference": "review-cycle://phase0-bootstrap-01M4V5KK/WP09-docs-timings-and-wrap-up/review-cycle-1.md",
+        "reviewer": "claude",
+        "verdict": "approved"
+      },
+      "shell_pid": 3312818,
+      "shell_pid_created_at": "1791993140.41"
+    }
+  }
+}

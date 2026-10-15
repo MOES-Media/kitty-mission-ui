@@ -1,0 +1,45 @@
+[
+  {
+    "gate": "rust",
+    "ciCommand": "cargo fmt --all --check && cargo clippy --workspace --all-targets --frozen -- -D warnings && cargo test --workspace --frozen",
+    "expectFailPattern": "plant_fmt_rust",
+    "overlays": [
+      {
+        "target": "crates/kitty-core/src/lib.rs",
+        "edits": [
+          {
+            "find": "    env!(\"CARGO_PKG_VERSION\")\n",
+            "replace": "    let plant_fmt_rust=1 ;\n    let _ = plant_fmt_rust;\n    env!(\"CARGO_PKG_VERSION\")\n"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "gate": "rust",
+    "ciCommand": "cargo fmt --all --check && cargo clippy --workspace --all-targets --frozen -- -D warnings && cargo test --workspace --frozen",
+    "expectFailPattern": "plant_clippy_rust",
+    "overlays": [
+      {
+        "target": "crates/kitty-core/src/lib.rs",
+        "edits": [
+          {
+            "find": "\n#[cfg(test)]\n",
+            "replace": "\n#[allow(dead_code)]\nfn plant_clippy() -> bool {\n    let plant_clippy_rust = true;\n    plant_clippy_rust == true\n}\n\n#[cfg(test)]\n"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "gate": "rust",
+    "ciCommand": "cargo fmt --all --check && cargo clippy --workspace --all-targets --frozen -- -D warnings && cargo test --workspace --frozen",
+    "expectFailPattern": "test plant_test_rust ... FAILED",
+    "overlays": [
+      {
+        "target": "crates/kitty-core/tests/plant_test_rust.rs",
+        "source": "plant_test_rust.rs.plant"
+      }
+    ]
+  }
+]

@@ -63,6 +63,7 @@ interface ConfigModule {
   OPS_KEYED_ENTRIES: SelectorEntry[];
   OPS_UNKEYED_ENTRIES: SelectorEntry[];
   OPS_KEYED_RULE: string;
+  SOURCE_FILES: string[];
 }
 
 async function loadConfig(): Promise<ConfigModule> {
@@ -153,6 +154,13 @@ const FIXTURES_BEFORE = 46;
 const FIXTURES_ADDED = 21;
 const FIXTURES_DRIFT = 7;
 const FIXTURES_OPS = 15;
+// The Svelte fixtures of the shell (B3): one that hard-codes a lane word and its clean twin. They are not `.ts.txt`
+// positives: each is linted under a .svelte file name by its own case below.
+const SVELTE_FIXTURES: Readonly<Record<string, string[]>> = {
+  'svelte-lane-literal.svelte.txt': ['S1'],
+  'svelte-clean.svelte.txt': [],
+};
+const SVELTE_FILE = 'packages/mission-shell/src/Fixture.svelte';
 
 describe('data-driven gate self-test: configuration', () => {
   it('declares the vocabulary of the contract and every selector entry, each with a distinct id', async () => {
@@ -200,16 +208,23 @@ describe('data-driven gate self-test: configuration', () => {
   it('turns inline configuration off', async () => {
     const cfg = await loadConfig();
     // all three blocks: the gate, the Ops bare-word block (BOUNDARY-001) and the Ops keyed-lookup block; each is unsilenceable on its own
+    // plus the Svelte parser block (B3), which sets no rule of its own. No global-ignores block: exception E-46 is withdrawn.
     const scoped = cfg.default.filter((c) => c.linterOptions?.noInlineConfig === true);
-    expect(scoped.length).toBe(3);
-    expect(cfg.default.length).toBe(3);
+    expect(scoped.length).toBe(4);
+    expect(cfg.default.length).toBe(4);
+    const [gate, ops, keyed, svelteBlock] = cfg.default;
+    for (const block of [gate, ops, keyed]) expect(block?.files).toEqual(['**/*.ts', '**/*.svelte']);
+    expect(svelteBlock?.files).toEqual(['**/*.svelte']);
+    expect(svelteBlock?.rules).toBeUndefined();
+    expect(cfg.default.filter((c) => c.ignores !== undefined && c.files === undefined)).toEqual([]);
+    expect('GENERATED_IGNORES' in cfg).toBe(false);
   });
 });
 
 describe('data-driven gate self-test: positive fixtures', () => {
   it('has the 46 positive fixtures of #5, the 21 of the Artifact Viewer, the 7 of the Drift screen and the 15 of the Ops screen, and no other file', () => {
     expect(positives.length).toBe(FIXTURES_BEFORE + FIXTURES_ADDED + FIXTURES_DRIFT + FIXTURES_OPS);
-    expect(readdirSync(FIXTURE_DIR).length).toBe(FIXTURES_BEFORE + FIXTURES_ADDED + FIXTURES_DRIFT + FIXTURES_OPS);
+    expect(readdirSync(FIXTURE_DIR).length).toBe(FIXTURES_BEFORE + FIXTURES_ADDED + FIXTURES_DRIFT + FIXTURES_OPS + Object.keys(SVELTE_FIXTURES).length);
     expect(positives.filter((f) => /^s1[56]-/.test(f)).length).toBe(FIXTURES_ADDED);
     expect(positives.filter((f) => /^s17-/.test(f)).length).toBe(FIXTURES_DRIFT);
     expect(positives.filter((f) => /^s1[89]-/.test(f)).length).toBe(FIXTURES_OPS);
@@ -1109,7 +1124,7 @@ describe('data-driven gate self-test: the real sources', () => {
     const sources = readdirSync(`${ROOT}packages`).flatMap((p) => walk(`${ROOT}packages/${p}/src`));
     const scanned = sources.filter(
       (f) =>
-        f.endsWith('.ts') &&
+        (f.endsWith('.ts') || f.endsWith('.svelte')) &&
         !f.includes('/src/defaults/') &&
         !f.includes('/src/contract/') &&
         !f.includes('/src/story-support/') &&
@@ -1119,6 +1134,10 @@ describe('data-driven gate self-test: the real sources', () => {
     );
     expect(scanned.length).toBeGreaterThan(0);
     expect(results.length).toBe(scanned.length);
+    // the shell's Svelte components are among the scanned files (B3): the gate does not skip .svelte
+    const svelteScanned = scanned.filter((f) => f.endsWith('.svelte'));
+    expect(svelteScanned.length).toBeGreaterThan(0);
+    expect(results.filter((r) => r.filePath.endsWith('.svelte')).length).toBe(svelteScanned.length);
   });
 });
 
@@ -1150,5 +1169,39 @@ describe('css alias ban', () => {
     expect((await lintCss("import { css } from 'lit';\nexport const s = css`:host { display: block; }`;\n")).length).toBe(0);
     expect((await lintCss("import { LitElement as L } from 'lit';\nexport const x = L;\n")).length).toBe(0);
     expect((await lintCss("import { css as c } from './local.js';\nexport const x = c;\n")).length).toBe(0);
+  });
+});
+
+describe('data-driven gate self-test: Svelte components (B3)', () => {
+  it('has exactly the two Svelte fixtures on disk', () => {
+    const onDisk = readdirSync(FIXTURE_DIR).filter((f) => f.endsWith('.svelte.txt')).sort();
+    expect(onDisk).toEqual(Object.keys(SVELTE_FIXTURES).sort());
+    expect(onDisk.length).toBe(2);
+  });
+
+  let ran = 0;
+  for (const [name, want] of Object.entries(SVELTE_FIXTURES)) {
+    it(want.length === 0 ? `reports nothing on ${name} (positive control)` : `reports exactly ${want.join(' and ')} on ${name}`, async () => {
+      const messages = await lint(readFileSync(`${FIXTURE_DIR}${name}`, 'utf8'), SVELTE_FILE);
+      expect(messages.filter((m) => m.fatal === true)).toEqual([]);
+      expect(selectorIds(messages).sort()).toEqual([...want].sort());
+      ran += 1;
+    });
+  }
+  it('ran both Svelte fixture cases', () => {
+    expect(ran).toBe(2);
+  });
+
+  it('applies the same selectors to a .svelte file as to a .ts file (the lane literal in a script block, S1)', async () => {
+    const code = "const lane = 'planned';\nexport { lane };\n";
+    expect(selectorIds(await lint(code, ELEMENT_FILE))).toEqual(['S1']);
+    expect(selectorIds(await lint(`<script lang="ts">${code}</script>\n`, SVELTE_FILE))).toEqual(['S1']);
+  });
+
+  it('scans the generated element typings like every other source (E-46 withdrawn 2026-10-15)', async () => {
+    const eslint = new ESLint({ cwd: ROOT, overrideConfigFile: CONFIG_PATH });
+    expect(await eslint.isPathIgnored('packages/mission-shell/src/generated/elements.d.ts')).toBe(false);
+    expect(await eslint.isPathIgnored('packages/mission-shell/src/generated/other.d.ts')).toBe(false);
+    expect(await eslint.isPathIgnored('packages/mission-shell/src/Shell.svelte')).toBe(false);
   });
 });

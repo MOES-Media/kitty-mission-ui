@@ -1,0 +1,2945 @@
+{
+  "ArtifactContent.empty": {
+    "schema": "ArtifactContent",
+    "value": {
+      "path": "notes/empty.txt",
+      "kind": "other",
+      "mediaType": "text/plain",
+      "encoding": "utf-8",
+      "sizeBytes": 0,
+      "redacted": false,
+      "content": ""
+    }
+  },
+  "ArtifactContent.json": {
+    "schema": "ArtifactContent",
+    "value": {
+      "path": "contracts/schema.json",
+      "kind": "contract",
+      "mediaType": "application/json",
+      "encoding": "utf-8",
+      "sizeBytes": 28,
+      "redacted": false,
+      "content": "{\"name\": \"example\", \"v\": 1}\n"
+    }
+  },
+  "ArtifactContent.markdown": {
+    "schema": "ArtifactContent",
+    "value": {
+      "path": "spec.md",
+      "kind": "spec",
+      "mediaType": "text/markdown",
+      "encoding": "utf-8",
+      "sizeBytes": 64,
+      "redacted": false,
+      "content": "# Example Mission\n\nA short specification of an example Mission.\n"
+    }
+  },
+  "ArtifactContent.redacted": {
+    "schema": "ArtifactContent",
+    "value": {
+      "path": "notes/handoff.md",
+      "kind": "other",
+      "mediaType": "text/markdown",
+      "encoding": "utf-8",
+      "sizeBytes": 81,
+      "redacted": true,
+      "content": "Work happened in [path] and the question went to [email].\n\nNothing else is open.\n"
+    }
+  },
+  "ArtifactListing.populated": {
+    "schema": "ArtifactListing",
+    "value": {
+      "missionId": "01JZCB3C4D5E6F7G8H9JKMNPQT",
+      "entries": [
+        {
+          "path": "analysis-report.md",
+          "kind": "analysis_report",
+          "sizeBytes": 4210,
+          "modifiedAt": "2026-09-22T11:05:00Z",
+          "readable": true
+        },
+        {
+          "path": "checklists/requirements.md",
+          "kind": "checklist",
+          "sizeBytes": 1388,
+          "modifiedAt": "2026-09-22T10:41:00Z",
+          "readable": true
+        },
+        {
+          "path": "contracts/api.yaml",
+          "kind": "contract",
+          "sizeBytes": 9876,
+          "modifiedAt": "2026-09-22T10:52:00Z",
+          "readable": true
+        },
+        {
+          "path": "data-model.md",
+          "kind": "data_model",
+          "sizeBytes": 3302,
+          "modifiedAt": "2026-09-22T10:50:00Z",
+          "readable": true
+        },
+        {
+          "path": "notes/big-export.json",
+          "kind": "other",
+          "sizeBytes": 300000,
+          "modifiedAt": "2026-09-23T08:00:00Z",
+          "readable": false
+        },
+        {
+          "path": "notes/with space.md",
+          "kind": "other",
+          "sizeBytes": 212,
+          "modifiedAt": "2026-09-23T08:10:00Z",
+          "readable": true
+        },
+        {
+          "path": "plan.md",
+          "kind": "plan",
+          "sizeBytes": 7420,
+          "modifiedAt": "2026-09-22T10:48:00Z",
+          "readable": true
+        },
+        {
+          "path": "research.md",
+          "kind": "research",
+          "sizeBytes": 6150,
+          "modifiedAt": "2026-09-22T10:44:00Z",
+          "readable": true
+        },
+        {
+          "path": "spec.md",
+          "kind": "spec",
+          "sizeBytes": 5120,
+          "modifiedAt": "2026-09-22T10:35:00Z",
+          "readable": true
+        },
+        {
+          "path": "tasks.md",
+          "kind": "tasks",
+          "sizeBytes": 8890,
+          "modifiedAt": "2026-09-22T10:58:00Z",
+          "readable": true
+        },
+        {
+          "path": "tasks/WP01-example.md",
+          "kind": "work_package_prompt",
+          "sizeBytes": 2750,
+          "modifiedAt": "2026-09-22T11:00:00Z",
+          "readable": true
+        },
+        {
+          "path": "tasks/WP01-example/review-cycle-1.md",
+          "kind": "review_cycle",
+          "sizeBytes": 960,
+          "modifiedAt": "2026-09-24T09:15:00Z",
+          "readable": true
+        }
+      ],
+      "truncated": false
+    }
+  },
+  "ArtifactListing.truncated": {
+    "schema": "ArtifactListing",
+    "value": {
+      "missionId": "01JZCB3C4D5E6F7G8H9JKMNPQT",
+      "entries": [
+        {
+          "path": "notes/a-000.md",
+          "kind": "other",
+          "sizeBytes": 10,
+          "modifiedAt": "2026-09-23T08:00:00Z",
+          "readable": true
+        },
+        {
+          "path": "notes/a-001.md",
+          "kind": "other",
+          "sizeBytes": 11,
+          "modifiedAt": "2026-09-23T08:00:00Z",
+          "readable": true
+        },
+        {
+          "path": "notes/a-002.md",
+          "kind": "other",
+          "sizeBytes": 12,
+          "modifiedAt": "2026-09-23T08:00:00Z",
+          "readable": true
+        }
+      ],
+      "truncated": true
+    }
+  },
+  "ArtifactRefusal.artifact-listing-unreadable": {
+    "schema": "ArtifactRefusal",
+    "value": {
+      "type": "about:blank",
+      "title": "The artifacts could not be listed",
+      "status": 500,
+      "code": "artifact_listing_unreadable",
+      "detail": "The Mission directory could not be listed."
+    }
+  },
+  "ArtifactRefusal.artifact-not-text": {
+    "schema": "ArtifactRefusal",
+    "value": {
+      "type": "about:blank",
+      "title": "The artifact is not text",
+      "status": 415,
+      "code": "artifact_not_text",
+      "detail": "The file holds a NUL byte or is not valid UTF-8."
+    }
+  },
+  "ArtifactRefusal.artifact-secret": {
+    "schema": "ArtifactRefusal",
+    "value": {
+      "type": "about:blank",
+      "title": "The artifact holds a credential",
+      "status": 422,
+      "code": "artifact_secret",
+      "detail": "The file holds a credential, so its content is not served."
+    }
+  },
+  "ArtifactRefusal.artifact-too-large": {
+    "schema": "ArtifactRefusal",
+    "value": {
+      "type": "about:blank",
+      "title": "The artifact is too large",
+      "status": 413,
+      "code": "artifact_too_large",
+      "detail": "The file is larger than 262144 bytes."
+    }
+  },
+  "ArtifactRefusal.artifact-unreadable": {
+    "schema": "ArtifactRefusal",
+    "value": {
+      "type": "about:blank",
+      "title": "The artifact could not be read",
+      "status": 500,
+      "code": "artifact_unreadable",
+      "detail": "The file could not be read."
+    }
+  },
+  "ArtifactRefusal.invalid-artifact-path": {
+    "schema": "ArtifactRefusal",
+    "value": {
+      "type": "about:blank",
+      "title": "The artifact path was refused",
+      "status": 400,
+      "code": "invalid_artifact_path",
+      "detail": "The path is not a relative path of forward-slash segments."
+    }
+  },
+  "ArtifactRefusal.not-found": {
+    "schema": "ArtifactRefusal",
+    "value": {
+      "type": "about:blank",
+      "title": "The artifact was not found",
+      "status": 404,
+      "code": "not_found",
+      "detail": "No eligible artifact has this path in the Mission."
+    }
+  },
+  "DriftRefusal.mission-not-found": {
+    "schema": "DriftRefusal",
+    "value": {
+      "type": "about:blank",
+      "title": "The Mission was not found",
+      "status": 404,
+      "code": "mission_not_found",
+      "detail": "No Mission has this identity."
+    }
+  },
+  "DriftRefusal.scan-unreadable": {
+    "schema": "DriftRefusal",
+    "value": {
+      "type": "about:blank",
+      "title": "The drift scan could not read a Mission",
+      "status": 500,
+      "code": "drift_scan_unreadable",
+      "detail": "A Mission the scan had to read could not be read, so no report is returned."
+    }
+  },
+  "DriftReport.clean": {
+    "schema": "DriftReport",
+    "value": {
+      "scannedAt": "2026-10-06T09:00:00Z",
+      "findings": [],
+      "truncated": false
+    }
+  },
+  "DriftReport.corrupt-json": {
+    "schema": "DriftReport",
+    "value": {
+      "scannedAt": "2026-10-06T09:00:00Z",
+      "findings": [
+        {
+          "kind": "snapshot_disagrees_with_event_log",
+          "severity": "error",
+          "missionId": "01JZCB3C4D5E6F7G8H9JKMNPQT",
+          "artifactPath": "status.json",
+          "summary": "The status snapshot is not a valid JSON object.",
+          "authority": "event_log",
+          "derivedSide": "status_json",
+          "laneComparison": [],
+          "remedy": "materialize_status",
+          "sourceCode": "CORRUPT_JSON"
+        }
+      ],
+      "truncated": false
+    }
+  },
+  "DriftReport.populated": {
+    "schema": "DriftReport",
+    "value": {
+      "scannedAt": "2026-10-06T09:00:00Z",
+      "findings": [
+        {
+          "kind": "lane_branch_missing",
+          "severity": "warning",
+          "missionId": "01JZCB3C4D5E6F7G8H9JKMNPQT",
+          "artifactPath": "lanes.json",
+          "summary": "An expected lane or Mission branch has no local branch.",
+          "authority": "git",
+          "derivedSide": "lanes_json",
+          "laneComparison": [],
+          "remedy": null,
+          "sourceCode": null
+        },
+        {
+          "kind": "snapshot_disagrees_with_event_log",
+          "severity": "error",
+          "missionId": "01JZCB3C4D5E6F7G8H9JKMNPQT",
+          "artifactPath": "status.json",
+          "summary": "The status snapshot disagrees with the event log.",
+          "authority": "event_log",
+          "derivedSide": "status_json",
+          "laneComparison": [
+            {
+              "wpId": "WP01",
+              "persistedStatusLane": "in_progress",
+              "derivedStatusLane": "for_review"
+            },
+            {
+              "wpId": "WP03",
+              "persistedStatusLane": "planned",
+              "derivedStatusLane": null
+            }
+          ],
+          "remedy": "materialize_status",
+          "sourceCode": "SNAPSHOT_DRIFT"
+        },
+        {
+          "kind": "snapshot_disagrees_with_event_log",
+          "severity": "warning",
+          "missionId": "01JZCB3D4E5F6G7H8J9KMNPQRS",
+          "artifactPath": "status.json",
+          "summary": "The status snapshot differs from the event log only in provenance fields.",
+          "authority": "event_log",
+          "derivedSide": "status_json",
+          "laneComparison": [],
+          "remedy": null,
+          "sourceCode": "SNAPSHOT_DRIFT_PROVENANCE"
+        },
+        {
+          "kind": "snapshot_disagrees_with_event_log",
+          "severity": "warning",
+          "missionId": "01JZCB3E5F6G7H8J9KMNPQRSTV",
+          "artifactPath": "status.json",
+          "summary": "The status snapshot differs from the event log and every work package is done.",
+          "authority": "event_log",
+          "derivedSide": "status_json",
+          "laneComparison": [
+            {
+              "wpId": "WP02",
+              "persistedStatusLane": "approved",
+              "derivedStatusLane": "done"
+            }
+          ],
+          "remedy": null,
+          "sourceCode": "SNAPSHOT_DRIFT_TERMINAL"
+        },
+        {
+          "kind": "snapshot_or_event_log_missing",
+          "severity": "warning",
+          "missionId": "01JZCB3F6G7H8J9KMNPQRSTVWX",
+          "artifactPath": "status.events.jsonl",
+          "summary": "One of the status snapshot and the event log is missing.",
+          "authority": "event_log",
+          "derivedSide": "status_json",
+          "laneComparison": [],
+          "remedy": null,
+          "sourceCode": null
+        }
+      ],
+      "truncated": false
+    }
+  },
+  "DriftReport.truncated": {
+    "schema": "DriftReport",
+    "value": {
+      "scannedAt": "2026-10-06T09:00:00Z",
+      "findings": [
+        {
+          "kind": "snapshot_or_event_log_missing",
+          "severity": "warning",
+          "missionId": "01JZCB3C4D5E6F7G8H9JKMNPQT",
+          "artifactPath": "status.json",
+          "summary": "One of the status snapshot and the event log is missing.",
+          "authority": "event_log",
+          "derivedSide": "status_json",
+          "laneComparison": [],
+          "remedy": "materialize_status",
+          "sourceCode": null
+        },
+        {
+          "kind": "snapshot_or_event_log_missing",
+          "severity": "warning",
+          "missionId": "01JZCB3D4E5F6G7H8J9KMNPQRS",
+          "artifactPath": "status.events.jsonl",
+          "summary": "One of the status snapshot and the event log is missing.",
+          "authority": "event_log",
+          "derivedSide": "status_json",
+          "laneComparison": [],
+          "remedy": null,
+          "sourceCode": null
+        }
+      ],
+      "truncated": true
+    }
+  },
+  "LogTruncatedEvent.content-mismatch": {
+    "schema": "LogTruncatedEvent",
+    "value": {
+      "missionId": "01JZAB3C4D5E6F7G8H9JKMNPQR",
+      "reason": "content_mismatch",
+      "detectedAtOffset": 1912,
+      "streamCursor": {
+        "offset": 0,
+        "invariant": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    }
+  },
+  "LogTruncatedEvent.size-shrink": {
+    "schema": "LogTruncatedEvent",
+    "value": {
+      "missionId": "01JZAB3C4D5E6F7G8H9JKMNPQR",
+      "reason": "size_shrink",
+      "detectedAtOffset": 2406,
+      "streamCursor": {
+        "offset": 0,
+        "invariant": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    }
+  },
+  "MissionDetail.early": {
+    "schema": "MissionDetail",
+    "value": {
+      "missionId": "01JZBB3C4D5E6F7G8H9JKMNPQS",
+      "mid8": "01JZBB3C",
+      "slug": "example-mission-01JZBB3C",
+      "friendlyName": "Example Mission Beta",
+      "displayNumber": null,
+      "missionType": null,
+      "targetBranch": "main",
+      "topology": "unknown",
+      "createdAt": "2026-09-21T09:00:00+02:00",
+      "statusLaneCounts": {
+        "planned": 0,
+        "claimed": 0,
+        "in_progress": 0,
+        "for_review": 0,
+        "in_review": 0,
+        "approved": 0,
+        "done": 0,
+        "blocked": 0,
+        "canceled": 0
+      },
+      "wpTotal": 0,
+      "blockedCount": 0,
+      "progress": {
+        "weightedPercentage": 0,
+        "donePercentage": 0,
+        "doneCount": 0,
+        "semantics": "weighted_readiness"
+      },
+      "lifecycleStatus": "draft",
+      "acceptedAt": null,
+      "mergedAt": null,
+      "discardedAt": null,
+      "lastEventId": null,
+      "lastActivityAt": null,
+      "eventCount": 0,
+      "streamCursor": {
+        "offset": 0,
+        "invariant": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "nextAction": null,
+      "phases": [
+        {
+          "name": "specify",
+          "status": "complete",
+          "basis": "artifact"
+        },
+        {
+          "name": "plan",
+          "status": "in_progress",
+          "basis": "lifecycle_event"
+        },
+        {
+          "name": "tasks",
+          "status": "pending",
+          "basis": "artifact"
+        },
+        {
+          "name": "implement",
+          "status": "pending",
+          "basis": "derived_from_status_lanes"
+        },
+        {
+          "name": "review",
+          "status": "pending",
+          "basis": "derived_from_status_lanes"
+        }
+      ],
+      "workPackages": []
+    }
+  },
+  "MissionDetail.populated": {
+    "schema": "MissionDetail",
+    "value": {
+      "missionId": "01JZAB3C4D5E6F7G8H9JKMNPQR",
+      "mid8": "01JZAB3C",
+      "slug": "example-mission-01JZAB3C",
+      "friendlyName": "Example Mission Alpha",
+      "displayNumber": 12,
+      "missionType": "software-dev",
+      "targetBranch": "main",
+      "topology": "lanes",
+      "createdAt": "2026-09-20T08:15:00Z",
+      "statusLaneCounts": {
+        "planned": 1,
+        "claimed": 0,
+        "in_progress": 1,
+        "for_review": 1,
+        "in_review": 0,
+        "approved": 0,
+        "done": 3,
+        "blocked": 0,
+        "canceled": 0
+      },
+      "wpTotal": 6,
+      "blockedCount": 0,
+      "progress": {
+        "weightedPercentage": 65,
+        "donePercentage": 50,
+        "doneCount": 3,
+        "semantics": "weighted_readiness"
+      },
+      "lifecycleStatus": "active",
+      "acceptedAt": null,
+      "mergedAt": null,
+      "discardedAt": null,
+      "lastEventId": "01JZAB3C4D5E6F7G8H9JKMNQ01",
+      "lastActivityAt": "2026-09-24T16:40:12Z",
+      "eventCount": 41,
+      "streamCursor": {
+        "offset": 5120,
+        "invariant": "3a7bd3e2360a3d29eea436fcfb7e44c735d117c42d1c1835420b6b9942dd4f1b"
+      },
+      "nextAction": null,
+      "phases": [
+        {
+          "name": "specify",
+          "status": "complete",
+          "basis": "artifact"
+        },
+        {
+          "name": "plan",
+          "status": "complete",
+          "basis": "artifact"
+        },
+        {
+          "name": "tasks",
+          "status": "complete",
+          "basis": "lifecycle_event"
+        },
+        {
+          "name": "implement",
+          "status": "in_progress",
+          "basis": "derived_from_status_lanes"
+        },
+        {
+          "name": "review",
+          "status": "in_progress",
+          "basis": "derived_from_status_lanes"
+        }
+      ],
+      "workPackages": [
+        {
+          "wpId": "WP01",
+          "title": "Set up the project skeleton",
+          "phaseLabel": "Foundation",
+          "statusLane": "done",
+          "dependencies": [],
+          "readiness": {
+            "satisfied": true,
+            "unsatisfied": []
+          },
+          "readyToStart": false,
+          "subtaskProgress": {
+            "done": 3,
+            "total": 3
+          },
+          "lastTransitionAt": "2026-09-21T10:00:00Z"
+        },
+        {
+          "wpId": "WP02",
+          "title": "Define the data model",
+          "phaseLabel": "Foundation",
+          "statusLane": "done",
+          "dependencies": [
+            "WP01"
+          ],
+          "readiness": {
+            "satisfied": true,
+            "unsatisfied": []
+          },
+          "readyToStart": false,
+          "subtaskProgress": {
+            "done": 4,
+            "total": 4
+          },
+          "lastTransitionAt": "2026-09-22T14:20:00Z"
+        },
+        {
+          "wpId": "WP03",
+          "title": "Build the list view",
+          "phaseLabel": "Screens",
+          "statusLane": "done",
+          "dependencies": [
+            "WP02"
+          ],
+          "readiness": {
+            "satisfied": true,
+            "unsatisfied": []
+          },
+          "readyToStart": false,
+          "subtaskProgress": {
+            "done": 5,
+            "total": 5
+          },
+          "lastTransitionAt": "2026-09-23T09:05:00Z"
+        },
+        {
+          "wpId": "WP04",
+          "title": "Build the detail view",
+          "phaseLabel": "Screens",
+          "statusLane": "for_review",
+          "dependencies": [
+            "WP03"
+          ],
+          "readiness": {
+            "satisfied": true,
+            "unsatisfied": []
+          },
+          "readyToStart": false,
+          "subtaskProgress": {
+            "done": 4,
+            "total": 4
+          },
+          "lastTransitionAt": "2026-09-24T16:40:12Z"
+        },
+        {
+          "wpId": "WP05",
+          "title": "Add the event stream",
+          "phaseLabel": "Screens",
+          "statusLane": "in_progress",
+          "dependencies": [
+            "WP03"
+          ],
+          "readiness": {
+            "satisfied": true,
+            "unsatisfied": []
+          },
+          "readyToStart": false,
+          "subtaskProgress": {
+            "done": 1,
+            "total": 3
+          },
+          "lastTransitionAt": "2026-09-24T11:30:00Z"
+        },
+        {
+          "wpId": "WP06",
+          "title": "Write the documentation",
+          "phaseLabel": "Release",
+          "statusLane": "planned",
+          "dependencies": [
+            "WP05"
+          ],
+          "readiness": {
+            "satisfied": false,
+            "unsatisfied": [
+              "WP05"
+            ]
+          },
+          "readyToStart": false,
+          "subtaskProgress": {
+            "done": 0,
+            "total": 2
+          },
+          "lastTransitionAt": "2026-09-20T08:20:00Z"
+        },
+        {
+          "wpId": "WP07",
+          "title": "Prepare the release notes",
+          "phaseLabel": null,
+          "statusLane": null,
+          "dependencies": [
+            "WP06"
+          ],
+          "readiness": {
+            "satisfied": false,
+            "unsatisfied": [
+              "WP06"
+            ]
+          },
+          "readyToStart": false,
+          "subtaskProgress": {
+            "done": 0,
+            "total": 0
+          },
+          "lastTransitionAt": null
+        }
+      ]
+    }
+  },
+  "MissionLifecycleEvent.mission-created": {
+    "schema": "MissionLifecycleEvent",
+    "value": {
+      "missionId": "01JZAB3C4D5E6F7G8H9JKMNPQR",
+      "eventId": "01JZAB3C4D5E6F7G8H9JKMNQ34",
+      "eventType": "MissionCreated",
+      "at": "2026-09-26T07:00:00Z",
+      "streamCursor": {
+        "offset": 312,
+        "invariant": "9d8c7b6a5f4e3d2c1b0a9f8e7d6c5b4a39281706f5e4d3c2b1a0f9e8d7c6b5a4"
+      }
+    }
+  },
+  "MissionLifecycleEvent.plan-completed": {
+    "schema": "MissionLifecycleEvent",
+    "value": {
+      "missionId": "01JZAB3C4D5E6F7G8H9JKMNPQR",
+      "eventId": "01JZAB3C4D5E6F7G8H9JKMNQ35",
+      "eventType": "PlanCompleted",
+      "at": "2026-09-26T07:45:00+02:00",
+      "streamCursor": {
+        "offset": 868,
+        "invariant": "1f3a5c7e9b0d2f4a6c8e0b1d3f5a7c9e1b3d5f7a9c0e2b4d6f8a0c1e3b5d7f90"
+      }
+    }
+  },
+  "MissionOverview.discarded": {
+    "schema": "MissionOverview",
+    "value": {
+      "missionId": "01JZDB3C4D5E6F7G8H9JKMNPQV",
+      "mid8": "01JZDB3C",
+      "slug": "example-mission-01JZDB3C",
+      "friendlyName": "Example Mission Delta",
+      "displayNumber": null,
+      "missionType": "research",
+      "targetBranch": "main",
+      "topology": "single_branch",
+      "createdAt": "2026-09-18T07:45:00Z",
+      "statusLaneCounts": {
+        "planned": 1,
+        "claimed": 0,
+        "in_progress": 0,
+        "for_review": 0,
+        "in_review": 0,
+        "approved": 0,
+        "done": 0,
+        "blocked": 0,
+        "canceled": 1
+      },
+      "wpTotal": 2,
+      "blockedCount": 0,
+      "progress": {
+        "weightedPercentage": 0,
+        "donePercentage": 0,
+        "doneCount": 0,
+        "semantics": "weighted_readiness"
+      },
+      "lifecycleStatus": "discarded",
+      "acceptedAt": null,
+      "mergedAt": null,
+      "discardedAt": "2026-09-19T08:00:00Z",
+      "lastEventId": "01JZAB3C4D5E6F7G8H9JKMNQ03",
+      "lastActivityAt": "2026-09-18T17:20:00Z",
+      "eventCount": 9,
+      "streamCursor": {
+        "offset": 980,
+        "invariant": "2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae"
+      },
+      "nextAction": null
+    }
+  },
+  "MissionOverview.populated": {
+    "schema": "MissionOverview",
+    "value": {
+      "missionId": "01JZAB3C4D5E6F7G8H9JKMNPQR",
+      "mid8": "01JZAB3C",
+      "slug": "example-mission-01JZAB3C",
+      "friendlyName": "Example Mission Alpha",
+      "displayNumber": 12,
+      "missionType": "software-dev",
+      "targetBranch": "main",
+      "topology": "lanes",
+      "createdAt": "2026-09-20T08:15:00Z",
+      "statusLaneCounts": {
+        "planned": 1,
+        "claimed": 0,
+        "in_progress": 1,
+        "for_review": 1,
+        "in_review": 0,
+        "approved": 0,
+        "done": 3,
+        "blocked": 0,
+        "canceled": 0
+      },
+      "wpTotal": 6,
+      "blockedCount": 0,
+      "progress": {
+        "weightedPercentage": 65,
+        "donePercentage": 50,
+        "doneCount": 3,
+        "semantics": "weighted_readiness"
+      },
+      "lifecycleStatus": "active",
+      "acceptedAt": null,
+      "mergedAt": null,
+      "discardedAt": null,
+      "lastEventId": "01JZAB3C4D5E6F7G8H9JKMNQ01",
+      "lastActivityAt": "2026-09-24T16:40:12Z",
+      "eventCount": 41,
+      "streamCursor": {
+        "offset": 5120,
+        "invariant": "3a7bd3e2360a3d29eea436fcfb7e44c735d117c42d1c1835420b6b9942dd4f1b"
+      },
+      "nextAction": null
+    }
+  },
+  "MissionOverview.provisional": {
+    "schema": "MissionOverview",
+    "value": {
+      "missionId": "01JZCB3C4D5E6F7G8H9JKMNPQT",
+      "mid8": "01JZCB3C",
+      "slug": "example-mission-01JZCB3C",
+      "friendlyName": "Example Mission Gamma",
+      "displayNumber": 13,
+      "missionType": "software-dev",
+      "targetBranch": "main",
+      "topology": "lanes_with_coord",
+      "createdAt": "2026-09-22T10:30:00Z",
+      "statusLaneCounts": {
+        "planned": 0,
+        "claimed": 0,
+        "in_progress": 0,
+        "for_review": 0,
+        "in_review": 0,
+        "approved": 0,
+        "done": 4,
+        "blocked": 0,
+        "canceled": 1
+      },
+      "wpTotal": 5,
+      "blockedCount": 0,
+      "progress": {
+        "weightedPercentage": 80,
+        "donePercentage": 80,
+        "doneCount": 4,
+        "semantics": "weighted_readiness"
+      },
+      "lifecycleStatus": "active",
+      "acceptedAt": null,
+      "mergedAt": "2026-09-26T12:00:00Z",
+      "discardedAt": null,
+      "lastEventId": "01JZAB3C4D5E6F7G8H9JKMNQ02",
+      "lastActivityAt": "2026-09-26T11:58:30Z",
+      "eventCount": 58,
+      "streamCursor": {
+        "offset": 7340,
+        "invariant": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08"
+      },
+      "nextAction": "Run /spec-kitty.review in your coding agent, then: spec-kitty accept --mission example-mission-01JZCB3C"
+    }
+  },
+  "MissionOverview.sparse": {
+    "schema": "MissionOverview",
+    "value": {
+      "missionId": "01JZBB3C4D5E6F7G8H9JKMNPQS",
+      "mid8": "01JZBB3C",
+      "slug": "example-mission-01JZBB3C",
+      "friendlyName": "Example Mission Beta",
+      "displayNumber": null,
+      "missionType": null,
+      "targetBranch": "main",
+      "topology": "unknown",
+      "createdAt": "2026-09-21T09:00:00+02:00",
+      "statusLaneCounts": {
+        "planned": 2,
+        "claimed": 0,
+        "in_progress": 0,
+        "for_review": 0,
+        "in_review": 0,
+        "approved": 0,
+        "done": 0,
+        "blocked": 0,
+        "canceled": 0
+      },
+      "wpTotal": 2,
+      "blockedCount": 0,
+      "progress": {
+        "weightedPercentage": 0,
+        "donePercentage": 0,
+        "doneCount": 0,
+        "semantics": "weighted_readiness"
+      },
+      "lifecycleStatus": "planned",
+      "acceptedAt": null,
+      "mergedAt": null,
+      "discardedAt": null,
+      "lastEventId": null,
+      "lastActivityAt": null,
+      "eventCount": 0,
+      "streamCursor": {
+        "offset": 0,
+        "invariant": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "nextAction": null
+    }
+  },
+  "MissionOverviewPage.exhausted": {
+    "schema": "MissionOverviewPage",
+    "value": {
+      "items": [],
+      "pageInfo": {
+        "hasNextPage": false,
+        "nextPageCursor": null,
+        "pageSize": 2
+      }
+    }
+  },
+  "MissionOverviewPage.first": {
+    "schema": "MissionOverviewPage",
+    "value": {
+      "items": [
+        {
+          "missionId": "01JZCB3C4D5E6F7G8H9JKMNPQT",
+          "mid8": "01JZCB3C",
+          "slug": "example-mission-01JZCB3C",
+          "friendlyName": "Example Mission Gamma",
+          "displayNumber": 13,
+          "missionType": "software-dev",
+          "targetBranch": "main",
+          "topology": "lanes_with_coord",
+          "createdAt": "2026-09-22T10:30:00Z",
+          "statusLaneCounts": {
+            "planned": 0,
+            "claimed": 0,
+            "in_progress": 0,
+            "for_review": 0,
+            "in_review": 0,
+            "approved": 0,
+            "done": 4,
+            "blocked": 0,
+            "canceled": 1
+          },
+          "wpTotal": 5,
+          "blockedCount": 0,
+          "progress": {
+            "weightedPercentage": 80,
+            "donePercentage": 80,
+            "doneCount": 4,
+            "semantics": "weighted_readiness"
+          },
+          "lifecycleStatus": "active",
+          "acceptedAt": null,
+          "mergedAt": "2026-09-26T12:00:00Z",
+          "discardedAt": null,
+          "lastEventId": "01JZAB3C4D5E6F7G8H9JKMNQ02",
+          "lastActivityAt": "2026-09-26T11:58:30Z",
+          "eventCount": 58,
+          "streamCursor": {
+            "offset": 7340,
+            "invariant": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08"
+          },
+          "nextAction": "Run /spec-kitty.review in your coding agent, then: spec-kitty accept --mission example-mission-01JZCB3C"
+        },
+        {
+          "missionId": "01JZAB3C4D5E6F7G8H9JKMNPQR",
+          "mid8": "01JZAB3C",
+          "slug": "example-mission-01JZAB3C",
+          "friendlyName": "Example Mission Alpha",
+          "displayNumber": 12,
+          "missionType": "software-dev",
+          "targetBranch": "main",
+          "topology": "lanes",
+          "createdAt": "2026-09-20T08:15:00Z",
+          "statusLaneCounts": {
+            "planned": 1,
+            "claimed": 0,
+            "in_progress": 1,
+            "for_review": 1,
+            "in_review": 0,
+            "approved": 0,
+            "done": 3,
+            "blocked": 0,
+            "canceled": 0
+          },
+          "wpTotal": 6,
+          "blockedCount": 0,
+          "progress": {
+            "weightedPercentage": 65,
+            "donePercentage": 50,
+            "doneCount": 3,
+            "semantics": "weighted_readiness"
+          },
+          "lifecycleStatus": "active",
+          "acceptedAt": null,
+          "mergedAt": null,
+          "discardedAt": null,
+          "lastEventId": "01JZAB3C4D5E6F7G8H9JKMNQ01",
+          "lastActivityAt": "2026-09-24T16:40:12Z",
+          "eventCount": 41,
+          "streamCursor": {
+            "offset": 5120,
+            "invariant": "3a7bd3e2360a3d29eea436fcfb7e44c735d117c42d1c1835420b6b9942dd4f1b"
+          },
+          "nextAction": null
+        }
+      ],
+      "pageInfo": {
+        "hasNextPage": true,
+        "nextPageCursor": "cGFnZS0y",
+        "pageSize": 2
+      }
+    }
+  },
+  "MissionOverviewPage.last": {
+    "schema": "MissionOverviewPage",
+    "value": {
+      "items": [
+        {
+          "missionId": "01JZDB3C4D5E6F7G8H9JKMNPQV",
+          "mid8": "01JZDB3C",
+          "slug": "example-mission-01JZDB3C",
+          "friendlyName": "Example Mission Delta",
+          "displayNumber": null,
+          "missionType": "research",
+          "targetBranch": "main",
+          "topology": "single_branch",
+          "createdAt": "2026-09-18T07:45:00Z",
+          "statusLaneCounts": {
+            "planned": 1,
+            "claimed": 0,
+            "in_progress": 0,
+            "for_review": 0,
+            "in_review": 0,
+            "approved": 0,
+            "done": 0,
+            "blocked": 0,
+            "canceled": 1
+          },
+          "wpTotal": 2,
+          "blockedCount": 0,
+          "progress": {
+            "weightedPercentage": 0,
+            "donePercentage": 0,
+            "doneCount": 0,
+            "semantics": "weighted_readiness"
+          },
+          "lifecycleStatus": "discarded",
+          "acceptedAt": null,
+          "mergedAt": null,
+          "discardedAt": "2026-09-19T08:00:00Z",
+          "lastEventId": "01JZAB3C4D5E6F7G8H9JKMNQ03",
+          "lastActivityAt": "2026-09-18T17:20:00Z",
+          "eventCount": 9,
+          "streamCursor": {
+            "offset": 980,
+            "invariant": "2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae"
+          },
+          "nextAction": null
+        }
+      ],
+      "pageInfo": {
+        "hasNextPage": false,
+        "nextPageCursor": null,
+        "pageSize": 2
+      }
+    }
+  },
+  "MissionOverviewPage.middle": {
+    "schema": "MissionOverviewPage",
+    "value": {
+      "items": [
+        {
+          "missionId": "01JZBB3C4D5E6F7G8H9JKMNPQS",
+          "mid8": "01JZBB3C",
+          "slug": "example-mission-01JZBB3C",
+          "friendlyName": "Example Mission Beta",
+          "displayNumber": null,
+          "missionType": null,
+          "targetBranch": "main",
+          "topology": "unknown",
+          "createdAt": "2026-09-21T09:00:00+02:00",
+          "statusLaneCounts": {
+            "planned": 2,
+            "claimed": 0,
+            "in_progress": 0,
+            "for_review": 0,
+            "in_review": 0,
+            "approved": 0,
+            "done": 0,
+            "blocked": 0,
+            "canceled": 0
+          },
+          "wpTotal": 2,
+          "blockedCount": 0,
+          "progress": {
+            "weightedPercentage": 0,
+            "donePercentage": 0,
+            "doneCount": 0,
+            "semantics": "weighted_readiness"
+          },
+          "lifecycleStatus": "planned",
+          "acceptedAt": null,
+          "mergedAt": null,
+          "discardedAt": null,
+          "lastEventId": null,
+          "lastActivityAt": null,
+          "eventCount": 0,
+          "streamCursor": {
+            "offset": 0,
+            "invariant": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "nextAction": null
+        },
+        {
+          "missionId": "01JZDB3C4D5E6F7G8H9JKMNPQV",
+          "mid8": "01JZDB3C",
+          "slug": "example-mission-01JZDB3C",
+          "friendlyName": "Example Mission Delta",
+          "displayNumber": null,
+          "missionType": "research",
+          "targetBranch": "main",
+          "topology": "single_branch",
+          "createdAt": "2026-09-18T07:45:00Z",
+          "statusLaneCounts": {
+            "planned": 1,
+            "claimed": 0,
+            "in_progress": 0,
+            "for_review": 0,
+            "in_review": 0,
+            "approved": 0,
+            "done": 0,
+            "blocked": 0,
+            "canceled": 1
+          },
+          "wpTotal": 2,
+          "blockedCount": 0,
+          "progress": {
+            "weightedPercentage": 0,
+            "donePercentage": 0,
+            "doneCount": 0,
+            "semantics": "weighted_readiness"
+          },
+          "lifecycleStatus": "discarded",
+          "acceptedAt": null,
+          "mergedAt": null,
+          "discardedAt": "2026-09-19T08:00:00Z",
+          "lastEventId": "01JZAB3C4D5E6F7G8H9JKMNQ03",
+          "lastActivityAt": "2026-09-18T17:20:00Z",
+          "eventCount": 9,
+          "streamCursor": {
+            "offset": 980,
+            "invariant": "2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae"
+          },
+          "nextAction": null
+        }
+      ],
+      "pageInfo": {
+        "hasNextPage": true,
+        "nextPageCursor": "cGFnZS0z",
+        "pageSize": 2
+      }
+    }
+  },
+  "OpsInvocation.closed-by-agent": {
+    "schema": "OpsInvocation",
+    "value": {
+      "invocationId": "01K6TY7H2J3K4M5N6P7Q8R9S0T",
+      "profileId": "reviewer-renata",
+      "action": "review",
+      "actor": "codex",
+      "modeOfWork": "mission_step",
+      "startedAt": "2026-10-05T11:02:30Z",
+      "missionId": "01JZCB3C4D5E6F7G8H9JKMNPQT",
+      "wpId": "WP02",
+      "status": "closed",
+      "outcome": "done",
+      "closedBy": "agent",
+      "completedAt": "2026-10-05T11:41:10Z",
+      "evidence": {
+        "kind": "repo_path",
+        "value": "docs/reports/review-summary.md",
+        "redacted": false
+      }
+    }
+  },
+  "OpsInvocation.closed-by-doctor-sweep": {
+    "schema": "OpsInvocation",
+    "value": {
+      "invocationId": "01K6TX6E1F2G3H4J5K6M7N8P9Q",
+      "profileId": "architect-alphonso",
+      "action": "analyze",
+      "actor": "operator",
+      "modeOfWork": "advisory",
+      "startedAt": "2026-10-04T16:45:00Z",
+      "missionId": null,
+      "wpId": null,
+      "status": "closed",
+      "outcome": "abandoned",
+      "closedBy": "doctor_sweep",
+      "completedAt": "2026-10-05T08:00:00Z",
+      "evidence": {
+        "kind": "text",
+        "value": "Closed by the doctor sweep because no completion was recorded.",
+        "redacted": false
+      }
+    }
+  },
+  "OpsInvocation.evidence-null": {
+    "schema": "OpsInvocation",
+    "value": {
+      "invocationId": "01K6TQ0N5P6Q7R8S9T0V1W2X3Y",
+      "profileId": "architect-alphonso",
+      "action": "profiles.list",
+      "actor": "claude",
+      "modeOfWork": "query",
+      "startedAt": "2026-09-28T12:00:00Z",
+      "missionId": null,
+      "wpId": null,
+      "status": "closed",
+      "outcome": "done",
+      "closedBy": "agent",
+      "completedAt": "2026-09-28T12:00:05Z",
+      "evidence": null
+    }
+  },
+  "OpsInvocation.evidence-repo-path": {
+    "schema": "OpsInvocation",
+    "value": {
+      "invocationId": "01K6TW5B0C1D2E3F4G5H6J7K8M",
+      "profileId": "python-pedro",
+      "action": "implement",
+      "actor": "claude",
+      "modeOfWork": "task_execution",
+      "startedAt": "2026-10-03T09:10:00Z",
+      "missionId": "01JZCB3C4D5E6F7G8H9JKMNPQT",
+      "wpId": "WP01",
+      "status": "closed",
+      "outcome": "done",
+      "closedBy": "agent",
+      "completedAt": "2026-10-03T10:30:00Z",
+      "evidence": {
+        "kind": "repo_path",
+        "value": "src/specify_cli/status/models.py",
+        "redacted": false
+      }
+    }
+  },
+  "OpsInvocation.evidence-text": {
+    "schema": "OpsInvocation",
+    "value": {
+      "invocationId": "01K6TS2T7V8W9X0Y1Z2A3B4C5D",
+      "profileId": "python-pedro",
+      "action": "implement",
+      "actor": "codex",
+      "modeOfWork": "task_execution",
+      "startedAt": "2026-09-30T08:00:00Z",
+      "missionId": "01JZCB3C4D5E6F7G8H9JKMNPQT",
+      "wpId": "WP02",
+      "status": "closed",
+      "outcome": "done",
+      "closedBy": "agent",
+      "completedAt": "2026-09-30T09:20:00Z",
+      "evidence": {
+        "kind": "text",
+        "value": "Reviewed the change and found no blocking issue.",
+        "redacted": false
+      }
+    }
+  },
+  "OpsInvocation.evidence-text-redacted": {
+    "schema": "OpsInvocation",
+    "value": {
+      "invocationId": "01K6TR1Q6R7S8T9V0W1X2Y3Z4A",
+      "profileId": "python-pedro",
+      "action": "implement",
+      "actor": "claude",
+      "modeOfWork": "task_execution",
+      "startedAt": "2026-09-29T10:00:00Z",
+      "missionId": "01JZCB3C4D5E6F7G8H9JKMNPQT",
+      "wpId": "WP01",
+      "status": "closed",
+      "outcome": "done",
+      "closedBy": "agent",
+      "completedAt": "2026-09-29T11:00:00Z",
+      "evidence": {
+        "kind": "text",
+        "value": "Notes were shared with [email] and kept in [path].",
+        "redacted": true
+      }
+    }
+  },
+  "OpsInvocation.evidence-url": {
+    "schema": "OpsInvocation",
+    "value": {
+      "invocationId": "01K6TV4Z9A0B1C2D3E4F5G6H7J",
+      "profileId": "reviewer-renata",
+      "action": "review",
+      "actor": "claude",
+      "modeOfWork": "task_execution",
+      "startedAt": "2026-10-02T13:00:00Z",
+      "missionId": "01JZCB3C4D5E6F7G8H9JKMNPQT",
+      "wpId": "WP04",
+      "status": "closed",
+      "outcome": "failed",
+      "closedBy": "agent",
+      "completedAt": "2026-10-02T13:25:00Z",
+      "evidence": {
+        "kind": "url",
+        "value": "https://example.org/reviews/42",
+        "redacted": false
+      }
+    }
+  },
+  "OpsInvocation.evidence-url-redacted": {
+    "schema": "OpsInvocation",
+    "value": {
+      "invocationId": "01K6TT3W8X9Y0Z1A2B3C4D5E6F",
+      "profileId": "reviewer-renata",
+      "action": "review",
+      "actor": "claude",
+      "modeOfWork": "task_execution",
+      "startedAt": "2026-10-01T15:30:00Z",
+      "missionId": "01JZCB3C4D5E6F7G8H9JKMNPQT",
+      "wpId": "WP04",
+      "status": "closed",
+      "outcome": "done",
+      "closedBy": "agent",
+      "completedAt": "2026-10-01T16:05:00Z",
+      "evidence": {
+        "kind": "url",
+        "value": "https://example.org/reviews/41",
+        "redacted": true
+      }
+    }
+  },
+  "OpsInvocation.open": {
+    "schema": "OpsInvocation",
+    "value": {
+      "invocationId": "01K6TZ8M3N4P5Q6R7S8T9V0W1X",
+      "profileId": "python-pedro",
+      "action": "implement",
+      "actor": "claude",
+      "modeOfWork": "task_execution",
+      "startedAt": "2026-10-05T14:20:00Z",
+      "missionId": "01JZCB3C4D5E6F7G8H9JKMNPQT",
+      "wpId": "WP03",
+      "status": "open",
+      "outcome": null,
+      "closedBy": null,
+      "completedAt": null,
+      "evidence": null
+    }
+  },
+  "OpsInvocationPage.empty": {
+    "schema": "OpsInvocationPage",
+    "value": {
+      "items": [],
+      "pageInfo": {
+        "hasNextPage": false,
+        "nextPageCursor": null,
+        "pageSize": 50
+      },
+      "totalCount": 0,
+      "skippedCount": 0
+    }
+  },
+  "OpsInvocationPage.first": {
+    "schema": "OpsInvocationPage",
+    "value": {
+      "items": [
+        {
+          "invocationId": "01K6TZ8M3N4P5Q6R7S8T9V0W1X",
+          "profileId": "python-pedro",
+          "action": "implement",
+          "actor": "claude",
+          "modeOfWork": "task_execution",
+          "startedAt": "2026-10-05T14:20:00Z",
+          "missionId": "01JZCB3C4D5E6F7G8H9JKMNPQT",
+          "wpId": "WP03",
+          "status": "open",
+          "outcome": null,
+          "closedBy": null,
+          "completedAt": null,
+          "evidence": null
+        },
+        {
+          "invocationId": "01K6TY7H2J3K4M5N6P7Q8R9S0T",
+          "profileId": "reviewer-renata",
+          "action": "review",
+          "actor": "codex",
+          "modeOfWork": "mission_step",
+          "startedAt": "2026-10-05T11:02:30Z",
+          "missionId": "01JZCB3C4D5E6F7G8H9JKMNPQT",
+          "wpId": "WP02",
+          "status": "closed",
+          "outcome": "done",
+          "closedBy": "agent",
+          "completedAt": "2026-10-05T11:41:10Z",
+          "evidence": {
+            "kind": "repo_path",
+            "value": "docs/reports/review-summary.md",
+            "redacted": false
+          }
+        }
+      ],
+      "pageInfo": {
+        "hasNextPage": true,
+        "nextPageCursor": "cGFnZS0y",
+        "pageSize": 2
+      },
+      "totalCount": 5,
+      "skippedCount": 1
+    }
+  },
+  "OpsInvocationPage.last": {
+    "schema": "OpsInvocationPage",
+    "value": {
+      "items": [
+        {
+          "invocationId": "01K6TW5B0C1D2E3F4G5H6J7K8M",
+          "profileId": "python-pedro",
+          "action": "implement",
+          "actor": "claude",
+          "modeOfWork": "task_execution",
+          "startedAt": "2026-10-03T09:10:00Z",
+          "missionId": "01JZCB3C4D5E6F7G8H9JKMNPQT",
+          "wpId": "WP01",
+          "status": "closed",
+          "outcome": "done",
+          "closedBy": "agent",
+          "completedAt": "2026-10-03T10:30:00Z",
+          "evidence": {
+            "kind": "repo_path",
+            "value": "src/specify_cli/status/models.py",
+            "redacted": false
+          }
+        }
+      ],
+      "pageInfo": {
+        "hasNextPage": false,
+        "nextPageCursor": null,
+        "pageSize": 2
+      },
+      "totalCount": 5,
+      "skippedCount": 1
+    }
+  },
+  "OpsRefusal.ops-unreadable": {
+    "schema": "OpsRefusal",
+    "value": {
+      "type": "about:blank",
+      "title": "The Ops directory could not be read",
+      "status": 500,
+      "code": "ops_unreadable",
+      "detail": "The Ops directory or the closure spine exists but could not be read, so no page is returned."
+    }
+  },
+  "PageCursorRefusal.invalid": {
+    "schema": "PageCursorRefusal",
+    "value": {
+      "type": "about:blank",
+      "title": "The page cursor was refused",
+      "status": 400,
+      "code": "invalid_page_cursor",
+      "detail": "The pageCursor is malformed, forged or no longer valid."
+    }
+  },
+  "Project.all-null": {
+    "schema": "Project",
+    "value": {
+      "name": "example-project",
+      "missionCount": 0,
+      "specKittyVersion": null,
+      "schemaVersion": null,
+      "health": "schema_drift",
+      "currentBranch": null,
+      "lastActivityAt": null
+    }
+  },
+  "Project.example": {
+    "schema": "Project",
+    "value": {
+      "name": "example-project",
+      "missionCount": 3,
+      "specKittyVersion": "4.0.0",
+      "schemaVersion": 3,
+      "health": "healthy",
+      "currentBranch": "main",
+      "lastActivityAt": "2026-10-01T09:30:00Z"
+    }
+  },
+  "Project.schema-drift": {
+    "schema": "Project",
+    "value": {
+      "name": "example-project",
+      "missionCount": 2,
+      "specKittyVersion": "3.1.0",
+      "schemaVersion": 2,
+      "health": "schema_drift",
+      "currentBranch": "topic/example",
+      "lastActivityAt": "2026-09-28T14:05:00+02:00"
+    }
+  },
+  "StatusTransitionEvent.first": {
+    "schema": "StatusTransitionEvent",
+    "value": {
+      "missionId": "01JZAB3C4D5E6F7G8H9JKMNPQR",
+      "eventId": "01JZAB3C4D5E6F7G8H9JKMNQ31",
+      "wpId": "WP01",
+      "fromStatusLane": null,
+      "toStatusLane": "planned",
+      "at": "2026-09-26T08:00:00Z",
+      "actor": {
+        "tool": "finalize-tasks",
+        "role": null,
+        "profile": null
+      },
+      "force": false,
+      "streamCursor": {
+        "offset": 1480,
+        "invariant": "1f3a5c7e9b0d2f4a6c8e0b1d3f5a7c9e1b3d5f7a9c0e2b4d6f8a0c1e3b5d7f90"
+      }
+    }
+  },
+  "StatusTransitionEvent.forced": {
+    "schema": "StatusTransitionEvent",
+    "value": {
+      "missionId": "01JZAB3C4D5E6F7G8H9JKMNPQR",
+      "eventId": "01JZAB3C4D5E6F7G8H9JKMNQ33",
+      "wpId": "WP02",
+      "fromStatusLane": "blocked",
+      "toStatusLane": "planned",
+      "at": "2026-09-27T10:15:00Z",
+      "actor": {
+        "tool": null,
+        "role": null,
+        "profile": null
+      },
+      "force": true,
+      "streamCursor": {
+        "offset": 2406,
+        "invariant": "1f3a5c7e9b0d2f4a6c8e0b1d3f5a7c9e1b3d5f7a9c0e2b4d6f8a0c1e3b5d7f90"
+      }
+    }
+  },
+  "StatusTransitionEvent.moved": {
+    "schema": "StatusTransitionEvent",
+    "value": {
+      "missionId": "01JZAB3C4D5E6F7G8H9JKMNPQR",
+      "eventId": "01JZAB3C4D5E6F7G8H9JKMNQ32",
+      "wpId": "WP01",
+      "fromStatusLane": "in_progress",
+      "toStatusLane": "for_review",
+      "at": "2026-09-26T09:30:00+02:00",
+      "actor": {
+        "tool": "claude",
+        "role": "implementer",
+        "profile": "implementer-ivan"
+      },
+      "force": false,
+      "streamCursor": {
+        "offset": 1912,
+        "invariant": "9d8c7b6a5f4e3d2c1b0a9f8e7d6c5b4a39281706f5e4d3c2b1a0f9e8d7c6b5a4"
+      }
+    }
+  },
+  "StreamRefusal.content-mismatch": {
+    "schema": "StreamRefusal",
+    "value": {
+      "type": "about:blank",
+      "title": "The resume cursor was refused",
+      "status": 409,
+      "code": "content_mismatch",
+      "detail": "The digest of the streamCursor does not match the event log of this Mission at that offset."
+    }
+  },
+  "StreamRefusal.cursor-without-mission": {
+    "schema": "StreamRefusal",
+    "value": {
+      "type": "about:blank",
+      "title": "The resume cursor was refused",
+      "status": 400,
+      "code": "cursor_without_mission",
+      "detail": "A streamCursor was sent without a missionId; a cursor needs the Mission whose log it belongs to."
+    }
+  },
+  "StreamRefusal.misaligned": {
+    "schema": "StreamRefusal",
+    "value": {
+      "type": "about:blank",
+      "title": "The resume cursor was refused",
+      "status": 400,
+      "code": "misaligned",
+      "detail": "The offset of the streamCursor is not at the start of a line of the event log."
+    }
+  },
+  "StreamRefusal.negative": {
+    "schema": "StreamRefusal",
+    "value": {
+      "type": "about:blank",
+      "title": "The resume cursor was refused",
+      "status": 400,
+      "code": "negative",
+      "detail": "The offset of the streamCursor is below 0."
+    }
+  },
+  "StreamRefusal.out-of-range": {
+    "schema": "StreamRefusal",
+    "value": {
+      "type": "about:blank",
+      "title": "The resume cursor was refused",
+      "status": 409,
+      "code": "out_of_range",
+      "detail": "The offset of the streamCursor is beyond the end of the event log of this Mission."
+    }
+  },
+  "WorkPackage.actor-handle": {
+    "schema": "WorkPackage",
+    "value": {
+      "wpId": "WP02",
+      "title": "Define the data model",
+      "phaseLabel": null,
+      "authored": {
+        "role": null,
+        "agentProfile": null,
+        "model": null,
+        "subtasks": []
+      },
+      "ownedFiles": [],
+      "dependencies": [],
+      "requirementRefs": [],
+      "executionMode": null,
+      "taskType": null,
+      "priority": null,
+      "mergeTargetBranch": null,
+      "trackerRefs": [],
+      "statusLane": "planned",
+      "assignment": {
+        "agent": null,
+        "assignee": null,
+        "role": null,
+        "agentProfile": null,
+        "agentProfileVersion": null,
+        "model": null,
+        "provider": null
+      },
+      "subtasks": {},
+      "subtaskProgress": {
+        "done": 0,
+        "total": 0
+      },
+      "implementerOfRecord": null,
+      "lastTransitionAt": "2026-09-22T07:00:00Z",
+      "forceCount": 0,
+      "lastEventId": "01JZAB3C4D5E6F7G8H9JKMNQ10",
+      "actor": {
+        "tool": "finalize-tasks",
+        "role": null,
+        "profile": null
+      },
+      "cancellation": null,
+      "readiness": {
+        "satisfied": true,
+        "unsatisfied": []
+      },
+      "readyToStart": true,
+      "review": {
+        "latestResult": null,
+        "override": null
+      },
+      "history": [
+        {
+          "eventId": "01JZAB3C4D5E6F7G8H9JKMNQ10",
+          "at": "2026-09-22T07:00:00Z",
+          "kind": "transition",
+          "fromStatusLane": null,
+          "toStatusLane": "planned",
+          "actor": {
+            "tool": "finalize-tasks",
+            "role": null,
+            "profile": null
+          },
+          "force": false,
+          "reason": null,
+          "reviewVerdict": null
+        }
+      ],
+      "staleness": null
+    }
+  },
+  "WorkPackage.actor-redacted": {
+    "schema": "WorkPackage",
+    "value": {
+      "wpId": "WP03",
+      "title": "Build the list view",
+      "phaseLabel": null,
+      "authored": {
+        "role": null,
+        "agentProfile": null,
+        "model": null,
+        "subtasks": []
+      },
+      "ownedFiles": [],
+      "dependencies": [],
+      "requirementRefs": [],
+      "executionMode": null,
+      "taskType": null,
+      "priority": null,
+      "mergeTargetBranch": null,
+      "trackerRefs": [],
+      "statusLane": "planned",
+      "assignment": {
+        "agent": null,
+        "assignee": null,
+        "role": null,
+        "agentProfile": null,
+        "agentProfileVersion": null,
+        "model": null,
+        "provider": null
+      },
+      "subtasks": {},
+      "subtaskProgress": {
+        "done": 0,
+        "total": 0
+      },
+      "implementerOfRecord": null,
+      "lastTransitionAt": "2026-09-22T07:00:00Z",
+      "forceCount": 0,
+      "lastEventId": "01JZAB3C4D5E6F7G8H9JKMNQ10",
+      "actor": {
+        "tool": null,
+        "role": null,
+        "profile": null
+      },
+      "cancellation": null,
+      "readiness": {
+        "satisfied": true,
+        "unsatisfied": []
+      },
+      "readyToStart": true,
+      "review": {
+        "latestResult": null,
+        "override": null
+      },
+      "history": [
+        {
+          "eventId": "01JZAB3C4D5E6F7G8H9JKMNQ10",
+          "at": "2026-09-22T07:00:00Z",
+          "kind": "transition",
+          "fromStatusLane": null,
+          "toStatusLane": "planned",
+          "actor": {
+            "tool": null,
+            "role": null,
+            "profile": null
+          },
+          "force": false,
+          "reason": null,
+          "reviewVerdict": null
+        }
+      ],
+      "staleness": null
+    }
+  },
+  "WorkPackage.actor-structured": {
+    "schema": "WorkPackage",
+    "value": {
+      "wpId": "WP01",
+      "title": "Set up the project skeleton",
+      "phaseLabel": null,
+      "authored": {
+        "role": null,
+        "agentProfile": null,
+        "model": null,
+        "subtasks": []
+      },
+      "ownedFiles": [],
+      "dependencies": [],
+      "requirementRefs": [],
+      "executionMode": null,
+      "taskType": null,
+      "priority": null,
+      "mergeTargetBranch": null,
+      "trackerRefs": [],
+      "statusLane": "planned",
+      "assignment": {
+        "agent": null,
+        "assignee": null,
+        "role": null,
+        "agentProfile": null,
+        "agentProfileVersion": null,
+        "model": null,
+        "provider": null
+      },
+      "subtasks": {},
+      "subtaskProgress": {
+        "done": 0,
+        "total": 0
+      },
+      "implementerOfRecord": null,
+      "lastTransitionAt": "2026-09-22T07:00:00Z",
+      "forceCount": 0,
+      "lastEventId": "01JZAB3C4D5E6F7G8H9JKMNQ10",
+      "actor": {
+        "tool": "claude",
+        "role": "implementer",
+        "profile": "implementer-ivan"
+      },
+      "cancellation": null,
+      "readiness": {
+        "satisfied": true,
+        "unsatisfied": []
+      },
+      "readyToStart": true,
+      "review": {
+        "latestResult": null,
+        "override": null
+      },
+      "history": [
+        {
+          "eventId": "01JZAB3C4D5E6F7G8H9JKMNQ10",
+          "at": "2026-09-22T07:00:00Z",
+          "kind": "transition",
+          "fromStatusLane": null,
+          "toStatusLane": "planned",
+          "actor": {
+            "tool": "claude",
+            "role": "implementer",
+            "profile": "implementer-ivan"
+          },
+          "force": false,
+          "reason": null,
+          "reviewVerdict": null
+        }
+      ],
+      "staleness": null
+    }
+  },
+  "WorkPackage.canceled": {
+    "schema": "WorkPackage",
+    "value": {
+      "wpId": "WP08",
+      "title": "Retire the old report",
+      "phaseLabel": null,
+      "authored": {
+        "role": null,
+        "agentProfile": null,
+        "model": null,
+        "subtasks": []
+      },
+      "ownedFiles": [],
+      "dependencies": [],
+      "requirementRefs": [],
+      "executionMode": null,
+      "taskType": null,
+      "priority": null,
+      "mergeTargetBranch": null,
+      "trackerRefs": [],
+      "statusLane": "canceled",
+      "assignment": {
+        "agent": null,
+        "assignee": null,
+        "role": null,
+        "agentProfile": null,
+        "agentProfileVersion": null,
+        "model": null,
+        "provider": null
+      },
+      "subtasks": {},
+      "subtaskProgress": {
+        "done": 0,
+        "total": 0
+      },
+      "implementerOfRecord": null,
+      "lastTransitionAt": "2026-09-22T07:00:00Z",
+      "forceCount": 0,
+      "lastEventId": "01JZAB3C4D5E6F7G8H9JKMNQ10",
+      "actor": {
+        "tool": "claude",
+        "role": "implementer",
+        "profile": "implementer-ivan"
+      },
+      "cancellation": {
+        "reasonSource": "operator",
+        "reason": "Superseded by WP09."
+      },
+      "readiness": {
+        "satisfied": true,
+        "unsatisfied": []
+      },
+      "readyToStart": false,
+      "review": {
+        "latestResult": null,
+        "override": null
+      },
+      "history": [
+        {
+          "eventId": "01JZAB3C4D5E6F7G8H9JKMNQ10",
+          "at": "2026-09-22T07:00:00Z",
+          "kind": "transition",
+          "fromStatusLane": "planned",
+          "toStatusLane": "canceled",
+          "actor": {
+            "tool": "claude",
+            "role": "implementer",
+            "profile": "implementer-ivan"
+          },
+          "force": false,
+          "reason": "Superseded by WP09.",
+          "reviewVerdict": null
+        }
+      ],
+      "staleness": null
+    }
+  },
+  "WorkPackage.no-events": {
+    "schema": "WorkPackage",
+    "value": {
+      "wpId": "WP07",
+      "title": "Prepare the release notes",
+      "phaseLabel": null,
+      "authored": {
+        "role": null,
+        "agentProfile": null,
+        "model": null,
+        "subtasks": []
+      },
+      "ownedFiles": [],
+      "dependencies": [
+        "WP06"
+      ],
+      "requirementRefs": [],
+      "executionMode": null,
+      "taskType": null,
+      "priority": null,
+      "mergeTargetBranch": null,
+      "trackerRefs": [],
+      "statusLane": null,
+      "assignment": {
+        "agent": null,
+        "assignee": null,
+        "role": null,
+        "agentProfile": null,
+        "agentProfileVersion": null,
+        "model": null,
+        "provider": null
+      },
+      "subtasks": {},
+      "subtaskProgress": {
+        "done": 0,
+        "total": 0
+      },
+      "implementerOfRecord": null,
+      "lastTransitionAt": null,
+      "forceCount": 0,
+      "lastEventId": null,
+      "actor": {
+        "tool": null,
+        "role": null,
+        "profile": null
+      },
+      "cancellation": null,
+      "readiness": {
+        "satisfied": false,
+        "unsatisfied": [
+          "WP06"
+        ]
+      },
+      "readyToStart": false,
+      "review": {
+        "latestResult": null,
+        "override": null
+      },
+      "history": [],
+      "staleness": null
+    }
+  },
+  "WorkPackage.override": {
+    "schema": "WorkPackage",
+    "value": {
+      "wpId": "WP09",
+      "title": "Ship the release",
+      "phaseLabel": "Screens",
+      "authored": {
+        "role": "implementer",
+        "agentProfile": "implementer-ivan",
+        "model": "sonnet",
+        "subtasks": [
+          "T023",
+          "T024",
+          "T025",
+          "T026"
+        ]
+      },
+      "ownedFiles": [
+        "src/example/detail_view.py",
+        "tests/example/test_detail_view.py"
+      ],
+      "dependencies": [
+        "WP03"
+      ],
+      "requirementRefs": [
+        "FR-005",
+        "FR-006"
+      ],
+      "executionMode": "code_change",
+      "taskType": null,
+      "priority": null,
+      "mergeTargetBranch": "main",
+      "trackerRefs": [
+        "#5558"
+      ],
+      "statusLane": "approved",
+      "assignment": {
+        "agent": "claude",
+        "assignee": null,
+        "role": "implementer",
+        "agentProfile": "implementer-ivan",
+        "agentProfileVersion": "1.0",
+        "model": "sonnet",
+        "provider": "anthropic"
+      },
+      "subtasks": {
+        "T023": "done",
+        "T024": "done",
+        "T025": "done",
+        "T026": "done"
+      },
+      "subtaskProgress": {
+        "done": 4,
+        "total": 4
+      },
+      "implementerOfRecord": "claude",
+      "lastTransitionAt": "2026-09-26T09:35:00Z",
+      "forceCount": 1,
+      "lastEventId": "01JZAB3C4D5E6F7G8H9JKMNQ21",
+      "actor": {
+        "tool": "claude",
+        "role": "implementer",
+        "profile": "implementer-ivan"
+      },
+      "cancellation": null,
+      "readiness": {
+        "satisfied": true,
+        "unsatisfied": []
+      },
+      "readyToStart": false,
+      "review": {
+        "latestResult": {
+          "reviewer": "reviewer-renata",
+          "verdict": "approved",
+          "reference": "review-cycle://example-mission-01JZAB3C/WP09/review-cycle-2.md"
+        },
+        "override": {
+          "complete": true,
+          "at": "2026-09-26T09:30:00Z",
+          "actor": "operator",
+          "reason": "Reviewed out of band by the maintainer."
+        }
+      },
+      "history": [
+        {
+          "eventId": "01JZAB3C4D5E6F7G8H9JKMNQ21",
+          "at": "2026-09-26T09:35:00Z",
+          "kind": "transition",
+          "fromStatusLane": "in_review",
+          "toStatusLane": "approved",
+          "actor": {
+            "tool": "claude",
+            "role": "reviewer",
+            "profile": "reviewer-renata"
+          },
+          "force": true,
+          "reason": "Approved after the override.",
+          "reviewVerdict": "approved"
+        }
+      ],
+      "staleness": null
+    }
+  },
+  "WorkPackage.override-partial": {
+    "schema": "WorkPackage",
+    "value": {
+      "wpId": "WP10",
+      "title": "Ship the release",
+      "phaseLabel": "Screens",
+      "authored": {
+        "role": "implementer",
+        "agentProfile": "implementer-ivan",
+        "model": "sonnet",
+        "subtasks": [
+          "T023",
+          "T024",
+          "T025",
+          "T026"
+        ]
+      },
+      "ownedFiles": [
+        "src/example/detail_view.py",
+        "tests/example/test_detail_view.py"
+      ],
+      "dependencies": [
+        "WP03"
+      ],
+      "requirementRefs": [
+        "FR-005",
+        "FR-006"
+      ],
+      "executionMode": "code_change",
+      "taskType": null,
+      "priority": null,
+      "mergeTargetBranch": "main",
+      "trackerRefs": [
+        "#5558"
+      ],
+      "statusLane": "approved",
+      "assignment": {
+        "agent": "claude",
+        "assignee": null,
+        "role": "implementer",
+        "agentProfile": "implementer-ivan",
+        "agentProfileVersion": "1.0",
+        "model": "sonnet",
+        "provider": "anthropic"
+      },
+      "subtasks": {
+        "T023": "done",
+        "T024": "done",
+        "T025": "done",
+        "T026": "done"
+      },
+      "subtaskProgress": {
+        "done": 4,
+        "total": 4
+      },
+      "implementerOfRecord": "claude",
+      "lastTransitionAt": "2026-09-26T09:35:00Z",
+      "forceCount": 1,
+      "lastEventId": "01JZAB3C4D5E6F7G8H9JKMNQ21",
+      "actor": {
+        "tool": "claude",
+        "role": "implementer",
+        "profile": "implementer-ivan"
+      },
+      "cancellation": null,
+      "readiness": {
+        "satisfied": true,
+        "unsatisfied": []
+      },
+      "readyToStart": false,
+      "review": {
+        "latestResult": {
+          "reviewer": "reviewer-renata",
+          "verdict": "approved",
+          "reference": "review-cycle://example-mission-01JZAB3C/WP10/review-cycle-2.md"
+        },
+        "override": {
+          "complete": false,
+          "at": "2026-09-26T09:30:00Z",
+          "actor": "operator",
+          "reason": null
+        }
+      },
+      "history": [
+        {
+          "eventId": "01JZAB3C4D5E6F7G8H9JKMNQ21",
+          "at": "2026-09-26T09:35:00Z",
+          "kind": "transition",
+          "fromStatusLane": "in_review",
+          "toStatusLane": "approved",
+          "actor": {
+            "tool": "claude",
+            "role": "reviewer",
+            "profile": "reviewer-renata"
+          },
+          "force": true,
+          "reason": "Approved while the override record is partial.",
+          "reviewVerdict": "approved"
+        }
+      ],
+      "staleness": null
+    }
+  },
+  "WorkPackage.populated": {
+    "schema": "WorkPackage",
+    "value": {
+      "wpId": "WP04",
+      "title": "Build the detail view",
+      "phaseLabel": "Screens",
+      "authored": {
+        "role": "implementer",
+        "agentProfile": "implementer-ivan",
+        "model": "sonnet",
+        "subtasks": [
+          "T023",
+          "T024",
+          "T025",
+          "T026"
+        ]
+      },
+      "ownedFiles": [
+        "src/example/detail_view.py",
+        "tests/example/test_detail_view.py"
+      ],
+      "dependencies": [
+        "WP03"
+      ],
+      "requirementRefs": [
+        "FR-005",
+        "FR-006"
+      ],
+      "executionMode": "code_change",
+      "taskType": null,
+      "priority": null,
+      "mergeTargetBranch": "main",
+      "trackerRefs": [
+        "#5558"
+      ],
+      "statusLane": "for_review",
+      "assignment": {
+        "agent": "claude",
+        "assignee": null,
+        "role": "implementer",
+        "agentProfile": "implementer-ivan",
+        "agentProfileVersion": "1.0",
+        "model": "sonnet",
+        "provider": "anthropic"
+      },
+      "subtasks": {
+        "T023": "done",
+        "T024": "done",
+        "T025": "done",
+        "T026": "done"
+      },
+      "subtaskProgress": {
+        "done": 4,
+        "total": 4
+      },
+      "implementerOfRecord": "claude",
+      "lastTransitionAt": "2026-09-25T08:00:00Z",
+      "forceCount": 0,
+      "lastEventId": "01JZAB3C4D5E6F7G8H9JKMNQ05",
+      "actor": {
+        "tool": "claude",
+        "role": "implementer",
+        "profile": "implementer-ivan"
+      },
+      "cancellation": null,
+      "readiness": {
+        "satisfied": true,
+        "unsatisfied": []
+      },
+      "readyToStart": false,
+      "review": {
+        "latestResult": {
+          "reviewer": "reviewer-renata",
+          "verdict": "changes_requested",
+          "reference": "review-cycle://example-mission-01JZAB3C/WP04/review-cycle-1.md"
+        },
+        "override": null
+      },
+      "history": [
+        {
+          "eventId": "01JZAB3C4D5E6F7G8H9JKMNQ01",
+          "at": "2026-09-23T09:10:00Z",
+          "kind": "transition",
+          "fromStatusLane": "planned",
+          "toStatusLane": "claimed",
+          "actor": {
+            "tool": "claude",
+            "role": "implementer",
+            "profile": "implementer-ivan"
+          },
+          "force": false,
+          "reason": null,
+          "reviewVerdict": null
+        },
+        {
+          "eventId": "01JZAB3C4D5E6F7G8H9JKMNQ02",
+          "at": "2026-09-23T09:12:00Z",
+          "kind": "transition",
+          "fromStatusLane": "claimed",
+          "toStatusLane": "in_progress",
+          "actor": {
+            "tool": "claude",
+            "role": "implementer",
+            "profile": "implementer-ivan"
+          },
+          "force": false,
+          "reason": null,
+          "reviewVerdict": null
+        },
+        {
+          "eventId": "01JZAB3C4D5E6F7G8H9JKMNQ03",
+          "at": "2026-09-24T10:00:00Z",
+          "kind": "transition",
+          "fromStatusLane": "in_progress",
+          "toStatusLane": "for_review",
+          "actor": {
+            "tool": "claude",
+            "role": "implementer",
+            "profile": "implementer-ivan"
+          },
+          "force": false,
+          "reason": null,
+          "reviewVerdict": null
+        },
+        {
+          "eventId": "01JZAB3C4D5E6F7G8H9JKMNQ04",
+          "at": "2026-09-24T16:40:12Z",
+          "kind": "transition",
+          "fromStatusLane": "for_review",
+          "toStatusLane": "in_progress",
+          "actor": {
+            "tool": "claude",
+            "role": "reviewer",
+            "profile": "reviewer-renata"
+          },
+          "force": false,
+          "reason": "Changes requested after review.",
+          "reviewVerdict": "changes_requested"
+        },
+        {
+          "eventId": "01JZAB3C4D5E6F7G8H9JKMNQ05",
+          "at": "2026-09-25T08:00:00Z",
+          "kind": "transition",
+          "fromStatusLane": "in_progress",
+          "toStatusLane": "for_review",
+          "actor": {
+            "tool": "claude",
+            "role": "implementer",
+            "profile": "implementer-ivan"
+          },
+          "force": false,
+          "reason": null,
+          "reviewVerdict": null
+        }
+      ],
+      "staleness": null
+    }
+  },
+  "WorkPackage.provisional": {
+    "schema": "WorkPackage",
+    "value": {
+      "wpId": "WP05",
+      "title": "Add the event stream",
+      "phaseLabel": "Screens",
+      "authored": {
+        "role": "implementer",
+        "agentProfile": "implementer-ivan",
+        "model": "sonnet",
+        "subtasks": [
+          "T023",
+          "T024",
+          "T025",
+          "T026"
+        ]
+      },
+      "ownedFiles": [
+        "src/example/detail_view.py",
+        "tests/example/test_detail_view.py"
+      ],
+      "dependencies": [
+        "WP03"
+      ],
+      "requirementRefs": [
+        "FR-005",
+        "FR-006"
+      ],
+      "executionMode": "code_change",
+      "taskType": null,
+      "priority": null,
+      "mergeTargetBranch": "main",
+      "trackerRefs": [
+        "#5558"
+      ],
+      "statusLane": "in_progress",
+      "assignment": {
+        "agent": "claude",
+        "assignee": null,
+        "role": "implementer",
+        "agentProfile": "implementer-ivan",
+        "agentProfileVersion": "1.0",
+        "model": "sonnet",
+        "provider": "anthropic"
+      },
+      "subtasks": {
+        "T023": "done",
+        "T024": "in_progress",
+        "T025": "planned"
+      },
+      "subtaskProgress": {
+        "done": 1,
+        "total": 3
+      },
+      "implementerOfRecord": "claude",
+      "lastTransitionAt": "2026-09-23T09:12:00Z",
+      "forceCount": 0,
+      "lastEventId": "01JZAB3C4D5E6F7G8H9JKMNQ02",
+      "actor": {
+        "tool": "claude",
+        "role": "implementer",
+        "profile": "implementer-ivan"
+      },
+      "cancellation": null,
+      "readiness": {
+        "satisfied": true,
+        "unsatisfied": []
+      },
+      "readyToStart": false,
+      "review": {
+        "latestResult": null,
+        "override": null
+      },
+      "history": [
+        {
+          "eventId": "01JZAB3C4D5E6F7G8H9JKMNQ01",
+          "at": "2026-09-23T09:10:00Z",
+          "kind": "transition",
+          "fromStatusLane": "planned",
+          "toStatusLane": "claimed",
+          "actor": {
+            "tool": "claude",
+            "role": "implementer",
+            "profile": "implementer-ivan"
+          },
+          "force": false,
+          "reason": null,
+          "reviewVerdict": null
+        },
+        {
+          "eventId": "01JZAB3C4D5E6F7G8H9JKMNQ02",
+          "at": "2026-09-23T09:12:00Z",
+          "kind": "transition",
+          "fromStatusLane": "claimed",
+          "toStatusLane": "in_progress",
+          "actor": {
+            "tool": "claude",
+            "role": "implementer",
+            "profile": "implementer-ivan"
+          },
+          "force": false,
+          "reason": null,
+          "reviewVerdict": null
+        }
+      ],
+      "staleness": {
+        "status": "stale",
+        "reason": null,
+        "minutesSinceCommit": 1440.5
+      }
+    }
+  },
+  "WorkPackage.with-prompt": {
+    "schema": "WorkPackage",
+    "value": {
+      "wpId": "WP04",
+      "title": "Build the detail view",
+      "phaseLabel": "Screens",
+      "authored": {
+        "role": "implementer",
+        "agentProfile": "implementer-ivan",
+        "model": "sonnet",
+        "subtasks": [
+          "T023",
+          "T024",
+          "T025",
+          "T026"
+        ]
+      },
+      "ownedFiles": [
+        "src/example/detail_view.py",
+        "tests/example/test_detail_view.py"
+      ],
+      "dependencies": [
+        "WP03"
+      ],
+      "requirementRefs": [
+        "FR-005",
+        "FR-006"
+      ],
+      "executionMode": "code_change",
+      "taskType": null,
+      "priority": null,
+      "mergeTargetBranch": "main",
+      "trackerRefs": [
+        "#5558"
+      ],
+      "statusLane": "for_review",
+      "assignment": {
+        "agent": "claude",
+        "assignee": null,
+        "role": "implementer",
+        "agentProfile": "implementer-ivan",
+        "agentProfileVersion": "1.0",
+        "model": "sonnet",
+        "provider": "anthropic"
+      },
+      "subtasks": {
+        "T023": "done",
+        "T024": "done",
+        "T025": "done",
+        "T026": "done"
+      },
+      "subtaskProgress": {
+        "done": 4,
+        "total": 4
+      },
+      "implementerOfRecord": "claude",
+      "lastTransitionAt": "2026-09-25T08:00:00Z",
+      "forceCount": 0,
+      "lastEventId": "01JZAB3C4D5E6F7G8H9JKMNQ05",
+      "actor": {
+        "tool": "claude",
+        "role": "implementer",
+        "profile": "implementer-ivan"
+      },
+      "cancellation": null,
+      "readiness": {
+        "satisfied": true,
+        "unsatisfied": []
+      },
+      "readyToStart": false,
+      "review": {
+        "latestResult": {
+          "reviewer": "reviewer-renata",
+          "verdict": "changes_requested",
+          "reference": "review-cycle://example-mission-01JZAB3C/WP04/review-cycle-1.md"
+        },
+        "override": null
+      },
+      "history": [
+        {
+          "eventId": "01JZAB3C4D5E6F7G8H9JKMNQ01",
+          "at": "2026-09-23T09:10:00Z",
+          "kind": "transition",
+          "fromStatusLane": "planned",
+          "toStatusLane": "claimed",
+          "actor": {
+            "tool": "claude",
+            "role": "implementer",
+            "profile": "implementer-ivan"
+          },
+          "force": false,
+          "reason": null,
+          "reviewVerdict": null
+        },
+        {
+          "eventId": "01JZAB3C4D5E6F7G8H9JKMNQ02",
+          "at": "2026-09-23T09:12:00Z",
+          "kind": "transition",
+          "fromStatusLane": "claimed",
+          "toStatusLane": "in_progress",
+          "actor": {
+            "tool": "claude",
+            "role": "implementer",
+            "profile": "implementer-ivan"
+          },
+          "force": false,
+          "reason": null,
+          "reviewVerdict": null
+        },
+        {
+          "eventId": "01JZAB3C4D5E6F7G8H9JKMNQ03",
+          "at": "2026-09-24T10:00:00Z",
+          "kind": "transition",
+          "fromStatusLane": "in_progress",
+          "toStatusLane": "for_review",
+          "actor": {
+            "tool": "claude",
+            "role": "implementer",
+            "profile": "implementer-ivan"
+          },
+          "force": false,
+          "reason": null,
+          "reviewVerdict": null
+        },
+        {
+          "eventId": "01JZAB3C4D5E6F7G8H9JKMNQ04",
+          "at": "2026-09-24T16:40:12Z",
+          "kind": "transition",
+          "fromStatusLane": "for_review",
+          "toStatusLane": "in_progress",
+          "actor": {
+            "tool": "claude",
+            "role": "reviewer",
+            "profile": "reviewer-renata"
+          },
+          "force": false,
+          "reason": "Changes requested after review.",
+          "reviewVerdict": "changes_requested"
+        },
+        {
+          "eventId": "01JZAB3C4D5E6F7G8H9JKMNQ05",
+          "at": "2026-09-25T08:00:00Z",
+          "kind": "transition",
+          "fromStatusLane": "in_progress",
+          "toStatusLane": "for_review",
+          "actor": {
+            "tool": "claude",
+            "role": "implementer",
+            "profile": "implementer-ivan"
+          },
+          "force": false,
+          "reason": null,
+          "reviewVerdict": null
+        }
+      ],
+      "staleness": null,
+      "promptMarkdown": "# Work Package Prompt: Build the detail view\n\n## Objective\n\nShow one Mission with its phases and work packages.\n\n## Subtasks\n\n- T023 Write the failing test first.\n- T024 Add the schema.\n"
+    }
+  },
+  "WorkPackageDetail.cycle-without-path": {
+    "schema": "WorkPackageDetail",
+    "value": {
+      "missionId": "01JZCB3C4D5E6F7G8H9JKMNPQT",
+      "wpId": "WP03",
+      "subtasks": [],
+      "dependencies": [],
+      "reviewCycles": [
+        {
+          "cycleNumber": 2,
+          "reviewedAt": null,
+          "reviewer": null,
+          "verdict": null,
+          "feedbackReference": null,
+          "artifactPath": null
+        }
+      ],
+      "workspace": {
+        "laneId": "lane-a",
+        "laneBranch": "kitty/mission-example-01JZCB3C-lane-a",
+        "planningBranch": "main",
+        "worktreePresent": false
+      },
+      "ownedFiles": [],
+      "artifactReferences": {
+        "prompt": {
+          "path": "tasks/WP03-example.md",
+          "kind": "work_package_prompt"
+        },
+        "spec": null
+      }
+    }
+  },
+  "WorkPackageDetail.no-cycles": {
+    "schema": "WorkPackageDetail",
+    "value": {
+      "missionId": "01JZCB3C4D5E6F7G8H9JKMNPQT",
+      "wpId": "WP02",
+      "subtasks": [
+        {
+          "id": "T005",
+          "title": null,
+          "statusLane": "planned"
+        }
+      ],
+      "dependencies": [
+        {
+          "wpId": "WP01",
+          "title": "WP01",
+          "statusLane": null
+        }
+      ],
+      "reviewCycles": [],
+      "workspace": {
+        "laneId": "lane-a",
+        "laneBranch": "kitty/mission-example-01JZCB3C-lane-a",
+        "planningBranch": "main",
+        "worktreePresent": false
+      },
+      "ownedFiles": [
+        {
+          "pattern": "src/example/module.py",
+          "isGlob": false,
+          "changeState": "unknown"
+        }
+      ],
+      "artifactReferences": {
+        "prompt": {
+          "path": "tasks/WP02-example.md",
+          "kind": "work_package_prompt"
+        },
+        "spec": {
+          "path": "spec.md",
+          "kind": "spec"
+        }
+      }
+    }
+  },
+  "WorkPackageDetail.null-workspace": {
+    "schema": "WorkPackageDetail",
+    "value": {
+      "missionId": "01JZCB3C4D5E6F7G8H9JKMNPQT",
+      "wpId": "WP01",
+      "subtasks": [],
+      "dependencies": [],
+      "reviewCycles": [],
+      "workspace": {
+        "laneId": null,
+        "laneBranch": null,
+        "planningBranch": null,
+        "worktreePresent": false
+      },
+      "ownedFiles": [],
+      "artifactReferences": {
+        "prompt": null,
+        "spec": null
+      }
+    }
+  },
+  "WorkPackageDetail.planning-lane": {
+    "schema": "WorkPackageDetail",
+    "value": {
+      "missionId": "01JZCB3C4D5E6F7G8H9JKMNPQT",
+      "wpId": "WP06",
+      "subtasks": [
+        {
+          "id": "T030",
+          "title": "Write the research note",
+          "statusLane": "done"
+        }
+      ],
+      "dependencies": [],
+      "reviewCycles": [],
+      "workspace": {
+        "laneId": "lane-planning",
+        "laneBranch": null,
+        "planningBranch": "main",
+        "worktreePresent": false
+      },
+      "ownedFiles": [
+        {
+          "pattern": "research/notes.md",
+          "isGlob": false,
+          "changeState": "unknown"
+        }
+      ],
+      "artifactReferences": {
+        "prompt": {
+          "path": "tasks/WP06-research.md",
+          "kind": "work_package_prompt"
+        },
+        "spec": {
+          "path": "spec.md",
+          "kind": "spec"
+        }
+      }
+    }
+  },
+  "WorkPackageDetail.populated": {
+    "schema": "WorkPackageDetail",
+    "value": {
+      "missionId": "01JZCB3C4D5E6F7G8H9JKMNPQT",
+      "wpId": "WP04",
+      "subtasks": [
+        {
+          "id": "T017",
+          "title": "Red-first tests for the detail",
+          "statusLane": "done"
+        },
+        {
+          "id": "T018",
+          "title": "The eleven detail schemas",
+          "statusLane": "in_progress"
+        },
+        {
+          "id": "T019",
+          "title": "The detail path file and responses",
+          "statusLane": "planned"
+        }
+      ],
+      "dependencies": [
+        {
+          "wpId": "WP03",
+          "title": "Contract slice A, the artifact reads",
+          "statusLane": "approved"
+        }
+      ],
+      "reviewCycles": [
+        {
+          "cycleNumber": 1,
+          "reviewedAt": "2026-09-21T09:15:00+00:00",
+          "reviewer": "reviewer-renata",
+          "verdict": "changes_requested",
+          "feedbackReference": "review-cycle://example-mission-01JZCB3C/WP04-contract-slice-b/review-cycle-1.md",
+          "artifactPath": "tasks/WP04-contract-slice-b/review-cycle-1.md"
+        },
+        {
+          "cycleNumber": 2,
+          "reviewedAt": "2026-09-22T14:40:00+02:00",
+          "reviewer": "reviewer-renata",
+          "verdict": "approved",
+          "feedbackReference": "review-cycle://example-mission-01JZCB3C/WP04-contract-slice-b/review-cycle-2.md",
+          "artifactPath": "tasks/WP04-contract-slice-b/review-cycle-2.md"
+        }
+      ],
+      "workspace": {
+        "laneId": "lane-a",
+        "laneBranch": "kitty/mission-example-01JZCB3C-lane-a",
+        "planningBranch": "main",
+        "worktreePresent": true
+      },
+      "ownedFiles": [
+        {
+          "pattern": "contracts/example/schemas/Detail.yaml",
+          "isGlob": false,
+          "changeState": "changed"
+        },
+        {
+          "pattern": "tests/example/test_detail.py",
+          "isGlob": false,
+          "changeState": "unchanged"
+        },
+        {
+          "pattern": "contracts/example/examples/*.yaml",
+          "isGlob": true,
+          "changeState": "changed"
+        }
+      ],
+      "artifactReferences": {
+        "prompt": {
+          "path": "tasks/WP04-contract-slice-b.md",
+          "kind": "work_package_prompt"
+        },
+        "spec": {
+          "path": "spec.md",
+          "kind": "spec"
+        }
+      }
+    }
+  },
+  "WorkPackageDetail.unknown-change-state": {
+    "schema": "WorkPackageDetail",
+    "value": {
+      "missionId": "01JZCB3C4D5E6F7G8H9JKMNPQT",
+      "wpId": "WP05",
+      "subtasks": [],
+      "dependencies": [],
+      "reviewCycles": [],
+      "workspace": {
+        "laneId": "lane-b",
+        "laneBranch": "kitty/mission-example-01JZCB3C-lane-b",
+        "planningBranch": "main",
+        "worktreePresent": false
+      },
+      "ownedFiles": [
+        {
+          "pattern": "src/example/module.py",
+          "isGlob": false,
+          "changeState": "unknown"
+        },
+        {
+          "pattern": "src/example/{alpha,beta}/handler.py",
+          "isGlob": true,
+          "changeState": "unknown"
+        },
+        {
+          "pattern": "tests/example/**",
+          "isGlob": true,
+          "changeState": "unknown"
+        }
+      ],
+      "artifactReferences": {
+        "prompt": {
+          "path": "tasks/WP05-example.md",
+          "kind": "work_package_prompt"
+        },
+        "spec": {
+          "path": "spec.md",
+          "kind": "spec"
+        }
+      }
+    }
+  },
+  "WorkPackageDetail.unparseable-cycle": {
+    "schema": "WorkPackageDetail",
+    "value": {
+      "missionId": "01JZCB3C4D5E6F7G8H9JKMNPQT",
+      "wpId": "WP03",
+      "subtasks": [],
+      "dependencies": [],
+      "reviewCycles": [
+        {
+          "cycleNumber": 3,
+          "reviewedAt": null,
+          "reviewer": null,
+          "verdict": null,
+          "feedbackReference": "review-cycle://example-mission-01JZCB3C/WP03-example/review-cycle-3.md",
+          "artifactPath": "tasks/WP03-example/review-cycle-3.md"
+        }
+      ],
+      "workspace": {
+        "laneId": "lane-a",
+        "laneBranch": "kitty/mission-example-01JZCB3C-lane-a",
+        "planningBranch": "main",
+        "worktreePresent": false
+      },
+      "ownedFiles": [],
+      "artifactReferences": {
+        "prompt": {
+          "path": "tasks/WP03-example.md",
+          "kind": "work_package_prompt"
+        },
+        "spec": null
+      }
+    }
+  },
+  "WorkPackageDetailRefusal.not-found": {
+    "schema": "WorkPackageDetailRefusal",
+    "value": {
+      "type": "about:blank",
+      "title": "The work package was not found",
+      "status": 404,
+      "code": "not_found",
+      "detail": "No work package with this identifier exists in the Mission."
+    }
+  },
+  "WorkPackageDetailRefusal.source-unreadable": {
+    "schema": "WorkPackageDetailRefusal",
+    "value": {
+      "type": "about:blank",
+      "title": "A source of the work package could not be read",
+      "status": 500,
+      "code": "source_unreadable",
+      "detail": "A file the detail is built from could not be read."
+    }
+  }
+}

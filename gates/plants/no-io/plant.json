@@ -31,5 +31,16 @@
         "source": "plant-no-io-timer.ts.plant"
       }
     ]
+  },
+  {
+    "gate": "no-io",
+    "ciCommand": "pnpm lint:no-io && pnpm test:no-io",
+    "expectFailPattern": "no-io: fetch is forbidden (network I/O)",
+    "overlays": [
+      {
+        "target": "packages/mission-shell/src/PlantNoIo.svelte",
+        "source": "PlantNoIo.svelte.plant"
+      }
+    ]
   }
 ]

@@ -469,3 +469,93 @@ describe('scanTemplate: raw-text end tags and empty comments', () => {
     expect(scan(['<p><!---><a href=', ''])).toContain('name:href');
   });
 });
+
+describe('global ignores of the main configuration', () => {
+  it('ignore the Cargo build output under target/ (CODE-BOUNDARY-006), and nothing beside it', async () => {
+    expect(await eslint.isPathIgnored(`${ROOT}target/debug/build/out.ts`)).toBe(true);
+    expect(await eslint.isPathIgnored(`${ROOT}target/release/bundle.js`)).toBe(true);
+    // Positive controls: a source file and a script beside target/ are still linted.
+    expect(await eslint.isPathIgnored(OUTSIDE)).toBe(false);
+    expect(await eslint.isPathIgnored(`${ROOT}scripts/typings.mjs`)).toBe(false);
+  });
+
+  it('lint the generated element typings of the shell (E-46 withdrawn 2026-10-15)', async () => {
+    expect(await eslint.isPathIgnored(`${ROOT}packages/mission-shell/src/generated/elements.d.ts`)).toBe(false);
+  });
+});
+
+describe('the shell .svelte sources get the rule set of the .ts sources (CODE-TEST-001)', () => {
+  const SVELTE_FILE = `${ROOT}packages/mission-shell/src/Shell.svelte`;
+  const svelte = (script: string): string => `<script lang="ts">\n${script}</script>\n`;
+  const rules = async (code: string): Promise<string[]> => {
+    const [result] = await eslint.lintText(code, { filePath: SVELTE_FILE });
+    return (result?.messages ?? []).map((message) => `${message.ruleId ?? 'fatal'}: ${message.message}`);
+  };
+
+  it('reports an explicit any (the TypeScript rules)', async () => {
+    expect((await rules(svelte('  export const x: any = 1;\n'))).filter((m) => m.startsWith('@typescript-eslint/no-explicit-any: Unexpected any'))).toHaveLength(1);
+  });
+
+  it('reports a floating promise (the typed TypeScript rules)', async () => {
+    const found = await rules(svelte('  const later = async (): Promise<void> => {};\n  later();\n'));
+    expect(found.filter((m) => m.startsWith('@typescript-eslint/no-floating-promises:'))).toHaveLength(1);
+  });
+
+  it('ignores an inline disable directive (noInlineConfig)', async () => {
+    const found = await rules(svelte('  // eslint-disable-next-line @typescript-eslint/no-explicit-any\n  export const x: any = 1;\n'));
+    expect(found.filter((m) => m.startsWith('@typescript-eslint/no-explicit-any: Unexpected any'))).toHaveLength(1);
+  });
+
+  it('knows the browser globals', async () => {
+    expect(await rules(svelte('  export const w = document.title + navigator.language + String(customElements.get("sk-x") === undefined);\n'))).toEqual([]);
+  });
+
+  it('applies the markdown renderer rules R1 and R3', async () => {
+    const r1 = await rules(svelte("  import MarkdownIt from 'markdown-it';\n  export const md = new MarkdownIt();\n"));
+    expect(r1.some((m) => m.includes('markdown-renderer: R1 '))).toBe(true);
+    const r3 = await rules(svelte('  export const f = (e: HTMLElement): void => {\n    e.innerHTML = "x";\n  };\n'));
+    expect(r3.some((m) => m.includes('markdown-renderer: R3 '))).toBe(true);
+  });
+
+  it('keeps prefer-const, and allows the `let { … } = $props()` idiom (svelte/prefer-const)', async () => {
+    expect(await rules(svelte('  let n = 1;\n  export const m = n;\n'))).toEqual(["svelte/prefer-const: 'n' is never reassigned. Use 'const' instead."]);
+  });
+
+  it('reports nothing on a clean component (positive control)', async () => {
+    expect(await rules(svelte("  import type { Snippet } from 'svelte';\n  let { children }: { children?: Snippet } = $props();\n") + '{@render children?.()}\n')).toEqual([]);
+  });
+});
+
+describe('the import boundary inside the shell (SO-BND-005)', () => {
+  const SHELL = `${ROOT}packages/mission-shell/src/`;
+  const FIXTURE_JSON = "import changes from '../../../../contracts/fixtures/mission-status.changes.json' with { type: 'json' };\nexport const c = changes;\n";
+  const restricted = async (file: string, code: string): Promise<string[]> => {
+    const [result] = await eslint.lintText(code, { filePath: file });
+    return (result?.messages ?? []).filter((message) => message.ruleId === 'no-restricted-imports').map((message) => message.message);
+  };
+
+  it('bans the fixture adapter from the production sources (a .ts file and a component)', async () => {
+    expect(await restricted(`${SHELL}client/port.ts`, "import { createFixtureClient } from './fixture';\nexport const c = createFixtureClient;\n")).toHaveLength(1);
+    expect(await restricted(`${SHELL}index.ts`, "export { createFixtureClient } from './client/fixture';\n")).toHaveLength(1);
+    expect(await restricted(`${SHELL}Shell.svelte`, `<script lang="ts">\n  import { createFixtureClient } from './client/fixture';\n  export const c = createFixtureClient;\n</script>\n`)).toHaveLength(1);
+  });
+
+  it('bans the test harness and the fixture JSON from the production sources', async () => {
+    expect(await restricted(`${SHELL}Shell.svelte`, `<script lang="ts">\n  import Harness from './harness/BindingHarness.svelte';\n  export const h = Harness;\n</script>\n`)).toHaveLength(1);
+    expect(await restricted(`${SHELL}client/port.ts`, FIXTURE_JSON)).toHaveLength(1);
+  });
+
+  it('lets the fixture adapter, the testing entry and the harness use them (positive controls)', async () => {
+    expect(await restricted(`${SHELL}client/fixture.ts`, FIXTURE_JSON)).toEqual([]);
+    expect(await restricted(`${SHELL}testing.ts`, "export { createFixtureClient } from './client/fixture';\n")).toEqual([]);
+    expect(await restricted(`${SHELL}harness/BindingHarness.svelte`, `<script lang="ts">\n  import { createFixtureClient } from '../client/fixture';\n  export const c = createFixtureClient;\n</script>\n`)).toEqual([]);
+  });
+
+  it('does not reach other packages (their sources are not shell sources)', async () => {
+    expect(await restricted(`${SRC}logic/summary.ts`, "import { createFixtureClient } from '../client/fixture';\nexport const c = createFixtureClient;\n")).toEqual([]);
+  });
+
+  it('reports a banned import even under an inline disable directive (noInlineConfig)', async () => {
+    expect(await restricted(`${SHELL}client/port.ts`, `${DISABLE}import { createFixtureClient } from './fixture';\nexport const c = createFixtureClient;\n`)).toHaveLength(1);
+  });
+});

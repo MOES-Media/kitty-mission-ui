@@ -10,7 +10,10 @@
 //  - Identifier-based rules assume no local shadowing of the banned names; shadowing is itself reported.
 //  - Only files under packages/*/src are linted; code outside it is out of scope.
 //  - Inline eslint-disable comments are ignored (noInlineConfig), so there is no in-source escape hatch.
+//  - In a .svelte file the rules see the <script> blocks and the template expressions ({fetch('x')} is reported), but a
+//    URL in a static markup attribute (<img src="https://...">) is plain markup and is not analysed.
 import tseslint from 'typescript-eslint';
+import { SVELTE_GLOB, svelteLanguageOptions } from './eslint-rules/svelte.mjs';
 
 const GLOBAL_OBJECTS = '(window|globalThis|self)';
 
@@ -148,26 +151,35 @@ const timerSyntax = {
   message: 'no-io: setTimeout/setInterval is forbidden in a screen (NFR-005, no timers)',
 };
 
+const ioRules = {
+  'no-restricted-globals': ['error', ...restrictedGlobals],
+  'no-restricted-properties': ['error', ...restrictedProperties],
+  'no-restricted-syntax': ['error', ...restrictedSyntax],
+  'no-restricted-imports': [
+    'error',
+    {
+      patterns: [
+        { group: ['@tauri-apps/*'], message: 'no-io: @tauri-apps packages are forbidden (desktop bridge)' },
+        { group: ['node:http*', 'node:net'], message: 'no-io: node network modules are forbidden (network I/O)' },
+      ],
+    },
+  ],
+};
+
 export default [
   {
     files: ['**/*.{ts,mts,cts,tsx,js,mjs,cjs,jsx}'],
     languageOptions: { parser: tseslint.parser, sourceType: 'module', parserOptions: { ecmaFeatures: { jsx: true } } },
     // E-07 (P-10): an inline eslint-disable comment must not silence this gate (reproduced: it did).
     linterOptions: { noInlineConfig: true },
-    rules: {
-      'no-restricted-globals': ['error', ...restrictedGlobals],
-      'no-restricted-properties': ['error', ...restrictedProperties],
-      'no-restricted-syntax': ['error', ...restrictedSyntax],
-      'no-restricted-imports': [
-        'error',
-        {
-          patterns: [
-            { group: ['@tauri-apps/*'], message: 'no-io: @tauri-apps packages are forbidden (desktop bridge)' },
-            { group: ['node:http*', 'node:net'], message: 'no-io: node network modules are forbidden (network I/O)' },
-          ],
-        },
-      ],
-    },
+    rules: ioRules,
+  },
+  {
+    // Svelte sources (FR-007, C-001, R-04): the same rules, unchanged, inside <script> blocks and template expressions.
+    files: [SVELTE_GLOB],
+    languageOptions: svelteLanguageOptions({ typed: false }),
+    linterOptions: { noInlineConfig: true },
+    rules: ioRules,
   },
   {
     // A later block replaces the rule's options, so it repeats the list above and adds the timer ban.

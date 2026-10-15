@@ -38,5 +38,65 @@
         ]
       }
     ]
+  },
+  {
+    "gate": "hygiene",
+    "ciCommand": "pnpm hygiene && pnpm test:scripts && pnpm test:terminology",
+    "expectFailPattern": "plant-caret-pin",
+    "overlays": [
+      {
+        "target": "crates/kitty-core/Cargo.toml",
+        "edits": [
+          {
+            "find": "\n[dependencies]\n",
+            "replace": "\n[dependencies]\nplant-caret-pin = \"0.1\"\n"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "gate": "hygiene",
+    "ciCommand": "pnpm hygiene && pnpm test:scripts && pnpm test:terminology",
+    "expectFailPattern": "is not pinned to a 40-hex SHA",
+    "overlays": [
+      {
+        "target": ".github/workflows/contract-drift.yml",
+        "edits": [
+          {
+            "find": "uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1",
+            "replace": "uses: actions/checkout@v4 # plant-unpinned-action"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "gate": "hygiene",
+    "ciCommand": "pnpm hygiene && pnpm test:scripts && pnpm test:terminology",
+    "expectFailPattern": "[rust-toolchain-pin]",
+    "overlays": [
+      {
+        "target": "rust-toolchain.toml",
+        "edits": [
+          {
+            "find": "channel = \"1.98.1\"\n",
+            "replace": "channel = \"stable\"\n"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "gate": "hygiene",
+    "ciCommand": "pnpm hygiene && pnpm test:scripts && pnpm test:terminology",
+    "expectFailPattern": "a legacy rust-toolchain file overrides",
+    "overlays": [
+      {
+        "target": "rust-toolchain",
+        "generated": "a NEW UNTRACKED extensionless file at the repo root; rustup reads it before rust-toolchain.toml, so the pin rule must report it",
+        "generator": "node -e \"require('fs').writeFileSync('rust-toolchain','1.98.1\\n')\""
+      }
+    ]
   }
 ]

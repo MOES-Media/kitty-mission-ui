@@ -2,12 +2,13 @@
 // vendored contract and the contract sources, runs the real check function and asserts the exact token list, so a
 // failure prints the actual tokens. A clean-input case runs first as the positive control.
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { cpSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir, userInfo } from 'node:os';
 import { join } from 'node:path';
 import { test, before, after } from 'node:test';
 import { LAYOUT, ROOT } from './common.mjs';
-import { PRODUCER_LANE_WEIGHTS, actorProblems, runChecks, workPackageFailures } from './check.mjs';
+import { PRODUCER_LANE_WEIGHTS, actorProblems, jsonOracleProblems, runChecks, workPackageFailures } from './check.mjs';
 import { generateFixturesSource, loadBulk, loadExamples } from './generate.mjs';
 import { buildFixtures as realBuild } from './overlays.mjs';
 import { FIXTURES } from './registry.mjs';
@@ -29,6 +30,9 @@ const TOKENS = {
   provisional: 'provisional',
   guard: 'guard',
   pinProvenance: 'pin provenance',
+  jsonStale: 'stale generated file',
+  jsonOracle: 'json oracle',
+  changeSequence: 'change sequence',
 };
 
 const dirs = [];
@@ -42,6 +46,7 @@ function tempRepo() {
   dirs.push(root);
   cpSync(join(ROOT, LAYOUT.vendor), join(root, LAYOUT.vendor), { recursive: true });
   cpSync(join(ROOT, 'packages/mission-ui/src'), join(root, 'packages/mission-ui/src'), { recursive: true });
+  cpSync(join(ROOT, 'contracts/fixtures'), join(root, 'contracts/fixtures'), { recursive: true });
   return root;
 }
 
@@ -108,6 +113,11 @@ test('positive control: the repository itself passes every check, and the checks
   assert.equal(clean.summary.bulkPages, 2);
   assert.equal(clean.summary.bulkDocuments, 6, 'two listings, three contents and the Drift report');
   assert.ok(clean.summary.c7Files > 0);
+  // contracts/fixtures (WP03): literals, not counts read from the files under test
+  assert.equal(clean.summary.jsonExamples, 77);
+  assert.equal(clean.summary.jsonRoutes, 10);
+  assert.equal(clean.summary.jsonFixtures, 134);
+  assert.equal(clean.summary.changeItems, 5);
 });
 
 test('positive control: a temporary copy passes too', async () => {
@@ -130,10 +140,13 @@ test('C1: an extra vendored file gives file set', async () => {
   assert.deepEqual(tokens(await check(root)), [TOKENS.fileSet]);
 });
 
-test('C1: a deleted vendored file gives file set', async () => {
+test('C1: a deleted vendored file gives file set (a deleted example also leaves examples.json stale and off its oracle)', async () => {
   const root = tempRepo();
   rmSync(join(root, LAYOUT.vendor, 'mission-status/examples/StreamRefusal.negative.yaml'));
-  assert.deepEqual(tokens(await check(root)), [TOKENS.fileSet]);
+  assert.deepEqual(tokens(await check(root)), [TOKENS.fileSet, TOKENS.jsonStale, TOKENS.jsonOracle]);
+  const other = tempRepo();
+  rmSync(join(other, LAYOUT.vendor, 'mission-status/schemas/_index.yaml'));
+  assert.deepEqual(tokens(await check(other)), [TOKENS.fileSet]);
 });
 
 test('C1: a 39-hex sha gives pin metadata (and the two headers that quote it go stale)', async () => {
@@ -616,6 +629,12 @@ test('C7: a stream identifier in an element file gives provisional', async () =>
   assert.deepEqual(tokens(await check(root)), [TOKENS.provisional]);
 });
 
+test('C7: a stream identifier in a Svelte source gives provisional', async () => {
+  const root = tempRepo();
+  write(root, 'packages/mission-ui/src/elements/plant-c7.svelte', '<script lang="ts">\n  type T = StatusTransitionEvent;\n</script>\n');
+  assert.deepEqual(tokens(await check(root)), [TOKENS.provisional]);
+});
+
 test('C7: the contract directory itself may name stream identifiers', async () => {
   const root = tempRepo();
   write(root, 'packages/mission-ui/src/contract/extra.ts', 'export type T = StreamCursor;\n');
@@ -845,4 +864,99 @@ test('C5 Drift: each rule fails a report built to violate exactly it', async () 
     n += 1;
   }
   assert.equal(n, 4);
+});
+
+// ---- contracts/fixtures (WP03 T018): staleness of the three generated JSON files, their oracle, the change sequence ----
+const FIXTURE_JSON = {
+  examples: 'contracts/fixtures/mission-status.examples.json',
+  fixtures: 'contracts/fixtures/mission-status.fixtures.json',
+  routes: 'contracts/fixtures/mission-status.routes.json',
+  changes: 'contracts/fixtures/mission-status.changes.json',
+};
+const messagesOf = (r) => r.problems.map((p) => p.message);
+
+test('JSON staleness: one changed value in each generated file is reported, naming that file and no other', async () => {
+  const cases = [
+    [FIXTURE_JSON.examples, '"title": "The resume cursor was refused"', '"title": "The resume cursor was refused!"', [TOKENS.jsonStale, TOKENS.jsonOracle]],
+    [FIXTURE_JSON.fixtures, '"schema": "Project"', '"schema": "Project "', [TOKENS.jsonStale]],
+    [FIXTURE_JSON.routes, '"defaultExample": "Project.example"', '"defaultExample": "Project.all-null"', [TOKENS.jsonStale]],
+  ];
+  let n = 0;
+  for (const [rel, from, to, expected] of cases) {
+    const root = tempRepo();
+    edit(root, rel, from, to);
+    const r = await check(root);
+    assert.deepEqual(tokens(r), expected, rel);
+    const stale = r.problems.filter((p) => p.token === TOKENS.jsonStale);
+    assert.equal(stale.length, 1);
+    assert.ok(stale[0].message.startsWith(`${rel} differs from a fresh generation`), stale[0].message);
+    n += 1;
+  }
+  assert.equal(n, 3);
+});
+
+test('JSON staleness: a missing generated file is reported as missing, naming it', async () => {
+  const root = tempRepo();
+  rmSync(join(root, FIXTURE_JSON.routes));
+  const r = await check(root);
+  assert.ok(tokens(r).includes(TOKENS.jsonStale));
+  assert.ok(messagesOf(r).includes(`${FIXTURE_JSON.routes} is missing; run pnpm contract:generate`));
+});
+
+test('JSON staleness: a changed vendored example leaves examples.json stale (the gate regenerates from the YAML)', async () => {
+  const root = tempRepo();
+  // the pin is rewritten with the new hash so that only the JSON checks can see the change
+  const rel = 'mission-status/examples/StreamRefusal.negative.yaml';
+  edit(root, `${LAYOUT.vendor}/${rel}`, 'is below 0.', 'is below zero.');
+  editPin(root, (pin) => {
+    pin.files[rel] = createHash('sha256').update(readFileSync(join(root, LAYOUT.vendor, rel))).digest('hex');
+  });
+  const r = await check(root);
+  assert.deepEqual(tokens(r), [TOKENS.jsonStale, TOKENS.jsonOracle]);
+  assert.ok(messagesOf(r)[0].startsWith(FIXTURE_JSON.examples));
+  assert.ok(messagesOf(r)[1].includes('StreamRefusal.negative'));
+});
+
+test('JSON oracle: an examples.json value that differs from its YAML is named; the committed file passes (positive control)', async () => {
+  assert.deepEqual(jsonOracleProblems(ROOT).problems, []);
+  const root = tempRepo();
+  const doc = JSON.parse(read(root, FIXTURE_JSON.examples));
+  doc['Project.example'].value.name = 'another name';
+  write(root, FIXTURE_JSON.examples, `${JSON.stringify(doc, null, 2)}\n`);
+  const r = jsonOracleProblems(root);
+  assert.deepEqual(r.problems.map((p) => p.message), ['examples.json entry Project.example differs from its vendored YAML']);
+  assert.equal(r.examples, 77);
+});
+
+test('JSON oracle: a host fixture in fixtures.json and a default example of the wrong schema are both named', async () => {
+  const root = tempRepo();
+  const fixtures = JSON.parse(read(root, FIXTURE_JSON.fixtures));
+  const host = Object.keys(FIXTURES).find((n) => FIXTURES[n].kind === 'host');
+  fixtures[host] = { schema: FIXTURES[host].schema, value: {} };
+  write(root, FIXTURE_JSON.fixtures, `${JSON.stringify(fixtures, null, 2)}\n`);
+  const routes = JSON.parse(read(root, FIXTURE_JSON.routes));
+  routes.find((x) => x.operationId === 'getProject').defaultExample = 'MissionDetail.populated';
+  write(root, FIXTURE_JSON.routes, `${JSON.stringify(routes, null, 2)}\n`);
+  const messages = jsonOracleProblems(root).problems.map((p) => p.message);
+  assert.equal(messages.length, 2, messages.join('\n'));
+  assert.ok(messages[0].includes(host));
+  assert.ok(messages[1].includes('getProject default example MissionDetail.populated'));
+});
+
+test('change sequence: an invalid committed changes.json fails the gate with the change-sequence token only', async () => {
+  const root = tempRepo();
+  const doc = JSON.parse(read(root, FIXTURE_JSON.changes));
+  doc.items.find((i) => i.event === 'log-truncated').scopedId = doc.items[0].scopedId;
+  write(root, FIXTURE_JSON.changes, `${JSON.stringify(doc, null, 2)}\n`);
+  const r = await check(root);
+  assert.deepEqual(tokens(r), [TOKENS.changeSequence]);
+  assert.equal(r.summary.changeItems, 5);
+});
+
+test('change sequence: an unreadable changes.json fails the gate rather than passing with no items', async () => {
+  const root = tempRepo();
+  write(root, FIXTURE_JSON.changes, '{ not json');
+  const r = await check(root);
+  assert.deepEqual(tokens(r), [TOKENS.changeSequence]);
+  assert.equal(r.summary.changeItems, 0);
 });

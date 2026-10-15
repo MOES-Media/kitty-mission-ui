@@ -3,7 +3,9 @@
 import js from '@eslint/js';
 import tseslint from 'typescript-eslint';
 import lit from 'eslint-plugin-lit';
+import svelte from 'eslint-plugin-svelte';
 import skLocal, { elementSyntaxRestrictions } from './eslint-rules/index.mjs';
+import { SVELTE_SOURCES, svelteLanguageOptions } from './eslint-rules/svelte.mjs';
 import { MARKDOWN_IT_HOME, markdownImportRestrictions } from './eslint-rules/markdown-renderer.mjs';
 
 
@@ -51,14 +53,29 @@ export const opsPartsRestrictions = [
   },
 ];
 
+// Svelte sources of the shell (R-04): the plugin's recommended blocks, scoped to package sources, parsed by svelte-eslint-parser
+// with the TypeScript parser for `<script lang="ts">`. The `*.svelte.ts` script-module block is left out: those files already
+// match the TypeScript globs above.
+export { SVELTE_SOURCES };
+const svelteRecommended = svelte.configs.recommended
+  .filter((block) => block.name !== 'svelte:base:setup-for-svelte-script')
+  .map((block) => (block.name === 'svelte:base:setup-plugin' ? block : { ...block, files: [SVELTE_SOURCES] }));
+
+// Exception E-46 (the generated element typings of the shell, ignored by exact path) was withdrawn on 2026-10-15: its sunset
+// was met, because scripts/typings.mjs emits output that is lint-clean under this config, eslint.no-io.config.mjs and
+// eslint.data-driven.config.mjs. The file is linted like every other source.
+
 export default tseslint.config(
   {
-    // Plants are non-source overlays; nothing lintable lives there. No other broad ignores.
+    // Plants are non-source overlays and target/ is build output; nothing lintable lives there. No other broad ignores.
     ignores: [
       'gates/plants/**',
       '**/storybook-static/**',
       '**/test-results/**',
       '.worktrees/**',
+      // Cargo build output (gitignored, but ESLint does not read .gitignore): build scripts and Tauri write generated
+      // .js and .ts files there.
+      'target/**',
       // Exception E-05: openapi-typescript emits `unknown & unknown`, which the type rules reject; gate contract C2
       // regenerates and byte-compares this one file, so it is ignored by exact path and nothing else.
       'packages/mission-ui/src/contract/types.generated.ts',
@@ -84,6 +101,27 @@ export default tseslint.config(
         clearTimeout: 'readonly',
         structuredClone: 'readonly',
       },
+    },
+  },
+  ...svelteRecommended,
+  {
+    // The shell's .svelte sources get the rule set of the .ts package sources (CODE-TEST-001): the typed TypeScript rules
+    // (svelte-eslint-parser hands `<script lang="ts">` to the TypeScript parser, typed through the project service), the
+    // element-template restrictions and the custom-event rule. The markdown renderer rules and `noInlineConfig` come from
+    // the block below, whose glob covers .svelte too.
+    // Browser globals: as for the .ts sources, `no-undef` is off (typescript-eslint's eslint-recommended override) and the
+    // TypeScript checker resolves every global against the DOM lib of tsconfig.base.json (svelte-check runs it), so a
+    // misspelt or non-browser global is a type error. No hand-written globals list is kept.
+    files: [SVELTE_SOURCES],
+    extends: [tseslint.configs.recommendedTypeChecked],
+    languageOptions: svelteLanguageOptions({ typed: true }),
+    plugins: { sk: skLocal },
+    rules: {
+      'no-restricted-syntax': ['error', ...elementSyntaxRestrictions],
+      'sk/dispatch-custom-event': 'error',
+      // Core prefer-const flags the rune idiom `let { … } = $props()`; the plugin's variant exempts $props and $derived.
+      'prefer-const': 'off',
+      'svelte/prefer-const': 'error',
     },
   },
   {
@@ -113,7 +151,7 @@ export default tseslint.config(
     // it one `eslint-disable-next-line` above a banned construct turns every rule here off (the main config had none).
     // R1 and R4 are rules of their own and are set once here, so no per-file override of `no-restricted-syntax` or
     // `no-restricted-imports` can replace them; R2 and R3 ride in `elementSyntaxRestrictions`.
-    files: ['packages/*/src/**/*.{ts,mts,cts,tsx,js,mjs,cjs,jsx}'],
+    files: ['packages/*/src/**/*.{ts,mts,cts,tsx,js,mjs,cjs,jsx,svelte}'],
     linterOptions: { noInlineConfig: true },
     plugins: { sk: skLocal },
     rules: { 'sk/markdown-it-import-home': ['error', { home: MARKDOWN_IT_HOME }] },
@@ -389,6 +427,26 @@ export default tseslint.config(
       'no-restricted-imports': [
         'error',
         { patterns: [{ group: ['**/story-support/**'], message: 'Elements must not import story-support: it is for stories and fixtures only.' }] },
+      ],
+    },
+  },
+  {
+    // The import boundary inside the shell (SO-BND-005, CODE-BOUNDARY-003): production sources never reach the fixture
+    // adapter, the binding harness or the fixture JSON of contracts/fixtures. Only the adapter itself, the ./testing entry
+    // and the harness may; the package's tests live outside src/. The `**/fixture` pattern catches the sibling import
+    // './fixture' from inside client/, which `**/client/fixture` does not match.
+    files: ['packages/mission-shell/src/**'],
+    ignores: ['**/testing.ts', '**/client/fixture.ts', '**/harness/**'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            { group: ['**/client/fixture', '**/fixture'], message: 'Shell sources must not import the fixture adapter: it is reached only through the ./testing entry.' },
+            { group: ['**/harness/**'], message: 'Shell sources must not import the binding harness: it is for the shell tests only.' },
+            { group: ['**/contracts/fixtures/*.json'], message: 'Shell sources must not import the fixture JSON: only the fixture adapter reads it.' },
+          ],
+        },
       ],
     },
   },

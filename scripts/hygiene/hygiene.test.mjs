@@ -9,8 +9,8 @@ import { deflateSync } from 'node:zlib';
 import { parse } from 'yaml';
 import {
   ALLOW_LIST, checkBaselines, checkGateJobNames, checkGateScripts, checkLockfile, checkNpmrc, checkPackageJson, checkPlantFiles,
-  checkPlaywrightTag, checkPng, checkTypecheckScripts, checkVitestFamily, checkWorkflow, checkWorkflowTriggers,
-  forbiddenNames, scanText,
+  checkGateStructure, checkPlaywrightTag, checkPng, checkTypecheckScripts, checkVitestFamily, checkWorkflow,
+  checkWorkflowSecurity, checkWorkflowTriggers, forbiddenNames, scanText,
 } from './rules.mjs';
 
 // Every token-, path- and credential-shaped string is assembled at run time from fragments.
@@ -410,6 +410,118 @@ test('gate ids derive from job ids, matrix and plant directories must agree', ()
   assert.ok(wf(noProof).some((f) => f.rule === 'gate-coverage'));
 });
 
+// Every workflow file gets the security rules (F-27, B12); the gate structure, including the main-only trigger rule,
+// is ci.yml's alone (A10). The titles never quote a rule message: node:test prints titles in the clean output, and the
+// hygiene plants look for those messages in the planted output only.
+const OTHER = '.github/workflows/other.yml';
+const nonCiWorkflow = () => ({
+  on: { schedule: [{ cron: '17 5 * * *' }], workflow_dispatch: {} },
+  permissions: { contents: 'read' },
+  jobs: {
+    drift: {
+      name: 'Contract drift',
+      permissions: { contents: 'read' },
+      steps: [
+        { uses: `actions/checkout@${sha}`, with: { 'persist-credentials': false } },
+        { uses: `actions/setup-node@${sha}`, with: { 'node-version': '22.22.2' } },
+        { run: 'node scripts/contract/drift.mjs' },
+      ],
+    },
+  },
+});
+const security = (doc) => checkWorkflowSecurity(OTHER, doc).map((f) => `${f.rule}|${f.file}|${f.message}`);
+const mutateNonCi = (fn) => { const d = nonCiWorkflow(); fn(d); return security(d); };
+
+test('non-ci workflow security: the clean scheduled document passes (positive control for every negative below)', () => {
+  assert.deepEqual(security(nonCiWorkflow()), []);
+});
+
+test('non-ci workflow security: an action referenced by tag is reported, the SHA-pinned original is clean', () => {
+  assert.deepEqual(mutateNonCi((d) => { d.jobs.drift.steps[0].uses = 'actions/checkout@v4'; }),
+    [`action-pin|${OTHER}|actions/checkout is not pinned to a 40-hex SHA`]);
+  assert.deepEqual(mutateNonCi((d) => { d.jobs.drift.steps[1].uses = 'actions/setup-node@main'; }),
+    [`action-pin|${OTHER}|actions/setup-node is not pinned to a 40-hex SHA`]);
+  assert.deepEqual(security(nonCiWorkflow()), []);
+});
+
+test('non-ci workflow security: a document without any permissions block is reported at workflow and job level', () => {
+  assert.deepEqual(mutateNonCi((d) => { delete d.permissions; delete d.jobs.drift.permissions; }), [
+    `workflow-permissions|${OTHER}|workflow-level permissions must include contents: read`,
+    `workflow-permissions|${OTHER}|job drift lacks permissions contents: read`,
+  ]);
+  assert.deepEqual(security(nonCiWorkflow()), []);
+});
+
+test('non-ci workflow security: checkout without the credential opt-out is reported, missing or true', () => {
+  assert.deepEqual(mutateNonCi((d) => { delete d.jobs.drift.steps[0].with; }),
+    [`checkout-credentials|${OTHER}|actions/checkout without persist-credentials: false`]);
+  assert.deepEqual(mutateNonCi((d) => { d.jobs.drift.steps[0].with['persist-credentials'] = true; }),
+    [`checkout-credentials|${OTHER}|actions/checkout without persist-credentials: false`]);
+  assert.deepEqual(security(nonCiWorkflow()), []);
+});
+
+test('non-ci workflow security, mutate style: removing only the workflow-level permissions is reported', () => {
+  assert.deepEqual(mutateNonCi((d) => { delete d.permissions; }),
+    [`workflow-permissions|${OTHER}|workflow-level permissions must include contents: read`]);
+  assert.deepEqual(security(nonCiWorkflow()), []);
+});
+
+test('non-ci workflow security, mutate style: a job granted contents write is reported', () => {
+  assert.deepEqual(mutateNonCi((d) => { d.jobs.drift.permissions = { contents: 'write' }; }),
+    [`workflow-permissions|${OTHER}|job drift lacks permissions contents: read`]);
+  assert.deepEqual(security(nonCiWorkflow()), []);
+});
+
+test('non-ci workflow security: continue-on-error and a long artifact retention are reported', () => {
+  assert.deepEqual(mutateNonCi((d) => { d.jobs.drift['continue-on-error'] = true; }),
+    [`continue-on-error|${OTHER}|continue-on-error is forbidden`]);
+  assert.deepEqual(mutateNonCi((d) => { d.jobs.drift.steps.push({ uses: `actions/upload-artifact@${sha}`, with: { 'retention-days': 7 } }); }),
+    [`artifact-retention|${OTHER}|upload-artifact without retention-days: 1`]);
+  assert.deepEqual(security(nonCiWorkflow()), []);
+});
+
+test('gate structure is ci-only: it judges the schedule trigger, the security rules never do', () => {
+  const structure = checkGateStructure(OTHER, nonCiWorkflow(), ['hygiene']).map((f) => `${f.rule}|${f.message}`);
+  assert.deepEqual(structure.filter((f) => f.startsWith('workflow-trigger')), [
+    'workflow-trigger|trigger schedule not allowed',
+    'workflow-trigger|trigger workflow_dispatch not allowed',
+    'workflow-trigger|pull_request must target main only',
+    'workflow-trigger|push must target main only',
+  ]);
+  assert.deepEqual(security(nonCiWorkflow()), []);
+});
+
+test('checkWorkflow on ci.yml is exactly the gate structure plus the security rules', () => {
+  const docs = [goodWorkflow(), (() => { const d = goodWorkflow(); delete d.permissions; d.on.push.branches = ['dev']; d.jobs.all.steps.push({ uses: 'actions/checkout@v4' }); delete d.jobs.proof; return d; })()];
+  const key = (f) => `${f.rule}|${f.message}`;
+  for (const d of docs) {
+    const both = [...checkGateStructure('ci.yml', d, ['hygiene', 'preflight']), ...checkWorkflowSecurity('ci.yml', d)].map(key).sort();
+    assert.deepEqual(wf(d).map(key).sort(), both);
+  }
+  assert.equal(docs.length, 2);
+  assert.equal(wf(docs[1]).length > 0, true);
+});
+
+test('the hygiene script applies the security rules to a second workflow file, and not the ci-only structure', () => {
+  const ci = readFileSync(resolve(dirname(SCRIPT), '..', '.github/workflows/ci.yml'), 'utf8');
+  const good = [
+    'on:', '  schedule:', "    - cron: '17 5 * * *'", '  workflow_dispatch:', 'permissions:', '  contents: read', 'jobs:', '  drift:',
+    "    name: 'Contract drift'", '    runs-on: ubuntu-24.04', '    permissions:', '      contents: read', '    steps:',
+    `      - uses: actions/checkout@${sha}`, '        with:', '          persist-credentials: false', '      - run: node x.mjs', '',
+  ].join('\n');
+  const dir = repo({ '.github/workflows/ci.yml': ci, '.github/workflows/extra.yml': good });
+  const extraLines = (out) => out.split('\n').filter((l) => l.includes('.github/workflows/extra.yml'));
+  try {
+    assert.deepEqual(extraLines(run(dir).stdout), []);
+    writeFileSync(join(dir, '.github/workflows/extra.yml'), good.replace(`checkout@${sha}`, 'checkout@v4').replace('          persist-credentials: false\n', '').replace('permissions:\n  contents: read\n', ''));
+    assert.deepEqual(extraLines(run(dir).stdout), [
+      'FINDING [workflow-permissions] .github/workflows/extra.yml: workflow-level permissions must include contents: read',
+      'FINDING [action-pin] .github/workflows/extra.yml: actions/checkout is not pinned to a 40-hex SHA',
+      'FINDING [checkout-credentials] .github/workflows/extra.yml: actions/checkout without persist-credentials: false',
+    ]);
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
 // Build a real PNG in the test itself; no binary fixture is committed.
 function crc32(buf) {
   let c = ~0;
@@ -518,7 +630,10 @@ test('the plant descriptor names the unique label and commits no token literal',
   const plantPath = resolve(dirname(SCRIPT), '..', 'gates/plants/hygiene/plant.json');
   const text = readFileSync(plantPath, 'utf8');
   const plants = JSON.parse(text);
-  assert.deepEqual(plants.map((p) => p.expectFailPattern), ['plant-hygiene-token', 'email-address', 'plant-hygiene-node-test']);
+  assert.deepEqual(plants.map((p) => p.expectFailPattern), [
+    'plant-hygiene-token', 'email-address', 'plant-hygiene-node-test', 'plant-caret-pin', ['is not pinned to a', '40-hex SHA'].join(' '),
+    ['[rust-toolchain', 'pin]'].join('-'), 'a legacy rust-toolchain file overrides',
+  ]);
   assert.equal(new Set(plants.map((p) => p.ciCommand)).size, 1);
   assert.deepEqual(rules('gates/plants/hygiene/plant.json', text), []);
   // the descriptor commits neither a token body nor an address: both are assembled when the generator runs
