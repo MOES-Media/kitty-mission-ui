@@ -4,7 +4,8 @@
 //! - Reads serve the route's default example, or a selected example or fixture whose schema fits the route
 //!   (`X-Kitty-Stub-Fixture` wins over `X-Kitty-Stub-Example`); refusals are `application/problem+json` with the
 //!   example's own status.
-//! - `GET /api/v1/events` replays `changes.json` deterministically, then sends heartbeats.
+//! - `GET /api/v1/events` replays `changes.json` deterministically, then sends heartbeats. A scoped request with a
+//!   `streamCursor` or `Last-Event-ID` cursor resumes after the matching item, or after the last `log-truncated`.
 //! - One guard layer applies the upstream service's Host, Origin and `Forwarded` rules to every route.
 //! - `GET /__stub/last-request` reports the most recent `/api/v1` request.
 //!
@@ -87,6 +88,8 @@ struct ChangeItem {
 /// One change, pre-rendered as the bytes written on a mission-scoped and on an unscoped stream.
 #[derive(Debug)]
 struct Frame {
+    scoped_id: Option<String>,
+    truncated: bool,
     delay_ms: u64,
     scoped: Bytes,
     unscoped: Bytes,
@@ -207,6 +210,8 @@ impl Frame {
             None => unscoped.clone(),
         };
         Ok(Frame {
+            scoped_id: item.scoped_id.clone(),
+            truncated: item.event == "log-truncated",
             delay_ms: item.delay_ms,
             scoped: Bytes::from(scoped),
             unscoped: Bytes::from(unscoped),
@@ -416,7 +421,16 @@ fn serve(stub: &Stub, index: usize, headers: &HeaderMap, query: Option<&str>) ->
             None => return body(StatusCode::NOT_FOUND, JSON, &json!({"code": "no-example"})),
         }
     } else if route.kind == "stream" {
-        return stream(stub, mission_scoped(query));
+        let scoped = mission_scoped(query);
+        let from = if scoped {
+            resume_index(
+                &stub.fixtures.frames,
+                resume_cursor(headers, query).as_deref(),
+            )
+        } else {
+            0
+        };
+        return stream(stub, scoped, from);
     } else {
         match route
             .default_example
@@ -453,14 +467,68 @@ fn mission_scoped(query: Option<&str>) -> bool {
     })
 }
 
+/// The resume cursor of a request: a non-empty `streamCursor` query value, else a non-empty `Last-Event-ID` header.
+fn resume_cursor(headers: &HeaderMap, query: Option<&str>) -> Option<String> {
+    let from_query = query.unwrap_or("").split('&').find_map(|pair| {
+        let (key, value) = pair.split_once('=')?;
+        (key == "streamCursor" && !value.is_empty()).then(|| percent_decode(value))
+    });
+    from_query.or_else(|| {
+        headers
+            .get("last-event-id")
+            .map(|v| String::from_utf8_lossy(v.as_bytes()).into_owned())
+            .filter(|v| !v.is_empty())
+    })
+}
+
+/// `%XX` escapes only (the ids contain `:`, which clients encode); a malformed escape is kept as it is.
+fn percent_decode(value: &str) -> String {
+    let bytes = value.as_bytes();
+    let mut out = Vec::with_capacity(bytes.len());
+    let mut i = 0;
+    while i < bytes.len() {
+        let hex = |b: u8| (b as char).to_digit(16);
+        if bytes[i] == b'%' && i + 2 < bytes.len() {
+            if let (Some(hi), Some(lo)) = (hex(bytes[i + 1]), hex(bytes[i + 2])) {
+                out.push((hi * 16 + lo) as u8);
+                i += 3;
+                continue;
+            }
+        }
+        out.push(bytes[i]);
+        i += 1;
+    }
+    String::from_utf8_lossy(&out).into_owned()
+}
+
+/// Where a mission-scoped stream starts (stub-http.md "Resume"): after the item whose `scopedId` equals the cursor;
+/// for any other non-empty cursor, after the last `log-truncated` item (from the start when there is none); with no
+/// cursor, from the start.
+fn resume_index(frames: &[Frame], cursor: Option<&str>) -> usize {
+    let Some(cursor) = cursor else {
+        return 0;
+    };
+    match frames
+        .iter()
+        .position(|f| f.scoped_id.as_deref() == Some(cursor))
+    {
+        Some(at) => at + 1,
+        None => frames
+            .iter()
+            .rposition(|f| f.truncated)
+            .map_or(0, |at| at + 1),
+    }
+}
+
 /// `200 text/event-stream`: every change after its scaled delay, then a heartbeat every interval until the client
 /// goes away (the send fails once the body is dropped).
-fn stream(stub: &Stub, scoped: bool) -> Response {
+fn stream(stub: &Stub, scoped: bool, from: usize) -> Response {
     let (mut tx, rx) = Channel::<Bytes, Infallible>::new(8);
     let frames: Vec<(Duration, Bytes)> = stub
         .fixtures
         .frames
         .iter()
+        .skip(from)
         .map(|f| {
             // `Fixtures::check_time_scale` rejects a scale that overflows; an unchecked caller waits "forever".
             let delay = scaled_delay(f.delay_ms, stub.time_scale).unwrap_or(Duration::MAX);
