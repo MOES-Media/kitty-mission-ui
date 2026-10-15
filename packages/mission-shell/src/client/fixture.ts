@@ -258,9 +258,20 @@ export function createFixtureClient(options: FixtureClientOptions = {}): Mission
     if (!CONNECTION_STATES.includes(next)) throw new Error(`fixture client: unknown connection state ${String(next)}`);
     if (next === state) return;
     state = next;
-    for (const listener of [...stateListeners]) listener(next);
+    // Every listener runs even when an earlier one throws; the errors are rethrown together afterwards, so one faulty
+    // listener neither hides the state change from the others nor leaves a subscription un-resynchronised.
+    const errors: unknown[] = [];
+    const run = (call: () => void): void => {
+      try {
+        call();
+      } catch (error) {
+        errors.push(error);
+      }
+    };
+    for (const listener of [...stateListeners]) run(() => listener(next));
     // The subscriptions follow the connection after its own listeners have heard it.
-    for (const follow of [...subscriptions]) follow(next);
+    for (const follow of [...subscriptions]) run(() => follow(next));
+    if (errors.length > 0) throw new AggregateError(errors, `fixture client: ${errors.length} listener(s) threw while the connection became ${next}`);
   });
   return client;
 }

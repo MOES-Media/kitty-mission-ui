@@ -401,6 +401,45 @@ describe('connection state', () => {
     expect(client.connection.state).toBe('connected');
   });
 
+  it('runs every listener when one throws, then rethrows the errors together (SO-CORR-006)', () => {
+    const client = createFixtureClient();
+    const first = new Error('first listener');
+    const third = new Error('third listener');
+    const heard: string[] = [];
+    client.connection.onChange(() => {
+      heard.push('a');
+      throw first;
+    });
+    client.connection.onChange((state) => heard.push(`b:${state}`));
+    client.connection.onChange(() => {
+      heard.push('c');
+      throw third;
+    });
+    let thrown: unknown;
+    try {
+      setConnectionState(client, 'reconnecting');
+    } catch (error) {
+      thrown = error;
+    }
+    expect(thrown).toBeInstanceOf(AggregateError);
+    expect((thrown as AggregateError).errors).toEqual([first, third]);
+    expect(heard).toEqual(['a', 'b:reconnecting', 'c']);
+    expect(client.connection.state).toBe('reconnecting');
+  });
+
+  it('still resynchronises an open subscription when a state listener throws', () => {
+    const scheduler = fakeScheduler();
+    const client = createFixtureClient({ scheduler, initialState: 'reconnecting' });
+    const seen: Change[] = [];
+    client.subscribe((change) => seen.push(change));
+    client.connection.onChange(() => {
+      throw new Error('listener');
+    });
+    expect(() => setConnectionState(client, 'connected')).toThrow(AggregateError);
+    scheduler.advance(0);
+    expect(seen.map((change) => change.kind)).toEqual([changes.items[0]?.event]);
+  });
+
   it('setting one client leaves another unchanged', () => {
     const first = createFixtureClient();
     const second = createFixtureClient();
