@@ -149,22 +149,28 @@ proof-leg durations, read from the job steps.
     refocus, retry (`sk-retry-load`, `sk-shell-retry`), and Rescan.
   - Each issues its read at once, with a new generation, even inside a window or with a read in flight. It clears
     `trailing` (the bypass read is newer) and opens a new window.
-  - Load-more is not a re-read (see "Page chains").
+  - Load-more is not a re-read (see "Page chains"). **A cursor retry is a load-more** (FS-08): an Ops `sk-retry-load`
+    with `target: 'ops-page'` and a `cursor` appends the page after that cursor and is not a bypass. A retry without a
+    cursor re-reads the first page, and is a bypass.
 - **Stale-while-revalidate** (R2-05):
   - A slot that holds a value keeps it, with its `ready` or `empty` view, while a re-read is in flight.
   - `loading` is shown only for a slot without a value.
   - Navigation creates fresh slots for keys that were not displayed, so a new screen shows `loading`. Keys displayed
     both before and after (chrome, or re-selecting the same destination) keep their values.
-- **The connection gate** (R2-09):
-  - While the state is `connecting`, requests are recorded but not issued.
-  - **The first transition out of `connecting`, to any state, releases the gate** and issues the current displayed set.
-  - The first `connected` ever triggers no read of its own when it is not that transition. A later `connected` after
-    `degraded` or `reconnecting` is a reconnect, which the adapter follows with `resync` (port, "Subscription
-    lifecycle").
+- **The connection gate** (R2-09 superseded by FS-01 and FS-02; spec FR-011, US4-1, US4-2):
+  - **No read is issued until the first `connected` ever.** While the state is `connecting`, or a `degraded` or
+    `reconnecting` state reached before any `connected`, requests are recorded but not issued.
+  - **A degraded state before the first `connected`** (from `connecting`, or an initial degraded state) sets the
+    no-value slots of the displayed set to `error` **without issuing reads**.
+  - **The first `connected`, whatever came before it, issues the current displayed set itself**, as bypass reads. It is
+    not a `resync`: the port and the fixture deliver no `resync` at first contact. The fixture starts its replay at
+    the first `connected` and resynchronises only a subscription that has been live.
+  - Later `connected` transitions are reconnects, followed by the adapter's `resync` (or a shell-side resync while the
+    stream is refused, R-18).
   - Tests cover both paths:
-    - `connecting` to `connected`: reads at the transition and no `resync`;
-    - `connecting` to `degraded` to `connected`: reads at the first transition, `error` on the no-value slots, then the
-      `resync` reads.
+    - `connecting` to `connected`: no `resync`; shell-issued reads at the first `connected`;
+    - `connecting` to `degraded` to `connected`: 0 reads while degraded, `error` on the no-value slots, then no
+      `resync`; shell-issued reads at the first `connected`.
 - **Page chains** (R2-06, R5-10). For `missions` and `ops`, which have n pages loaded:
   - A re-read issues page 1, then each next page with `pageCursor` set to the `nextPageCursor` of the page **just
     read** (re-chained, never the old cursors), up to n pages or until a page has no next cursor.
@@ -190,14 +196,18 @@ proof-leg durations, read from the job steps.
   property, and `not-found` where the screen defines it for 404.
 - **`unavailable`** is a non-answer. On a slot with data, it keeps the data and the view state. On a slot without data,
   it sets `error`. This is the operator's ruling, recorded in the spec as a dated amendment to FR-005.
-- **Entering a degraded state** (R1-01):
-  - Every slot without a value is set to `error` at once, without waiting for a read.
-  - Reads held by the `connecting` gate are **kept, not dropped**: leaving `connecting` issues them (R-05). If the
-    service answers after all, the data appears.
+- **Degraded states** (R1-01 superseded by FS-01 and FS-02):
+  - While a state is `degraded`, every displayed slot without a value shows `error`, **even with a read in flight**
+    (FS-05). The banner carries the explanation, and the read's result applies by the table when it arrives.
+  - Before the first `connected` there are no reads: a degraded state sets the no-value slots to `error`, and the
+    recorded requests are issued by the first `connected` (R-05).
   - Tests:
-    - `connecting` to `degraded: service-missing`;
-    - a client created with `initialState: 'degraded: contract-mismatch'`, which has no gate, so reads are issued at
-      mount and their `unavailable` results give `error`.
+    - `connecting` to `degraded: service-missing` (0 reads, `error`), then `connected`: no `resync`; shell-issued reads
+      at the first `connected`;
+    - `initialState: 'degraded: contract-mismatch'`: 0 reads at mount, `error`, then the same at the first
+      `connected`;
+    - after the first `connected`: navigate while `degraded`, so the new no-value slot shows `error`, not `loading`,
+      while its read is in flight (FS-05).
 - A refused load-more cursor (400 `PageCursorRefusal`) drops the loaded pages and reads page 1 again.
 - **Refusal coverage** (R5-08). The tests enumerate every refusal schema and status from `routes.json`:
 
@@ -250,8 +260,10 @@ proof-leg durations, read from the job steps.
   path.
   - The ESLint boundary block's patterns (`**/client/fixture`, `**/fixture`, `**/harness/**` and the fixture JSON) do
     not match that path, so **no boundary exemption is added** (R4-07). The boundary block is unchanged.
-  - A story-local `storyClient({ state, reads })` wraps the fixture client:
-    - `connection` reports the fixed `state`;
+  - A story-local `storyClient({ state, reads, startConnected })` wraps the fixture client:
+    - `connection` reports `state`. With `startConnected`, used by the stories "with data", it first reports
+      `connected` and switches to `state` once the reads have settled. The shell reads nothing before the first
+      `connected` (FS-01);
     - `reads: 'fixture'` delegates to the fixture;
     - `reads: 'unavailable'` resolves every read as `{ ok: false, unavailable: 'contract-mismatch' }`, for the
       contract-mismatch story without data (R1-01).
@@ -486,6 +498,8 @@ proof-leg durations, read from the job steps.
   - **Gate-proof**: `scripts/gate-proof.mjs` and `scripts/gate-proof/**`.
   - **The visual harness**: `scripts/visual.sh`, `apps/storybook/playwright.config.ts` and
     `apps/storybook/tests/visual/**` except `__snapshots__/` (see below).
+  - **The port and #17 shell internals** (FS-07): `packages/mission-shell/src/index.ts`, `src/testing.ts`,
+    `src/client/**`, `src/contract/stream.ts`, `src/harness/**` and `src/Shell.svelte`.
   - **no-io**: `eslint.no-io.config.mjs`, `eslint-rules/svelte.mjs` and `gates/no-io.selftest.ts`.
   - **Hygiene**: `scripts/check-hygiene.mjs` and `scripts/hygiene/**`.
   - **Scripts**:
@@ -524,10 +538,14 @@ proof-leg durations, read from the job steps.
   - While live updates are off, **every `connected` that is not the first ever is treated as a shell-side `resync`**,
     which re-reads the displayed set as a bypass trigger. A refused subscription receives no adapter `resync`, so
     reconnects would otherwise leave stale data.
-- **Copy protocol** (R2-07):
-  - On `sk-copy-command`, the shell sets `copyResult = null` and lets it reach the element (the snapshot is emitted,
-    then Svelte's `tick()` runs) **before** awaiting `host.copyText`. Then it sets the answer.
-  - So two consecutive `copied` answers each reach the screen as a change. This is tested.
+- **Copy protocol** (R2-07, FS-03):
+  - The controller takes an injected flush hook, `afterRender: () => Promise<void>`. The view (`ui/`) supplies one
+    that awaits Svelte's `tick()`. The default, used in Node, is `() => Promise.resolve()`. So the controller never
+    imports Svelte, and the layering of P-8 holds.
+  - On `sk-copy-command`, the controller sets `copyResult = null`, emits the snapshot, **awaits `afterRender`**, then
+    awaits `host.copyText`, and finally sets the answer.
+  - So two consecutive `copied` answers each reach the screen as a change. This is tested in Chromium; in Node, the
+    order of the calls is asserted.
 - **The reconnecting grace timer** (R2-08):
   - Entering `reconnecting` updates the state first, then arms a 1 s timer on the injected scheduler.
   - Every exit clears it, and a re-entry arms a fresh one.

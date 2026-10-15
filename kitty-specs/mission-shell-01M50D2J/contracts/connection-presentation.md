@@ -7,7 +7,9 @@ flag and is confirmed or amended by the operator at CP-1 (`plan.md`, "Design rev
 
 - Each banner is one `sk-notice` from `@spec-kitty/elements`, placed in the `sk-mission-shell` content slot above the
   hosted screen.
-- `src/ui/ConnectionBanner.svelte` holds the tone and announce table, one line per condition. The reconnecting line is
+- **One home for each part** (FS-06). `src/core/connection.ts` owns the state → condition mapping (including the
+  refused flag and the grace timer) and the copy below. `src/ui/ConnectionBanner.svelte` owns only the tone and
+  announce table, one line per condition. The reconnecting line is
   exactly `reconnecting: { tone: 'attention', announce: 'polite' },`, which is the anchor of visual plant P-6.
 - Shell CSS only lays it out: a flex column, with a gap from a `--sk-space-*` token.
 - The screen below keeps its own state.

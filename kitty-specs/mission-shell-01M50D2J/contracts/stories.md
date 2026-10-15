@@ -21,9 +21,13 @@
 
 ## Story data (R2-12, R1-01)
 
-- **Client.** `storyClient({ state, reads })` is story-local. `connection` reports a fixed state. `reads: 'fixture'`
-  delegates to `createFixtureClient(...)`, and `reads: 'unavailable'` resolves every read as
+- **Client.** `storyClient({ state, reads, startConnected })` is story-local. `reads: 'fixture'` delegates to
+  `createFixtureClient(...)`, and `reads: 'unavailable'` resolves every read as
   `{ ok: false, unavailable: 'contract-mismatch' }`.
+  - Because the shell reads nothing before the first `connected` (FS-01), a story "with data" starts its `connection`
+    in `connected`. Once the reads have settled, under the immediate scheduler, it switches to the story's `state`.
+  - The `connecting` story and the contract-mismatch story without data report their `state` from the start, so no
+    read is ever issued and no-value slots show `loading` or `error`.
 - **Fixture.** The fixture is always created with `fixtures: { changes: { missionId: <the sequence id>, items: [] } }`,
   so no change replays during a story.
 - **Refused story.** The `live-updates-off` story selects `examples: { streamEvents: 'StreamRefusal.content-mismatch' }`.

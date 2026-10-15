@@ -78,12 +78,16 @@ Parameters are asserted too: a `wp:M/WP02` read carries `wpId: 'WP02'`.
   - `examples: { streamEvents: 'StreamRefusal.content-mismatch' }` shows the notice, and reads still apply.
   - Then `reconnecting` → `connected` re-reads the whole displayed set (a shell-side resync), with **0** new
     `subscribe` calls.
-- **Connection gating** (R2-02, R2-09):
-  - `initialState: 'connecting'`: 0 reads; then `setConnectionState('connected')`. Exactly the destination's initial
-    reads are recorded, **observed before the fake scheduler is advanced**. No `resync` is delivered.
-  - `connecting` → `degraded: service-missing` → `connected`: the initial reads at the first transition, `error` on the
-    no-value slots, then the `resync` reads.
-  - `initialState: 'degraded: contract-mismatch'`: reads at mount, `error`.
+- **Connection gating** (R2-02; FS-01 and FS-02, superseding R2-09):
+  - `initialState: 'connecting'`: 0 reads. Then `setConnectionState('connected')`: no `resync`; shell-issued reads at
+    the first `connected`, exactly the destination's initial reads, **observed before the fake scheduler is
+    advanced**.
+  - `connecting` → `degraded: service-missing`: 0 reads, and every no-value slot shows `error`. Then `connected`: no
+    `resync`; shell-issued reads at the first `connected`.
+  - `initialState: 'degraded: contract-mismatch'`: 0 reads at mount, `error`. Then `connected`: no `resync`;
+    shell-issued reads at the first `connected`.
+  - FS-05: after the first `connected`, a navigation while `degraded` shows `error` (not `loading`) on the new no-value
+    slot while its read is in flight. The read's result then applies by the table.
 - **Edge: `resync` while a read is in flight.** The in-flight result is dropped, and the resync read's result is shown.
 - **NFR-007.** A Node setup file fails the run on any `unhandledRejection` or `uncaughtException`. Nothing in the shell
   swallows its own errors.

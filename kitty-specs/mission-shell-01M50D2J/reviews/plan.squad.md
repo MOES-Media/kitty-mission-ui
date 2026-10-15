@@ -43,7 +43,7 @@ orchestrator).
 |---|---|---|---|---|---|
 | R5-01 | R5 | 4 | No check stops existing visual baselines from being modified, deleted or renamed. | CONFIRMED | accepted: `git diff --exit-code --diff-filter=MDR "$base" -- apps/storybook/tests/visual/__snapshots__/` is an IC-08a and IC-08b exit check and part of IC-09's frozen check. Only `shell-*.png` may be added, and the reviewer repeats it (plan, research R-17, `stories.md`). |
 | R5-02 | R5 | n/g | P-2's marker-type construction is unproven. The token is weak, and the anchor may not be unique. | CONFIRMED | changed: the check type `Exclude<Declared, Mapped>` is assigned `true` (and the reverse). The token is the literal `sk-drift-screen sk-copy-command`, and table entries are one per line (research R-09, plan P-2). |
-| R1-01 | R1 | n/g | The degraded state's effect on no-value slots and on gated reads is undefined; the contract-mismatch story has no data source. | CONFIRMED | accepted: entering a degraded state sets no-value slots to `error`, and gated reads are **kept and issued**. Tests cover `connecting` → degraded and an initial degraded state. A story-local `storyClient({ reads: 'unavailable' })` serves the contract-mismatch story (research R-06, R-08; `stories.md`). |
+| R1-01 | R1 | n/g | The degraded state's effect on no-value slots and on gated reads is undefined; the contract-mismatch story has no data source. | CONFIRMED | accepted: entering a degraded state sets no-value slots to `error`, and gated reads are **kept and issued**. Tests cover `connecting` → degraded and an initial degraded state. A story-local `storyClient({ reads: 'unavailable' })` serves the contract-mismatch story (research R-06, R-08; `stories.md`). **SUPERSEDED in round 2 by FS-01 and FS-02**: gated reads are no longer issued on leaving `connecting`; see "Fix round 2". |
 | R1-02 | R1 | n/g | What `unavailable` does on a slot that already has data needs a spec anchor. | CONFIRMED | **ruled** (operator, decision `01M50K4DBT2VCW6DD4JQAGEMB4`): keep the data and the view state. A dated FR-005 amendment is in `spec.md` "Amendments". |
 | R5-03 | R5 | n/g | NFR-002 asserted only "at most 2" reads. | CONFIRMED | accepted: **exactly 2**, the second at t ≥ 100, with the trailing value applied (`refresh-policy.md`). |
 | R5-04 | R5 | n/g | The SC-004 check ignored every timeout, including job `timeout-minutes`. | CONFIRMED | accepted: job `timeout-minutes` must be exact. Only proof-leg matrix `timeout`s may change, and only upward (research R-17). |
@@ -73,7 +73,7 @@ orchestrator).
 | R2-06 | R2 | n/g | The page-chain re-read and its interplay with load-more are undefined. | CONFIRMED | accepted: sequential, re-chained, one generation, applied atomically; the load-more rules are defined; a 2-page test (research R-05). |
 | R2-07 | R2 | n/g | Two consecutive `copied` answers are invisible to the screen. | CONFIRMED | accepted: the copy protocol delivers `null` (emit, then `tick`) before awaiting the host. Tested (research R-18). |
 | R2-08 | R2 | n/g | Grace-timer handling on re-entry is undefined. | CONFIRMED | accepted: the state is updated before arming; the timer is cleared on every exit and re-armed on entry. A re-entry test. |
-| R2-09 | R2 | n/g | The gate does not release when leaving `connecting` for a non-`connected` state. | CONFIRMED | accepted: the first exit from `connecting` to any state issues the displayed set. The first `connected` ever triggers no extra read. Both paths are tested. |
+| R2-09 | R2 | n/g | The gate does not release when leaving `connecting` for a non-`connected` state. | CONFIRMED | accepted: the first exit from `connecting` to any state issues the displayed set. The first `connected` ever triggers no extra read. Both paths are tested. **SUPERSEDED in round 2 by FS-01 and FS-02**: the gate stays closed until the first `connected` (spec FR-011, US4-1); see "Fix round 2". |
 | R2-10 | R2 | n/g | After `refused`, reconnects leave stale data. | CONFIRMED | **ruled** (operator, decision `01M50K4G2G0EA0JN3B6YGH607S`): each non-first `connected` is a shell-side resync, with no new subscription (research R-18). |
 | R2-11, R3-04, R4-03 | R2, R3, R4 | n/g | The dashboard guard misses three picker or dialog intents; the dashboard with a null client is undefined; `routeChanged` timing is undefined; `setClient` has no route. | CONFIRMED | accepted: the guard covers all six, tested through `controller.intent` in Node. The dashboard with a null client is an error state with no reads and no throw. `routeChanged` fires after the shell's navigations and after normalisation, never as an echo. `setClient(client, route?)` (research R-02, R-10). |
 | R2-12 | R2 | n/g | Story fixtures replay changes; the story client is unnamed. | CONFIRMED | accepted: empty `changes` in every story fixture; `storyClient({ state, reads })` (`stories.md`). |
@@ -98,11 +98,15 @@ orchestrator).
 | R6-03 | R6 | n/g | Timeouts cannot be derived from a PR run before the PR exists. | CONFIRMED | **ruled** (orchestrator, decision `01M50K4S90BX5W0M322WYH8SA1`, following the #17 precedent): provisional values from local measurements in IC-09; a post-PR `(landing)` fold re-derives them. |
 | R6-04 | R6 | n/g | IC-08 straddles CP-1; amendments have no owner; the location of `design-review` is unclear. | CONFIRMED | accepted: split into IC-08a and IC-08b. IC-08b has a grant to edit the IC-06 and IC-03 files for amendments and re-proves P-6. The `design-review` files live on `feat/mission-shell-18`. |
 | R6-05 | R6 | n/g | The Chromium shell tests have no plant proving they run. | CONFIRMED | **ruled** (operator, decision `01M50K4NSNYD9TEQ12T4J7KVHT`): P-7 in `test/shell` (token `mounted screen mismatch on drift`). The unit-tests leg is re-derived: 10 plants, 11 runs, about 22.5 min, timeout 30 → 32 provisional. |
-| R6-07 | R6 | n/g | The coordination branch `kitty/mission-mission-shell-01M50D2J` is stale: it holds the 3 deferred spec decisions only. | NOTED (investigated) | deferred_with_rationale: see "R6-07 investigation" below. The tooling refuses to sync a diverged coordination branch; no hand edit was made; it is escalated to the orchestrator. |
+| R6-07 | R6 | n/g | The coordination branch `kitty/mission-mission-shell-01M50D2J` is stale: it holds the 3 deferred spec decisions only. | NOTED (investigated) | deferred_with_rationale: see "R6-07 investigation" below. The tooling refuses to sync a diverged coordination branch; no hand edit was made; it is escalated to the orchestrator. **CLOSED in round 2 (FS-09)**: the coordination branch was reconciled to `5dd3a27` on 2026-10-15, and the doctor reports healthy. |
 | R6-08 | R6 | n/g | P-1's token origin is unstated; the P-2 fallback said "scoped". | CONFIRMED | accepted: P-1's token is an assertion message (no test title contains it). The P-2 fallback is removed, since the token is now the pair literal. |
 | R6-09 | R6 | n/g | The visual timeout appears formula-derived. | CONFIRMED | accepted: a note that the visual timeout is never set from the formula alone. It is held at 60 because timeouts are never lowered. |
 
 ## R6-07 investigation
+
+**Closed 2026-10-15 (FS-09).** The orchestrator committed the coordination worktree's pending events and merged
+`feat/mission-shell-18` into `kitty/mission-mission-shell-01M50D2J` (now `5dd3a27`). `spec-kitty doctor coordination`
+reports healthy. The investigation below is kept as the record.
 
 - **Where decisions live.**
   - `spec-kitty agent decision open`, `resolve` and `defer` write the decision files and `decisions/index.json` in the
@@ -123,14 +127,44 @@ orchestrator).
   tooling commit the coordination worktree's status log and then reconciling the divergence. The CLI offers no
   automatic path for a diverged branch.
 
+## Fix round 2 (fresh sweep)
+
+A fresh sweep of `ba7362b` verified 49 of 49 round-1 folds present, with 5 exceptions (FS-01 to FS-05 below), and
+returned NOT READY. All of these are folded on `feat/mission-shell-18`. No operator ruling or spec amendment was needed:
+FS-01 and FS-02 restore the spec as written (remedy a).
+
+The plan agent checked FS-01 and FS-02 against the code. `src/client/fixture.ts` starts its replay at the first
+`connected`, whatever came before it, with no `resync`, and resynchronises only a subscription that has been live. So
+the round-1 statement "a `resync` follows `connecting` → degraded → `connected`" was wrong.
+
+| Id | Sev | Finding | Verified | Disposition |
+|---|---|---|---|---|
+| FS-01 | 4 | Round 1 (R2-09) issued reads on leaving `connecting` for a degraded state, against spec FR-011 and US4-1 ("no reads until the state first becomes `connected`"). | CONFIRMED (spec, fixture) | changed: the gate stays closed until the first `connected` ever; the first `connected` issues the displayed set itself. R2-09 is superseded (research R-05, `data-model.md` "Connection gate", `refresh-policy.md`, plan IC-03 and data flow). |
+| FS-02 | 4 | Round 1 (R1-01) expected a `resync` after `connecting` → degraded → `connected`, and reads at mount in an initial degraded state. Neither the port nor the fixture sends `resync` at first contact. | CONFIRMED (fixture.ts) | changed: a degraded state before the first `connected` sets no-value slots to `error` without reads. Every test description now reads "no `resync`; shell-issued reads at the first `connected`". R1-01 is superseded (research R-06, `refresh-policy.md`, `data-model.md`, plan). Knock-on: `storyClient` gains `startConnected`, so stories "with data" load before switching state (research R-08, `stories.md`). |
+| FS-03 | 3 | The copy protocol awaits Svelte's `tick()` in the controller, which breaks the layering of P-8. | CONFIRMED | changed: an injected `afterRender: () => Promise<void>` (a resolved promise by default; `ui/` awaits `tick()`). Order: emit, await `afterRender`, await `host.copyText` (research R-18, plan IC-03 and IC-06). |
+| FS-04 | 3 | IC-08b cannot re-anchor P-6 after an amendment, and has no regression exit checks. | CONFIRMED | accepted: the grant covers P-6's find and replace, the anchor quotes in two contracts, and the banner and copy tests. P-6 stays a visible tone change. Exit checks add `pnpm test`, `pnpm lint`, `pnpm typecheck`, and a P-7 re-proof when `MissionShell.svelte` is touched (plan IC-08b, ownership table). |
+| FS-05 | n/g | It is undefined what a no-value slot shows while degraded with a read in flight. | CONFIRMED | accepted: `error`, even with a read in flight. Stated and tested (research R-06, `data-model.md`, `refresh-policy.md`). |
+| FS-06 | n/g | The presentation table has two homes. | CONFIRMED | accepted: core owns state → condition, the refused flag, the grace timer and the copy; the view owns the tone and announce table. Stated in `data-model.md`, `connection-presentation.md` and plan IC-03. |
+| FS-07 | n/g | The frozen diff misses the visual harness directory and the #17 shell internals. | CONFIRMED | accepted: added to the quickstart command, research R-17 and plan IC-09. |
+| FS-08 | n/g | Whether a cursor retry is a bypass is undefined. | CONFIRMED | accepted: a cursor retry is a load-more (append, no bypass); a retry without a cursor is a bypass (research R-05, `data-model.md`). |
+| FS-09 | n/g | R6-07 was still open after the reconciliation. | CONFIRMED | accepted: R6-07 is closed, with a dated note; plan timeline risk 9 is updated. |
+| FS-10 | n/g | Under the Vitest-fallback risk, the window sentinel would fail in Chromium. | CONFIRMED | accepted: under that fallback, the sentinel is dropped and the leg is re-derived (plan timeline risk 6). |
+| FS-11 | n/g | The FR-005 row does not point to its amendment. | CONFIRMED | accepted: the FR-005 title gains "(amended 2026-10-15; see Amendments)". |
+| FS-12 | n/g | The "Stream-refreshed" column mis-describes `log-truncated` and `resync`. | CONFIRMED | accepted: the column is renamed to the two status changes, with a footnote for `log-truncated` and `resync` (`data-model.md`). |
+| FS-13 (IC-07) | n/g | The ordering of the layering block relative to the boundary block is unstated. | CONFIRMED | accepted: the layering block must sit after the boundary block, re-spreading the shared patterns (plan IC-07). |
+
+Raw 13, confirmed 13, refuted 0. Plants, leg times and timeouts are unchanged by this round.
+
 ## Totals
 
 | Round | Raw rows | Confirmed | Refuted | Noted | Ruled (of the confirmed) |
 |---|---|---|---|---|---|
 | 1 (three delegates) | 50 | 49 | 0 | 1 | 5 |
+| 2 (fresh sweep) | 13 | 13 | 0 | 0 | 0 |
+| **All** | **63** | **62** | **0** | **1** (closed) | **5** |
 
 - Every confirmed finding is dispositioned.
-- The only deferral is R6-07, an orchestrator action outside the plan artifacts.
+- R6-07 was deferred to the orchestrator and is now closed (FS-09). R1-01 and R2-09 are superseded by FS-01 and FS-02.
 - Plan decisions: `01M50HMCBJMREJ5XJASGE29X73`, `01M50HMK3E7A4XA93PZMZ9KBT8` (forks) and the five squad rulings above.
   `decision verify` is clean.
 
@@ -139,7 +173,7 @@ orchestrator).
 - **Plants**: P-1 to P-8 (7 new, 1 moved) are WP deliverables, each with its exact anchor and token (plan Gates).
 - **Test obligations**:
   - the literal recording, including the WP-none and Artifacts-none rows;
-  - the scheduler transitions and tests of R2-01 to R2-09;
+  - the scheduler transitions and tests of R2-01 to R2-08, and the gate of FS-01 and FS-02 (which supersede R2-09);
   - the 40-case intent sweep;
   - the link negatives;
   - the route decoding negatives;

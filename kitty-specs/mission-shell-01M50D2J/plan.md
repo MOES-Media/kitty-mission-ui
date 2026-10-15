@@ -167,7 +167,8 @@ flowchart LR
 4. Each result is applied only if its generation is the slot's latest.
 5. The snapshot updates, and the view sets the screens' properties.
 
-The connection state gates and presents. The first transition out of `connecting` loads the displayed set. Reconnects
+The connection state gates and presents. Nothing is read before the first `connected`, which loads the displayed set
+itself (no `resync` at first contact); a degraded state before it only marks no-value slots `error`. Reconnects
 re-read through the adapter's `resync`, or through a shell-side resync while the stream is refused (ruling
 `01M50K4G2G0EA0JN3B6YGH607S`).
 
@@ -291,14 +292,24 @@ README.md, CHANGELOG.md
   - `test/logic/{controller,results,connection}.test.ts`.
 - **Sequencing/depends-on**: IC-01, IC-02.
 - **Risks**:
-  - **Degraded states**: entering one sets every slot without a value to `error`. Gated reads are kept and issued.
-    Tests: `connecting` → degraded, and an initial degraded state (R1-01).
+  - **Gate and degraded states** (FS-01, FS-02; R1-01 and R2-09 superseded):
+    - No read is issued before the first `connected`.
+    - A degraded state before it sets the displayed no-value slots to `error`, without reads.
+    - The first `connected` issues the displayed set itself; there is no `resync` at first contact.
+    - While degraded, a no-value slot shows `error` even with a read in flight (FS-05).
+    - Tests: `connecting` → degraded → `connected`; an initial degraded state; a navigation while degraded after the
+      first `connected`.
   - **Refusals**: every refusal from `routes.json` is enumerated (research R-06 table). The 404 `Problem` is injected
     through `fixtures.examples` (R5-08).
   - **Refused stream**: each non-first `connected` is a shell-side resync, with no new subscription (ruling
     `01M50K4G2G0EA0JN3B6YGH607S`).
   - **Grace timer**: armed after the state update, cleared on every exit, re-armed on re-entry. Test: re-entry (R2-08).
-  - **Copy protocol**: `null` is delivered before the host is awaited. Test: two `copied` answers in a row (R2-07).
+  - **Copy protocol** (R2-07, FS-03): the controller takes an injected `afterRender: () => Promise<void>`, which
+    defaults to a resolved promise in Node and is supplied by `ui/` to await Svelte's `tick()`. The order is: set
+    `copyResult = null`, emit the snapshot, await `afterRender`, await `host.copyText`, set the answer. Test: two
+    `copied` answers in a row.
+  - **Presentation home** (FS-06): `core/connection.ts` owns the state → condition mapping, the refused flag, the grace
+    timer and the copy. `ui/ConnectionBanner.svelte` owns only the tone and announce table.
   - **Errors**: the test harnesses fail on uncaught errors. The controller converts host errors to fallbacks and never
     swallows its own (R5-11).
 
@@ -352,6 +363,8 @@ README.md, CHANGELOG.md
 - **Sequencing/depends-on**: IC-03, IC-04, IC-05, IC-07.
 - **Risks**:
   - `MissionShell.svelte` has exactly one root, `<sk-mission-shell>`.
+  - The view passes `afterRender` (awaiting Svelte's `tick()`) to the controller (FS-03), so the controller stays free
+    of Svelte.
   - The screen components are looked up in a `SCREENS` table, one entry per line. P-7 swaps `drift: DriftScreen,` for
     `drift: OpsScreen,`, and the routing test fails with the assertion message `mounted screen mismatch on drift`.
   - `ConnectionBanner.svelte` keeps its tone and announce table one line per condition. P-6 anchors on
@@ -378,6 +391,9 @@ README.md, CHANGELOG.md
 - **Risks**:
   - The `no-restricted-globals` entries match free references only; a local of the same name is a shadowing error.
   - The boundary block itself is unchanged. No stories exemption is added (R4-07).
+  - **The layering block must sit after the boundary block** in `eslint.config.mjs`. It replaces
+    `no-restricted-imports` for `src/{core,controller,intents}/**`, so it re-spreads the boundary patterns from the
+    shared constant. Placed before the boundary block, it would be overridden.
 
 ### IC-08a — Stories, Storybook integration and candidate baselines
 
@@ -411,12 +427,20 @@ README.md, CHANGELOG.md
 
 - **Purpose**: apply CP-1's amendments, finalise the baselines, and re-prove P-6.
 - **Relevant requirements**: FR-018, SC-007.
-- **Affected surfaces**: the `shell-*.png` baselines, plus a **grant** to edit the IC-06 files (`src/ui/**`) and the
-  IC-03 copy and presentation files (`src/core/connection.ts`) for an amendment.
+- **Affected surfaces**: the `shell-*.png` baselines, plus a **grant**, for a CP-1 amendment only, to edit:
+  - the IC-06 files (`src/ui/**`), and the IC-03 copy and presentation file (`src/core/connection.ts`);
+  - **P-6 itself** (FS-04): the `find` and `replace` of `gates/plants/visual/plant.json`, and
+    `contracts/connection-presentation.md` and `contracts/stories.md` where they quote the anchor;
+  - the banner and copy tests (`test/shell/banners.test.ts`, `test/logic/connection.test.ts`).
+
+  **P-6 must stay a visible tone change.** If CP-1 makes the reconnecting tone `danger`, the plant switches it to a
+  different tone, for example `danger` → `info`.
 - **Sequencing/depends-on**: IC-08a and CP-1.
 - **Exit checks**:
   - `sha256sum -c design-review.sha256`, and the set of `shell-*.png` files equals the set listed;
-  - P-6 re-proven after any amendment;
+  - P-6 re-proven after any amendment, on the new anchor if it was re-anchored;
+  - **P-7 re-proven** whenever `src/ui/MissionShell.svelte` is touched;
+  - `pnpm test` (under `heavy`), `pnpm lint` and `pnpm typecheck` pass (FS-04);
   - the R5-01 baseline diff passes.
 
   Any later commit or rebase touching `shell-*.png` reopens CP-1.
@@ -433,7 +457,9 @@ README.md, CHANGELOG.md
     measurements. A post-PR `(landing)` fold re-derives them from the PR's first CI run.
   - **The frozen-surface check** is research R-17 in full:
     - the base (`git merge-base HEAD main`) contains #17: `git merge-base --is-ancestor 39a51a6 "$base"`;
-    - the file diffs;
+    - the file diffs, including `apps/storybook/tests/visual/**` except `__snapshots__/`, and the port and #17 shell
+      internals `src/index.ts`, `src/testing.ts`, `src/client/**`, `src/contract/stream.ts`, `src/harness/**` and
+      `src/Shell.svelte` (FS-07);
     - the `ci.yml` structure, with job `timeout-minutes` exact and matrix timeouts rising only;
     - plant `ciCommand`s and `prepare`s, and every base plant retained except the moved visual one;
     - the gate scripts;
@@ -466,7 +492,8 @@ flowchart LR
 | `gates/plants/unit-tests/plant.json` | IC-02 | IC-06 (P-7) |
 | `gates/plants/typecheck/plant.json` and payloads | IC-05 | none |
 | `gates/plants/eslint/plant.json` and payloads | IC-07 | none |
-| `gates/plants/storybook-build/plant.json`, `gates/plants/visual/plant.json` | IC-08a | IC-08b (P-6 re-proof only) |
+| `gates/plants/storybook-build/plant.json`, `gates/plants/visual/plant.json` | IC-08a | IC-08b (P-6 re-anchor and re-proof, by grant) |
+| `contracts/connection-presentation.md`, `contracts/stories.md` | plan | IC-08b (the P-6 anchor quote, by grant) |
 | `apps/storybook/.storybook/main.ts`, `apps/storybook/package.json`, `pnpm-lock.yaml` | IC-08a | none |
 | `apps/storybook/tests/visual/__snapshots__/shell-*.png` | IC-08a (candidates) | IC-08b (final) |
 | `.github/workflows/ci.yml` (matrix `timeout` values only) | IC-09 | IC-02, IC-05, IC-06, IC-07, IC-08a (local leg timings) |
@@ -582,12 +609,14 @@ All are resolved, and `decision verify` is clean.
    takes about 18 min, one at a time.
 5. **Unit-tests leg growth**: the timeout is projected at 32. If the Chromium tests are slower, the provisional value
    rises further, still a matrix-only rise.
-6. **Mixed Vitest projects**: if they cannot coexist, the logic tests run in Chromium, adding about 5.5 min to the leg.
+6. **Mixed Vitest projects**: if they cannot coexist, the logic tests run in Chromium. That adds about 5.5 min to the
+   leg. Under that fallback **the `typeof window === 'undefined'` sentinel is dropped** (it would fail in Chromium), and
+   the unit-tests leg time and timeout are re-derived (FS-10).
 7. **The check-type message shape** in svelte-check is to be confirmed by a spike. The token is the pair literal.
 8. **`sk-notice` tones and announce values** are taken from mission-ui's current use. A missing tone is a library gap.
-9. **The coordination branch** `kitty/mission-mission-shell-01M50D2J` has diverged from `feat/mission-shell-18`, and
-   its worktree holds the uncommitted decision event log (`reviews/plan.squad.md`, R6-07). Reconciling it before
-   `/spec-kitty.tasks` is an orchestrator action that the tooling does not perform automatically.
+9. **The coordination branch**: closed (FS-09). On 2026-10-15 the orchestrator committed the pending events and
+   merged `feat/mission-shell-18` into `kitty/mission-mission-shell-01M50D2J` (now `5dd3a27`), and
+   `spec-kitty doctor coordination` reports healthy.
 
 ## PR shape
 
