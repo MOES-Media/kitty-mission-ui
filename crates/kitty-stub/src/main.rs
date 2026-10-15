@@ -79,7 +79,19 @@ async fn main() -> ExitCode {
             return ExitCode::from(2);
         }
     };
-    match run(args).await {
+    let fixtures = match Fixtures::load(&args.fixtures) {
+        Ok(fixtures) => fixtures,
+        Err(e) => {
+            eprintln!("kitty-stub: {e}");
+            return ExitCode::FAILURE;
+        }
+    };
+    // The overflow check needs the scripted delays, so it runs once the fixtures are loaded, before the stub listens.
+    if let Err(e) = fixtures.check_time_scale(args.time_scale) {
+        eprintln!("kitty-stub: {e}\n{USAGE}");
+        return ExitCode::from(2);
+    }
+    match run(args, fixtures).await {
         Ok(()) => ExitCode::SUCCESS,
         Err(e) => {
             eprintln!("kitty-stub: {e}");
@@ -88,8 +100,7 @@ async fn main() -> ExitCode {
     }
 }
 
-async fn run(args: Args) -> Result<(), String> {
-    let fixtures = Fixtures::load(&args.fixtures)?;
+async fn run(args: Args, fixtures: Fixtures) -> Result<(), String> {
     let listener = tokio::net::TcpListener::bind((Ipv4Addr::LOCALHOST, args.port))
         .await
         .map_err(|e| format!("bind: {e}"))?;

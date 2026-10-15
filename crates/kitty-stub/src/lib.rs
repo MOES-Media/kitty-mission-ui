@@ -170,6 +170,25 @@ impl Fixtures {
     }
 }
 
+impl Fixtures {
+    /// CODE-SEC-003: a time scale is usable when it is finite, not negative, and every scaled scripted delay still fits
+    /// in a `Duration` (checked on the largest delay), so a stream task can never panic on it.
+    pub fn check_time_scale(&self, time_scale: f64) -> Result<(), String> {
+        if !(time_scale.is_finite() && time_scale >= 0.0) {
+            return Err("--time-scale must be a finite number >= 0".into());
+        }
+        let largest = self.frames.iter().map(|f| f.delay_ms).max().unwrap_or(0);
+        scaled_delay(largest, time_scale).map(|_| ()).ok_or_else(|| {
+            format!("--time-scale {time_scale} scales the {largest} ms delay beyond the longest duration")
+        })
+    }
+}
+
+/// `delay_ms × time_scale` as a `Duration`, or `None` when it is not representable.
+fn scaled_delay(delay_ms: u64, time_scale: f64) -> Option<Duration> {
+    Duration::try_from_secs_f64(delay_ms as f64 * time_scale / 1000.0).ok()
+}
+
 impl Frame {
     fn render(item: &ChangeItem) -> Result<Frame, String> {
         let data = serde_json::to_string(&item.data).map_err(|e| format!("changes: {e}"))?;
@@ -366,7 +385,8 @@ fn stream(stub: &Stub, scoped: bool) -> Response {
         .frames
         .iter()
         .map(|f| {
-            let delay = Duration::from_secs_f64(f.delay_ms as f64 * stub.time_scale / 1000.0);
+            // `Fixtures::check_time_scale` rejects a scale that overflows; an unchecked caller waits "forever".
+            let delay = scaled_delay(f.delay_ms, stub.time_scale).unwrap_or(Duration::MAX);
             (
                 delay,
                 if scoped {

@@ -10,7 +10,7 @@ kitty-stub --fixtures <dir> [--port <n>] [--heartbeat-ms <ms>] [--time-scale <f>
 |---|---|---|
 | `--port` | `0` | port to bind on `127.0.0.1`; `0` means ephemeral |
 | `--heartbeat-ms` | `30000` | interval between `: heartbeat` comments |
-| `--time-scale` | `1.0` | multiplier for every item's `delayMs`; tests use `0` |
+| `--time-scale` | `1.0` | multiplier for every item's `delayMs`; tests use `0`. A value that is not finite, is negative, or scales the largest `delayMs` beyond what a `Duration` holds is a usage error (exit 2) before the stub listens |
 | `--header-timeout-ms` | `10000` | how long a connection may take to send a complete request header before it is closed |
 
 The stub binds `127.0.0.1:<port>` only. The first line on stdout is `listening <addr>`, printed from the bound listener's `local_addr()` (never from configuration), so tests and later missions can read the bound port. The loopback test runs the real binary, asserts the announced address is `127.0.0.1`, and connects on a non-loopback local address expecting a refusal. That address is found with `std` only (a UDP socket "connect" to a documentation-range address reveals the default-route local IP without sending traffic); the test is skipped, with the reason logged, when it is loopback or unavailable. No crate is added (R2-08, R3-07). (The upstream service does not announce its port, epic #16; the stub deliberately does.) The stub loads the four named files from `<dir>` (`routes.json`, `examples.json`, `fixtures.json`, `changes.json`, each with its `mission-status.` prefix) once at start-up (B17).

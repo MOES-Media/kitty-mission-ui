@@ -187,3 +187,50 @@ fn closes_a_connection_whose_header_never_completes() {
         "closed after {waited:?}, expected about 300 ms"
     );
 }
+
+/// CODE-SEC-003: a `--time-scale` that is not finite, is negative, or would push the largest scripted delay past what a
+/// `Duration` can hold is a usage error (exit 2) before the stub listens, never a panic in a stream task later.
+#[test]
+fn rejects_an_unusable_time_scale_with_the_usage_exit() {
+    let fixtures = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../contracts/fixtures");
+    for scale in [
+        "NaN",
+        "inf",
+        "-inf",
+        "-1",
+        "-0.5",
+        "1e300",
+        "1.7976931348623157e308",
+    ] {
+        let mut child = Command::new(env!("CARGO_BIN_EXE_kitty-stub"))
+            .args(["--port", "0", "--time-scale", scale, "--fixtures"])
+            .arg(&fixtures)
+            .stdin(Stdio::null())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .expect("kitty-stub starts");
+        let deadline = Instant::now() + Duration::from_secs(10);
+        while child.try_wait().unwrap().is_none() {
+            if Instant::now() >= deadline {
+                let _ = child.kill();
+                let _ = child.wait();
+                panic!("--time-scale {scale} was accepted: the stub was still running after 10 s");
+            }
+            std::thread::sleep(Duration::from_millis(20));
+        }
+        let out = child.wait_with_output().unwrap();
+        assert_eq!(out.status.code(), Some(2), "--time-scale {scale}: {out:?}");
+        assert!(
+            out.stdout.is_empty(),
+            "--time-scale {scale} must not listen"
+        );
+        let stderr = String::from_utf8_lossy(&out.stderr);
+        assert!(stderr.contains("--time-scale"), "{scale}: {stderr}");
+        assert!(stderr.contains("usage: kitty-stub"), "{scale}: {stderr}");
+    }
+    // Positive control: a small positive scale starts and serves.
+    let (_stub, addr) = start_with(&["--time-scale", "0.001"]);
+    let ok = http_get(addr, "/api/v1/project", &addr.to_string());
+    assert!(ok.starts_with("HTTP/1.1 200 "), "{ok}");
+}
