@@ -1,21 +1,21 @@
 {
-  "event_count": 53,
-  "last_event_id": "01M4XHKFAH4RT5AP7VV0QNDSKT",
-  "materialized_at": "2026-10-14T15:48:25.041416+00:00",
+  "event_count": 59,
+  "last_event_id": "01M4ZP54JJKP4FZZ7YBEGNVER6",
+  "materialized_at": "2026-10-15T11:46:27.026706+00:00",
   "mission_number": "",
   "mission_slug": "phase0-bootstrap-01M4V5KK",
   "mission_type": "software-dev",
   "schema_version": 2,
   "summary": {
-    "approved": 7,
+    "approved": 9,
     "blocked": 0,
     "canceled": 0,
     "claimed": 0,
     "done": 0,
     "for_review": 0,
     "in_progress": 0,
-    "in_review": 1,
-    "planned": 1
+    "in_review": 0,
+    "planned": 0
   },
   "work_packages": {
     "WP01": {
@@ -192,18 +192,25 @@
     "WP06": {
       "actor": "claude",
       "agent": "claude",
-      "agent_profile": "reviewer-renata",
-      "agent_profile_version": "1.0",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
       "force_count": 0,
       "implementer_of_record": "claude",
-      "lane": "in_review",
-      "last_event_id": "01M4XHKFAH4RT5AP7VV0QNDSKT",
-      "last_transition_at": "2026-10-14T15:48:25.041416+00:00",
+      "lane": "approved",
+      "last_event_id": "01M4XHSG2PCJ8ZB17ZWM58P4PY",
+      "last_transition_at": "2026-10-14T15:51:42.422874+00:00",
       "model": "__resolved_model_absent__",
       "notes": [
-        "Ready for review: commits 7f57ab5, 4ef12c5, 4c1d8e8, f9c7006 (lane-f). gate-proof local --only unit-tests: ok, clean exit 0, planted exit 1, all 7 plant tokens matched incl. 3 new (binding: loadingMore not set as property; binding: intent sk-search not delivered; coverage: missing operation getDriftReport), leg 439493 ms. Root pnpm test (-r --no-bail --workspace-concurrency=1) runs mission-ui unit+perf and shell (30 tests). typecheck/lint/lint:styles/no-io/manifest/hygiene/scripts/terminology/contract/data-driven/build-storybook green. SC-005 probe empty. Rust gate n/a (no Cargo.toml in lane). Out-of-map: root package.json test script (recorded; --no-bail approved CR)."
+        "Ready for review: commits 7f57ab5, 4ef12c5, 4c1d8e8, f9c7006 (lane-f). gate-proof local --only unit-tests: ok, clean exit 0, planted exit 1, all 7 plant tokens matched incl. 3 new (binding: loadingMore not set as property; binding: intent sk-search not delivered; coverage: missing operation getDriftReport), leg 439493 ms. Root pnpm test (-r --no-bail --workspace-concurrency=1) runs mission-ui unit+perf and shell (30 tests). typecheck/lint/lint:styles/no-io/manifest/hygiene/scripts/terminology/contract/data-driven/build-storybook green. SC-005 probe empty. Rust gate n/a (no Cargo.toml in lane). Out-of-map: root package.json test script (recorded; --no-bail approved CR).",
+        "Independent review PASS. FR-001: missions bound as property (Array.isArray + toEqual fixture items, row count by accessible name), loadingMore===true as property, stray attrs missions/loadingmore/loading-more absent with positive control, status reflects exception cited. FR-002/SC-001: 4 declared events read from custom-elements.json, one via real click, three dispatched, loop count and toHaveBeenCalledTimes equality. FR-003/FR-009: reviewer applied all 3 new plants verbatim from plant.json: each red on its exact token (loadingMore property / intent sk-search / coverage missing getDriftReport), tokens absent from clean verbose output. Extra mutations (attribute binding, wrong handler) also red. SC-005: packages/mission-ui diff empty, no commits. Root test --no-bail recorded in f9c7006 and handoff; verified on pnpm 11.18.0 that a failing package still exits 1 while later packages run. 60s beforeAll only widens the hook under the dynamic-import plant; clean run 1.5s. Shell typecheck, lint, lint:no-io, test:no-io, hygiene, lint:data-driven green. Nit: intent samples typed Record<string, unknown> rather than satisfies Sk*Detail."
       ],
       "provider": "__resolved_provider_absent__",
+      "review_result": {
+        "feedback_path": "/home/jeroennouws/dev/SK-missions/ui17/kitty-specs/phase0-bootstrap-01M4V5KK/tasks/WP06-permanent-binding-check/review-cycle-1.md",
+        "reference": "review-cycle://phase0-bootstrap-01M4V5KK/WP06-permanent-binding-check/review-cycle-1.md",
+        "reviewer": "claude",
+        "verdict": "approved"
+      },
       "role": "reviewer",
       "shell_pid": 3278173,
       "shell_pid_created_at": "1791992902.69",
@@ -286,11 +293,37 @@
       }
     },
     "WP09": {
-      "actor": "finalize-tasks",
+      "actor": "claude",
+      "agent": "claude",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
       "force_count": 0,
-      "lane": "planned",
-      "last_event_id": "01M4VCC4HHRR4NRQZRJT248116",
-      "last_transition_at": "2026-10-13T19:38:32.881566+00:00"
+      "implementer_of_record": "claude",
+      "lane": "approved",
+      "last_event_id": "01M4ZP54JJKP4FZZ7YBEGNVER6",
+      "last_transition_at": "2026-10-15T11:46:27.026706+00:00",
+      "model": "__resolved_model_absent__",
+      "notes": [
+        "Ready for review: commits 695f2c3 (docs), e242ad1 (ci.yml contract proof-leg timeout 10->12, recorded out-of-map), 99c5314 (README timeout note). 18 new plants counted with equality. Every affected proof leg is ok locally. SC-005 and C-005 diffs are empty. Gates are green except the known gate-proof.test.mjs schema-enum failures (3), which resolve with cf5d9c1; in a cf5d9c1-patched worktree, test:scripts passes 625/0 and the hygiene leg is ok. Visual leg and CI timings are deferred to the orchestrator. Full evidence is in the hand-off report.",
+        "Review passed: docs match crates/kitty-stub (options, 403 host/origin/forwarded, selection headers, 400/404/501), drift.mjs exit codes 0-3, and mission-shell src (port, four states, createFixtureClient options, binding rules). 18 new plants confirmed by value against 9c9d83c (rust 3, typecheck 3, eslint 1, stylelint 1, no-io 1, data-driven 1, unit-tests 3, manifest 1, contract 2, hygiene 2). ci.yml diff is timeouts only; contract (1+7)x68s+2=11.07->12 re-derived. hygiene 0 findings, terminology 13/13, SC-005 and C-005 diffs empty. Low nits: origin wording, drift 'Node built-ins only' (shells out to git), README 'earlier value' vs prompt 'pre-mission value'."
+      ],
+      "provider": "__resolved_provider_absent__",
+      "review_result": {
+        "feedback_path": "/home/jeroennouws/dev/SK-missions/ui17/kitty-specs/phase0-bootstrap-01M4V5KK/tasks/WP09-docs-timings-and-wrap-up/review-cycle-1.md",
+        "reference": "review-cycle://phase0-bootstrap-01M4V5KK/WP09-docs-timings-and-wrap-up/review-cycle-1.md",
+        "reviewer": "claude",
+        "verdict": "approved"
+      },
+      "role": "reviewer",
+      "shell_pid": 3651697,
+      "shell_pid_created_at": "1792064497.48",
+      "subtasks": {
+        "T049": "done",
+        "T050": "done",
+        "T051": "done",
+        "T052": "done",
+        "T053": "done"
+      }
     }
   }
 }

@@ -517,6 +517,27 @@ jobs:
         if: always()
         run: rm -f "$HOME/.npmrc"
 
+  rust:
+    name: "Gate: rust"
+    needs: preflight
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    permissions:
+      contents: read
+    # No pnpm install and no registry credential: the gate needs only the toolchain and the locked crates. No cargo
+    # cache (research R-02): only the pnpm store is cached. The gate step itself is offline (--frozen, NFR-001).
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install the pinned Rust toolchain
+        run: rustup toolchain install
+      - name: Fetch locked crates
+        run: cargo fetch --locked
+      - name: rust
+        id: gate
+        run: cargo fmt --all --check && cargo clippy --workspace --all-targets --frozen -- -D warnings && cargo test --workspace --frozen
+
   proof-leg:
     name: 'Gate: proof (${{ matrix.gate }})'
     needs: preflight
@@ -527,7 +548,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        gate: [preflight, typecheck, eslint, stylelint, no-io, manifest, hygiene, contract, data-driven, storybook-build, unit-tests, visual]
+        gate: [preflight, typecheck, eslint, stylelint, no-io, manifest, hygiene, contract, data-driven, storybook-build, unit-tests, visual, rust]
         include:
           - gate: preflight
             timeout: 4
@@ -539,7 +560,7 @@ jobs:
             timeout: 6
             image: ''
           - gate: stylelint
-            timeout: 6
+            timeout: 9
             image: ''
           - gate: no-io
             timeout: 6
@@ -551,20 +572,23 @@ jobs:
             timeout: 6
             image: ''
           - gate: contract
-            timeout: 6
+            timeout: 10
             image: ''
           - gate: data-driven
-            timeout: 6
+            timeout: 8
             image: ''
           - gate: storybook-build
             timeout: 8
             image: ''
           - gate: unit-tests
-            timeout: 11
+            timeout: 16
             image: 'mcr.microsoft.com/playwright:v1.62.1-noble@sha256:dcc5531e97840b9b5e794f2814476b21571c5124a3fca2267d73041f56e7580e'
           - gate: visual
             timeout: 60
             image: 'mcr.microsoft.com/playwright:v1.62.1-noble@sha256:dcc5531e97840b9b5e794f2814476b21571c5124a3fca2267d73041f56e7580e'
+          - gate: rust
+            timeout: 20
+            image: ''
     container: ${{ matrix.image }}
     env:
       SK_VISUAL_IMAGE: ${{ matrix.image }}
@@ -600,6 +624,12 @@ jobs:
         # In the Playwright container the checkout belongs to another user, so git refuses it ("dubious ownership") and
         # the proof's restore step cannot ask which planted files are tracked.
         run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - name: Install the pinned Rust toolchain
+        if: matrix.gate == 'rust'
+        run: rustup toolchain install
+      - name: Fetch locked crates
+        if: matrix.gate == 'rust'
+        run: cargo fetch --locked
       - name: Run the gate proof leg
         run: node scripts/gate-proof.mjs leg --gate ${{ matrix.gate }} --out proof-output/fragments
       - name: Upload proof fragment
@@ -670,7 +700,7 @@ jobs:
 
   all:
     name: "Gate: all"
-    needs: [preflight, typecheck, eslint, stylelint, no-io, manifest, hygiene, contract, data-driven, storybook-build, unit-tests, visual, proof-leg, proof]
+    needs: [preflight, typecheck, eslint, stylelint, no-io, manifest, hygiene, contract, data-driven, storybook-build, unit-tests, visual, rust, proof-leg, proof]
     if: always()
     runs-on: ubuntu-24.04
     timeout-minutes: 1
