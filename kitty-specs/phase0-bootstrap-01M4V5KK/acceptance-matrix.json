@@ -2,7 +2,7 @@
   "mission_slug": "phase0-bootstrap-01M4V5KK",
   "mission_number": "",
   "mission_type": "software-dev",
-  "overall_verdict": "pending",
+  "overall_verdict": "pass",
   "criteria": [
     {
       "criterion_id": "FR-001",
@@ -118,10 +118,10 @@
       "criterion_id": "FR-012",
       "description": "Verify FR-012 is satisfied",
       "proof_type": "automated_test",
-      "evidence": null,
-      "pass_fail": "pending",
-      "verified_by": null,
-      "verified_at": null,
+      "evidence": "scripts/contract/drift.test.mjs exit 0/1/2/3 offline tests and built-ins-only import graph; .github/workflows/contract-drift.yml on schedule and workflow_dispatch, outside ci.yml all.needs; hygiene plant 'is not pinned to a 40-hex SHA'",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-15T11:48:59.034034+00:00",
       "notes": "TODO: replace with a real acceptance criterion"
     }
   ],
