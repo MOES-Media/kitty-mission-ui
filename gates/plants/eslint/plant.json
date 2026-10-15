@@ -96,5 +96,16 @@
         "source": "PlantSvelteAny.svelte.plant"
       }
     ]
+  },
+  {
+    "gate": "eslint",
+    "ciCommand": "pnpm lint",
+    "expectFailPattern": "Shell sources must not import the fixture adapter",
+    "overlays": [
+      {
+        "target": "packages/mission-shell/src/plant-shell-boundary.ts",
+        "source": "plant-shell-boundary.ts.plant"
+      }
+    ]
   }
 ]

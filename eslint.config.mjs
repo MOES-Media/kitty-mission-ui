@@ -431,6 +431,26 @@ export default tseslint.config(
     },
   },
   {
+    // The import boundary inside the shell (SO-BND-005, CODE-BOUNDARY-003): production sources never reach the fixture
+    // adapter, the binding harness or the fixture JSON of contracts/fixtures. Only the adapter itself, the ./testing entry
+    // and the harness may; the package's tests live outside src/. The `**/fixture` pattern catches the sibling import
+    // './fixture' from inside client/, which `**/client/fixture` does not match.
+    files: ['packages/mission-shell/src/**'],
+    ignores: ['**/testing.ts', '**/client/fixture.ts', '**/harness/**'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            { group: ['**/client/fixture', '**/fixture'], message: 'Shell sources must not import the fixture adapter: it is reached only through the ./testing entry.' },
+            { group: ['**/harness/**'], message: 'Shell sources must not import the binding harness: it is for the shell tests only.' },
+            { group: ['**/contracts/fixtures/*.json'], message: 'Shell sources must not import the fixture JSON: only the fixture adapter reads it.' },
+          ],
+        },
+      ],
+    },
+  },
+  {
     // Lit binds @event handlers to the host, so `@click=${this.onX}` is not an unbound method.
     // Not fixed in the element: the unit-tests plant overlays that file by base sha256.
     files: ['packages/*/src/elements/**/*.{ts,mts,cts,tsx}'],
