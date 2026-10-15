@@ -1,7 +1,6 @@
 [workspace]
 resolver = "2"
-# crates/kitty-stub joins this list in WP07, once it exists.
-members = ["crates/kitty-core", "apps/desktop/src-tauri", "apps/dashboard"]
+members = ["crates/kitty-core", "crates/kitty-stub", "apps/desktop/src-tauri", "apps/dashboard"]
 
 [workspace.package]
 edition = "2021"
@@ -9,4 +8,10 @@ license = "AGPL-3.0-or-later"
 publish = false
 
 [workspace.dependencies]
-# exact pins only ("=x.y.z"); WP07 adds the stub's crates here as a recorded out-of-map edit
+# exact pins only ("=x.y.z"): the newest release at least 14 days old when WP07 started (2026-10-14).
+axum = { version = "=0.8.9", default-features = false, features = ["http1", "tokio"] }
+tokio = { version = "=1.53.1", features = ["rt-multi-thread", "macros", "net", "time", "signal"] }
+serde = { version = "=1.0.229", features = ["derive"] }
+serde_json = { version = "=1.0.151", features = ["preserve_order"] }
+http-body-util = { version = "=0.1.5", features = ["channel"] }
+tower = { version = "=0.5.3", features = ["util"] }

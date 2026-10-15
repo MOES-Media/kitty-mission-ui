@@ -1,0 +1,269 @@
+// The fixture adapter of the MissionStatusClient port (WP05, FR-011, NFR-004): reads serve the examples of
+// contracts/fixtures, refusals carry their own status, subscriptions replay changes.json through an injected scheduler.
+// Oracles are read from the JSON files directly (examples.json, changes.json, routes.json), never from the adapter.
+import { beforeAll, describe, expect, it } from 'vitest';
+import { page } from 'vitest/browser';
+import routes from '../../../contracts/fixtures/mission-status.routes.json' with { type: 'json' };
+import examples from '../../../contracts/fixtures/mission-status.examples.json' with { type: 'json' };
+import changes from '../../../contracts/fixtures/mission-status.changes.json' with { type: 'json' };
+import { CONNECTION_STATES, type Change, type ConnectionState, type MissionStatusClient, type ReadOp } from '../src/client/port';
+import { createFixtureClient, setConnectionState, type ChangesEnvelope, type Scheduler } from '../src/client/fixture';
+
+const exampleTable = examples as Record<string, { schema: string; value: unknown }>;
+
+/** A scheduler that fires only when the test advances it. Timers fire in due-time order, then creation order. */
+function fakeScheduler(): Scheduler & { advance(ms: number): void; pending(): number } {
+  let now = 0;
+  let next = 0;
+  const timers = new Map<number, { due: number; fn: () => void }>();
+  return {
+    setTimeout(fn, ms) {
+      const handle = next++;
+      timers.set(handle, { due: now + ms, fn });
+      return handle;
+    },
+    clearTimeout(handle) {
+      timers.delete(handle as number);
+    },
+    advance(ms) {
+      const until = now + ms;
+      for (;;) {
+        const due = [...timers.entries()].filter(([, t]) => t.due <= until).sort((a, b) => a[1].due - b[1].due || a[0] - b[0]);
+        const first = due[0];
+        if (!first) break;
+        timers.delete(first[0]);
+        now = first[1].due;
+        first[1].fn();
+      }
+      now = until;
+    },
+    pending: () => timers.size,
+  };
+}
+
+/** Sum of every delay in changes.json, so one advance replays the whole sequence. */
+const totalDelay = changes.items.reduce((sum, item) => sum + item.delayMs, 0);
+
+/** Calls one read of the port with parameters that satisfy its contract. */
+function callRead(client: MissionStatusClient, op: ReadOp) {
+  const missionId = changes.missionId;
+  switch (op) {
+    case 'getProject':
+      return client.getProject({});
+    case 'listMissions':
+      return client.listMissions({});
+    case 'getMission':
+      return client.getMission({ path: { missionId } });
+    case 'getWorkPackage':
+      return client.getWorkPackage({ path: { missionId, wpId: 'WP01' } });
+    case 'getWorkPackageDetail':
+      return client.getWorkPackageDetail({ path: { missionId, wpId: 'WP01' } });
+    case 'listArtifacts':
+      return client.listArtifacts({ path: { missionId } });
+    case 'getArtifactContent':
+      return client.getArtifactContent({ path: { missionId }, query: { path: 'spec.md' } });
+    case 'getDriftReport':
+      return client.getDriftReport({});
+    case 'listOpsInvocations':
+      return client.listOpsInvocations({});
+  }
+}
+
+const readRoutes = routes.filter((route) => route.kind === 'read');
+
+function replay(scope?: { missionId?: string }): Change[] {
+  const scheduler = fakeScheduler();
+  const client = createFixtureClient({ scheduler });
+  const seen: Change[] = [];
+  client.subscribe((change) => seen.push(change), scope);
+  scheduler.advance(totalDelay);
+  return seen;
+}
+
+beforeAll(async () => {
+  await page.viewport(1024, 768);
+});
+
+describe('reads', () => {
+  it('every read returns its default example', async () => {
+    expect(readRoutes.length).toBe(9);
+    const client = createFixtureClient();
+    let checked = 0;
+    for (const route of readRoutes) {
+      const key = route.defaultExample;
+      expect(key, route.operationId).toBeTypeOf('string');
+      const result = await callRead(client, route.operationId as ReadOp);
+      expect(result, route.operationId).toEqual({ ok: true, value: exampleTable[key as string]?.value });
+      checked += 1;
+    }
+    expect(checked).toBe(9);
+  });
+
+  it('a selected success example is served instead of the default', async () => {
+    const client = createFixtureClient({ examples: { getProject: 'Project.all-null' } });
+    expect(await client.getProject({})).toEqual({ ok: true, value: exampleTable['Project.all-null']?.value });
+    expect(exampleTable['Project.all-null']?.value).not.toEqual(exampleTable['Project.example']?.value);
+  });
+
+  it('a selected refusal resolves with the status of the example itself', async () => {
+    const tooLarge = exampleTable['ArtifactRefusal.artifact-too-large'];
+    const status = (tooLarge?.value as { status: number }).status;
+    expect(status).toBe(413);
+    const client = createFixtureClient({ examples: { getArtifactContent: 'ArtifactRefusal.artifact-too-large' } });
+    const refused = await client.getArtifactContent({ path: { missionId: changes.missionId }, query: { path: 'big.md' } });
+    expect(refused).toEqual({ ok: false, refusal: { status, body: tooLarge?.value } });
+    // Positive control on the same operation: without a selection it succeeds.
+    const served = await createFixtureClient().getArtifactContent({ path: { missionId: changes.missionId }, query: { path: 'spec.md' } });
+    expect(served.ok).toBe(true);
+  });
+
+  it('a selection whose schema the operation does not declare throws', () => {
+    expect(() => createFixtureClient({ examples: { getProject: 'ArtifactRefusal.not-found' } })).toThrow(
+      /ArtifactRefusal\.not-found.*getProject/,
+    );
+    expect(() => createFixtureClient({ examples: { getMission: 'No.such-example' } })).toThrow(/No\.such-example/);
+    // Positive control: a declared refusal schema for the same kind of operation is accepted.
+    expect(() => createFixtureClient({ examples: { listArtifacts: 'ArtifactRefusal.not-found' } })).not.toThrow();
+  });
+
+  it('two reads return equal but independent values', async () => {
+    const client = createFixtureClient();
+    const first = await client.getProject({});
+    const second = await client.getProject({});
+    expect(first).toEqual(second);
+    if (first.ok && second.ok) expect(first.value).not.toBe(second.value);
+    expect(first.ok && second.ok).toBe(true);
+  });
+});
+
+describe('subscriptions', () => {
+  it('a scoped subscription yields every change with the R2-05 cursors', () => {
+    const seen = replay({ missionId: changes.missionId });
+    expect(seen.length).toBe(changes.items.length);
+    let checked = 0;
+    changes.items.forEach((item, index) => {
+      const change = seen[index];
+      expect(change?.kind).toBe(item.event);
+      expect(change?.data).toEqual(item.data);
+      const scopedId = (item as { scopedId?: string }).scopedId;
+      expect(change?.cursor).toBe(item.event === 'log-truncated' ? null : scopedId);
+      checked += 1;
+    });
+    expect(checked).toBe(changes.items.length);
+    // Positive control: at least the scoped kinds carry a string cursor.
+    expect(seen.filter((change) => typeof change.cursor === 'string').length).toBe(
+      changes.items.filter((item) => item.event !== 'log-truncated').length,
+    );
+    expect(seen.filter((change) => change.kind === 'log-truncated').length).toBe(1);
+  });
+
+  it('a log-truncated change has a null cursor even when its item carries a scopedId', () => {
+    const truncated = changes.items.find((item) => item.event === 'log-truncated');
+    const transition = changes.items.find((item) => item.event === 'status-transition');
+    expect([truncated?.event, transition?.event]).toEqual(['log-truncated', 'status-transition']);
+    const envelope = {
+      missionId: changes.missionId,
+      items: [
+        { ...transition, scopedId: '1:a', delayMs: 0 },
+        { ...truncated, scopedId: '2:b', delayMs: 0 },
+      ],
+    } as ChangesEnvelope;
+    const scheduler = fakeScheduler();
+    const seen: Change[] = [];
+    createFixtureClient({ scheduler, fixtures: { changes: envelope } }).subscribe((change) => seen.push(change), {
+      missionId: changes.missionId,
+    });
+    scheduler.advance(0);
+    expect(seen.map((change) => [change.kind, change.cursor])).toEqual([
+      ['status-transition', '1:a'],
+      ['log-truncated', null],
+    ]);
+  });
+
+  it('an unscoped subscription yields every change with a null cursor', () => {
+    const seen = replay();
+    expect(seen.length).toBe(changes.items.length);
+    expect(seen.map((change) => change.cursor)).toEqual(changes.items.map(() => null));
+    expect(seen.map((change) => change.kind)).toEqual(changes.items.map((item) => item.event));
+  });
+
+  it('follows the delays of changes.json', () => {
+    const scheduler = fakeScheduler();
+    const seen: Change[] = [];
+    createFixtureClient({ scheduler }).subscribe((change) => seen.push(change));
+    const firstDelay = changes.items[0]?.delayMs ?? -1;
+    const secondDelay = changes.items[1]?.delayMs ?? -1;
+    expect([firstDelay, secondDelay]).toEqual([0, 250]);
+    scheduler.advance(0);
+    expect(seen.length).toBe(1);
+    scheduler.advance(secondDelay - 1);
+    expect(seen.length).toBe(1);
+    scheduler.advance(1);
+    expect(seen.length).toBe(2);
+  });
+
+  it('unsubscribe stops further changes and cancels the pending timer', () => {
+    const scheduler = fakeScheduler();
+    const seen: Change[] = [];
+    const unsubscribe = createFixtureClient({ scheduler }).subscribe((change) => seen.push(change));
+    scheduler.advance(0);
+    expect(seen.length).toBe(1);
+    expect(scheduler.pending()).toBe(1);
+    unsubscribe();
+    expect(scheduler.pending()).toBe(0);
+    scheduler.advance(totalDelay);
+    expect(seen.length).toBe(1);
+  });
+
+  it('replays deterministically: ten full runs serialise identically', () => {
+    const runs: string[] = [];
+    for (let run = 0; run < 10; run += 1) {
+      runs.push(JSON.stringify({ scoped: replay({ missionId: changes.missionId }), unscoped: replay() }));
+    }
+    expect(runs.length).toBe(10);
+    expect(new Set(runs).size).toBe(1);
+    expect(JSON.parse(runs[0] as string).scoped.length).toBe(changes.items.length);
+  });
+});
+
+describe('connection state', () => {
+  it('starts connected, or in the initial state given', () => {
+    expect(createFixtureClient().connection.state).toBe('connected');
+    expect(createFixtureClient({ initialState: 'reconnecting' }).connection.state).toBe('reconnecting');
+  });
+
+  it('notifies exactly once per change, for each of the four states', () => {
+    const client = createFixtureClient({ initialState: 'degraded: contract-mismatch' });
+    const heard: ConnectionState[] = [];
+    const stop = client.connection.onChange((state) => heard.push(state));
+    let assigned = 0;
+    for (const state of CONNECTION_STATES) {
+      setConnectionState(client, state);
+      expect(client.connection.state).toBe(state);
+      assigned += 1;
+    }
+    expect(assigned).toBe(4);
+    expect(heard).toEqual([...CONNECTION_STATES]);
+    // Setting the current state again is not a change.
+    setConnectionState(client, 'degraded: contract-mismatch');
+    expect(heard.length).toBe(4);
+    stop();
+    setConnectionState(client, 'connected');
+    expect(heard.length).toBe(4);
+    expect(client.connection.state).toBe('connected');
+  });
+
+  it('setting one client leaves another unchanged', () => {
+    const first = createFixtureClient();
+    const second = createFixtureClient();
+    const heardFirst: ConnectionState[] = [];
+    const heardSecond: ConnectionState[] = [];
+    first.connection.onChange((state) => heardFirst.push(state));
+    second.connection.onChange((state) => heardSecond.push(state));
+    setConnectionState(first, 'degraded: service-missing');
+    expect(first.connection.state).toBe('degraded: service-missing');
+    expect(second.connection.state).toBe('connected');
+    expect(heardFirst).toEqual(['degraded: service-missing']);
+    expect(heardSecond).toEqual([]);
+  });
+});

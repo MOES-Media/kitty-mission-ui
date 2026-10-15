@@ -1,11 +1,24 @@
-{
-  "gate": "manifest",
-  "ciCommand": "pnpm manifest:check",
-  "expectFailPattern": "sk-plant-manifest-x",
-  "overlays": [
-    {
-      "target": "packages/mission-ui/src/elements/sk-plant-manifest/sk-plant-manifest.ts",
-      "source": "plant-manifest.ts.plant"
-    }
-  ]
-}
+[
+  {
+    "gate": "manifest",
+    "ciCommand": "pnpm manifest:check",
+    "expectFailPattern": "sk-plant-manifest-x",
+    "overlays": [
+      {
+        "target": "packages/mission-ui/src/elements/sk-plant-manifest/sk-plant-manifest.ts",
+        "source": "plant-manifest.ts.plant"
+      }
+    ]
+  },
+  {
+    "gate": "manifest",
+    "ciCommand": "pnpm manifest:check",
+    "expectFailPattern": "elements.d.ts is stale",
+    "overlays": [
+      {
+        "target": "packages/mission-shell/src/generated/elements.d.ts",
+        "edits": [{ "find": "      selectedPath?: string;\n", "replace": "      selectedPathPlant?: string;\n" }]
+      }
+    ]
+  }
+]
