@@ -632,6 +632,7 @@ test('the plant descriptor names the unique label and commits no token literal',
   const plants = JSON.parse(text);
   assert.deepEqual(plants.map((p) => p.expectFailPattern), [
     'plant-hygiene-token', 'email-address', 'plant-hygiene-node-test', 'plant-caret-pin', ['is not pinned to a', '40-hex SHA'].join(' '),
+    ['[rust-toolchain', 'pin]'].join('-'),
   ]);
   assert.equal(new Set(plants.map((p) => p.ciCommand)).size, 1);
   assert.deepEqual(rules('gates/plants/hygiene/plant.json', text), []);
