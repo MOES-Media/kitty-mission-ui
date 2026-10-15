@@ -27,11 +27,11 @@
     {
       "criterion_id": "FR-003",
       "description": "Verify FR-003 is satisfied",
-      "proof_type": "automated_test",
-      "evidence": null,
-      "pass_fail": "pending",
-      "verified_by": null,
-      "verified_at": null,
+      "proof_type": "gate_proof",
+      "evidence": "gates/plants/unit-tests/plant.json: 3 new plants red in the unit-tests proof leg (7/7 tokens matched, clean leg exit 0); root test script pnpm -r --no-bail runs the shell suite on every PR",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-15T11:48:14.305714+00:00",
       "notes": "TODO: replace with a real acceptance criterion"
     },
     {
