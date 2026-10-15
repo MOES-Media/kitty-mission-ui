@@ -14,9 +14,8 @@
   "accepted_by": "claude",
   "accepted_from_commit": "43d12f3534b504fe100fa2ecae7689aa43b7716c",
   "baseline_merge_commit": "e783620406db3a805e7adb9f296939ae998b3b29",
-  "coordination_branch": "kitty/mission-phase0-bootstrap-01M4V5KK",
   "created_at": "2026-10-13T17:40:17.213984+00:00",
-  "flattened": false,
+  "flattened": true,
   "friendly_name": "Phase 0 bootstrap: binding check, workspace and CI, port and stub",
   "merged_at": "2026-10-15T11:51:14.948841+00:00",
   "merged_commit": "cfe40331b29806828996d546a74e47896be57914",
@@ -31,7 +30,6 @@
   "slug": "phase0-bootstrap-01M4V5KK",
   "status_phase": "1",
   "target_branch": "feat/phase0-bootstrap-17",
-  "topology": "coord",
   "vcs": "git",
   "vcs_locked_at": "2026-10-13T20:48:35.738672+00:00"
 }
