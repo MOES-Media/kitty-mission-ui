@@ -8,8 +8,8 @@ import type { ShellOptions } from '../shell';
 /** The Mission of the fixture's own change sequence; every story that names a Mission uses it. */
 export const STORY_MISSION_ID = '01JZAB3C4D5E6F7G8H9JKMNPQR';
 
-/** An artifact path of the fixture's artifact examples. */
-export const STORY_ARTIFACT_PATH = 'spec.md';
+/** An artifact of the fixture's listing, inside a folder that also holds an unreadable file. */
+export const STORY_ARTIFACT_PATH = 'notes/with space.md';
 
 /**
  * A scheduler with no waiting: `setTimeout(fn)` runs `fn` on a microtask unless its handle was cleared first, so the

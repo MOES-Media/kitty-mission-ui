@@ -1,4 +1,5 @@
 // The layout compositions of the shell (contracts/stories.md), one story each, for the CP-1 design review.
+import type { ProjectEntry } from '@moes-media/mission-ui';
 import type { MissionStatusClient } from '../index';
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 import { unmount } from 'svelte';
@@ -16,15 +17,25 @@ function renderShell(options: ShellOptions): HTMLElement {
   return story.element;
 }
 
+const sampleProject = (name: string, missionCount: number, health: string): NonNullable<ProjectEntry['project']> => ({
+  name,
+  missionCount,
+  specKittyVersion: '4.0.0',
+  schemaVersion: 3,
+  health,
+  currentBranch: 'main',
+  lastActivityAt: '2026-10-01T09:30:00Z',
+});
+
 const connected = (): MissionStatusClient => storyClient({ state: 'connected', startConnected: true });
 
-/** A recording-free host: the picker lists synthetic projects, nothing else is called. */
+/** A host that lists synthetic projects and nothing else. */
 const pickerHost: ShellHost = {
   listRecentProjects: () =>
-    Promise.resolve([
-      { key: 'sample-alpha', location: 'Sample location A', name: 'Sample Alpha' },
-      { key: 'sample-beta', location: 'Sample location B', name: 'Sample Beta' },
-      { key: 'sample-gamma', location: 'Sample location C', name: 'Sample Gamma', localOnly: true },
+    Promise.resolve<ProjectEntry[]>([
+      { key: 'sample-alpha', location: 'Sample location A', name: 'Sample Alpha', project: sampleProject('example-alpha', 4, 'healthy') },
+      { key: 'sample-beta', location: 'Sample location B', name: 'Sample Beta', project: sampleProject('example-beta', 2, 'schema_drift') },
+      { key: 'sample-gamma', location: 'Sample location C', name: 'Sample Gamma', localOnly: true, state: 'unavailable' },
     ]),
   listFolders: (location) => Promise.resolve({ location, folders: [] }),
 };

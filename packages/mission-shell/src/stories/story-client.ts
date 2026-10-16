@@ -1,9 +1,9 @@
 // The story-local client (contracts/stories.md "Story data"; research R-08). Reads delegate to the fixture adapter and are
 // tracked, so a story "with data" can switch to its connection state only after the screens have filled. The port stays
 // frozen: this module adds nothing to it and never uses the fixture's connection-state test hook.
-import type { ConnectionState, MissionStatusClient } from '../index';
+import type { ConnectionState, MissionStatusClient, Ok, Result } from '../index';
 import { createFixtureClient, type FixtureClientOptions } from '../testing';
-import { immediateScheduler, STORY_MISSION_ID } from './story-support';
+import { immediateScheduler, STORY_ARTIFACT_PATH, STORY_MISSION_ID } from './story-support';
 
 export interface StoryClientOptions {
   /** The connection state the story is about. */
@@ -15,6 +15,15 @@ export interface StoryClientOptions {
 }
 
 export type StoryClient = MissionStatusClient & { whenSettled(): Promise<void> };
+
+/**
+ * Points an artifact read at the story's Mission and artifact. The shipped listing names another Mission than the default
+ * Mission detail, and the Artifact screen shows `loading` for a listing that does not belong to its Mission, so the
+ * unmodified examples could never fill that screen. The fixture adapter ignores request parameters, so the story does it.
+ */
+function retarget<Op extends 'listArtifacts' | 'getArtifactContent'>(result: Result<Op>, change: Partial<Ok<Op>>): Result<Op> {
+  return result.ok ? { ok: true, value: { ...result.value, ...change } } : result;
+}
 
 export function storyClient({ state, startConnected = false, examples }: StoryClientOptions): StoryClient {
   // No change replays during a story: the sequence is empty (R2-12), under the id of the fixture's own sequence.
@@ -63,8 +72,8 @@ export function storyClient({ state, startConnected = false, examples }: StoryCl
     getMission: (params) => track(base.getMission(params)),
     getWorkPackage: (params) => track(base.getWorkPackage(params)),
     getWorkPackageDetail: (params) => track(base.getWorkPackageDetail(params)),
-    listArtifacts: (params) => track(base.listArtifacts(params)),
-    getArtifactContent: (params) => track(base.getArtifactContent(params)),
+    listArtifacts: (params) => track(base.listArtifacts(params).then((result) => retarget(result, { missionId: STORY_MISSION_ID }))),
+    getArtifactContent: (params) => track(base.getArtifactContent(params).then((result) => retarget(result, { path: STORY_ARTIFACT_PATH }))),
     getDriftReport: (params) => track(base.getDriftReport(params)),
     listOpsInvocations: (params) => track(base.listOpsInvocations(params)),
     subscribe: (listener, scope) => base.subscribe(listener, scope),
