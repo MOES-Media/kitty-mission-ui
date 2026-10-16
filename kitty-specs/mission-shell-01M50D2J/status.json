@@ -72,7 +72,8 @@
       "last_transition_at": "2026-10-16T12:14:58.907481+00:00",
       "model": "__resolved_model_absent__",
       "notes": [
-        "Shell I/O, markup and layering lint blocks plus plants P-3, P-4, P-8 (commit ff6ab6f). Out-of-map edit: one line in gates/markdown-lint.selftest.ts (navigator.language -> String(performance.now())). WP06 note: 'import type { Snippet } from svelte' is reported in core/controller/intents, so Snippet-typed code must live outside them. Eslint leg 127 s, step about 0.16 min, formula 4.1 <= 8."
+        "Shell I/O, markup and layering lint blocks plus plants P-3, P-4, P-8 (commit ff6ab6f). Out-of-map edit: one line in gates/markdown-lint.selftest.ts (navigator.language -> String(performance.now())). WP06 note: 'import type { Snippet } from svelte' is reported in core/controller/intents, so Snippet-typed code must live outside them. Eslint leg 127 s, step about 0.16 min, formula 4.1 <= 8.",
+        "Review passed: I/O (8 globals + 2 document props), markup (14 elements) and layering blocks match R-13 verbatim; layering after boundary and re-spreads SHELL_BOUNDARY_PATTERNS (fixture/harness/JSON bans still fire in core/controller/intents); allowTypeImports works for mission-ui; type-only svelte import IS reported in core (note for WP06); mission-ui unaffected; noInlineConfig holds. Plants P-3/P-4/P-8 single-cause, base 9 entries unchanged, gate-proof eslint leg green (117.7s, 13 runs, step ~0.15 min, (1+12)x0.15+2=3.96<=8). selftest numstat 1 1, no-io byte-unchanged. lint, lint:no-io, test:no-io (220), test:scripts (643), hygiene (0) green."
       ],
       "provider": "__resolved_provider_absent__",
       "review_result": {
