@@ -79,7 +79,7 @@ A developer building the Rust core (#19) or a host (#20, #21) needs data for eve
 1. **Given** the stub running, **When** any read in the pinned contract is requested, **Then** the stub answers with that operation's vendored example.
 2. **Given** a subscriber, **When** the scripted sequence plays, **Then** it delivers a status transition, a lifecycle event and a log-truncated marker in a fixed order, identical on every run.
 3. **Given** the pinned contract gains a read the client interface lacks, **When** tests run, **Then** a test fails and names the missing read.
-4. **Given** the client interface, **When** a host inspects its connection state, **Then** the state is one of `connected`, `reconnecting`, `degraded: service-missing` or `degraded: contract-mismatch`.
+4. **Given** the client interface, **When** a host inspects its connection state, **Then** the state is one of `connecting`, `connected`, `reconnecting`, `degraded: service-missing` or `degraded: contract-mismatch` (five states; `connecting` added by the 2026-10-15 amendment, see Amendments).
 
 ### User Story 4 - Upstream contract drift is noticed without blocking merges (Priority: P2)
 
@@ -148,8 +148,8 @@ The operator wants to know when spec-kitty's upstream contract moves away from t
 ### Key Entities *(include if the mission involves data)*
 
 - **Client interface**: the single port hosts and the shell read through. Its operations mirror the contract's reads (project, missions, mission, work package, work-package detail, artifacts, artifact content, drift, ops invocations), plus a change subscription and a connection state.
-- **Connection state**: one of `connected`, `reconnecting`, `degraded: service-missing`, `degraded: contract-mismatch`.
-- **Change**: an item on the change stream. Its kind is a WP status transition, a mission lifecycle event, or a log-truncated marker. Each change has a cursor.
+- **Connection state**: one of `connecting` (before first contact), `connected`, `reconnecting`, `degraded: service-missing`, `degraded: contract-mismatch`. Five states since the 2026-10-15 amendment (SO-DES-003).
+- **Change**: an item on the change stream. Its kind is a WP status transition, a mission lifecycle event, a log-truncated marker, a `refused` marker (the stream was refused, ending that subscription with the refusal of the contract) or a `resync` marker (an in-band signal delivered after each reconnect and before any later event, telling the consumer to refetch everything; added by the 2026-10-15 amendment, SO-DES-002). Each change has a cursor.
 - **Contract pin**: the vendored contract plus `PIN.json` (upstream commit, version, per-file digests). It is the only source of contract truth.
 - **Scripted sequence**: the fixed, ordered list of changes the stub plays.
 
