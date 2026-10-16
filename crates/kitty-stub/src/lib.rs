@@ -1,5 +1,5 @@
 //! `kitty-stub`: a loopback HTTP and SSE stand-in for spec-kitty's Mission Status service, normative contract
-//! `contracts/stub-http.md`.
+//! `contracts/stub-http.md` (#17), extended by `contracts/stub-http-delta.md` of the kitty-core mission.
 //!
 //! - Reads serve the route's default example, or a selected example or fixture whose schema fits the route
 //!   (`X-Kitty-Stub-Fixture` wins over `X-Kitty-Stub-Example`); refusals are `application/problem+json` with the
@@ -8,6 +8,10 @@
 //!   `streamCursor` or `Last-Event-ID` cursor resumes after the matching item, or after the last `log-truncated`.
 //! - One guard layer applies the upstream service's Host, Origin and `Forwarded` rules to every route.
 //! - `GET /__stub/last-request` reports the most recent `/api/v1` request.
+//! - `GET /api/v1/openapi.yaml` serves the document given to [`Fixtures::with_openapi_document`] byte for byte as
+//!   `application/yaml`, or `404 {"code":"no-openapi-document"}` when there is none.
+//! - [`Fixtures::with_selections`] picks a scenario per operation without request headers. The order is: the fixture
+//!   header, the example header, the start-up selection, then the route's default (or the stream).
 //!
 //! Every fixture file is read once, by [`Fixtures::load`], before the router exists. No request value is ever
 //! used to build a filesystem path (F-38): handlers only look values up in memory.
@@ -34,11 +38,14 @@ use serde_json::{json, Value};
 
 /// The server URL prefix every contract path is relative to.
 pub const API_PREFIX: &str = "/api/v1";
+/// The contract document, served byte for byte (stub-http-delta.md).
+pub const OPENAPI_PATH: &str = "/api/v1/openapi.yaml";
 /// The test-support route; not part of the contract.
 pub const LAST_REQUEST_PATH: &str = "/__stub/last-request";
 const FIXTURE_HEADER: &str = "x-kitty-stub-fixture";
 const EXAMPLE_HEADER: &str = "x-kitty-stub-example";
 const JSON: &str = "application/json";
+const YAML: &str = "application/yaml";
 const PROBLEM_JSON: &str = "application/problem+json";
 const HEARTBEAT: &[u8] = b": heartbeat\n\n";
 /// Headers whose values `/__stub/last-request` never echoes (CODE-SEC-002): the name is kept, the value is replaced.
@@ -102,6 +109,15 @@ pub struct Fixtures {
     examples: BTreeMap<String, Entry>,
     fixtures: BTreeMap<String, Entry>,
     frames: Vec<Frame>,
+    openapi: Option<Bytes>,
+    selections: BTreeMap<String, Selection>,
+}
+
+/// A start-up scenario choice for one operation: an `examples.json` entry or a `fixtures.json` entry.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Selection {
+    Example(String),
+    Fixture(String),
 }
 
 impl Fixtures {
@@ -153,6 +169,12 @@ impl Fixtures {
                 ));
             }
             axum_path(&route.path)?;
+            if route.path == "/openapi.yaml" {
+                return Err(format!(
+                    "{}: route template {} conflicts with the contract document route",
+                    route.operation_id, route.path
+                ));
+            }
             if let Some(first) = shapes.insert(template_shape(&route.path), &route.path) {
                 return Err(format!(
                     "{}: route template {} conflicts with {first}",
@@ -178,7 +200,45 @@ impl Fixtures {
             examples,
             fixtures,
             frames,
+            openapi: None,
+            selections: BTreeMap::new(),
         })
+    }
+
+    /// Serves `doc` at `GET /api/v1/openapi.yaml`, unchanged.
+    pub fn with_openapi_document(mut self, doc: Bytes) -> Self {
+        self.openapi = Some(doc);
+        self
+    }
+
+    /// Chooses a scenario per operation for requests without a selection header. Each choice is checked by the
+    /// header rule: the operation and the entry exist, and the entry's schema is the route's `responseSchema` or a
+    /// declared refusal whose own `status` is allowed. A second choice for one operation is an error.
+    pub fn with_selections(mut self, sel: Vec<(String, Selection)>) -> Result<Self, String> {
+        for (operation, choice) in sel {
+            let route = self
+                .routes
+                .iter()
+                .find(|r| r.operation_id == operation)
+                .ok_or_else(|| format!("unknown operation {operation}"))?;
+            let (pool, name) = match &choice {
+                Selection::Example(name) => (&self.examples, name),
+                Selection::Fixture(name) => (&self.fixtures, name),
+            };
+            let entry = pool
+                .get(name)
+                .ok_or_else(|| format!("{operation}: no such entry {name}"))?;
+            if outcome(route, entry).is_none() {
+                return Err(format!(
+                    "{operation}: {name} ({}) does not fit the operation",
+                    entry.schema
+                ));
+            }
+            if self.selections.insert(operation.clone(), choice).is_some() {
+                return Err(format!("{operation}: selected more than once"));
+            }
+        }
+        Ok(self)
     }
 }
 
@@ -257,6 +317,7 @@ pub fn app(fixtures: Fixtures, options: Options) -> Router {
         router = router.route(&path, route_handler(index));
     }
     router
+        .route(OPENAPI_PATH, get_only(get(openapi_document)))
         .route(LAST_REQUEST_PATH, get_only(get(last_request)))
         .layer(middleware::from_fn_with_state(stub.clone(), record))
         .layer(middleware::from_fn_with_state(stub.clone(), guard))
@@ -420,6 +481,16 @@ fn serve(stub: &Stub, index: usize, headers: &HeaderMap, query: Option<&str>) ->
             Some(entry) => entry,
             None => return body(StatusCode::NOT_FOUND, JSON, &json!({"code": "no-example"})),
         }
+    } else if let Some(entry) =
+        stub.fixtures
+            .selections
+            .get(&route.operation_id)
+            .and_then(|choice| match choice {
+                Selection::Example(name) => stub.fixtures.examples.get(name),
+                Selection::Fixture(name) => stub.fixtures.fixtures.get(name),
+            })
+    {
+        entry
     } else if route.kind == "stream" {
         let scoped = mission_scoped(query);
         let from = if scoped {
@@ -444,19 +515,28 @@ fn serve(stub: &Stub, index: usize, headers: &HeaderMap, query: Option<&str>) ->
             }
         }
     };
-    if route.response_schema.as_deref() == Some(selected.schema.as_str()) {
-        return body(StatusCode::OK, JSON, &selected.value);
-    }
-    let own_status = selected.value.get("status").and_then(Value::as_u64);
-    let allowed = route.refusals.get(&selected.schema);
-    if let (Some(allowed), Some(status)) = (allowed, own_status) {
-        if allowed.iter().any(|s| u64::from(*s) == status) {
-            let status = StatusCode::from_u16(status as u16).expect("allowed statuses are valid");
-            return body(status, PROBLEM_JSON, &selected.value);
+    match outcome(route, selected) {
+        Some((status, content_type)) => body(status, content_type, &selected.value),
+        None => {
+            let mismatch = json!({"code": "schema-mismatch", "schema": selected.schema, "operationId": route.operation_id});
+            body(StatusCode::BAD_REQUEST, JSON, &mismatch)
         }
     }
-    let mismatch = json!({"code": "schema-mismatch", "schema": selected.schema, "operationId": route.operation_id});
-    body(StatusCode::BAD_REQUEST, JSON, &mismatch)
+}
+
+/// How `entry` is served on `route`: a `responseSchema` match is a 200; a declared refusal schema whose own `status`
+/// is allowed is that status as `application/problem+json`; anything else does not fit (`None`).
+fn outcome(route: &Route, entry: &Entry) -> Option<(StatusCode, &'static str)> {
+    if route.response_schema.as_deref() == Some(entry.schema.as_str()) {
+        return Some((StatusCode::OK, JSON));
+    }
+    let status = entry.value.get("status").and_then(Value::as_u64)?;
+    let allowed = route.refusals.get(&entry.schema)?;
+    if !allowed.iter().any(|s| u64::from(*s) == status) {
+        return None;
+    }
+    let code = StatusCode::from_u16(u16::try_from(status).ok()?).ok()?;
+    Some((code, PROBLEM_JSON))
 }
 
 /// A request is mission-scoped when its query carries a non-empty `missionId`.
@@ -620,6 +700,17 @@ async fn record(State(stub): State<Arc<Stub>>, req: Request, next: Next) -> Resp
         *stub.last_request.lock().expect("last-request lock") = Some(entry);
     }
     next.run(req).await
+}
+
+async fn openapi_document(State(stub): State<Arc<Stub>>) -> Response {
+    match &stub.fixtures.openapi {
+        Some(doc) => (StatusCode::OK, [(CONTENT_TYPE, YAML)], doc.clone()).into_response(),
+        None => body(
+            StatusCode::NOT_FOUND,
+            JSON,
+            &json!({"code": "no-openapi-document"}),
+        ),
+    }
 }
 
 async fn last_request(State(stub): State<Arc<Stub>>) -> Response {
