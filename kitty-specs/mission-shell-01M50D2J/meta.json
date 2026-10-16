@@ -13,5 +13,7 @@
   "purpose_tldr": "Give Kitty Desktop and Kitty Dashboard one shared shell that routes between the mission screens, keeps their data current from the change stream, and shows clearly when the service is connecting, reconnecting or unavailable.",
   "slug": "mission-shell-01M50D2J",
   "target_branch": "feat/mission-shell-18",
-  "topology": "coord"
+  "topology": "coord",
+  "vcs": "git",
+  "vcs_locked_at": "2026-10-16T11:57:08.226840+00:00"
 }
