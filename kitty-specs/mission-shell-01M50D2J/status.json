@@ -139,7 +139,8 @@
       "model": "__resolved_model_absent__",
       "notes": [
         "Ready for review: ShellHost wrappers, link check, picker/dashboard/refocus/routeChanged in controller, 69 new logic tests",
-        "Review cycle 1 addressed: F1 command-level dashboard guard, F2 destroyed check, F3-F5"
+        "Review cycle 1 addressed: F1 command-level dashboard guard, F2 destroyed check, F3-F5",
+        "Cycle 2 approved (05befa6). F1: pickerAllowed guards all 6 commands; direct dashboard calls give 0 host calls, no emit, no state change; dashboard navigate(projects) gives Missions with no listing. F2: no host call after destroy, covering setRoute, setClient, navigate, refresh, links, copy and picker. F3/F4 are real tests, each failing under mutation. 326 tests passing; lint, no-io, typecheck and hygiene clean. Scope: snapshot.ts and host-seam.ts are unrecorded out-of-map edits under WP03's controller/** glob, required by T021; record them in the PR."
       ],
       "provider": "__resolved_provider_absent__",
       "review": null,
