@@ -1603,7 +1603,7 @@ async fn a_dying_host_takes_its_service_with_it() {
 }
 
 #[test]
-fn nothing_is_left_behind_by_the_scratch_directories() {
+fn a_scratch_directory_is_removed_when_its_guard_drops() {
     let path;
     {
         let dir = TempDir::new("supervision-scratch");
