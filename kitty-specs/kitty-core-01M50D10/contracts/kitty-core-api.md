@@ -19,6 +19,10 @@ pub struct CoreConfig {
     pub env_passthrough: Vec<OsString>,         // extra variable names passed to the child; empty by default (FS-11)
 }
 
+impl CoreConfig {
+    pub fn new(project_root: impl Into<PathBuf>) -> Self; // every default above; hosts write `CoreConfig { x, ..CoreConfig::new(root) }` (pre-merge ARCH-001). Not #[non_exhaustive].
+}
+
 pub struct Subscription { pub initial: CoreStatus, pub receiver: broadcast::Receiver<CoreStatus> }
 
 pub struct Core { /* Clone; every clone holds one Arc<HandleGuard> */ }
@@ -44,7 +48,8 @@ impl ContractClient {
     pub async fn open_stream(&self, scope: StreamScope) -> Result<ChangeStream, StreamOpenError>;
     pub async fn check_contract(&self, pin: &ContractPin) -> CheckOutcome;
     pub async fn forward(&self, path_and_query: &str, accept: HeaderValue)
-        -> Result<http::Response<hyper::body::Incoming>, TransportFailure>;   // /api/v1/* only; FR-004/FR-005 enforced
+        -> Result<http::Response<hyper::body::Incoming>, TransportFailure>;   // /api/v1/* only; FR-004/FR-005 enforced;
+        // the path refuses `.`/`..` segments (also %2e forms), `//`, `%2f`, `%5c`, `;`/`%3b`, and the whole target refuses `\`, `#` and non-ASCII (pre-merge SEC-001)
 }
 pub fn upstream_request_headers(endpoint: &ServiceEndpoint, accept: HeaderValue) -> http::HeaderMap; // exactly Host + Accept
 pub fn digest_of(document: &[u8]) -> Result<Digest, ParseError>;
@@ -67,7 +72,8 @@ The facade module is `kitty_core::facade`, not `core`: a crate-level module name
 
 ## Guarantees
 
-- **`#[non_exhaustive]` outcome enums** (B1). `ReadOutcome` and `StreamOpenError` are `#[non_exhaustive]`, so a host's `match` needs a wildcard arm. Their `Core`-only variants `NotReady` and `ContractMismatch` are added by the facade WP after the client and stream WPs.
+- **`#[non_exhaustive]` enums** (B1; pre-merge ARCH-002). `ReadOutcome`, `StreamOpenError`, `StartError` and `CheckOutcome`, plus `SupervisionState`, `DegradedReason`, `Actual`, `MissingReason`, `TransportFailure`, `UnavailableReason`, `StreamEvent` and `StreamDiagnostic`, are `#[non_exhaustive]`, so a host's `match` needs a wildcard arm. The plain-data structs (`CoreStatus`, `Mismatch`, `ServiceMissing`) are not. The `Core`-only variants `NotReady` and `ContractMismatch` are added by the facade WP after the client and stream WPs.
+- **Discovery binary name** (pre-merge SEC-004). The PATH search only accepts a bare file name: an absolute name, a separator, `.`, `..` or an empty name is `NotFound`.
 - **No panics** (NFR-005). This holds outside a runtime as well: `start` returns `Err(NoRuntime)`.
 - **Never interprets** (C-003). No refetch, no reconnect, no cursor store, no `resync`.
 - **Loopback only** (FR-005).
