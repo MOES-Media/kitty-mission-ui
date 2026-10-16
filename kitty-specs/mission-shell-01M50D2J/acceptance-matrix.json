@@ -88,10 +88,10 @@
       "criterion_id": "FR-009",
       "description": "Verify FR-009 is satisfied",
       "proof_type": "automated_test",
-      "evidence": null,
-      "pass_fail": "pending",
-      "verified_by": null,
-      "verified_at": null,
+      "evidence": "packages/mission-shell/test/logic/scheduler.test.ts (line 259) 'R2-04: two reads of one key settling out of order show the later-issued value', line 227 'FR-009, R2-04: A to B to A drops the first A read', line 246 'the first A read, settling last, finds no slot and is dropped', line 270 (resync inside an open window); packages/mission-shell/test/logic/controller.test.ts line 541 'two mission reads resolving out of order: the later-issued value is the snapshots' and line 525 'A -> B -> A: the first A read resolves last and is dropped'",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-16T20:08:51.116560+00:00",
       "notes": "TODO: replace with a real acceptance criterion"
     },
     {
