@@ -57,7 +57,9 @@
   // The client effect is declared first: a client and a route changed in the same tick must read the new screen on the new client.
   $effect(() => {
     const client = options.client;
-    if (client !== lastClient) setClient(client);
+    // The route prop goes with the client, untracked: a client and a route changed in the same tick make one step to the new
+    // route on the new client, not a default screen first (ARCH-009), and a route change alone is the route effect's job.
+    if (client !== lastClient) setClient(client, untrack(() => options.route));
   });
   $effect(() => {
     const route = options.route;

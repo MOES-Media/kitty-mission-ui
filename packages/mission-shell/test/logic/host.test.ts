@@ -408,7 +408,8 @@ describe('the desktop picker flows (FR-014)', () => {
   it('drops a listing that arrives after the shell left the picker', async () => {
     const pending: ((entries: ProjectEntry[]) => void)[] = [];
     const rec = recordingHost({ listRecentProjects: () => new Promise((resolve) => void pending.push(resolve)) });
-    const { controller, fake } = rig({ mode: 'desktop', route: '/projects', host: rec.host }, null);
+    // A project is open, so the shell may leave the picker (a null client on the desktop may not, ARCH-001).
+    const { controller, fake } = rig({ mode: 'desktop', route: '/projects', host: rec.host });
     expect(pending).toHaveLength(1);
     controller.setRoute('/ops');
     pending[0]?.(ENTRIES); // the first, now stale, answer

@@ -129,4 +129,37 @@ describe('MissionShell used as a Svelte component', () => {
     expect(a.take(), 'the old client reads nothing').toEqual([]);
     expect(b.reads.filter((read) => read.startsWith('listOpsInvocations ')).length).toBe(1);
   });
+
+  it('a client and a route changed in the same tick make no spurious routeChanged and no wasted read (ARCH-009)', async () => {
+    const scheduler = createFakeScheduler();
+    const a = recordingClient(createFixtureClient({ scheduler }));
+    const b = recordingClient(createFixtureClient({ scheduler }));
+    const host = recordingHost();
+    const target = document.createElement('div');
+    document.body.append(target);
+    const app = mount(PropsHost, { target, props: { initial: { client: a, host, mode: 'desktop', route: '/missions', scheduler } } }) as unknown as {
+      update(patch: { client?: typeof a; route?: string }): void;
+    };
+    mounted.push({ app: app as never, target });
+    const harness = { target, scheduler, shell: target.querySelector('sk-mission-shell') as HTMLElement } as unknown as Harness;
+    await settle(harness);
+    host.calls.length = 0;
+    b.take();
+    app.update({ client: b, route: '/ops' });
+    flushSync();
+    await settle(harness);
+    expect(screenTag(harness.shell)).toBe('sk-ops-screen');
+    expect(b.reads.filter((read) => read.startsWith('listMissions')), 'the default screen is never read on the new client').toEqual([]);
+    expect(host.calls.filter((call) => call.member === 'routeChanged')).toEqual([]);
+
+    // The other direction: the default screen differs from where the shell was, which announced a route nobody asked for.
+    const c = recordingClient(createFixtureClient({ scheduler }));
+    app.update({ client: c, route: '/missions' });
+    flushSync();
+    await settle(harness);
+    app.update({ client: a, route: '/ops' });
+    flushSync();
+    await settle(harness);
+    expect(host.calls.filter((call) => call.member === 'routeChanged')).toEqual([]);
+  });
 });
