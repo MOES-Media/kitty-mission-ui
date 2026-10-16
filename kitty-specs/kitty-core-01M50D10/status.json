@@ -29,6 +29,9 @@
       "last_event_id": "01M529J9GZJXF45TVHM7RT61ZH",
       "last_transition_at": "2026-10-16T12:04:09.887665+00:00",
       "model": "__resolved_model_absent__",
+      "notes": [
+        "Commit 5fd755c: 4 exact pins, kitty-core manifest, Cargo.lock gains exactly the 14 R-07 packages (want 0.3.1, cfg-if 1.0.4, generic-array 0.14.7 pinned precisely). Extra lock edge not in prompt: tokio -> bytes (bytes already locked, no new package). Gates green: rust gate 44 tests, contract 231, scripts 643, terminology 13, hygiene 0 findings, cargo audit clean, cargo check 5.17s."
+      ],
       "provider": "__resolved_provider_absent__",
       "role": "implementer",
       "shell_pid": 3738972,
