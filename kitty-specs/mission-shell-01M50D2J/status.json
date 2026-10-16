@@ -66,7 +66,8 @@
       "last_transition_at": "2026-10-16T13:26:50.549426+00:00",
       "model": "__resolved_model_absent__",
       "notes": [
-        "Refresh policy, read scheduler, gate, page chains, test support, literal recording and plant P-1 done; logic project green, unit-tests gate-proof leg proven."
+        "Refresh policy, read scheduler, gate, page chains, test support, literal recording and plant P-1 done; logic project green, unit-tests gate-proof leg proven.",
+        "Review cycle 1 fixes: initial connected sets the mark (F1), trailing reads gated (F2), nits."
       ],
       "provider": "__resolved_provider_absent__",
       "review": null,
