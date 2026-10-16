@@ -135,6 +135,11 @@ impl FrameReader {
     }
 
     fn push(&mut self, byte: u8, out: &mut Vec<Frame>) -> Result<(), FrameError> {
+        if self.after_cr && byte == b'\n' {
+            // The LF of a CRLF pair belongs to the line ending already counted at the CR (CON-001).
+            self.after_cr = false;
+            return Ok(());
+        }
         self.since_boundary += 1;
         if self.since_boundary > FRAME_CAP {
             return Err(FrameError::TooLarge);
@@ -731,6 +736,24 @@ mod tests {
         // Positive control: exactly the cap is still fine (no error, nothing dispatched yet).
         over.truncate(FRAME_CAP);
         assert_eq!(both(&over), (vec![], None));
+    }
+
+    #[test]
+    fn a_frame_of_exactly_the_cap_parses_after_either_line_ending() {
+        // CON-001: the LF swallowed after a CR must not count against the next frame.
+        for ending in [&b"\n\n"[..], &b"\r\n\r\n"[..], &b"\r\r"[..]] {
+            let mut input = b"data: x".to_vec();
+            input.extend_from_slice(ending);
+            let mut body = b"data: ".to_vec();
+            // The line plus its two terminating CR or LF bytes make exactly FRAME_CAP counted bytes in every case
+            // (an LF that follows a CR is swallowed and never counted).
+            body.resize(FRAME_CAP - 2, b'a');
+            input.extend_from_slice(&body);
+            input.extend_from_slice(ending);
+            let (frames, error) = both(&input);
+            assert_eq!(error, None, "ending {ending:?}");
+            assert_eq!(frames.len(), 2, "ending {ending:?}");
+        }
     }
 
     #[test]
