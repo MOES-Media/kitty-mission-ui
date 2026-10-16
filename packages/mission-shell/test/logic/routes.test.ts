@@ -8,6 +8,7 @@ import {
   ARTIFACT_PATH_PATTERN,
   LAYOUT,
   MISSION_ID_PATTERN,
+  WP_ID_MAX_LENGTH,
   WP_ID_PATTERN,
   formatRoute,
   normaliseRoute,
@@ -253,6 +254,7 @@ describe('contract copies', () => {
   });
 
   it('matches MissionId.yaml and WpId.yaml', () => {
+    expect(WP_ID_MAX_LENGTH).toBe(schemas('WpId')['maxLength']);
     expect(MISSION_ID_PATTERN).toBe(schemas('MissionId')['pattern']);
     expect(WP_ID_PATTERN).toBe(schemas('WpId')['pattern']);
   });
