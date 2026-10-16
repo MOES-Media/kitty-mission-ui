@@ -155,5 +155,21 @@
         ]
       }
     ]
+  },
+  {
+    "gate": "unit-tests",
+    "ciCommand": "pnpm test",
+    "expectFailPattern": "mounted screen mismatch on drift",
+    "overlays": [
+      {
+        "target": "packages/mission-shell/src/ui/MissionShell.svelte",
+        "edits": [
+          {
+            "find": "drift: DriftScreen,",
+            "replace": "drift: OpsScreen,"
+          }
+        ]
+      }
+    ]
   }
 ]
