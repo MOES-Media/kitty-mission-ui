@@ -28,10 +28,10 @@
       "criterion_id": "FR-003",
       "description": "Verify FR-003 is satisfied",
       "proof_type": "automated_test",
-      "evidence": null,
-      "pass_fail": "pending",
-      "verified_by": null,
-      "verified_at": null,
+      "evidence": "packages/mission-shell/test/shell/intents.test.ts (line 388) 'intent: <tag> <event>', generated from INTENT_TABLE: each of the 40 (tag, event) pairs is dispatched from its real element in the mounted shell, the handler is called exactly once with the detail, and its effect (navigation, the exact reads, shell state, or the host call) is asserted; line 365 'has 40 pairs and 23 distinct event names, nine hosting tags and one expectation per pair' and line 374 'has exactly five via entries' guard against a vacuous sweep; line 433 'events the hosting elements do not declare reach no handler'. WP05 review: intent-dispatch.test.ts red-first, 19 of 32 failing against the cycle-1 lookup",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-16T20:08:40.597258+00:00",
       "notes": "TODO: replace with a real acceptance criterion"
     },
     {
