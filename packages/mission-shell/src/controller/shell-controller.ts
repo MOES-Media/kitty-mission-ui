@@ -33,6 +33,7 @@ import {
   type ResourceSlot,
   type ShellScheduler,
 } from '../core/scheduler';
+import { INTENT_TABLE } from '../intents/table';
 import { readKey } from './read-key';
 import { buildSnapshot, type PickerState, type ShellSnapshot, type SlotRead } from './snapshot';
 
@@ -51,6 +52,43 @@ export interface ShellControllerOptions {
   copy?: ShellCopyOverrides;
   /** Flushes the screen after a snapshot (T017). The view supplies Svelte's `tick`; the default resolves at once. */
   afterRender?: () => Promise<void>;
+}
+
+/**
+ * The commands the intent table calls (plan IC-05). Each takes the event's detail as it arrived and reads it tolerantly, so a
+ * malformed detail does nothing rather than throw; `mode` lets the table guard the dashboard (FR-015). Not part of the public
+ * `ShellController`.
+ */
+export interface IntentCommands {
+  readonly mode: ShellMode;
+  navigateHref(detail: unknown): void;
+  toggleFolder(detail: unknown): void;
+  toggleDrawer(detail: unknown): void;
+  toggleFlyout(detail: unknown): void;
+  retryChrome(): void;
+  openMission(detail: unknown): void;
+  openMissions(): void;
+  openArtifacts(detail: unknown): void;
+  openArtifact(detail: unknown): void;
+  openWorkPackage(detail: unknown): void;
+  search(detail: unknown): void;
+  filterChange(detail: unknown): void;
+  loadMoreMissions(detail: unknown): void;
+  loadMoreOps(detail: unknown): void;
+  retryWorkPackage(detail: unknown): void;
+  retryArtifact(detail: unknown): void;
+  retryDrift(detail: unknown): void;
+  retryOps(detail: unknown): void;
+  selectFinding(detail: unknown): void;
+  rescanDrift(detail: unknown): void;
+  openLink(detail: unknown): void;
+  copyCommand(detail: unknown): Promise<void>;
+  openProject(detail: unknown): void;
+  requestOpenProject(): Promise<void>;
+  retryProjects(detail: unknown): Promise<void>;
+  browseFolder(detail: unknown): Promise<void>;
+  confirmOpenProject(detail: unknown): void;
+  retryFolders(detail: unknown): Promise<void>;
 }
 
 export interface ShellController {
@@ -108,15 +146,10 @@ function driftScope(destination: Destination): string | null {
   return destination.screen === 'drift' ? (destination.missionId ?? '*') : null;
 }
 
-/** The six picker and dialog intents the dashboard ignores (FR-015, R2-11), keyed on tag and event together. */
-const DASHBOARD_IGNORED: ReadonlySet<string> = new Set([
-  'sk-projects-screen sk-open-project',
-  'sk-projects-screen sk-request-open-project',
-  'sk-projects-screen sk-retry-load',
-  'sk-open-project-dialog sk-browse-folder',
-  'sk-open-project-dialog sk-confirm-open-project',
-  'sk-open-project-dialog sk-retry-load',
-]);
+/** The table read by run-time strings: any (tag, event) may be absent. */
+type IntentLookup = Readonly<
+  Record<string, Readonly<Record<string, ((commands: IntentCommands, detail: unknown) => void | Promise<void>) | { readonly via: string }>> | undefined>
+>;
 
 const CLOSED_DIALOG: PickerState['dialog'] = { open: false, location: '', folders: [], selected: null, status: 'ready' };
 const FRESH_PICKER: PickerState = { status: 'loading', entries: [], dialog: CLOSED_DIALOG };
@@ -482,53 +515,9 @@ export function createShellController(options: ShellControllerOptions): ShellCon
     emit();
   };
 
-  // ---- the intent dispatcher (WP04 and WP05 extend it) ----
+  // ---- the intent commands (the table in ../intents/table.ts is the only dispatcher) ----
   const go = (next: Destination): void => navigate(next);
-  const sync: Record<string, (detail: unknown) => void> = {
-    'sk-mission-shell sk-navigate': (d) => go(parseRoute((text(d, 'href') ?? '').replace(/^#/, ''), mode)),
-    'sk-shell-nav-item sk-navigate': (d) => go(parseRoute((text(d, 'href') ?? '').replace(/^#/, ''), mode)),
-    'sk-shell-tree sk-navigate': (d) => go(parseRoute((text(d, 'href') ?? '').replace(/^#/, ''), mode)),
-    'sk-mission-shell sk-tree-toggle': (d) => controller.toggleFolder(text(d, 'id') ?? '', field(d, 'expanded') === true),
-    'sk-shell-tree sk-tree-toggle': (d) => controller.toggleFolder(text(d, 'id') ?? '', field(d, 'expanded') === true),
-    'sk-mission-shell sk-toggle-drawer': (d) => controller.setDrawerOpen(field(d, 'open') === true),
-    'sk-mission-shell sk-toggle-flyout': (d) => controller.setFlyoutOpen(field(d, 'open') === true),
-    'sk-mission-shell sk-shell-retry': () => controller.retryChrome(),
-    'sk-missions-screen sk-open-mission': (d) => openMission(d),
-    'sk-missions-screen sk-search': (d) => controller.setQuery(text(d, 'query') ?? ''),
-    'sk-missions-screen sk-load-more': (d) => loadMore(MISSIONS_KEY, text(d, 'cursor') ?? ''),
-    'sk-missions-screen sk-filter-change': (d) => controller.setFilter(text(d, 'filter') ?? ''),
-    'sk-filter-toggle-group sk-filter-change': (d) => controller.setFilter(text(d, 'filter') ?? ''),
-    'sk-pipeline-screen sk-open-missions': () => go({ screen: 'missions' }),
-    'sk-pipeline-screen sk-view-artifacts': (d) => openArtifacts(d),
-    'sk-pipeline-screen sk-select-work-package': (d) => openWorkPackage(d),
-    'sk-work-package-board sk-select-work-package': (d) => openWorkPackage(d),
-    'sk-work-package-screen sk-select-work-package': (d) => openWorkPackage(d),
-    'sk-work-package-screen sk-open-mission': (d) => openMission(d),
-    'sk-work-package-screen sk-open-artifact': (d) => openArtifact(d),
-    'sk-work-package-screen sk-retry-load': (d) => retryWorkPackage(d),
-    'sk-artifact-screen sk-select-artifact': (d) => openArtifact(d),
-    'sk-artifact-screen sk-select-work-package': (d) => openWorkPackage(d),
-    'sk-artifact-screen sk-open-mission': (d) => openMission(d),
-    'sk-artifact-screen sk-retry-load': (d) => retryArtifact(d),
-    'sk-drift-screen sk-select-finding': (d) => controller.selectFinding(findingOf(d)),
-    'sk-drift-screen sk-rescan-drift': (d) => rescan(text(d, 'missionId') ?? null),
-    'sk-drift-screen sk-open-mission': (d) => openMission(d),
-    'sk-drift-screen sk-open-missions': () => go({ screen: 'missions' }),
-    'sk-drift-screen sk-retry-load': (d) => retry(text(d, 'missionId') === undefined ? { kind: 'drift' } : { kind: 'drift', missionId: text(d, 'missionId') ?? '' }),
-    'sk-ops-screen sk-load-more': (d) => loadMore(OPS_KEY, text(d, 'cursor') ?? ''),
-    'sk-ops-screen sk-retry-load': (d) => retry(OPS_KEY, text(d, 'cursor')),
-    'sk-artifact-screen sk-open-link': (d) => controller.openExternalLink(text(d, 'href') ?? ''),
-  };
-  // The intents that await the host.
-  const hosted: Record<string, (detail: unknown) => Promise<void>> = {
-    'sk-drift-screen sk-copy-command': (d) => copyCommand(text(d, 'text') ?? ''),
-    'sk-projects-screen sk-open-project': (d) => Promise.resolve(controller.openProject(text(d, 'key') ?? '')),
-    'sk-projects-screen sk-request-open-project': () => requestOpenProject(),
-    'sk-projects-screen sk-retry-load': (d) => (['projects', 'project'].includes(text(d, 'target') ?? '') ? loadProjects() : Promise.resolve()),
-    'sk-open-project-dialog sk-browse-folder': (d) => controller.browseFolder(text(d, 'location') ?? ''),
-    'sk-open-project-dialog sk-confirm-open-project': (d) => Promise.resolve(controller.confirmOpenProject(text(d, 'location') ?? '')),
-    'sk-open-project-dialog sk-retry-load': (d) => (text(d, 'target') === 'folders' ? controller.retryFolders() : Promise.resolve()),
-  };
+  const hrefDestination = (d: unknown): Destination => parseRoute((text(d, 'href') ?? '').replace(/^#/, ''), mode);
 
   function openMission(d: unknown): void {
     const missionId = text(d, 'missionId');
@@ -571,6 +560,38 @@ export function createShellController(options: ShellControllerOptions): ShellCon
     return missionId === undefined || kind === undefined || artifactPath === undefined ? null : { missionId, kind, artifactPath };
   }
 
+  const intentCommands: IntentCommands = {
+    mode,
+    navigateHref: (d) => go(hrefDestination(d)),
+    toggleFolder: (d) => controller.toggleFolder(text(d, 'id') ?? '', field(d, 'expanded') === true),
+    toggleDrawer: (d) => controller.setDrawerOpen(field(d, 'open') === true),
+    toggleFlyout: (d) => controller.setFlyoutOpen(field(d, 'open') === true),
+    retryChrome: () => controller.retryChrome(),
+    openMission,
+    openMissions: () => go({ screen: 'missions' }),
+    openArtifacts,
+    openArtifact,
+    openWorkPackage,
+    search: (d) => controller.setQuery(text(d, 'query') ?? ''),
+    filterChange: (d) => controller.setFilter(text(d, 'filter') ?? ''),
+    loadMoreMissions: (d) => loadMore(MISSIONS_KEY, text(d, 'cursor') ?? ''),
+    loadMoreOps: (d) => loadMore(OPS_KEY, text(d, 'cursor') ?? ''),
+    retryWorkPackage,
+    retryArtifact,
+    retryDrift: (d) => retry(text(d, 'missionId') === undefined ? { kind: 'drift' } : { kind: 'drift', missionId: text(d, 'missionId') ?? '' }),
+    retryOps: (d) => retry(OPS_KEY, text(d, 'cursor')),
+    selectFinding: (d) => controller.selectFinding(findingOf(d)),
+    rescanDrift: (d) => rescan(text(d, 'missionId') ?? null),
+    openLink: (d) => controller.openExternalLink(text(d, 'href') ?? ''),
+    copyCommand: (d) => copyCommand(text(d, 'text') ?? ''),
+    openProject: (d) => controller.openProject(text(d, 'key') ?? ''),
+    requestOpenProject,
+    retryProjects: (d) => (['projects', 'project'].includes(text(d, 'target') ?? '') ? loadProjects() : Promise.resolve()),
+    browseFolder: (d) => controller.browseFolder(text(d, 'location') ?? ''),
+    confirmOpenProject: (d) => controller.confirmOpenProject(text(d, 'location') ?? ''),
+    retryFolders: (d) => (text(d, 'target') === 'folders' ? controller.retryFolders() : Promise.resolve()),
+  };
+
   const controller: ShellController = {
     snapshot: build,
     subscribe(run) {
@@ -607,14 +628,12 @@ export function createShellController(options: ShellControllerOptions): ShellCon
     },
     windowRefocused: () => explicitRefresh('refocus'),
     intent(tag, event, detail) {
-      const key = `${tag} ${event}`;
-      if (mode === 'dashboard' && DASHBOARD_IGNORED.has(key)) return Promise.resolve();
-      const handler = sync[key];
-      if (handler !== undefined) {
-        handler(detail);
-        return Promise.resolve();
-      }
-      return hosted[key]?.(detail) ?? Promise.resolve();
+      // One hop at most: a nested element's `via` names the hosting element whose entry handles the same event.
+      const table = INTENT_TABLE as unknown as IntentLookup;
+      const entry = table[tag]?.[event];
+      const handler = entry !== undefined && 'via' in entry ? table[entry.via]?.[event] : entry;
+      if (handler === undefined || 'via' in handler) return Promise.resolve();
+      return Promise.resolve(handler(intentCommands, detail));
     },
     setQuery: (value) => mutate(() => (query = value)),
     setFilter: (value) => mutate(() => (filter = value)),
