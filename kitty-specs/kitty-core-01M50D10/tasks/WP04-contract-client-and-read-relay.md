@@ -160,6 +160,7 @@ Implementation command (orchestrator-run): `spec-kitty agent action implement WP
    - collect the body under a 16 MiB cap.
 3. **The whole sequence** runs under one **total** deadline, `read_timeout` (R3-08). Past it, the result is `Transport(Timeout)`.
 4. **Every status** becomes `Answer { status, content_type, body }`. A refused connection is `ConnectRefused`, and an over-cap body is `BodyTooLarge { limit }` with no partial body.
+5. **`ReadOutcome` is `#[non_exhaustive]`** (B1). This WP defines it with `Answer` and `Transport` only. WP09 adds the `Core`-only variants `NotReady(CoreStatus)` and `ContractMismatch(Mismatch)` as a recorded out-of-map edit, after this WP. `#[non_exhaustive]` makes the compiler require a wildcard arm in every match outside the crate (the integration tests in `tests/` and both hosts), so the later variants break no earlier test. Inside the crate, avoid exhaustive matches on `ReadOutcome`; where one is unavoidable, add a wildcard arm.
 
 **Validation**: T023.
 

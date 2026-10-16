@@ -112,7 +112,7 @@ Implementation command (orchestrator-run): `spec-kitty agent action implement WP
    - `DegradedReason { None, ServiceMissing(ServiceMissing), ContractMismatch(Mismatch) }`;
    - `CoreStatus { state, degraded, generation, attempt, left_initial_start }`.
 2. **The initial status** is `Starting`, generation 1, `None`, attempt 0, `left_initial_start = false`.
-3. **`left_initial_start`** becomes `true` only at the first `Ready` or the first `Stopped` (FS-04).
+3. **`left_initial_start`** is set by WP08's supervisor, at the first `Ready` or the first `Stopped` (FS-04, B3). This WP only verifies it, through the hint tests in T050.
 4. `pub fn connection_state_hint(&CoreStatus) -> Option<&'static str>` implements exactly the data-model table: `Starting`, `Crashed` and `Backoff` before the flag map to `connecting`; after it, to `reconnecting`; `Ready` is `connected`; and the two degraded strings follow. `Stopped` with no reason is `None`.
 
 ### Subtask T048: The `Core` facade (`facade.rs`, module `facade`; A13)
@@ -124,12 +124,13 @@ Implementation command (orchestrator-run): `spec-kitty agent action implement WP
 2. `Core::subscribe()` is atomic: it takes the publishing lock, reads the current status and subscribes before releasing (R4-04, R5-02).
 3. **`HandleGuard`.** Each `Core` clone holds an `Arc<HandleGuard>`. The last drop aborts the supervisor task, so `ChildGuard::drop` sends SIGKILL to the group and `kill_on_drop` is the backstop (A-05).
 4. **`stop()`** runs the graceful sequence and returns `Err(SupervisorPanicked)` when the task's `JoinError` is a panic.
-5. **The other methods.**
+5. **The `Core`-only variants (B1).** Add `NotReady(CoreStatus)` and `ContractMismatch(Mismatch)` to `ReadOutcome` (`client.rs`) and to `StreamOpenError` (`sse.rs`), both recorded out-of-map edits. Both enums are already `#[non_exhaustive]`, so WP04's and WP05's tests keep compiling.
+6. **The other methods.**
    - `retry()` works only from `Stopped`.
    - `ready_endpoint()` is `Some` only while `Ready`, carrying the generation.
    - `read()` and `open_stream()` answer `NotReady` or `ContractMismatch` **without I/O** unless `Ready`.
    - `captured_output()` returns the newest 64 KiB of the current or most recent child.
-6. Assert `Core: Send + Sync + Clone` at compile time.
+7. Assert `Core: Send + Sync + Clone` at compile time.
 
 ### Subtask T049: Re-exports (`lib.rs`, an out-of-map edit)
 
@@ -171,7 +172,8 @@ Implementation command (orchestrator-run): `spec-kitty agent action implement WP
    - That supervised service (the host's direct child) writes its own pid to `<root>/inner/service.pid` (FS-15).
    - Once the status is `Ready`, the host calls `std::process::exit(0)` without `stop()`.
 2. **`crates/kitty-core/tests/host_exit.rs`** (`cfg(target_os = "linux")`):
-   - start the host directly, with `CARGO_BIN_EXE_kitty-fake-service` and the `host` scenario;
+   - write both scenario files first: `write_scenario(<root>, &["host"], None)` for the host, and `write_scenario(<root>/inner, &["ready"], None)` for the service it supervises (B5);
+   - start the host directly, with `CARGO_BIN_EXE_kitty-fake-service`;
    - wait for `service.pid`, then wait for the host to exit;
    - assert that the inner service's pid is gone within 1 s (`kill(pid, 0)` gives ESRCH).
    - A positive control: the pid existed before the host exited.
@@ -230,6 +232,8 @@ Per-subtask completion is recorded with `spec-kitty agent tasks mark-status <Txx
 
 **Recorded out-of-map edits** (each one is committed with a plain `git add <path>`, and listed in the hand-off with a one-line rationale):
 - `crates/kitty-core/src/lib.rs` (owned by WP04): add the `pub use` re-exports only; `version()` and the `#[cfg(test)]` anchor stay unchanged.
+- `crates/kitty-core/src/client.rs` (owned by WP04): add the `Core`-only variants `NotReady(CoreStatus)` and `ContractMismatch(Mismatch)` to the `#[non_exhaustive]` `ReadOutcome` (B1). This comes after WP04.
+- `crates/kitty-core/src/sse.rs` (owned by WP05): add the same two variants to the `#[non_exhaustive]` `StreamOpenError` (B1). This comes after WP05.
 - `crates/kitty-core/src/bin/kitty-fake-service.rs` (owned by WP08): add the `host` mode arm only (A1).
 - `crates/kitty-stub/Cargo.toml` (owned by WP03): add `kitty-core = { path = "../kitty-core" }` to `[dev-dependencies]`.
 - `Cargo.lock` (owned by WP01): the dev-dependency edge `kitty-stub` → `kitty-core` (FS-01). No package is added.

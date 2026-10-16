@@ -153,7 +153,7 @@ None.
 ## Exit checks
 
 1. Every gate is green.
-2. The SC-004 probe passes (T054 output).
+2. The SC-004 probe passes (T055 output).
 3. kitty-core's test total is 60 s or less.
 4. `ci.yml` differs from `$base` only in `timeout:` values.
 
@@ -169,7 +169,7 @@ Per-subtask completion is recorded with `spec-kitty agent tasks mark-status <Txx
 
 ## Risks
 
-- **Merging #18 first** changes `ci.yml`. Re-run T054 and T056 after merging `main`.
+- **Merging #18 first** changes `ci.yml`. Re-run T055 and T057 after merging `main`.
 - **A local proxy far from CI.** CI values win; the orchestrator updates them.
 
 ## Reviewer Guidance

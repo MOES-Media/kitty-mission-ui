@@ -199,6 +199,7 @@ Implementation command (orchestrator-run): `spec-kitty agent action implement WP
 8. **A mismatch** stops the group and gives `Stopped + ContractMismatch`, with no restart.
 9. **`retry()`** from `Stopped` clears the policy state and runs discovery again.
 10. **Publishing** goes through the public `StatusSink`. A send with no receiver is ignored.
+    - The supervisor sets `CoreStatus.left_initial_start = true` at the first `Ready` or the first `Stopped`, and never back. `Crashed` and `Backoff` before the first `Ready` leave it `false` (FS-04, B3). Scenario tests assert the flag on each published status.
 11. **The public entry point.** `spawn_supervisor(config, sink, runtime) -> SupervisorHandle { stop(), retry(), join() }` is `#[doc(hidden)]` and `pub` (A2). WP09's `Core` wraps it, and tests can drive it with a recording sink.
 
 ### Subtask T044: `kitty-fake-service` and its `[[bin]]`
@@ -231,15 +232,15 @@ Implementation command (orchestrator-run): `spec-kitty agent action implement WP
 
 **Purpose**: SC-003 and FR-016 to FR-022. Every scenario asserts the exact state sequence, the `RecordingSleeper` log, the generations, and no panics.
 
-**Steps**: one test per scenario, using the `Timings` test table: poll 10 ms, start 2 s, grace 300 ms, and a **300 ms start budget in every budget-exhaustion scenario** (never-ready, serve-503, alive-no-bind; A3). Drive the supervisor through `spawn_supervisor` with a recording `StatusSink`.
+**Steps**: one test per scenario, using the `Timings` test table: poll 10 ms, start 2 s, grace 300 ms, and a **300 ms start budget in the two budget-exhaustion scenarios**, never-ready and serve-503 (A3, B2). `alive-no-bind` keeps the 2 s budget: its three attempts fail on ownership, not on the budget. Drive the supervisor through `spawn_supervisor` with a recording `StatusSink`.
 1. **`ready`:** `Starting(1)` then `Ready(1)`. The launch file shows exactly the two argv strings, with the canonical root, and an environment equal to the allowlist present in the test process. stdin is null: the fake asserts that a read returns EOF.
 2. **`crash-after` then `ready`:** `Ready`, `Crashed`, `Backoff(0.5 s)`, `Starting(2)`, `Ready(2)`. The sleeper log is `[0.5 s]`.
 3. **Five crashes:** the log is `[0.5, 1, 2, 4]`, then `Stopped + Crashing`, with the detail naming the last exit status.
 4. **Busy port.** The first scripted port is held by a squatter that accepts but holds its answer until the fake exits or for 200 ms. The fake exits (bind error), the exit wins, and the next attempt uses a different port and reaches `Ready`.
-5. **`alive-no-bind`, `cfg(target_os = "linux")` (A4).** Script the `PortPicker` with exactly 3 free ports, and run a `squatter` on each that answers at once with the pinned document. The socket-ownership check fails on all 3 attempts. Assert:
+5. **`alive-no-bind`, `cfg(target_os = "linux")` (A4, B2; 2 s start budget).** Script the `PortPicker` with exactly 3 free ports, and run a `squatter` on each that answers at once with the pinned document. The socket-ownership check fails on all 3 attempts. Assert:
    - 3 distinct ports were tried (from the launch files);
-   - the failure cause is "listening socket not owned by the service";
-   - `Ready` never occurs;
+   - the start failure's cause is "listening socket not owned by the service";
+   - no `Ready` during the first start;
    - the mismatches took **no** crash-window slot. The scenario file is `launches: [alive-no-bind, alive-no-bind, alive-no-bind, ready]`, and the picker then hands out free ports. The three mismatches make one start failure, so the sleeper log is exactly `[0.5 s]`, and the second start reaches `Ready` with generation 4 (attempts 1 to 3 were generations 1 to 3).
 6. **`serve-503`** (300 ms budget): `Starting` until the budget is spent, then `Crashed`, then the policy, with the detail "start budget spent on 503s" once the policy gives up.
 7. **`never-ready`** (300 ms start budget): a start failure, the full stop sequence (the pid is gone), then `Crashed`.
