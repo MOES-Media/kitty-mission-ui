@@ -1,128 +1,116 @@
 {
   "mission_slug": "phase0-bootstrap-01M4V5KK",
-  "mission_number": "",
+  "mission_number": "4",
   "mission_type": "software-dev",
   "overall_verdict": "pass",
   "criteria": [
     {
       "criterion_id": "FR-001",
-      "description": "Verify FR-001 is satisfied",
+      "description": "Any mission-ui screen hosted in the shell receives its data as real values (lists, objects), never as text.",
       "proof_type": "automated_test",
-      "evidence": "packages/mission-shell/test/binding.test.ts: missions bound as an Array of the pageFirst fixture items; loadingMore === true as a property with no loadingmore/loading-more attribute; unit-tests plant 'binding: loadingMore not set as property' red in the gate-proof leg; registration-order plant",
+      "evidence": "packages/mission-shell/test/binding.test.ts (line 73) 'sets loadingMore as a property and leaves no attribute a wrong binding would create': the missions list is bound as a real array of the fixture items and loadingMore === true as a property; unit-tests plants 'binding: loadingMore not set as property' (registration order) red in the gate-proof leg",
       "pass_fail": "pass",
       "verified_by": "claude",
-      "verified_at": "2026-10-15T11:48:09.656461+00:00",
-      "notes": "TODO: replace with a real acceptance criterion"
+      "verified_at": "2026-10-16T10:59:58.193858+00:00"
     },
     {
       "criterion_id": "FR-002",
-      "description": "Verify FR-002 is satisfied",
+      "description": "Every sk-* intent a hosted screen emits reaches the shell handler with its typed detail.",
       "proof_type": "automated_test",
-      "evidence": "packages/mission-shell/test/binding.test.ts 'delivers the declared events': all 4 declared intents from custom-elements.json, toHaveBeenCalledTimes(4), sk-open-mission via real click; plant 'binding: intent sk-search not delivered'",
+      "evidence": "packages/mission-shell/test/binding.test.ts (line 124) 'delivers the declared events: one through real UI, the rest dispatched from the element': all declared intents from custom-elements.json, toHaveBeenCalledTimes(declared.length), sk-open-mission through a real click; unit-tests plant 'binding: intent sk-search not delivered'",
       "pass_fail": "pass",
       "verified_by": "claude",
-      "verified_at": "2026-10-15T11:48:11.862904+00:00",
-      "notes": "TODO: replace with a real acceptance criterion"
+      "verified_at": "2026-10-16T10:59:59.398931+00:00"
     },
     {
       "criterion_id": "FR-003",
-      "description": "Verify FR-003 is satisfied",
+      "description": "FR-001 and FR-002 are verified by a permanent automated check on a real mission-ui screen, run on every pull request; a planted binding break makes it fail.",
       "proof_type": "gate_proof",
-      "evidence": "gates/plants/unit-tests/plant.json: 3 new plants red in the unit-tests proof leg (7/7 tokens matched, clean leg exit 0); root test script pnpm -r --no-bail runs the shell suite on every PR",
+      "evidence": "gates/plants/unit-tests/plant.json: 8 plants in all, 4 of them new in this mission (binding: loadingMore not set as property, binding: intent sk-search not delivered, coverage: missing operation getDriftReport, coverage: missing operation getNewThing), each red in the unit-tests proof leg; the binding checks run through the root test script (pnpm -r --no-bail) on every pull request",
       "pass_fail": "pass",
       "verified_by": "claude",
-      "verified_at": "2026-10-15T11:48:14.305714+00:00",
-      "notes": "TODO: replace with a real acceptance criterion"
+      "verified_at": "2026-10-16T11:00:00.606822+00:00"
     },
     {
       "criterion_id": "FR-004",
-      "description": "Verify FR-004 is satisfied",
+      "description": "Shell code is type-checked against every screen declared properties and events, generated from the published declaration; a planted use of a non-existent property fails the type check.",
       "proof_type": "gate_proof",
-      "evidence": "scripts/typings.test.mjs 'the real run types exactly the 15 elements'; typecheck plants plantNoSuchProp and open-misson; manifest plant 'elements.d.ts is stale'",
+      "evidence": "scripts/typings.test.mjs line 177 'the real run types exactly the 15 elements of custom-elements.json and matches the committed file'; typecheck plants plantNoSuchProp (PlantProp.svelte) and open-misson (PlantIntent.svelte); manifest plant 'elements.d.ts is stale'",
       "pass_fail": "pass",
       "verified_by": "claude",
-      "verified_at": "2026-10-15T11:48:17.043032+00:00",
-      "notes": "TODO: replace with a real acceptance criterion"
+      "verified_at": "2026-10-16T11:00:01.823785+00:00"
     },
     {
       "criterion_id": "FR-005",
-      "description": "Verify FR-005 is satisfied",
+      "description": "The repository holds a Rust workspace (shared core plus placeholder desktop and dashboard members) and the mission-shell package, all building from a clean checkout.",
       "proof_type": "automated_test",
-      "evidence": "crates/kitty-core/tests/workspace.rs workspace_members_are_exactly_the_expected_packages; cargo build/test --workspace --frozen; mission-shell svelte-check 0 errors 0 warnings",
+      "evidence": "crates/kitty-core/tests/workspace.rs line 95 workspace_members_are_exactly_the_expected_packages; cargo build and cargo test --workspace --frozen in the rust gate; mission-shell typecheck (svelte-check --fail-on-warnings)",
       "pass_fail": "pass",
       "verified_by": "claude",
-      "verified_at": "2026-10-15T11:48:19.537205+00:00",
-      "notes": "TODO: replace with a real acceptance criterion"
+      "verified_at": "2026-10-16T11:00:03.421994+00:00"
     },
     {
       "criterion_id": "FR-006",
-      "description": "Verify FR-006 is satisfied",
+      "description": "Every new check (Rust format, lint and tests; Svelte type check; declaration typings; lint, token-only style and data-driven rules extended to Svelte files) runs on every pull request inside the existing gate structure, each with a planted-defect proof.",
       "proof_type": "gate_proof",
-      "evidence": "18 new plants across rust 3, typecheck 3, eslint 1, stylelint 1, no-io 1, data-driven 1, unit-tests 3, manifest 1, contract 2, hygiene 2, counted with equality against merge-base 9c9d83c; every proof leg ok; gate-proof coverage ok",
+      "evidence": "24 new plants, counted against merge-base 9c9d83c in gates/plants/*/plant.json: contract +3, data-driven +1, eslint +3, hygiene +4, manifest +1, no-io +1, rust +3, stylelint +1, typecheck +3, unit-tests +4 (21 at the pre-merge review, 24 after the landing folds); every proof leg ok, gate-proof coverage ok",
       "pass_fail": "pass",
       "verified_by": "claude",
-      "verified_at": "2026-10-15T11:48:22.760463+00:00",
-      "notes": "TODO: replace with a real acceptance criterion"
+      "verified_at": "2026-10-16T11:00:04.643913+00:00"
     },
     {
       "criterion_id": "FR-007",
-      "description": "Verify FR-007 is satisfied",
+      "description": "The no-io gate covers mission-shell, and mission-ui keeps passing its no-io and data-driven gates unchanged; I/O planted in the shell fails the gate.",
       "proof_type": "gate_proof",
-      "evidence": "no-io plant 'no-io: fetch is forbidden (network I/O)' over a .svelte file; lint:no-io and lint:data-driven cover packages/*/src including .svelte (205/205 self-tests)",
+      "evidence": "no-io plant 'no-io: fetch is forbidden (network I/O)' over PlantNoIo.svelte in packages/mission-shell/src; data-driven plant 'data-driven: S1 phase name or lane value as a literal' over PlantDataDriven.svelte; lint:no-io and lint:data-driven cover packages/*/src including .svelte",
       "pass_fail": "pass",
       "verified_by": "claude",
-      "verified_at": "2026-10-15T11:48:24.597168+00:00",
-      "notes": "TODO: replace with a real acceptance criterion"
+      "verified_at": "2026-10-16T11:00:05.829956+00:00"
     },
     {
       "criterion_id": "FR-008",
-      "description": "Verify FR-008 is satisfied",
+      "description": "One client interface covers every read in the pinned contract, a change subscription, and a connection state with exactly the values connecting, connected, reconnecting, degraded: service-missing and degraded: contract-mismatch (amended 2026-10-15).",
       "proof_type": "automated_test",
-      "evidence": "packages/mission-shell/test/port-coverage.test.ts 'are exactly the four spec strings' and 'the fixture adapter has exactly the methods of the table'; fixture-client.test.ts 'notifies exactly once per change, for each of the four states'",
+      "evidence": "packages/mission-shell/test/port-coverage.test.ts line 85 'are exactly the five strings: connecting before first contact, then the four of the spec'; fixture-client.test.ts line 393 'starts connected (a documented test convenience), or in the initial state given, connecting included' and line 399 'notifies exactly once per change, for each of the five states'; resync tests at fixture-client.test.ts line 446 'still resynchronises an open subscription when a state listener throws' and line 493 'is delivered when the connection returns from reconnecting to connected, before any later change'. Amended 2026-10-15 (SO-DES-003, SO-DES-002)",
       "pass_fail": "pass",
       "verified_by": "claude",
-      "verified_at": "2026-10-15T11:48:29.633440+00:00",
-      "notes": "TODO: replace with a real acceptance criterion"
+      "verified_at": "2026-10-16T11:00:07.098843+00:00"
     },
     {
       "criterion_id": "FR-009",
-      "description": "Verify FR-009 is satisfied",
+      "description": "A test fails, naming the read, when the pinned contract contains a read the client interface lacks.",
       "proof_type": "automated_test",
-      "evidence": "packages/mission-shell/test/port-coverage.test.ts 'covers exactly the ten operationIds of routes.json'; plant 'coverage: missing operation getDriftReport' red in the unit-tests leg",
+      "evidence": "packages/mission-shell/test/port-coverage.test.ts line 40 'covers exactly the operationIds of routes.json, naming any it lacks before anything else is checked (FR-009)'; unit-tests plants 'coverage: missing operation getDriftReport' (operation removed from the port) and 'coverage: missing operation getNewThing' (read added to routes.json), both red in the unit-tests leg",
       "pass_fail": "pass",
       "verified_by": "claude",
-      "verified_at": "2026-10-15T11:48:52.288037+00:00",
-      "notes": "TODO: replace with a real acceptance criterion"
+      "verified_at": "2026-10-16T11:00:08.326927+00:00"
     },
     {
       "criterion_id": "FR-010",
-      "description": "Verify FR-010 is satisfied",
+      "description": "A local stub answers every read in the pinned contract with that operation vendored example, and a clear error for a read without an example.",
       "proof_type": "automated_test",
-      "evidence": "crates/kitty-stub/tests/routes.rs every_read_serves_its_default_example, every_selectable_example_is_served_on_a_fitting_route (57 examples), null default example gives 501; guard.rs Host/Origin/Forwarded 403 tests",
+      "evidence": "crates/kitty-stub/tests/routes.rs every_read_serves_its_default_example (line 62), every_selectable_example_is_served_on_a_fitting_route (line 92, 57 examples), a_null_default_example_is_501 (line 264); crates/kitty-stub/tests/guard.rs Host, Origin and Forwarded 403 tests",
       "pass_fail": "pass",
       "verified_by": "claude",
-      "verified_at": "2026-10-15T11:48:54.086745+00:00",
-      "notes": "TODO: replace with a real acceptance criterion"
+      "verified_at": "2026-10-16T11:00:09.562959+00:00"
     },
     {
       "criterion_id": "FR-011",
-      "description": "Verify FR-011 is satisfied",
+      "description": "The stub plays a scripted change sequence with at least one status transition, one lifecycle event and one log-truncated marker in a fixed order (stub resume added by the 2026-10-15 amendment).",
       "proof_type": "automated_test",
-      "evidence": "crates/kitty-stub/tests/events.rs a_mission_scoped_stream_replays_changes_with_ids, an_unscoped_stream_carries_no_ids, the_stream_is_byte_identical_across_ten_runs; scripts/contract/changes-json.test.mjs; fixture-client.test.ts scoped subscription cursors",
+      "evidence": "crates/kitty-stub/tests/events.rs a_mission_scoped_stream_replays_changes_with_ids (64), an_unscoped_stream_carries_no_ids (97), the_stream_is_byte_identical_across_ten_runs (136), and the resume tests resuming_after_an_id_skips_that_item_and_every_item_before_it (214), an_unknown_cursor_resumes_after_the_last_log_truncated_item (246), last_event_id_resumes_exactly_like_stream_cursor (272), an_unscoped_or_empty_cursor_changes_nothing (299); scripts/contract/changes-json.test.mjs; fixture-client.test.ts 'a scoped subscription yields every change with the R2-05 cursors'. Resume added by the 2026-10-15 amendment (SO-DES-008)",
       "pass_fail": "pass",
       "verified_by": "claude",
-      "verified_at": "2026-10-15T11:48:57.242026+00:00",
-      "notes": "TODO: replace with a real acceptance criterion"
+      "verified_at": "2026-10-16T11:00:10.785212+00:00"
     },
     {
       "criterion_id": "FR-012",
-      "description": "Verify FR-012 is satisfied",
+      "description": "A scheduled workflow, outside the merge-required set, compares the upstream contract with the pin and reports drift by file, reusing the existing contract scripts.",
       "proof_type": "automated_test",
-      "evidence": "scripts/contract/drift.test.mjs exit 0/1/2/3 offline tests and built-ins-only import graph; .github/workflows/contract-drift.yml on schedule and workflow_dispatch, outside ci.yml all.needs; hygiene plant 'is not pinned to a 40-hex SHA'",
+      "evidence": "scripts/contract/drift.test.mjs offline tests for exit 0, 1, 2 and 3 (lines 91, 106, 125, 136) and the built-ins-only import check; .github/workflows/contract-drift.yml on schedule and workflow_dispatch, outside the ci.yml all job's needs; hygiene plant 'is not pinned to a 40-hex SHA'",
       "pass_fail": "pass",
       "verified_by": "claude",
-      "verified_at": "2026-10-15T11:48:59.034034+00:00",
-      "notes": "TODO: replace with a real acceptance criterion"
+      "verified_at": "2026-10-16T11:00:11.977154+00:00"
     }
   ],
   "negative_invariants": []

@@ -75,7 +75,7 @@ A discriminated union by `kind`:
 
 ## SubscriptionScope (TypeScript, `mission-shell`)
 
-`{ missionId?: string; cursor?: string }`. A `cursor` is valid only together with `missionId`, matching the contract's `streamCursor`/`Last-Event-ID` rule. The fixture adapter ignores `cursor` and replays from the start (a replay needs no stored position). `cursor` is the text form of the contract's `streamCursor` parameter (`toStreamCursorString`); resume is the adapters' job (see "Ownership").
+A discriminated union (`packages/mission-shell/src/client/port.ts`): `{ missionId: string; cursor?: string } | { missionId?: undefined; cursor?: undefined }`. A `cursor` is valid only together with a `missionId`, matching the contract's `streamCursor`/`Last-Event-ID` rule, so a cursor without a `missionId` is a type error (CODE-BOUNDARY-002). An empty `missionId` is no mission: with a cursor it type-checks, but the subscription is refused at run time with 400 `cursor_without_mission`. The fixture adapter ignores `cursor` and replays from the start (a replay needs no stored position). `cursor` is the text form of the contract's `streamCursor` parameter (`toStreamCursorString`); resume is the adapters' job (see "Ownership").
 
 ## Ownership (SO-DES-001)
 
