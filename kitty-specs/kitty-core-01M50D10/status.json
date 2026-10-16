@@ -26,7 +26,7 @@
       "last_event_id": "01M52SPBSW5MR1FVZZ9JQ9HXXG",
       "last_transition_at": "2026-10-16T16:46:00.508125+00:00",
       "review_result": {
-        "feedback_path": "/home/jeroennouws/dev/SK-missions/ui19/kitty-specs/kitty-core-01M50D10/tasks/WP01-dependencies-and-pins/review-cycle-1.md",
+        "feedback_path": "kitty-specs/kitty-core-01M50D10/tasks/WP01-dependencies-and-pins/review-cycle-1.md",
         "reference": "review-cycle://kitty-core-01M50D10/WP01-dependencies-and-pins/review-cycle-1.md",
         "reviewer": "claude",
         "verdict": "approved"
@@ -43,7 +43,7 @@
       "last_event_id": "01M52SPCE83T366MJHQ81KSXQT",
       "last_transition_at": "2026-10-16T16:46:01.160992+00:00",
       "review_result": {
-        "feedback_path": "/home/jeroennouws/dev/SK-missions/ui19/kitty-specs/kitty-core-01M50D10/tasks/WP02-bundled-contract-document/review-cycle-1.md",
+        "feedback_path": "kitty-specs/kitty-core-01M50D10/tasks/WP02-bundled-contract-document/review-cycle-1.md",
         "reference": "review-cycle://kitty-core-01M50D10/WP02-bundled-contract-document/review-cycle-1.md",
         "reviewer": "claude",
         "verdict": "approved"
@@ -60,7 +60,7 @@
       "last_event_id": "01M52SPD3ZW0CWP8Y11HBDZ77Y",
       "last_transition_at": "2026-10-16T16:46:01.855661+00:00",
       "review_result": {
-        "feedback_path": "/home/jeroennouws/dev/SK-missions/ui19/kitty-specs/kitty-core-01M50D10/tasks/WP03-stub-extensions/review-cycle-2.md",
+        "feedback_path": "kitty-specs/kitty-core-01M50D10/tasks/WP03-stub-extensions/review-cycle-2.md",
         "reference": "review-cycle://kitty-core-01M50D10/WP03-stub-extensions/review-cycle-2.md",
         "reviewer": "claude",
         "verdict": "approved"
@@ -77,7 +77,7 @@
       "last_event_id": "01M52SPDSPPERAG0YQ201FRBKW",
       "last_transition_at": "2026-10-16T16:46:02.550331+00:00",
       "review_result": {
-        "feedback_path": "/home/jeroennouws/dev/SK-missions/ui19/kitty-specs/kitty-core-01M50D10/tasks/WP04-contract-client-and-read-relay/review-cycle-1.md",
+        "feedback_path": "kitty-specs/kitty-core-01M50D10/tasks/WP04-contract-client-and-read-relay/review-cycle-1.md",
         "reference": "review-cycle://kitty-core-01M50D10/WP04-contract-client-and-read-relay/review-cycle-1.md",
         "reviewer": "claude",
         "verdict": "approved"
@@ -94,7 +94,7 @@
       "last_event_id": "01M52SPEFHSSRQBMJWW6XJPGH8",
       "last_transition_at": "2026-10-16T16:46:03.249603+00:00",
       "review_result": {
-        "feedback_path": "/home/jeroennouws/dev/SK-missions/ui19/kitty-specs/kitty-core-01M50D10/tasks/WP05-change-stream-relay/review-cycle-1.md",
+        "feedback_path": "kitty-specs/kitty-core-01M50D10/tasks/WP05-change-stream-relay/review-cycle-1.md",
         "reference": "review-cycle://kitty-core-01M50D10/WP05-change-stream-relay/review-cycle-1.md",
         "reviewer": "claude",
         "verdict": "approved"
@@ -111,7 +111,7 @@
       "last_event_id": "01M52SPF5V3EQE264JBHJM0G2N",
       "last_transition_at": "2026-10-16T16:46:03.963126+00:00",
       "review_result": {
-        "feedback_path": "/home/jeroennouws/dev/SK-missions/ui19/kitty-specs/kitty-core-01M50D10/tasks/WP06-contract-digest-check/review-cycle-1.md",
+        "feedback_path": "kitty-specs/kitty-core-01M50D10/tasks/WP06-contract-digest-check/review-cycle-1.md",
         "reference": "review-cycle://kitty-core-01M50D10/WP06-contract-digest-check/review-cycle-1.md",
         "reviewer": "claude",
         "verdict": "approved"
@@ -128,7 +128,7 @@
       "last_event_id": "01M52SPFWF23P54VHZ1899FTXN",
       "last_transition_at": "2026-10-16T16:46:04.687462+00:00",
       "review_result": {
-        "feedback_path": "/home/jeroennouws/dev/SK-missions/ui19/kitty-specs/kitty-core-01M50D10/tasks/WP07-discovery/review-cycle-1.md",
+        "feedback_path": "kitty-specs/kitty-core-01M50D10/tasks/WP07-discovery/review-cycle-1.md",
         "reference": "review-cycle://kitty-core-01M50D10/WP07-discovery/review-cycle-1.md",
         "reviewer": "claude",
         "verdict": "approved"
@@ -145,7 +145,7 @@
       "last_event_id": "01M52SPGJ17GXB9P9P7R8QN790",
       "last_transition_at": "2026-10-16T16:46:05.377223+00:00",
       "review_result": {
-        "feedback_path": "/home/jeroennouws/dev/SK-missions/ui19/kitty-specs/kitty-core-01M50D10/tasks/WP08-supervision/review-cycle-2.md",
+        "feedback_path": "kitty-specs/kitty-core-01M50D10/tasks/WP08-supervision/review-cycle-2.md",
         "reference": "review-cycle://kitty-core-01M50D10/WP08-supervision/review-cycle-2.md",
         "reviewer": "claude",
         "verdict": "approved"
@@ -162,7 +162,7 @@
       "last_event_id": "01M52SPH7CYG97HHC3JY6FYP9Y",
       "last_transition_at": "2026-10-16T16:46:06.060450+00:00",
       "review_result": {
-        "feedback_path": "/home/jeroennouws/dev/SK-missions/ui19/kitty-specs/kitty-core-01M50D10/tasks/WP09-core-facade-and-supervised-stand-in/review-cycle-1.md",
+        "feedback_path": "kitty-specs/kitty-core-01M50D10/tasks/WP09-core-facade-and-supervised-stand-in/review-cycle-1.md",
         "reference": "review-cycle://kitty-core-01M50D10/WP09-core-facade-and-supervised-stand-in/review-cycle-1.md",
         "reviewer": "claude",
         "verdict": "approved"
@@ -179,7 +179,7 @@
       "last_event_id": "01M52SPHVT7HMTWBCT16HRRHEF",
       "last_transition_at": "2026-10-16T16:46:06.714234+00:00",
       "review_result": {
-        "feedback_path": "/home/jeroennouws/dev/SK-missions/ui19/kitty-specs/kitty-core-01M50D10/tasks/WP10-docs-budgets-and-wrap-up/review-cycle-2.md",
+        "feedback_path": "kitty-specs/kitty-core-01M50D10/tasks/WP10-docs-budgets-and-wrap-up/review-cycle-2.md",
         "reference": "review-cycle://kitty-core-01M50D10/WP10-docs-budgets-and-wrap-up/review-cycle-2.md",
         "reviewer": "claude",
         "verdict": "approved"
