@@ -12,6 +12,9 @@ requirement_refs:
 planning_base_branch: feat/mission-shell-18
 merge_target_branch: feat/mission-shell-18
 branch_strategy: Planning artifacts for this mission were generated on feat/mission-shell-18. During /spec-kitty.implement this WP may branch from a dependency-specific base, but completed changes must merge back into feat/mission-shell-18 unless the human explicitly redirects the landing branch.
+base_branch: kitty/mission-mission-shell-01M50D2J
+base_commit: daceef1a2b9502e8ae6aad9a19f6a4dcfe0b4679
+created_at: '2026-10-16T13:55:34.895335+00:00'
 subtasks:
 - T019
 - T020
