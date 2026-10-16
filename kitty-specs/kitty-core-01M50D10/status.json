@@ -295,11 +295,16 @@
     "WP09": {
       "actor": "claude",
       "agent": "claude",
+      "agent_profile": "implementer-ivan",
+      "agent_profile_version": "1.0",
       "force_count": 0,
       "implementer_of_record": "claude",
       "lane": "in_progress",
       "last_event_id": "01M52N123H2ARD50NYBAYXZEBM",
       "last_transition_at": "2026-10-16T15:24:28.141627+00:00",
+      "model": "__resolved_model_absent__",
+      "provider": "__resolved_provider_absent__",
+      "role": "implementer",
       "shell_pid": 717089,
       "shell_pid_created_at": "1792164264.98"
     },
