@@ -1,0 +1,6 @@
+// Planted violation: a shell story importing a module that does not exist, so the Storybook build must fail.
+import './plant-shell-storybook-missing';
+
+export default { title: 'Plant/ShellStorybookMissing' };
+
+export const Default = { render: () => document.createElement('div') };
