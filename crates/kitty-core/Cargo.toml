@@ -21,3 +21,9 @@ libc = { workspace = true }
 
 [dev-dependencies]
 kitty-stub = { path = "../kitty-stub" }
+
+[[bin]]
+name = "kitty-fake-service"
+path = "src/bin/kitty-fake-service.rs"
+test = false
+doc = false
