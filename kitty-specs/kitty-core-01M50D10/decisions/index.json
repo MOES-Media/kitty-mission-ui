@@ -316,6 +316,78 @@
       "status": "resolved",
       "step_id": null,
       "summary_json": null
+    },
+    {
+      "created_at": "2026-10-16T10:59:54.894933Z",
+      "decision_id": "01M525WMWERXEBRY05X78Q6P3F",
+      "final_answer": "Not yet ready: keep polling within the start budget; a start budget spent on 503s counts as a start failure (Crashed); spec amendment A-10 and a data-model row",
+      "input_key": "starting_503",
+      "mission_id": "01M50D10J2DWR9J76F7APJQJDP",
+      "mission_slug": "kitty-core-01M50D10",
+      "opened_by": "claude",
+      "options": [
+        "Not yet ready: keep polling within the start budget; a budget spent on 503s is a start failure (Crashed); spec amendment A-10",
+        "Final answer: contract-mismatch",
+        "Other"
+      ],
+      "origin_flow": "plan",
+      "other_answer": false,
+      "question": "FS-05: what does a 503 from /api/v1/openapi.yaml mean while the service is starting?",
+      "rationale": "Orchestrator decision 2026-10-16 (plan-squad fix round 2), relayed by the coordinator",
+      "resolved_at": "2026-10-16T10:59:56.097643Z",
+      "resolved_by": "coordinator",
+      "slot_key": "plan.supervision.starting-503",
+      "status": "resolved",
+      "step_id": null,
+      "summary_json": null
+    },
+    {
+      "created_at": "2026-10-16T10:59:57.322674Z",
+      "decision_id": "01M525WQ8AFYF4PZAF4ACKSBXJ",
+      "final_answer": "Deterministic squatter test: the squatter holds its answer until the fake exits or for 200 ms. On Linux, before Ready, check the listening socket inode (/proc/net/tcp) against the fds of the child process group (/proc/<pid>/fd), std only; a mismatch is a start failure. Other platforms: document the cross-project limit; #22 note: the service identifies its project root and pid",
+      "input_key": "socket_ownership",
+      "mission_id": "01M50D10J2DWR9J76F7APJQJDP",
+      "mission_slug": "kitty-core-01M50D10",
+      "opened_by": "claude",
+      "options": [
+        "Deterministic squatter test (holds its answer until the fake exits or 200 ms); on Linux check the listening socket inode against the child process group fds before Ready (std only, mismatch = start failure); elsewhere document the limit and add a #22 note",
+        "Rely on the biased select only",
+        "Other"
+      ],
+      "origin_flow": "plan",
+      "other_answer": false,
+      "question": "FS-06: how is a squatter on the chosen port kept from passing readiness?",
+      "rationale": "Orchestrator decision 2026-10-16 (plan-squad fix round 2), relayed by the coordinator",
+      "resolved_at": "2026-10-16T10:59:58.535545Z",
+      "resolved_by": "coordinator",
+      "slot_key": "plan.supervision.socket-ownership",
+      "status": "resolved",
+      "step_id": null,
+      "summary_json": null
+    },
+    {
+      "created_at": "2026-10-16T10:59:59.773174Z",
+      "decision_id": "01M525WSMXB8VDB63XNDMTG80A",
+      "final_answer": "<project-root>/.kitty-stub/fixtures if present, else the compiled-in contracts/fixtures; A-07 updated",
+      "input_key": "stub_fixtures_default",
+      "mission_id": "01M50D10J2DWR9J76F7APJQJDP",
+      "mission_slug": "kitty-core-01M50D10",
+      "opened_by": "claude",
+      "options": [
+        "<project-root>/.kitty-stub/fixtures if present, else the compiled-in contracts/fixtures; update A-07",
+        "<project-root>/fixtures",
+        "Other"
+      ],
+      "origin_flow": "plan",
+      "other_answer": false,
+      "question": "FS-10: where does the stub look for fixtures when only --mission-status.project-root is given?",
+      "rationale": "Orchestrator decision 2026-10-16 (plan-squad fix round 2), relayed by the coordinator",
+      "resolved_at": "2026-10-16T11:00:00.991762Z",
+      "resolved_by": "coordinator",
+      "slot_key": "plan.stub.fixtures-default",
+      "status": "resolved",
+      "step_id": null,
+      "summary_json": null
     }
   ],
   "mission_id": "01M50D10J2DWR9J76F7APJQJDP",

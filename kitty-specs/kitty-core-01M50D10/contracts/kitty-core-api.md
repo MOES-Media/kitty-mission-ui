@@ -16,6 +16,7 @@ pub struct CoreConfig {
     pub clock: Arc<dyn Clock>,                  // MonotonicClock (Instant); ManualClock in tests
     pub sleeper: Arc<dyn Sleeper>,              // TokioSleeper; RecordingSleeper in tests (backoff only)
     pub runtime: Option<tokio::runtime::Handle>,// None → Handle::try_current() (R4-02)
+    pub env_passthrough: Vec<OsString>,         // extra variable names passed to the child; empty by default (FS-11)
 }
 
 pub struct Subscription { pub initial: CoreStatus, pub receiver: broadcast::Receiver<CoreStatus> }
@@ -65,7 +66,7 @@ pub fn connection_state_hint(status: &CoreStatus) -> Option<&'static str>;  // t
   - `forward` sends exactly `Host` and the caller's `Accept`.
 - **Launch** (A-06, R3-02, R3-03).
   - The argv is exactly `--mission-status.project-root=<canonical root>` and `--mission-status.port=<n>`.
-  - The environment is cleared down to `PATH`, `HOME`, `LANG`, `LC_*` and `TMPDIR`.
+  - The environment is cleared down to `PATH`, `HOME`, `LANG`, `LC_*` and `TMPDIR`, plus platform defaults behind `cfg` (`SystemRoot` on Windows) and the names in `env_passthrough` (FS-11).
   - `stdin` is null, and the working directory is the canonical root.
   - The child runs in its own process group.
 - **Bounded memory** (NFR-004).
@@ -76,6 +77,8 @@ pub fn connection_state_hint(status: &CoreStatus) -> Option<&'static str>;  // t
   - Transition channel: 64.
 - **Thread-safety** (R2-13). `Core: Send + Sync + Clone`, and `ChangeStream: Send + 'static`.
 - **One child process group per `Core`.** Two hosts on one project start two groups.
+- **`forward()` deadline (FS-08).** `read_timeout` bounds connecting and the response headers only. The response body belongs to the caller: kitty-core applies no cap and no deadline to it, so #21 can stream events through. #21 must apply its own limits.
+- **Generations** (FS-12). Supervisor generations start at 1; generation 0 is reserved for `ServiceEndpoint::loopback()`.
 - **No liveness probe** (R4-09). A hung service whose process stays alive stays `Ready` in #19. A liveness probe goes on #22's notes.
 
 **Leaking types** (R4-11). The surface exposes `http` types (`HeaderValue`, `HeaderMap`, `Response`), `hyper::body::Incoming` and `tokio` types (`broadcast::Receiver`, `runtime::Handle`). A host shares the workspace pins of `http`, `hyper` and `tokio`, and a change to those pins is a change to this surface.
@@ -86,7 +89,7 @@ Decision `01M50M47K1PNKP9KHCGGDBQZ0A` and amendment A-07 apply here.
 
 - **The stand-in.** `kitty-stub` accepts the upstream launch options (`--mission-status.port=<n>`, `--mission-status.project-root=<dir>`). Pointed at by discovery, it behaves as a service that `Core` can supervise:
   - it serves the pinned bundle, so the digest matches;
-  - it reads `<project-root>/fixtures` when that directory exists, and otherwise the workspace fixtures.
+  - it reads `<project-root>/.kitty-stub/fixtures` when that directory exists, and otherwise the workspace fixtures (FS-10).
 - **Manual use.** Build it with `cargo build -p kitty-stub`. Then set the host's configured service path, or `KITTY_MISSION_STATUS_SERVICE`, to the absolute path of `target/<profile>/kitty-stub`.
 - **Automated tests.** Cargo gives a test `CARGO_BIN_EXE_kitty-stub` only inside the `kitty-stub` package. The proven pattern is `crates/kitty-stub/tests/supervised.rs`, which dev-depends on kitty-core and passes a `Discovery` that returns `env!("CARGO_BIN_EXE_kitty-stub")`.
   - A host can follow the same pattern for the parts of its adapter that are a library.
@@ -114,5 +117,5 @@ Decision `01M50M47K1PNKP9KHCGGDBQZ0A` and amendment A-07 apply here.
 - **Launch index.** The fake picks `launches[min(n, len - 1)]`, where `n` is read from and incremented in `<root>/kitty-fake-service.count`. This is safe because the supervisor never runs two children at once.
 - **`crashAfterMs`** counts from the first `openapi.yaml` GET served.
 - **`fork-child`** starts a grandchild that writes its pid to `<root>/grandchild.pid`.
-- **`host`** runs `kitty_core::Core` on its own runtime, supervising another fake (whose grandchild writes its pid), then calls `std::process::exit` without `stop()`.
+- **`host`** runs `kitty_core::Core` on its own runtime, with its own project root, supervising a fake in `ready` mode. That supervised service (the host's direct child) writes its own pid to `<its root>/service.pid`. The host then calls `std::process::exit` without `stop()` (FS-15).
 - **Platform.** `fork-child`, `host` and `ignore-term` are `cfg(unix)`. The parent-death assertion is `cfg(target_os = "linux")`.

@@ -337,7 +337,7 @@ Each amendment is from an operator ruling, recorded as a Decision Moment, or fro
 - **A-02 — FR-020: the reachable restart policy (operator, R2-02; decision `01M50M407F65T4SQA9TNWQYCQT`).**
   - After a crash, the backoff is 0.5 s, 1 s, 2 s, then 4 s.
   - The 5th crash within 5 minutes gives up: the state is `stopped`, degraded service-missing (`crashing`).
-  - The backoff restarts at 0.5 s after 60 s of uninterrupted `ready`.
+  - Two counters are kept apart (fix round 2, FS-03). The **crash window** (crash timestamps within 5 minutes) decides only the give-up. The **consecutive-crash index** selects the delay, and resets to 0.5 s after 60 s of uninterrupted `ready`. That reset does not clear the crash window.
   - The 30 s cap is removed, because the give-up rule makes it unreachable.
   - The policy reads a monotonic clock (`Instant`) in production.
 - **A-03 — FR-018: start timeout (operator, R2-02; decision `01M50M407F65T4SQA9TNWQYCQT`).** The start timeout (10 s by default) is one budget per start. It covers every busy-port attempt of that start (FR-019).
@@ -356,7 +356,14 @@ Each amendment is from an operator ruling, recorded as a Decision Moment, or fro
   The project root is canonicalised before launch. A root that cannot be canonicalised is refused as service-missing (`cannot-execute`), with the OS error.
 - **A-07 — FR-014 and FR-015: the stub as a supervised stand-in (operator, R4-01, decision `01M50M47K1PNKP9KHCGGDBQZ0A`; R4-07).**
   - `kitty-stub` also accepts `--mission-status.port=<n>` and `--mission-status.project-root=<dir>`.
-  - Without `--fixtures`, it reads `<project-root>/fixtures` when that directory exists, and otherwise the workspace's `contracts/fixtures`.
+  - Without `--fixtures`, it reads `<project-root>/.kitty-stub/fixtures` when that directory exists, and otherwise the workspace's `contracts/fixtures`, compiled in (fix round 2, FS-10, decision `01M525WSMXB8VDB63XNDMTG80A`).
   - A missing *default* contract document makes the route answer 404 `no-openapi-document`. Only an unreadable *explicit* `--openapi <file>` is exit 1.
 - **A-08 — FR-009: the 404 stream refusal (R1-01).** Neither `examples.json` nor `fixtures.json` holds a `Problem` entry, and C-002 freezes both files. The 404 `Problem` refusal is therefore selected on an in-process stub built from in-memory fixture values that add one `Problem` example. A raw-TCP fake covers the same case a second time.
 - **A-09 — NFR-004: contract document cap (R3-08).** The fetched contract document is capped at 4 MiB. A larger one is contract-mismatch.
+
+### 2026-10-16: plan-squad fix round 2 (fresh sweep)
+
+- **A-10 — FR-018 and FR-019: a 503 while starting (orchestrator decision `01M525WMWERXEBRY05X78Q6P3F`, FS-05).**
+  - Before the first final answer, a 503 from `/api/v1/openapi.yaml` means "not yet ready", and polling continues within the start budget (A-03).
+  - A start budget spent on 503s counts as a start failure: `crashed`, then the restart policy.
+  - The first answer that is not a 503 (or a refused or reset connection) is final.

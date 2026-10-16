@@ -125,3 +125,76 @@ Dispositions follow the procedure's contract: accepted, changed, or deferred_wit
 - **Timeouts.** Contract `max(21, 10 × T + 2)`; rust `4 × T + 2`, both from the PR's first CI run.
 - **Crates.** No new crates beyond the 14 in research R-07. The mutual dev-dependency and dropping `tokio/test-util` add none.
 - **Still open for the operator.** One item: the local `main` ref is stale, which the coordinator may want to fast-forward. The probes no longer depend on it.
+
+## Fix round 2 (fresh sweep)
+
+**Input.** The fresh sweep of `6127088` returned NOT READY:
+- 64 of 68 round-1 folds were verified;
+- 4 folds were partial;
+- 4 texts were stale;
+- 17 items were new (FS-01 to FS-17).
+
+The coordinator relayed three orchestrator decisions, recorded as decisions resolved by the coordinator:
+
+| Decision | Item |
+|---|---|
+| `01M525WMWERXEBRY05X78Q6P3F` | FS-05 |
+| `01M525WQ8AFYF4PZAF4ACKSBXJ` | FS-06 |
+| `01M525WSMXB8VDB63XNDMTG80A` | FS-10 |
+
+**Verification.** Before folding, the plan author re-checked these claims against the files:
+
+- **FS-02.** `contracts/spec-kitty/mission-status/schemas/StreamRefusal.yaml` lists `examples: - $ref: ../examples/StreamRefusal.negative.yaml` (and the other four), so the dereferenced bundle inlines the example files. `scripts/contract/check.test.mjs` asserts exact token lists in two tests that touch that file:
+  - lines 143–146, which delete it;
+  - lines 907–918, which edit it and index `messagesOf(r)[1]`.
+
+  The anchor-file and floor guards (lines 664–690) and the three-case JSON loop (lines 880–895) assert by filter, or touch only generated JSON.
+- **FS-04.** In #17's `client-port.md` ("Connection state", SO-DES-003), `connecting` is the state "before first contact", and a real adapter "never returns to `connecting`". A crash before the first `Ready` is still before first contact.
+- **FS-09.** `contracts/fixtures/mission-status.changes.json` has delays of 0, 250, 250, 250 and 250 ms (about 1 s in total). The stub's default heartbeat is 30 s, so an idle limit below that gap is safe only while the test stops reading at the last scripted event.
+- **FS-12.** Round 1's data-model gave both the initial supervisor status and `ServiceEndpoint::loopback()` generation 0. That is a collision.
+- **FS-13.** The stub's heartbeat is `: heartbeat\n\n`. It ends with a blank line, an event boundary that dispatches nothing, so round 1's "since the last dispatched frame" cap would trip on long heartbeat-only stretches.
+- **Stale texts.** `research.md` had all four: R-08 "there is no cycle", R-07 S-1 "the only path dependency is `kitty-stub`", R-09 "between 10 and 400 ms", and R-14 `forward(endpoint, …)`.
+
+| Id | Item | Verdict | Disposition |
+|---|---|---|---|
+| R2-06 (partial) | No case for several `id:` lines in one frame | CONFIRMED | accepted: the last one wins, with a test (IC-05; data-model) |
+| R3-08 (partial) | No test that a 4 MiB + 1 contract document is refused | CONFIRMED | accepted: 4 MiB + 1 is refused, and exactly 4 MiB is parsed (IC-06) |
+| R5-09 (partial) | Default-value tests not placed in IC-08 | CONFIRMED | accepted: `Timings::default()` and `RestartPolicy::default()` tests (IC-08, "Unit tests") |
+| R5-10 (partial) | Ring-buffer test not placed in IC-08 | CONFIRMED | accepted: 100 KiB written in uneven chunks leaves the newest 64 KiB (IC-08) |
+| stale R-08 | "There is no cycle" | CONFIRMED | changed: a dev-only cycle, with no normal-dependency cycle, verified (research R-08) |
+| stale R-07 S-1 | "The only path dependency" | CONFIRMED | changed: two dev-dependency path edges (research R-07) |
+| stale R-09 | "10–400 ms" conflicts with the 2 s and 1 s test values | CONFIRMED | changed: points to the IC-08 `Timings` table and names which tests actually wait (research R-09) |
+| stale R-14 | The `forward` signature differs from the API | CONFIRMED | changed: the exact `ContractClient::forward` signature, with its deadline scope (research R-14) |
+| FS-01 | `Cargo.lock` gains dev-dependency edges outside the 14-entry comparison | CONFIRMED | accepted: IC-04 and IC-09 request lock changes; the expected change is "14 entries plus the two dev-dependency edges", and the comparison excludes the edges (IC-01; ownership table) |
+| FS-02 | A dereference failure masks the other JSON checks; contract tests change | CONFIRMED (schema `$ref`s, test lines above) | accepted: the bundle has its own try/catch, giving one bundle-specific problem; `check.test.mjs` is added to IC-02's surfaces; the changed tests are named; NFR-008 covers the stub tests only (IC-02) |
+| FS-03 | One counter conflates the delay index with the give-up window | CONFIRMED | changed: a crash window (give-up only) and a consecutive-crash index (delay; reset after 60 s of `Ready`, which does not clear the window). Policy test: crash, 70 s of `Ready`, crash gives 0.5 s. A-02 updated (IC-08; data-model) |
+| FS-04 | A crash before the first `Ready` mapped to `reconnecting` | CONFIRMED (SO-DES-003) | changed: `left_initial_start` becomes true only at the first `Ready` or `Stopped`; `Crashed` and `Backoff` before it map to `connecting`; hint table and test updated (data-model; IC-09) |
+| FS-05 | Undefined 503 semantics while starting | CONFIRMED | accepted (orchestrator, `01M525WMWERXEBRY05X78Q6P3F`): spec A-10, data-model rows, IC-08 |
+| FS-06 | A squatter can still pass readiness, and the squatter test can be flaky | CONFIRMED | accepted (orchestrator, `01M525WQ8AFYF4PZAF4ACKSBXJ`): a deterministic squatter; a Linux `/proc` inode check before `Ready` (std only; a mismatch is a start failure); the limit documented elsewhere; a #22 note (IC-08; data-model) |
+| FS-07 | Grandchildren survive when the leader exits first, because signals stop at the reap | CONFIRMED, with a qualification recorded: "an empty group gives ESRCH" holds unless the pid is reused in the window between the reap and the call | accepted: exactly one `kill(-pgid, SIGKILL)` immediately after the reap, with its safety argument and the residual risk written down; `stop()` probes with `kill(-pgid, 0)`; a leader-exits, grandchild-lives test (IC-08; data-model invariant) |
+| FS-08 | `forward()`'s deadline would cut #21's streams | CONFIRMED | accepted: the deadline covers connect and headers only; the body is the caller's, with no cap and no deadline; documented in the Guarantees; tested with a stream that outlives `read_timeout` (IC-04; API) |
+| FS-09 | `supervised.rs` idle limit too short; the stub could print a local path | CONFIRMED (delays checked) | accepted: idle limit at least 2 s; the stub never prints the resolved fixtures path (IC-03, IC-09; stub-http-delta) |
+| FS-10 | `<project-root>/fixtures` could collide with a real project's directory | CONFIRMED | accepted (orchestrator, `01M525WSMXB8VDB63XNDMTG80A`): `<project-root>/.kitty-stub/fixtures`, else the compiled-in `contracts/fixtures`; A-07 updated (stub-http-delta; data-model; API; quickstart) |
+| FS-11 | The environment allowlist cannot be extended and breaks on Windows | CONFIRMED | accepted: `CoreConfig.env_passthrough` (empty by default) and per-platform defaults behind `cfg` (`SystemRoot`); a `JAVA_HOME` note for #22 (IC-08; API) |
+| FS-12 | Generation 0 collides with `loopback()`; retries are not published | CONFIRMED | accepted: every launch publishes a `Starting` with the new generation; supervisor generations start at 1 (IC-08; data-model; API) |
+| FS-13 | The SSE cap trips on long heartbeat-only stretches | CONFIRMED | changed: the cap counts from the last event boundary (a blank line); a many-heartbeats test (IC-05; data-model) |
+| FS-14 | Terminal-outcome bodies are uncapped and have no deadline | CONFIRMED | accepted: 16 MiB cap and `read_timeout`, with a never-ending 409 body test (IC-05; data-model) |
+| FS-15 | Host-mode pid file written by the wrong process | CONFIRMED | changed: the supervised service (the host's direct child, in `ready` mode) writes its own pid; the inner fake has its own project root (IC-08; API) |
+| FS-16 | The quickstart's SC-004 probe has no fetch and no `ci.yml` checks | CONFIRMED | accepted: `git fetch origin main`, plus the job-list and `matrix.gate` diffs (quickstart; IC-10) |
+| FS-17 | `supervised.rs` cannot use kitty-core's `tests/common` panic hook | CONFIRMED | accepted: stated in IC-09 as a deliberate duplicate of about 15 lines |
+
+### Round 2 tally
+
+25 items:
+
+| Verdict | Count |
+|---|---|
+| CONFIRMED | 25 (FS-07 with a recorded qualification) |
+| NOTED | 0 |
+| REFUTED | 0 |
+
+**After the round.**
+- **Plants and crates.** Unchanged: 1 new contract plant, and the 14 lock entries plus the two dev-dependency edges.
+- **Spec.** A-02 and A-07 updated; A-10 added.
+- **Decisions.** `decision verify` is clean.
+

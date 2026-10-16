@@ -14,7 +14,7 @@ kitty-stub [--fixtures <dir>] [--port <n> | --mission-status.port=<n>] [--missio
 |---|---|---|
 | `--fixtures` | see "Fixtures directory" | Directory holding the four `mission-status.*.json` files and the bundle. |
 | `--mission-status.port=<n>` | — | Same as `--port`; the upstream launch form. Giving both is a usage error (exit 2). |
-| `--mission-status.project-root=<dir>` | — | Accepted so `Core` can supervise the stub. It is used only to find `<dir>/fixtures`, and is never read otherwise. |
+| `--mission-status.project-root=<dir>` | — | Accepted so `Core` can supervise the stub. It is used only to find `<dir>/.kitty-stub/fixtures`, and is never read otherwise. |
 | `--openapi` | `<fixtures>/mission-status.openapi.json` | The document served at `GET /api/v1/openapi.yaml`. A **missing default** serves 404 `no-openapi-document`. An **explicit** file that cannot be read is exit 1 (R4-07). |
 | `--select` | none | Serve this `examples.json` entry on the operation when the request carries no selection header. |
 | `--select-fixture` | none | Serve this `fixtures.json` entry on the operation when the request carries no selection header. |
@@ -24,10 +24,10 @@ kitty-stub [--fixtures <dir>] [--port <n> | --mission-status.port=<n>] [--missio
 The stub takes the first of these that applies:
 
 1. `--fixtures` when it is given.
-2. Otherwise `<project-root>/fixtures`, when `--mission-status.project-root` is given and that path is a directory.
+2. Otherwise `<project-root>/.kitty-stub/fixtures`, when `--mission-status.project-root` is given and that path is a directory (FS-10).
 3. Otherwise the workspace's `contracts/fixtures`, as a compile-time path: `concat!(env!("CARGO_MANIFEST_DIR"), "/../../contracts/fixtures")`.
 
-The stub is a test stand-in run from this workspace, so a path relative to the working directory would break whenever a host starts it from elsewhere. The compile-time path ends up in the built binary only, never in a tracked file.
+The stub is a test stand-in run from this workspace, so a path relative to the working directory would break whenever a host starts it from elsewhere. The compile-time path ends up in the built binary only, never in a tracked file. The stub never prints the resolved fixtures path: `listening` names only the address, and a load error names only the file's base name (FS-09).
 
 **Load order** (pinned):
 1. arguments;

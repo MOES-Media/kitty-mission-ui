@@ -8,7 +8,7 @@ None of them appears in the TypeScript port. Adapters map them onto it (C-002, C
 
 | Type | Fields | Invariants |
 |---|---|---|
-| `ServiceEndpoint` | `port: u16`, `generation: u64` | Always `127.0.0.1:<port>`. Built only by kitty-core: from the supervisor (Ready) or `ServiceEndpoint::loopback(port)` (tests and lower-level use, `generation = 0`). `TryFrom<SocketAddr>` refuses any IP other than `127.0.0.1`, and refuses port 0, before any I/O (FR-005). An endpoint from the supervisor is valid only until the next status transition (R3-07). |
+| `ServiceEndpoint` | `port: u16`, `generation: u64` | Always `127.0.0.1:<port>`. Built only by kitty-core: from the supervisor (Ready; generation ≥ 1) or `ServiceEndpoint::loopback(port)` (tests and lower-level use; generation 0, which is reserved for it, FS-12). `TryFrom<SocketAddr>` refuses any IP other than `127.0.0.1`, and refuses port 0, before any I/O (FR-005). An endpoint from the supervisor is valid only until the next status transition (R3-07). |
 | `Digest` | 32 bytes; shown as 64 lowercase hex characters | SHA-256 of the canonical form (`contracts/bundled-document.md`). |
 | `ContractPin` | `document: Cow<'static, [u8]>`, plus the digest computed once | `ContractPin::embedded()` is the generated bundle. Tests may build `ContractPin::from_document(..)` (R4-08). |
 | `RouteEntry` | `operation_id`, `path_template`, `kind: Read \| Stream`, `refusals: BTreeMap<Schema, Vec<u16>>` | Parsed once from the embedded `routes.json`. |
@@ -59,16 +59,18 @@ UnavailableReason = Status | ConnectRefused | Dropped | Idle { limit } | Malform
   - So is a 200 with no `content-type`, or one other than `text/event-stream`.
   - A clean end of stream is `Dropped`.
 - **Idle.** Every byte resets the idle timer, heartbeats included.
-- **FrameTooLarge.** It counts every byte since the last dispatched frame, including a pending line with no newline and comment lines.
+- **FrameTooLarge.** It counts every byte since the last event boundary (a blank line, whether or not it dispatched an event), including a pending line with no newline and comment lines (FS-13). Many heartbeats never trip it.
 - **MalformedFrame.** A line that is not valid UTF-8. The checks run in this order: the cap, then UTF-8, then field parsing (R2-06).
 - **MalformedData.** Joined `data` that is not one JSON value.
 - **Field handling, as in the SSE specification.**
   - A bare `data` line (no colon) adds empty data.
   - An empty `id:` clears the cursor.
+  - Several `id:` lines in one frame: the last one wins.
   - An `id` containing NUL is ignored.
   - `retry:` and comments are never relayed.
   - A leading BOM is honoured only at the start of the stream.
 - **No cursor store.** kitty-core keeps no cursor.
+- **Terminal bodies (FS-14).** The body of `Refused` and of `Unavailable(Status)` is read under the 16 MiB cap and `read_timeout`.
 
 ## Contract check
 
@@ -111,11 +113,13 @@ DegradedReason   = None | ServiceMissing(ServiceMissing) | ContractMismatch(Mism
 CoreStatus       { state, degraded, generation: u64, attempt: u32, left_initial_start: bool }
 Timings          { poll_interval: 50 ms, start_timeout: 10 s (per start), stop_grace: 5 s, read_timeout: 30 s, idle_limit: 90 s }
 RestartPolicy    { delays: [0.5 s, 1 s, 2 s, 4 s], give_up: 5th crash within 300 s, reset_after_ready: 60 s }
+PolicyState      { window: VecDeque<Instant>,   // crash timestamps within 300 s: give-up only (FS-03)
+                   index: usize }               // consecutive crashes: selects the delay; 0 after 60 s of Ready; never clears the window
 ```
 
-- **Initial status.** `Starting`, `generation 0`, degraded `None`, `attempt 0`, `left_initial_start = false` (R5-02).
-- **`left_initial_start`** becomes `true` at the first transition to `Ready`, `Crashed` or `Stopped`, and never goes back.
-- **`generation`** increments at each launch.
+- **Initial status.** `Starting`, `generation 1`, degraded `None`, `attempt 0`, `left_initial_start = false` (R5-02, FS-12).
+- **`left_initial_start`** becomes `true` at the first `Ready` or the first `Stopped` only, and never goes back (FS-04). `Crashed` and `Backoff` before the first `Ready` leave it `false`.
+- **`generation`** starts at 1 and increments at each launch. Every launch, including a busy-port retry and a restart after backoff, publishes a `Starting` carrying the new generation (FS-12).
 
 ### State transitions
 
@@ -126,21 +130,24 @@ Every arrow is one `broadcast` message, in order. A send with no receivers is ig
 | (initial) | discovery found a binary and the root canonicalised | `Starting` | None |
 | (initial) | discovery `NotFound` | `Stopped` | ServiceMissing(not-found) |
 | `Starting` | spawn fails, or the root cannot be canonicalised | `Stopped` | ServiceMissing(cannot-execute, OS error) |
-| `Starting` | child exits before ready (wins a biased select), attempt < 3, budget left | `Starting` (port not yet tried, attempt + 1, generation + 1) | None |
-| `Starting` | 200 + digest equal + `try_wait() == None` | `Ready { endpoint }` | None |
+| `Starting` | child exits before ready (wins a biased select), attempt < 3, budget left | `Starting` (port not yet tried, attempt + 1, generation + 1; published) | None |
+| `Starting` | 503 before the first final answer, budget left | `Starting` (keep polling; no message) (A-10) | None |
+| `Starting` | start budget spent while every answer was 503 | `Crashed` (after the full stop sequence; a start failure) (A-10) | None |
+| `Starting` | Linux: the listening socket's inode is not one of the child group's fds | `Crashed` (after the full stop sequence; a start failure) (FS-06) | None |
+| `Starting` | 200 + digest equal + `try_wait() == None` (+ the Linux socket check) | `Ready { endpoint }` | None |
 | `Starting` | first final answer not 200, unparseable, or unequal digest | `Stopped` (group stopped) | ContractMismatch |
 | `Starting` | start budget spent, or 3 exits before ready | `Crashed` (after the full stop sequence) | None |
 | `Ready` | child exits | `Crashed` | None |
-| `Crashed` | policy: crash *n* within the window, *n* ≤ 4 | `Backoff { delay = delays[n-1] }` | None |
-| `Crashed` | policy: the 5th crash within 300 s | `Stopped` | ServiceMissing(crashing, last exit status or signal) |
-| `Backoff` | delay elapsed | `Starting` | None |
+| `Crashed` | policy: fewer than 5 crashes in the window | `Backoff { delay = delays[min(index, 3)] }`, then index + 1 | None |
+| `Crashed` | policy: the 5th crash in the window (300 s) | `Stopped` | ServiceMissing(crashing, last exit status or signal) |
+| `Backoff` | delay elapsed | `Starting` (generation + 1; published) | None |
 | any but `Stopped` | `stop()` | `Stopped` (SIGTERM to the group, grace, SIGKILL to the group) | unchanged |
 | any | last host handle dropped | (task aborted; SIGKILL to the group; no further message) | — |
 | `Stopped` | `retry()` | `Starting` (discovery again; crash history cleared) | None |
 
 **Invariants.**
 - A supervisor owns at most one child process group, and only one it started.
-- Only the supervisor task signals, and only while `child.id()` is `Some` (R2-09).
+- Only the supervisor task signals, and only while `child.id()` is `Some` (R2-09). There is one exception: a single `kill(-pgid, SIGKILL)` immediately after the leader is reaped, to reach surviving members (FS-07).
 - No process of the group outlives `stop()` or the drop of the last handle.
 - Captured output is at most 64 KiB, newest kept. The most recent child's output is kept after it exits.
 
@@ -150,10 +157,10 @@ Every arrow is one `broadcast` message, in order. A send with no receivers is ig
 
 | `state` | `left_initial_start` | `degraded` | Hint |
 |---|---|---|---|
-| `Starting` | false | None | `connecting` |
+| `Starting`, `Crashed`, `Backoff` | false (before the first `Ready` or `Stopped`) | None | `connecting` (FS-04, SO-DES-003) |
 | `Starting` | true | None | `reconnecting` (including after a host `retry()`: the port never returns to `connecting`) |
 | `Ready` | any | None | `connected` |
-| `Crashed`, `Backoff` | true (always) | None | `reconnecting` |
+| `Crashed`, `Backoff` | true | None | `reconnecting` |
 | `Stopped` | true | ServiceMissing(any) | `degraded: service-missing` |
 | `Stopped` | true | ContractMismatch | `degraded: contract-mismatch` |
 | `Stopped` | true | None (host stopped) | `None`, because the adapter is closing |
@@ -167,4 +174,4 @@ Every arrow is one `broadcast` message, in order. A send with no receivers is ig
 |---|---|
 | `Fixtures::with_openapi_document(Bytes)` | The document served at `GET /api/v1/openapi.yaml`, byte for byte, as `application/yaml`. When it is absent, the route answers 404 `{"code":"no-openapi-document"}`. |
 | `Fixtures::with_selections(Selections) -> Result` | `operationId → Example(<Schema.name>) \| Fixture(<name>)`. It is checked by the header rule. |
-| CLI | `--openapi <file>` (missing default → 404; unreadable explicit file → exit 1). `--select` and `--select-fixture`. `--mission-status.port=<n>` and `--mission-status.project-root=<dir>`. The fixtures directory is `--fixtures`, else `<project-root>/fixtures`, else the compile-time workspace `contracts/fixtures`. Load order: arguments, fixtures, selections, document, `listening`. |
+| CLI | `--openapi <file>` (missing default → 404; unreadable explicit file → exit 1). `--select` and `--select-fixture`. `--mission-status.port=<n>` and `--mission-status.project-root=<dir>`. The fixtures directory is `--fixtures`, else `<project-root>/.kitty-stub/fixtures`, else the compile-time workspace `contracts/fixtures` (FS-10). Load order: arguments, fixtures, selections, document, `listening`. |
