@@ -1,17 +1,17 @@
 {
-  "event_count": 109,
-  "last_event_id": "01M535E318KVG23GDDV2Q5FQY8",
-  "materialized_at": "2026-10-16T20:11:12.296406+00:00",
+  "event_count": 110,
+  "last_event_id": "01M535E3N0BSXABWHVRE5B3DH1",
+  "materialized_at": "2026-10-16T20:11:12.928399+00:00",
   "mission_number": "5",
   "mission_slug": "mission-shell-01M50D2J",
   "mission_type": "software-dev",
   "schema_version": 2,
   "summary": {
-    "approved": 1,
+    "approved": 0,
     "blocked": 0,
     "canceled": 0,
     "claimed": 0,
-    "done": 9,
+    "done": 10,
     "for_review": 0,
     "in_progress": 0,
     "in_review": 0,
@@ -328,15 +328,15 @@
       }
     },
     "WP10": {
-      "actor": "claude",
+      "actor": "merge",
       "agent": "claude",
       "agent_profile": "__resolved_profile_absent__",
       "agent_profile_version": "__resolved_profile_version_absent__",
       "force_count": 0,
       "implementer_of_record": "claude",
-      "lane": "approved",
-      "last_event_id": "01M5350VTM5W9RC9FQ7S8SCZNX",
-      "last_transition_at": "2026-10-16T20:03:58.932468+00:00",
+      "lane": "done",
+      "last_event_id": "01M535E3N0BSXABWHVRE5B3DH1",
+      "last_transition_at": "2026-10-16T20:11:12.928399+00:00",
       "model": "__resolved_model_absent__",
       "notes": [
         "Review passed: ci.yml diff is the one matrix timeout line (30 to 32, matches the plan projection and DoD; visual held at 60; job timeout-minutes frozen per C-003); reviewer re-ran T049 green, the swapped-ref negative control (exit 1, lowered timeout and all seven new plants dropped) and the job timeout-minutes mutation (named preflight.timeout-minutes); docs match src/shell.ts, the contracts and the CP-1 amendments; 341 stories confirmed on a fresh build; #17 README sections unchanged; no shell PNG touched after WP09; hygiene, terminology, test:scripts and lint green. Carry to the landing fold: the 32 is described as from local measurements but comes from the plan's CI projection (local proxy gives 30)."
