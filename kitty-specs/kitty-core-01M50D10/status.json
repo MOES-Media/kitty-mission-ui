@@ -209,6 +209,9 @@
       "last_event_id": "01M52EKB4M0B1BH3VJJG3KH6X8",
       "last_transition_at": "2026-10-16T13:32:07.188439+00:00",
       "model": "__resolved_model_absent__",
+      "notes": [
+        "Discovery trait, DefaultDiscovery, EnvSnapshot; 16 tests; Rust, contract, hygiene gates green; 6 reverts each fail named tests"
+      ],
       "provider": "__resolved_provider_absent__",
       "role": "implementer",
       "shell_pid": 4072257,
