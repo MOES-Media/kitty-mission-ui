@@ -97,7 +97,8 @@
       "model": "__resolved_model_absent__",
       "notes": [
         "Ready for review: stub extensions in dce6341; Rust, contract, hygiene gates green; #17 stub tests byte-identical",
-        "Review round 1 fixed: deadlines, kill-on-drop, scratch guards, unreadable-bundle test; gates green"
+        "Review round 1 fixed: deadlines, kill-on-drop, scratch guards, unreadable-bundle test; gates green",
+        "Cycle 2 review passed (dcb5944): feedback-1 issues resolved. Both-ports revert now fails by name in 5.01s (rc=101, no hang); project-copy revert fails with no orphan stub; scratch dirs removed on failure; unreadable-default-bundle test passes and fails on revert. src/ diff since dce6341 is the main.rs doc line only; #17 stub tests byte-identical. Rust gate under heavy exit 0; pnpm hygiene 0 findings; no kitty-stub left. Files touched: WP03-owned only."
       ],
       "provider": "__resolved_provider_absent__",
       "review": null,
