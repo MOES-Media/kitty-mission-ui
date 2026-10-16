@@ -28,6 +28,9 @@ fn held() -> MutexGuard<'static, Vec<(PathBuf, File)>> {
     HELD.lock().unwrap_or_else(|p| p.into_inner())
 }
 
+/// The next offset into the port range, shared by every way of claiming so that none hands out a port twice.
+static NEXT: AtomicU32 = AtomicU32::new(0);
+
 /// The claim directory, checked to be ours so that a foreign one fails by name instead of looping.
 fn claim_dir() -> PathBuf {
     use std::os::unix::fs::MetadataExt as _;
@@ -121,7 +124,6 @@ fn try_claim(claims: &std::path::Path, port: u16) -> bool {
 /// The caller keeps the listener for as long as the port must stay taken (a squatter is built from it), so there is
 /// no gap between "verified free" and "bound".
 pub fn claim_listener(exclude: &[u16]) -> (u16, TcpListener) {
-    static NEXT: AtomicU32 = AtomicU32::new(0);
     let claims = claim_dir();
     let start = std::process::id().wrapping_mul(2_654_435_761) % 10_000;
     // One full sweep of the range is the most that is ever worth trying.
@@ -139,9 +141,47 @@ pub fn claim_listener(exclude: &[u16]) -> (u16, TcpListener) {
     panic!("no free test port in 20000..30000 after a full sweep");
 }
 
-/// Claims a free port of 20000..30000 that is not in `exclude`, and returns it (the verifying listener is dropped).
+/// Whether some socket listens on `port` (Linux: `/proc/net/tcp` and `tcp6`, state `0A`). Reading a table opens no
+/// socket, so nothing can leak into a process that is forked at the same moment.
+#[cfg(target_os = "linux")]
+fn something_listens_on(port: u16) -> bool {
+    let wanted = format!(":{port:04X}");
+    ["/proc/net/tcp", "/proc/net/tcp6"].iter().any(|table| {
+        std::fs::read_to_string(table).is_ok_and(|text| {
+            text.lines().skip(1).any(|line| {
+                let mut fields = line.split_whitespace().skip(1);
+                let local = fields.next().unwrap_or("");
+                let state = fields.nth(1).unwrap_or("");
+                state == "0A" && local.ends_with(&wanted)
+            })
+        })
+    })
+}
+
+#[cfg(not(target_os = "linux"))]
+fn something_listens_on(port: u16) -> bool {
+    TcpListener::bind(("127.0.0.1", port)).is_err()
+}
+
+/// Claims a free port of 20000..30000 that is not in `exclude`, and returns it. The claim is the lock; freedom is
+/// read from the kernel's table instead of by binding and dropping a probe socket. A probe socket that is open while
+/// another thread forks is copied into the child and stays bound until the child execs, so under load the service
+/// started right afterwards found its "verified free" port busy (TEST-001).
 pub fn unique_port(exclude: &[u16]) -> u16 {
-    claim_listener(exclude).0
+    let claims = claim_dir();
+    let start = std::process::id().wrapping_mul(2_654_435_761) % 10_000;
+    for _ in 0..10_000 {
+        let n = NEXT.fetch_add(1, Ordering::SeqCst);
+        let port = (20_000 + (start + n) % 10_000) as u16;
+        if exclude.contains(&port) || !try_claim(&claims, port) {
+            continue;
+        }
+        if !something_listens_on(port) {
+            return port;
+        }
+        release_port(port);
+    }
+    panic!("no free test port in 20000..30000 after a full sweep");
 }
 
 /// A [`PortPicker`] over [`unique_port`] that remembers what it handed out, so its owner can release the claims.

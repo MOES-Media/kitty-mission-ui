@@ -262,6 +262,16 @@ fn write_scenario_with(root: &Path, launches: &[&str], extra: &[(&str, Value)]) 
         .expect("write the scenario");
 }
 
+/// A `portModes` scenario value: these ports get a service that is alive but never binds.
+fn port_modes(ports: &[u16]) -> Value {
+    Value::Object(
+        ports
+            .iter()
+            .map(|p| (p.to_string(), Value::String("alive-no-bind".to_owned())))
+            .collect(),
+    )
+}
+
 // ---- Processes ---------------------------------------------------------------------------------------------------
 
 fn errno() -> i32 {
@@ -512,6 +522,15 @@ impl Rig {
         std::fs::write(self.root.join("crash-now"), "").expect("write the crash trigger");
     }
 
+    /// The port of every launch that got far enough to write its record, in record order. A launch the supervisor
+    /// stops before the fake has counted itself has no record, so record `n` is not always launch `n`.
+    fn recorded_ports(&self) -> Vec<u16> {
+        (0..self.launch_count())
+            .filter(|n| self.launch_record(*n).is_some())
+            .map(|n| self.launch_port(n))
+            .collect()
+    }
+
     fn launch_count(&self) -> usize {
         std::fs::read_dir(&self.root)
             .expect("read the scratch directory")
@@ -675,7 +694,9 @@ async fn a_crash_after_ready_backs_off_and_restarts() {
             "Backoff(500ms) g1 a0",
             "Starting g2 a0",
             "Ready g2 a0",
-        ])
+        ]),
+        "failure causes: {:?}",
+        rig.sink.failure_causes()
     );
     assert_invariants(&seen);
     assert_eq!(rig.sleeper.log(), vec![Duration::from_millis(500)]);
@@ -767,12 +788,18 @@ async fn a_busy_port_is_retried_on_another_port() {
         strings(&["Starting g1 a0", "Starting g2 a1", "Ready g2 a1"])
     );
     assert_invariants(&seen);
-    assert_eq!(rig.launch_port(0), squat);
-    assert_ne!(rig.launch_port(1), squat);
-    assert_eq!(ready_port(&seen), rig.launch_port(1));
+    // The first launch is on the squatted port; on a loaded machine the supervisor can stop it before the fake wrote
+    // its record, which shifts the record numbers, so the picks are the oracle.
+    assert_eq!(rig.ports.picked()[0], squat);
+    assert_ne!(ready_port(&seen), squat);
+    assert_eq!(ready_port(&seen), rig.ports.picked()[1]);
     assert_eq!(rig.ports.excludes(), vec![vec![], vec![squat]]);
     assert!(rig.sleeper.log().is_empty(), "no backoff for a busy port");
-    assert!(reaped(rig.launch_pid(0)), "the first launch exited");
+    if let Some(first) = (0..rig.launch_count())
+        .find(|n| rig.launch_record(*n).is_some() && rig.launch_port(*n) == squat)
+    {
+        assert!(reaped(rig.launch_pid(first)), "the first launch exited");
+    }
     rig.stop().await;
     report("busy-port", &rig.sink.all(), &rig.sleeper.log());
     drop(guard);
@@ -815,10 +842,8 @@ async fn a_socket_that_is_not_the_services_is_not_ready() {
         "three distinct ports, in the scripted order"
     );
     // A service stopped while it was still starting has no record; one that has a record names its port.
-    for (n, port) in ports.iter().enumerate() {
-        if rig.launch_record(n).is_some() {
-            assert_eq!(rig.launch_port(n), *port);
-        }
+    for recorded in rig.recorded_ports() {
+        assert!(ports.contains(&recorded), "launch on {recorded}: {ports:?}");
     }
     assert!(
         rig.sleeper.log().is_empty(),
@@ -849,7 +874,13 @@ async fn a_foreign_listener_with_a_wrong_answer_is_retried_on_another_port() {
         Some(b"HTTP/1.1 404 Not Found\r\ncontent-length: 0\r\n\r\n".to_vec()),
         None,
     );
-    let mut rig = Rig::new(&["alive-no-bind", "ready"], None);
+    let rig = Rig::new(&["ready"], None);
+    write_scenario_with(
+        &rig.root,
+        &["ready"],
+        &[("portModes", port_modes(&[squat]))],
+    );
+    let mut rig = rig;
     rig.ports = ScriptedPorts::new(&[squat]);
     rig.go();
     let seen = rig
@@ -906,10 +937,10 @@ async fn a_connection_reset_during_readiness_keeps_polling() {
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn ownership_mismatches_take_no_crash_slot_and_no_backoff() {
     let (ports, squatters) = pinned_answering_squatters(3);
-    let mut rig = Rig::new(
-        &["alive-no-bind", "alive-no-bind", "alive-no-bind", "ready"],
-        None,
-    );
+    let mut rig = Rig::new(&["ready"], None);
+    // The mode follows the port, not the launch count: a launch stopped before the fake counted itself would shift
+    // every later mode.
+    write_scenario_with(&rig.root, &["ready"], &[("portModes", port_modes(&ports))]);
     rig.ports = ScriptedPorts::new(&ports);
     rig.go();
     let seen = rig
@@ -930,10 +961,11 @@ async fn ownership_mismatches_take_no_crash_slot_and_no_backoff() {
     );
     assert_invariants(&seen);
     assert_eq!(rig.ports.picked()[..3], ports[..]);
-    for (n, port) in ports.iter().enumerate() {
-        if rig.launch_record(n).is_some() {
-            assert_eq!(rig.launch_port(n), *port);
-        }
+    for recorded in rig.recorded_ports() {
+        assert!(
+            ports.contains(&recorded) || recorded == ready_port(&seen),
+            "launch on {recorded}: {ports:?}"
+        );
     }
     assert_eq!(rig.sleeper.log(), vec![Duration::from_millis(500)]);
     assert!(!ports.contains(&ready_port(&seen)));
@@ -1628,7 +1660,13 @@ fn a_held_claim_cannot_be_taken_and_a_released_one_leaves_no_file() {
     assert!(!try_lock(&claim), "a held claim cannot be locked again");
     drop(listener);
     release_port(port);
-    assert!(!claim.exists(), "a released claim leaves no file");
+    // Another test process may claim the same port the moment it is free; what must be gone is this process's claim.
+    let mine = std::process::id().to_string();
+    assert_ne!(
+        std::fs::read_to_string(&claim).ok().as_deref(),
+        Some(mine.as_str()),
+        "a released claim is not ours any more"
+    );
     assert_no_panics();
 }
 
@@ -1667,7 +1705,7 @@ fn the_fakes_crash_after_mode_counts_its_delay_from_the_first_contract_fetch() {
         .arg(format!("--mission-status.port={port}"))
         .stdin(std::process::Stdio::null())
         .stdout(std::process::Stdio::null())
-        .stderr(std::process::Stdio::null())
+        .stderr(std::fs::File::create(root.join("fake.stderr")).expect("stderr file"))
         .spawn()
         .expect("start the fake");
     let mut fake = HandStarted {
@@ -1679,7 +1717,12 @@ fn the_fakes_crash_after_mode_counts_its_delay_from_the_first_contract_fetch() {
     let give_up = Instant::now() + Duration::from_secs(5);
     let pid_file = root.join("service.pid");
     while !pid_file.exists() {
-        assert!(Instant::now() < give_up, "the fake never held its port");
+        assert!(
+            Instant::now() < give_up,
+            "the fake never held its port {port}: exit {:?}, stderr {:?}",
+            fake.child.try_wait(),
+            std::fs::read_to_string(root.join("fake.stderr"))
+        );
         std::thread::sleep(Duration::from_millis(5));
     }
     let mut stream =

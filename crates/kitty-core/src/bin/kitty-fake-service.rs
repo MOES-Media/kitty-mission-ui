@@ -12,6 +12,8 @@
 //! Modes: `ready`, `crash-after`, `exit-at-start`, `never-ready`, `ignore-term`, `serve-modified`, `serve-503`,
 //! `alive-no-bind`, `fork-child`, `reset-first`, `host`.
 //!
+//! A scenario may also map ports to modes (`portModes`), which wins over the launch index.
+//!
 //! `reset-first` serves like `ready`, but accepts the first `resetFirst` connections (scenario file; default 2) and
 //! resets each one with a TCP RST before reading the request, appending a line to `<root>/resets.log` for each.
 //!
@@ -105,7 +107,14 @@ fn run() -> i32 {
         eprintln!("cannot write the launch count");
         return 2;
     }
-    let mode = launches[n.min(launches.len() - 1)].clone();
+    // A mode keyed by port wins over the launch index: a launch that is stopped before it counted itself would
+    // shift every later index.
+    let mode = scenario["portModes"][port.to_string()]
+        .as_str()
+        .map_or_else(
+            || launches[n.min(launches.len() - 1)].clone(),
+            str::to_owned,
+        );
 
     // The supervisor starts the service with stdin closed (null): a read must give end-of-file at once.
     let stdin_eof = matches!(std::io::stdin().read(&mut [0u8; 1]), Ok(0));
@@ -160,7 +169,9 @@ fn run() -> i32 {
         #[cfg(unix)]
         "host" => host(&root),
         other => {
-            eprintln!("unknown mode {other}");
+            // One write: `eprintln!` may split a line into several writes, and the supervisor's two pipe drains can
+            // interleave the pieces with the stdout line.
+            let _ = std::io::stderr().write_all(format!("unknown mode {other}\n").as_bytes());
             2
         }
     }
