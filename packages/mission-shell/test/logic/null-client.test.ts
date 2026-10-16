@@ -110,7 +110,7 @@ describe('a null client on the desktop only shows the picker (ARCH-001b, c)', ()
   });
 });
 
-describe('the dashboard keeps its null-client behaviour', () => {
+describe('the dashboard null client shows the error and resets to the default route', () => {
   it('a null client shows the project layout in error, with no coercion and no announcement', () => {
     const { controller, routes } = rig('/missions', null, 'dashboard');
     expect(shown(controller)).toBe('/missions');
@@ -120,7 +120,7 @@ describe('the dashboard keeps its null-client behaviour', () => {
     expect(routes).toEqual([]);
   });
 
-  it('setClient(null) on the dashboard keeps the route and shows "No project is open."', () => {
+  it('setClient(null) on the dashboard resets to /missions and shows "No project is open."', () => {
     const { controller, routes } = rig('/ops', 'fixture', 'dashboard');
     controller.setClient(null);
     expect(shown(controller)).toBe('/missions');
