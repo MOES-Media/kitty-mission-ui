@@ -138,10 +138,10 @@
       "criterion_id": "FR-014",
       "description": "Verify FR-014 is satisfied",
       "proof_type": "automated_test",
-      "evidence": null,
-      "pass_fail": "pending",
-      "verified_by": null,
-      "verified_at": null,
+      "evidence": "packages/mission-shell/test/shell/modes.test.ts (line 19) 'shows the picker layout filled from the host, and each picker intent reaches the host once', positive control at line 45; packages/mission-shell/test/logic/host.test.ts line 360 'opens a project by key and by location, and browses with the folder as selected', line 379 (empty Projects, re-list on retry), line 392 (a stale folder listing never overwrites a newer one), line 408",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-16T20:09:23.886026+00:00",
       "notes": "TODO: replace with a real acceptance criterion"
     },
     {
