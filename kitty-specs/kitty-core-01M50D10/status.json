@@ -95,6 +95,9 @@
       "last_event_id": "01M52C494F9WNYDE5PB0TGXF20",
       "last_transition_at": "2026-10-16T12:48:56.463862+00:00",
       "model": "__resolved_model_absent__",
+      "notes": [
+        "Ready for review: stub extensions in dce6341; Rust, contract, hygiene gates green; #17 stub tests byte-identical"
+      ],
       "provider": "__resolved_provider_absent__",
       "role": "implementer",
       "shell_pid": 3805802,
