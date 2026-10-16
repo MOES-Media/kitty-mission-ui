@@ -267,4 +267,77 @@ declare module 'svelte/elements' {
   }
 }
 
-export {};
+export interface MissionUiIntents {
+  'sk-artifact-screen': {
+    'sk-open-link': SkOpenLinkDetail;
+    'sk-open-mission': SkOpenMissionDetail;
+    'sk-retry-load': SkArtifactRetryLoadDetail;
+    'sk-select-artifact': SkSelectArtifactDetail;
+    'sk-select-work-package': SkSelectWorkPackageDetail;
+  };
+  'sk-drift-screen': {
+    'sk-copy-command': SkCopyCommandDetail;
+    'sk-open-mission': SkOpenMissionDetail;
+    'sk-open-missions': SkOpenMissionsDetail;
+    'sk-rescan-drift': SkRescanDriftDetail;
+    'sk-retry-load': SkDriftRetryLoadDetail;
+    'sk-select-finding': SkSelectFindingDetail;
+  };
+  'sk-filter-toggle-group': {
+    'sk-filter-change': SkFilterChangeDetail;
+  };
+  'sk-mission-sample': {
+    'sk-mission-retry': SkMissionRetryDetail;
+    'sk-open-mission': SkOpenMissionDetail;
+  };
+  'sk-mission-shell': {
+    'sk-navigate': ShellNavigateDetail;
+    'sk-shell-retry': ShellRetryDetail;
+    'sk-toggle-drawer': ToggleDrawerDetail;
+    'sk-toggle-flyout': ToggleFlyoutDetail;
+    'sk-tree-toggle': TreeToggleDetail;
+  };
+  'sk-missions-screen': {
+    'sk-filter-change': SkFilterChangeDetail;
+    'sk-load-more': SkLoadMoreDetail;
+    'sk-open-mission': SkOpenMissionDetail;
+    'sk-search': SkSearchDetail;
+  };
+  'sk-open-project-dialog': {
+    'sk-browse-folder': SkBrowseFolderDetail;
+    'sk-confirm-open-project': SkConfirmOpenProjectDetail;
+    'sk-retry-load': RetryLoadDetail;
+  };
+  'sk-ops-screen': {
+    'sk-load-more': SkLoadMoreDetail;
+    'sk-retry-load': SkOpsRetryLoadDetail;
+  };
+  'sk-phase-bar': Record<never, never>;
+  'sk-pipeline-screen': {
+    'sk-open-missions': SkOpenMissionsDetail;
+    'sk-select-work-package': SkSelectWorkPackageDetail;
+    'sk-view-artifacts': SkViewArtifactsDetail;
+  };
+  'sk-projects-screen': {
+    'sk-open-project': SkOpenProjectDetail;
+    'sk-request-open-project': null;
+    'sk-retry-load': RetryLoadDetail;
+  };
+  'sk-shell-nav-item': {
+    'sk-navigate': ShellNavigateDetail;
+  };
+  'sk-shell-tree': {
+    'sk-navigate': ShellNavigateDetail;
+    'sk-tree-toggle': TreeToggleDetail;
+  };
+  'sk-work-package-board': {
+    'sk-select-work-package': SkSelectWorkPackageDetail;
+  };
+  'sk-work-package-screen': {
+    'sk-open-artifact': SkOpenArtifactDetail;
+    'sk-open-mission': SkOpenMissionDetail;
+    'sk-retry-load': SkRetryLoadDetail;
+    'sk-select-work-package': SkSelectWorkPackageDetail;
+  };
+}
+export type MissionUiTag = keyof MissionUiIntents;
