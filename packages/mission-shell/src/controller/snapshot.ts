@@ -8,8 +8,10 @@ import type {
   DriftCopyResult,
   DriftFindingKey,
   DriftScreenStatus,
+  FolderEntry,
   OpsLoadMoreError,
   OpsScreenStatus,
+  ProjectEntry,
   ShellMission,
   ShellProject,
   ViewState,
@@ -122,9 +124,28 @@ export interface ArtifactsScreen {
   readonly refusalCode: string | null;
 }
 
-/** The picker layout; WP04 fills it from the host. */
+/** The open-project dialog's properties, by the element's own names (desktop picker only). */
+export interface DialogModel {
+  readonly open: boolean;
+  readonly location: string;
+  readonly folders: readonly FolderEntry[];
+  readonly selected: string | null;
+  readonly status: ViewState;
+}
+
+/** The desktop picker, filled from the host (FR-014); the properties are those of `sk-projects-screen`. */
 export interface ProjectsScreen {
   readonly screen: 'projects';
+  readonly status: ViewState;
+  readonly entries: readonly ProjectEntry[];
+  readonly dialog: DialogModel;
+}
+
+/** The picker's session state as the controller holds it. */
+export interface PickerState {
+  readonly status: ViewState;
+  readonly entries: readonly ProjectEntry[];
+  readonly dialog: DialogModel;
 }
 
 export type ScreenModel = MissionsScreen | DriftScreen | OpsScreen | PipelineScreen | WorkPackagesScreen | ArtifactsScreen | ProjectsScreen;
@@ -163,6 +184,9 @@ export interface SnapshotInput {
   readonly flyoutOpen: boolean;
   readonly copyResult: DriftCopyResult | null;
   readonly now: string | null;
+  readonly picker: PickerState;
+  /** A dashboard without a client: the project layout shows the shell error "No project is open.". */
+  readonly noProject: boolean;
 }
 
 const NO_FOLDERS: Readonly<Record<string, boolean>> = Object.freeze({});
@@ -283,6 +307,7 @@ function chromeOf(input: SnapshotInput): ChromeSnapshot {
     case 'picker':
       return { status: 'ready', errorMessage: '', project: null, mission: null };
     case 'project': {
+      if (input.noProject) return { status: 'error', errorMessage: SHELL_COPY.noProjectOpen, project: null, mission: null };
       const slot = read({ kind: 'project' });
       const name = field(slot.value, 'name');
       const status = viewState(slot.view);
@@ -437,7 +462,7 @@ function screenOf(input: SnapshotInput): ScreenModel {
       };
     }
     case 'projects':
-      return { screen: 'projects' };
+      return { screen: 'projects', status: input.picker.status, entries: input.picker.entries, dialog: input.picker.dialog };
   }
 }
 

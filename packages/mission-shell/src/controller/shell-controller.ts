@@ -2,9 +2,9 @@
 // scheduler) to one MissionStatusClient. It turns port results into each screen's properties and view state, holds the
 // session state, runs the explicit refresh triggers and owns the connection presentation's logic. Plain TypeScript: no
 // Svelte, no I/O. Time comes only from the injected scheduler and clock. Nothing of the controller's own is caught
-// (NFR-007); only host calls are guarded, in host-seam.ts.
+// (NFR-007); only host calls are guarded, in core/host.ts.
 import type { Change, ConnectionState, MissionStatusClient } from '../client/port';
-import type { DriftCopyResult, DriftFindingKey, OpsLoadMoreError } from '@moes-media/mission-ui';
+import type { DriftCopyResult, DriftFindingKey, FolderEntry, OpsLoadMoreError } from '@moes-media/mission-ui';
 import {
   createConnectionPresenter,
   type ConnectionPresenter,
@@ -13,7 +13,18 @@ import {
 import { displayedKeys, displayedSet, keyString, type ResourceKey } from '../core/displayed';
 import { isStreamChange, refreshKeys } from '../core/refresh-policy';
 import { appendFailure, applyResult, RESULT_RULES } from '../core/results';
-import { formatRoute, parseRoute, type Destination, type ShellMode } from '../core/routes';
+import {
+  safeCopyText,
+  safeListFolders,
+  safeListRecentProjects,
+  safeOnWindowRefocus,
+  safeOpenExternalLink,
+  safeOpenProject,
+  safeRouteChanged,
+  type ShellHost,
+} from '../core/host';
+import { isAllowedExternalHref } from '../core/links';
+import { formatRoute, normaliseRoute, parseRoute, type Destination, type ShellMode } from '../core/routes';
 import {
   createConnectionGate,
   createReadScheduler,
@@ -22,16 +33,15 @@ import {
   type ResourceSlot,
   type ShellScheduler,
 } from '../core/scheduler';
-import { copyViaHost, type ControllerHost } from './host-seam';
 import { readKey } from './read-key';
-import { buildSnapshot, type ShellSnapshot, type SlotRead } from './snapshot';
+import { buildSnapshot, type PickerState, type ShellSnapshot, type SlotRead } from './snapshot';
 
 export type { ShellSnapshot } from './snapshot';
 
 export interface ShellControllerOptions {
   /** One client per project; `null` has no subscription and no reads. */
   client: MissionStatusClient | null;
-  host?: ControllerHost;
+  host?: ShellHost;
   mode: ShellMode;
   route?: string;
   /** Default: the global timers. */
@@ -70,6 +80,14 @@ export interface ShellController {
   loadMore(key: ResourceKey, cursor: string): void;
   rescan(missionId: string | null): void;
   copyCommand(text: string): Promise<void>;
+  // Desktop picker commands (FR-014); a dashboard controller ignores them.
+  openProject(key: string): void;
+  requestOpenProject(): Promise<void>;
+  retryProjects(): Promise<void>;
+  browseFolder(location: string): Promise<void>;
+  confirmOpenProject(location: string): void;
+  retryFolders(): Promise<void>;
+  openExternalLink(href: string): void;
 }
 
 const defaultScheduler: ShellScheduler = {
@@ -90,12 +108,25 @@ function driftScope(destination: Destination): string | null {
   return destination.screen === 'drift' ? (destination.missionId ?? '*') : null;
 }
 
+/** The six picker and dialog intents the dashboard ignores (FR-015, R2-11), keyed on tag and event together. */
+const DASHBOARD_IGNORED: ReadonlySet<string> = new Set([
+  'sk-projects-screen sk-open-project',
+  'sk-projects-screen sk-request-open-project',
+  'sk-projects-screen sk-retry-load',
+  'sk-open-project-dialog sk-browse-folder',
+  'sk-open-project-dialog sk-confirm-open-project',
+  'sk-open-project-dialog sk-retry-load',
+]);
+
+const CLOSED_DIALOG: PickerState['dialog'] = { open: false, location: '', folders: [], selected: null, status: 'ready' };
+const FRESH_PICKER: PickerState = { status: 'loading', entries: [], dialog: CLOSED_DIALOG };
+
 const MISSIONS_KEY: ResourceKey = { kind: 'missions' };
 const OPS_KEY: ResourceKey = { kind: 'ops' };
 
 export function createShellController(options: ShellControllerOptions): ShellController {
   const { mode } = options;
-  const host: ControllerHost = options.host ?? {};
+  const host: ShellHost = options.host ?? {};
   const timers = options.scheduler ?? defaultScheduler;
   const clock = options.clock ?? ((): Date => new Date());
   const afterRender = options.afterRender ?? ((): Promise<void> => Promise.resolve());
@@ -103,13 +134,18 @@ export function createShellController(options: ShellControllerOptions): ShellCon
 
   // ---- per-controller state ----
   let client: MissionStatusClient | null = null;
-  let destination: Destination = parseRoute(options.route ?? (options.client === null && mode === 'desktop' ? '/projects' : '/missions'), mode);
+  const initial = normaliseRoute(options.route ?? (options.client === null && mode === 'desktop' ? '/projects' : '/missions'), mode);
+  let destination: Destination = initial.destination;
   let destroyed = false;
   let now: string | null = null;
   let copyResult: DriftCopyResult | null = null;
   let copyToken = 0;
   let rescanKey: string | null = null;
   const loadMoreErrors = new Map<string, OpsLoadMoreError>();
+  // The desktop picker (session state, FR-014); each listing carries a counter so a stale answer is dropped.
+  let picker: PickerState = FRESH_PICKER;
+  let projectsSeq = 0;
+  let foldersSeq = 0;
   const listeners = new Set<(snapshot: ShellSnapshot) => void>();
 
   // ---- session ----
@@ -124,6 +160,7 @@ export function createShellController(options: ShellControllerOptions): ShellCon
   const gate = createConnectionGate('connecting');
   let presenter: ConnectionPresenter | null = null;
   let release: (() => void) | null = null;
+  let releaseRefocus: (() => void) | null = null;
   let epoch = 0;
 
   const scheduler = createReadScheduler({
@@ -140,6 +177,8 @@ export function createShellController(options: ShellControllerOptions): ShellCon
   const missionOf = (): string | undefined => ('missionId' in destination ? destination.missionId : undefined);
 
   function effective(key: ResourceKey): SlotRead {
+    // A dashboard without a client has nothing to read: its project layout is the shell error (R-10).
+    if (client === null && mode === 'dashboard') return { value: undefined, view: 'error', refusal: null };
     const slot = scheduler.slot(key);
     if (slot === undefined) return { value: undefined, view: 'loading', refusal: null };
     if (slot.value !== undefined) return { value: slot.value, view: slot.view, refusal: slot.refusal };
@@ -171,6 +210,8 @@ export function createShellController(options: ShellControllerOptions): ShellCon
       flyoutOpen,
       copyResult,
       now,
+      picker,
+      noProject: client === null && mode === 'dashboard',
     });
   }
 
@@ -219,12 +260,17 @@ export function createShellController(options: ShellControllerOptions): ShellCon
     epoch += 1;
     release?.();
     release = null;
+    releaseRefocus?.();
+    releaseRefocus = null;
     presenter?.dispose();
     presenter = null;
   }
 
   function attach(next: MissionStatusClient | null): void {
     client = next;
+    // Exactly one refocus registration per client. The listener is the shell's own: a throw inside it is a shell error.
+    releaseRefocus = safeOnWindowRefocus(host, () => controller.windowRefocused());
+    if (destination.screen === 'projects' && mode === 'desktop') void loadProjects();
     if (next === null) {
       gate.reset('connecting');
       scheduler.setDisplayed(displayedKeys(destination));
@@ -280,13 +326,64 @@ export function createShellController(options: ShellControllerOptions): ShellCon
     copyToken += 1;
     rescanKey = null;
     loadMoreErrors.clear();
+    leavePicker();
   }
 
+  // ---- the desktop picker ----
+  /** Drops any listing in flight and closes the dialog. */
+  function leavePicker(): void {
+    projectsSeq += 1;
+    foldersSeq += 1;
+    picker = FRESH_PICKER;
+  }
+
+  async function loadProjects(): Promise<void> {
+    if (destroyed) return;
+    const seq = ++projectsSeq;
+    picker = { ...picker, status: 'loading', entries: [] };
+    emit();
+    const answer = await safeListRecentProjects(host);
+    if (destroyed || seq !== projectsSeq) return;
+    picker = answer.ok
+      ? { ...picker, status: answer.entries.length === 0 ? 'empty' : 'ready', entries: answer.entries }
+      : { ...picker, status: 'error', entries: [] };
+    emit();
+  }
+
+  async function listFolders(location: string, selected: string | null): Promise<void> {
+    if (destroyed) return;
+    const seq = ++foldersSeq;
+    picker = { ...picker, dialog: { ...picker.dialog, open: true, selected, status: 'loading' } };
+    emit();
+    const answer = await safeListFolders(host, location);
+    if (destroyed || seq !== foldersSeq) return;
+    const dialog = picker.dialog;
+    const folders: readonly FolderEntry[] = answer.ok ? answer.folders : dialog.folders;
+    picker = {
+      ...picker,
+      dialog: {
+        ...dialog,
+        location: answer.ok ? answer.location : dialog.location,
+        folders,
+        status: !answer.ok ? 'error' : answer.folders.length === 0 ? 'empty' : 'ready',
+      },
+    };
+    emit();
+  }
+
+  const requestOpenProject = (): Promise<void> => {
+    if (destroyed) return Promise.resolve();
+    picker = { ...picker, dialog: { open: true, location: '', folders: [], selected: null, status: 'loading' } };
+    return listFolders('', null);
+  };
+
   // ---- navigation ----
-  function navigate(next: Destination): void {
+  /** Shows a destination: all the state work, and no `routeChanged`. */
+  function show(next: Destination): void {
     if (destroyed) return;
     const same = formatRoute(destination) === formatRoute(next);
     destination = next;
+    if (next.screen !== 'projects') leavePicker();
     copyToken += 1;
     copyResult = null;
     const scope = driftScope(next);
@@ -297,7 +394,22 @@ export function createShellController(options: ShellControllerOptions): ShellCon
     const shown = new Set(displayedKeys(next).map(keyString));
     for (const id of [...loadMoreErrors.keys()]) if (!shown.has(id)) loadMoreErrors.delete(id);
     if (rescanKey !== null && !shown.has(rescanKey)) rescanKey = null;
+    if (next.screen === 'projects' && mode === 'desktop') void loadProjects();
     emit();
+  }
+
+  /** A navigation the shell makes itself: the state first, then `routeChanged` with the canonical route. */
+  function navigate(next: Destination): void {
+    if (destroyed) return;
+    show(next);
+    safeRouteChanged(host, formatRoute(destination));
+  }
+
+  /** A route the host set: normalised, and announced once only when it was not already canonical (no echo loop). */
+  function applyHostRoute(route: string): void {
+    const normalised = normaliseRoute(route, mode);
+    show(normalised.destination);
+    if (!normalised.canonical) safeRouteChanged(host, normalised.route);
   }
 
   function explicitRefresh(trigger: 'refresh' | 'refocus'): void {
@@ -329,7 +441,7 @@ export function createShellController(options: ShellControllerOptions): ShellCon
     copyResult = null;
     emit();
     await afterRender();
-    const answer = await copyViaHost(host, value);
+    const answer = await safeCopyText(host, value);
     // The destination changed while the host was copying: navigation reset copyResult; the late answer is not applied.
     if (destroyed || token !== copyToken) return;
     copyResult = answer;
@@ -399,6 +511,17 @@ export function createShellController(options: ShellControllerOptions): ShellCon
     'sk-drift-screen sk-retry-load': (d) => retry(text(d, 'missionId') === undefined ? { kind: 'drift' } : { kind: 'drift', missionId: text(d, 'missionId') ?? '' }),
     'sk-ops-screen sk-load-more': (d) => loadMore(OPS_KEY, text(d, 'cursor') ?? ''),
     'sk-ops-screen sk-retry-load': (d) => retry(OPS_KEY, text(d, 'cursor')),
+    'sk-artifact-screen sk-open-link': (d) => controller.openExternalLink(text(d, 'href') ?? ''),
+  };
+  // The intents that await the host.
+  const hosted: Record<string, (detail: unknown) => Promise<void>> = {
+    'sk-drift-screen sk-copy-command': (d) => copyCommand(text(d, 'text') ?? ''),
+    'sk-projects-screen sk-open-project': (d) => Promise.resolve(controller.openProject(text(d, 'key') ?? '')),
+    'sk-projects-screen sk-request-open-project': () => requestOpenProject(),
+    'sk-projects-screen sk-retry-load': (d) => (['projects', 'project'].includes(text(d, 'target') ?? '') ? loadProjects() : Promise.resolve()),
+    'sk-open-project-dialog sk-browse-folder': (d) => controller.browseFolder(text(d, 'location') ?? ''),
+    'sk-open-project-dialog sk-confirm-open-project': (d) => Promise.resolve(controller.confirmOpenProject(text(d, 'location') ?? '')),
+    'sk-open-project-dialog sk-retry-load': (d) => (text(d, 'target') === 'folders' ? controller.retryFolders() : Promise.resolve()),
   };
 
   function openMission(d: unknown): void {
@@ -452,15 +575,17 @@ export function createShellController(options: ShellControllerOptions): ShellCon
       };
     },
     navigate,
-    setRoute: (route) => navigate(parseRoute(route, mode)),
+    setRoute: applyHostRoute,
     setClient(next, route) {
       if (destroyed) return;
       detach();
       scheduler.setDisplayed([]);
       resetSession();
-      if (route !== undefined) destination = parseRoute(route, mode);
+      const normalised = route === undefined ? null : normaliseRoute(route, mode);
+      if (normalised !== null) destination = normalised.destination;
       attach(next);
       emit();
+      if (normalised !== null && !normalised.canonical) safeRouteChanged(host, normalised.route);
     },
     destroy() {
       if (destroyed) return;
@@ -469,13 +594,21 @@ export function createShellController(options: ShellControllerOptions): ShellCon
       destroyed = true;
       listeners.clear();
     },
-    refresh: () => explicitRefresh('refresh'),
+    refresh() {
+      explicitRefresh('refresh');
+      // The Refresh flow counts as a navigation the shell made itself (R-02).
+      if (!destroyed && (destination.screen === 'artifacts' || destination.screen === 'ops')) safeRouteChanged(host, formatRoute(destination));
+    },
     windowRefocused: () => explicitRefresh('refocus'),
     intent(tag, event, detail) {
-      const handler = sync[`${tag} ${event}`];
-      if (handler !== undefined) handler(detail);
-      else if (tag === 'sk-drift-screen' && event === 'sk-copy-command') return copyCommand(text(detail, 'text') ?? '');
-      return Promise.resolve();
+      const key = `${tag} ${event}`;
+      if (mode === 'dashboard' && DASHBOARD_IGNORED.has(key)) return Promise.resolve();
+      const handler = sync[key];
+      if (handler !== undefined) {
+        handler(detail);
+        return Promise.resolve();
+      }
+      return hosted[key]?.(detail) ?? Promise.resolve();
     },
     setQuery: (value) => mutate(() => (query = value)),
     setFilter: (value) => mutate(() => (filter = value)),
@@ -506,8 +639,24 @@ export function createShellController(options: ShellControllerOptions): ShellCon
     loadMore,
     rescan,
     copyCommand,
+    openProject(key) {
+      if (destroyed) return;
+      safeOpenProject(host, { key });
+    },
+    requestOpenProject,
+    retryProjects: loadProjects,
+    browseFolder: (location) => listFolders(location, location),
+    confirmOpenProject(location) {
+      if (destroyed) return;
+      safeOpenProject(host, { location });
+    },
+    retryFolders: () => listFolders(picker.dialog.location, picker.dialog.selected),
+    openExternalLink(href) {
+      if (!destroyed && isAllowedExternalHref(href)) safeOpenExternalLink(host, href);
+    },
   };
 
   attach(options.client);
+  if (options.route !== undefined && !initial.canonical) safeRouteChanged(host, initial.route);
   return controller;
 }
