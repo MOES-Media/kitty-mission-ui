@@ -118,10 +118,10 @@
       "criterion_id": "FR-012",
       "description": "Verify FR-012 is satisfied",
       "proof_type": "automated_test",
-      "evidence": null,
-      "pass_fail": "pending",
-      "verified_by": null,
-      "verified_at": null,
+      "evidence": "packages/mission-shell/test/logic/host.test.ts (lines 83-137) 'the host wrappers (FR-012, NFR-007)': absent, throwing and rejecting members give the fallbacks (copy manual, listings { ok: false }, the others nothing) and a shell error is not swallowed; line 196 fallbacks through the controller; line 475 'a host without the member gets no refocus refresh, while one with it does'; lines 497-560 routeChanged; recording hosts in packages/mission-shell/test/shell/modes.test.ts and packages/mission-shell/test/logic/links.test.ts. WP04 review: F3/F4 tests each fail under mutation",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-16T20:09:20.387105+00:00",
       "notes": "TODO: replace with a real acceptance criterion"
     },
     {
