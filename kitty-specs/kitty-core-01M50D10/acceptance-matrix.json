@@ -148,10 +148,10 @@
       "criterion_id": "FR-015",
       "description": "Verify FR-015 is satisfied",
       "proof_type": "automated_test",
-      "evidence": null,
-      "pass_fail": "pending",
-      "verified_by": null,
-      "verified_at": null,
+      "evidence": "crates/kitty-stub/tests/select.rs: each_stream_refusal_is_served_with_its_own_status_and_no_headers (line 43, all 5 StreamRefusal examples with no request headers), an_artifact_refusal_selection_is_a_404_problem_and_a_header_overrides_it (line 73, example and fixture headers win), the_binary_serves_start_up_selections (line 327, --select and --select-fixture on the real binary), a_bad_selection_is_a_usage_error_before_listening (line 351, 7 cases exit 2 with no listening line). WP03 cycle-2 review: the selection and both-ports reverts fail by name with bounded runs",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-16T16:43:41.962608+00:00",
       "notes": "TODO: replace with a real acceptance criterion"
     },
     {
