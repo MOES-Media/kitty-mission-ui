@@ -432,8 +432,10 @@ README.md, CHANGELOG.md
 - **Relevant requirements**: FR-018, SC-007.
 - **Affected surfaces**: the `shell-*.png` baselines, plus a **grant**, for a CP-1 amendment only, to edit:
   - the IC-06 files (`src/ui/**`), and the IC-03 copy and presentation file (`src/core/connection.ts`);
-  - **P-6 itself** (FS-04): the `find` and `replace` of `gates/plants/visual/plant.json`, and
-    `contracts/connection-presentation.md` and `contracts/stories.md` where they quote the anchor;
+  - **P-6 itself** (FS-04): the `find` and `replace` of `gates/plants/visual/plant.json`. The anchor quotes in
+    `contracts/connection-presentation.md` and `contracts/stories.md` are planning artifacts and are not edited from
+    a lane. WP09 reports the new anchor, and the orchestrator updates both quotes on `feat/mission-shell-18`
+    together with `design-review.sha256` (`tasks-notes.md`, CP-1 step 5);
   - the banner and copy tests (`test/shell/banners.test.ts`, `test/logic/connection.test.ts`).
 
   **P-6 must stay a visible tone change.** If CP-1 makes the reconnecting tone `danger`, the plant switches it to a
@@ -496,7 +498,7 @@ flowchart LR
 | `gates/plants/typecheck/plant.json` and payloads | IC-05 | none |
 | `gates/plants/eslint/plant.json` and payloads | IC-07 | none |
 | `gates/plants/storybook-build/plant.json`, `gates/plants/visual/plant.json` | IC-08a | IC-08b (P-6 re-anchor and re-proof, by grant) |
-| `contracts/connection-presentation.md`, `contracts/stories.md` | plan | IC-08b (the P-6 anchor quote, by grant) |
+| `contracts/connection-presentation.md`, `contracts/stories.md` | plan (orchestrator) | updated by the orchestrator when IC-08b re-anchors P-6 |
 | `apps/storybook/.storybook/main.ts`, `apps/storybook/package.json`, `pnpm-lock.yaml` | IC-08a | none |
 | `apps/storybook/tests/visual/__snapshots__/shell-*.png` | IC-08a (candidates) | IC-08b (final) |
 | `.github/workflows/ci.yml` (matrix `timeout` values only) | IC-09 | IC-02, IC-05, IC-06, IC-07, IC-08a (local leg timings) |
