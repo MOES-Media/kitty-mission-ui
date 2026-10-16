@@ -120,7 +120,7 @@ Implementation command (orchestrator-run): `spec-kitty agent action implement WP
 **Purpose**: FR-008 and FR-009 (R1-04, R2-12).
 
 **Steps**:
-1. `ContractClient::open_stream(scope) -> Result<ChangeStream, StreamOpenError>`.
+1. `ContractClient::open_stream(scope) -> Result<ChangeStream, StreamOpenError>`. Define `StreamOpenError` here as `#[non_exhaustive]`, with `CursorWithoutMission` and `EmptyMission` only (B1). WP09 adds `NotReady(CoreStatus)` and `ContractMismatch(Mismatch)` as a recorded out-of-map edit, after this WP. Integration tests match with a wildcard arm, which the compiler requires.
 2. Refuse before any I/O:
    - `CursorWithoutMission` when a cursor comes with an empty mission;
    - `EmptyMission` when a `Mission` scope has an empty id and no cursor.

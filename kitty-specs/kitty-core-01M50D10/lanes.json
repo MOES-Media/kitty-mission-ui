@@ -108,6 +108,7 @@
       ],
       "predicted_surfaces": [
         "api",
+        "tests",
         "tracker-integration",
         "workspace"
       ],
@@ -222,8 +223,8 @@
       "parallel_group": 6
     }
   ],
-  "computed_at": "2026-10-16T11:48:46.441240+00:00",
+  "computed_at": "2026-10-16T11:54:02.889020+00:00",
   "computed_from": "dependency_graph+ownership",
   "planning_artifact_wps": [],
-  "planning_commit_sha": "307ba66ecc4dcfd67b7c6dde16e7db0a4f2d622f"
+  "planning_commit_sha": "b83817ec84de70eb336795f5de4b430c3f7ac212"
 }
