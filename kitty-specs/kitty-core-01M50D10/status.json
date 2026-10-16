@@ -132,7 +132,8 @@
       "last_transition_at": "2026-10-16T13:19:15.053618+00:00",
       "model": "__resolved_model_absent__",
       "notes": [
-        "Contract client, read relay, forward(), harness and reads.rs in c4aa556. Rust gate, contract gate, hygiene/scripts/terminology and gate-proof --only rust all green."
+        "Contract client, read relay, forward(), harness and reads.rs in c4aa556. Rust gate, contract gate, hygiene/scripts/terminology and gate-proof --only rust all green.",
+        "Independent review passed. Rust gate green (fmt, clippy -D warnings, workspace tests; reads 13/13, unit 10/10), hygiene 0 findings, gate-proof rust ok (plants red, 18.9 s leg). Anchors intact (1/1). Adversarial probes held: 302 relayed as Answer with no follow; slow-drip head times out at 1.0 s for read and forward; chunked and endless bodies over 16 MiB give BodyTooLarge; dropping a forward() response or body mid-stream closes the upstream connection (no task leak); panic counter counts a real panic. Reverts: added Origin header -> a_read_sends_exactly_host_and_accept FAILED; dropped '/' path refusal -> query_values_are_encoded_and_unsafe_path_values_send_nothing FAILED. Non-blocking: forward() relays dot segments (/api/v1/../x) verbatim; panic counter cascades one failure into later tests; connect() spawns the driver before ready()."
       ],
       "provider": "__resolved_provider_absent__",
       "review_result": {
