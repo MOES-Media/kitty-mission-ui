@@ -13,5 +13,7 @@
   "purpose_tldr": "Give Kitty Desktop and Kitty Dashboard one shared Rust core that finds, starts and watches the Mission Status service, checks it speaks the pinned contract, and relays its reads and live changes unchanged.",
   "slug": "kitty-core-01M50D10",
   "target_branch": "feat/kitty-core-19",
-  "topology": "coord"
+  "topology": "coord",
+  "vcs": "git",
+  "vcs_locked_at": "2026-10-16T11:57:15.585004+00:00"
 }
