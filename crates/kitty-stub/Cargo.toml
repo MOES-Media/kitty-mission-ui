@@ -21,3 +21,5 @@ hyper-util = { workspace = true }
 
 [dev-dependencies]
 tower = { workspace = true }
+# The supervised stand-in test (tests/supervised.rs): Cargo hands `CARGO_BIN_EXE_kitty-stub` only to this package's tests.
+kitty-core = { path = "../kitty-core" }

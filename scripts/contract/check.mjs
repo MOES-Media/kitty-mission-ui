@@ -13,7 +13,7 @@ import { scanText } from '../hygiene/rules.mjs';
 import {
   LAYOUT, ROOT, changelogTopVersionOf, infoVersionOf, listFiles, readPin, readText, vendoredDigest, vendoredHashes,
 } from './common.mjs';
-import { FIXTURE_FILES, generateFixturesSource, generateJsonSources, generateTypesSource, importTs, loadBulk } from './generate.mjs';
+import { FIXTURE_FILES, generateBundleSource, generateFixturesSource, generateJsonSources, generateTypesSource, importTs, loadBulk } from './generate.mjs';
 import { FIXTURES, RELAXATIONS, errorAllowed, relaxationSchemas } from './registry.mjs';
 import { OPS_ACTORS, SYNTHETIC_ACTORS } from './overlays.mjs';
 import { compile, loadSchema, relaxedSchema, stripHost, validateWith } from './validate.mjs';
@@ -598,6 +598,27 @@ async function checkJsonFresh(root) {
   return out;
 }
 
+/**
+ * The bundled contract document: byte-compared with a fresh generation. It has its own try/catch, so an ungeneratable
+ * bundle is one bundle-specific problem and the three other generated files are still checked (FS-02).
+ */
+export async function checkBundleFresh(root) {
+  const rel = FIXTURE_FILES.openapi;
+  let fresh;
+  try {
+    fresh = await generateBundleSource(root);
+  } catch (err) {
+    return [problem(TOKENS.jsonStale, `the bundled contract document could not be regenerated: ${err.message}`)];
+  }
+  let committed;
+  try {
+    committed = readText(root, rel);
+  } catch {
+    return [problem(TOKENS.jsonStale, `${rel} is missing; run pnpm contract:generate`)];
+  }
+  return committed === fresh ? [] : [problem(TOKENS.jsonStale, `${rel} differs from a fresh generation; run pnpm contract:generate`)];
+}
+
 const readJson = (root, rel) => JSON.parse(readText(root, rel));
 
 /**
@@ -731,6 +752,7 @@ export async function runChecks({ root = ROOT, deps = {}, requireMain = false } 
   const c7 = checkProvisional(root);
   problems.push(...c7.problems);
   problems.push(...(await checkJsonFresh(root)));
+  problems.push(...(await checkBundleFresh(root)));
   const oracle = jsonOracleProblems(root);
   problems.push(...oracle.problems);
   const changes = await checkChanges(root);
@@ -749,7 +771,7 @@ async function main() {
   for (const p of problems) process.stdout.write(`contract: ${p.token}: ${p.message}\n`);
   if (problems.length === 0) {
     const s = summary;
-    process.stdout.write(`contract gate: ok (${s.vendoredFiles} vendored files, ${s.anchorFiles} anchor files, ${s.fixtures} fixtures, ${s.bulkPages} bulk pages, ${s.bulkDocuments} bulk documents, ${s.coherenceRecords} records checked for coherence, ${s.hygieneFiles} files in the hygiene scope, ${s.c7Files} files in the provisional scan, ${s.jsonExamples} JSON examples, ${s.jsonFixtures} JSON fixtures, ${s.jsonRoutes} routes, ${s.changeItems} change items)\n`);
+    process.stdout.write(`contract gate: ok (${s.vendoredFiles} vendored files, ${s.anchorFiles} anchor files, ${s.fixtures} fixtures, ${s.bulkPages} bulk pages, ${s.bulkDocuments} bulk documents, ${s.coherenceRecords} records checked for coherence, ${s.hygieneFiles} files in the hygiene scope, ${s.c7Files} files in the provisional scan, ${s.jsonExamples} JSON examples, ${s.jsonFixtures} JSON fixtures, ${s.jsonRoutes} routes, 1 bundled document, ${s.changeItems} change items)\n`);
     return 0;
   }
   process.stdout.write(`contract gate: ${problems.length} problem(s)\n`);
