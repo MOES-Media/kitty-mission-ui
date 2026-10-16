@@ -138,6 +138,9 @@ export function createConnectionPresenter(options: ConnectionPresenterOptions): 
     },
     refused: () => isRefused,
     setState(next) {
+      // A repeat of the current state changes nothing: it must not re-arm the grace timer (a shown banner would vanish and
+      // return) and has nothing to notify.
+      if (next === state) return;
       enter(next);
       onChange();
     },
