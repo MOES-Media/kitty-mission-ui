@@ -670,7 +670,7 @@ export function createShellController(options: ShellControllerOptions): ShellCon
     },
     setCopy(copy) {
       mutate(() => {
-        overrides = copy;
+        overrides = copy ?? {};
       });
     },
     destroy() {

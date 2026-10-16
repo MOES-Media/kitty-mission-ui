@@ -64,7 +64,10 @@ const shell = mountShell(document.querySelector('#app')!, {
 
 - `setRoute(route)` shows a route. Call it on back and forward.
 - `setClient(client, route?)` switches project. It releases the old subscriptions, drops the loaded data and subscribes
-  the new client. It keeps the session's drawer and flyout state, and can set the route in the same step.
+  the new client. It keeps the session's drawer and flyout state, and can set the route in the same step. With no
+  route it resets to the default route: `/missions`, or `/projects` for a null client on the desktop. It never keeps the
+  previous project's screen. A Svelte host gets the same reset when it changes only the `client` prop; changing `route`
+  in the same tick sets that route instead.
 - `setCopy(copy)` replaces the host's banner copy overrides (`ShellOptions.copy`) and the banner updates on the next
   render. The overrides are replaced as a whole, not merged: `setCopy({ serviceMissing })` drops an earlier
   `contractMismatch` override, and `setCopy({})` restores the defaults. It does nothing after `destroy`.
@@ -106,14 +109,17 @@ A Svelte host can render `<MissionShell {client} {mode} {route} {host} />` from 
 On the dashboard, `/projects` parses to Missions.
 
 `routeChanged(route)` runs after each navigation the shell makes itself. When the host sets a route that is not
-canonical, it runs once with the canonical route. It never runs for a host-set route that is already canonical, so a
-host cannot create an echo loop.
+canonical, it runs once with the canonical route. It does not run for a host-set route that the shell shows exactly as
+given, so a host cannot create an echo loop. It does run when the shell shows a different screen than the one asked for:
+a null client on the desktop shows `/projects` whatever route is set, and `setClient` with no route announces the default
+route when that moves the screen.
 
 Two rules for a host that binds `routeChanged` to its history:
 
 - A call made synchronously inside `setRoute`, `setClient` or `mountShell` is a canonicalisation of the route the host
   itself just gave (for example an unknown route becoming `/missions`, or a null-client desktop becoming `/projects`).
-  Handle it with history *replace*, not *push*, so Back does not return to the route that was rewritten.
+  The same holds for the default route that `setClient` with no route announces. Handle it with history *replace*, not
+  *push*, so Back does not return to the route that was rewritten.
 - Skip a route equal to the host's current one. Refresh and re-selecting the current destination can fire the same
   route again.
 

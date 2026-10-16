@@ -305,3 +305,23 @@ describe('setCopy on the controller (ARCH-003)', () => {
     expect(() => controller.setCopy({})).not.toThrow();
   });
 });
+
+describe('setCopy(null) (R2-NEW-002)', () => {
+  it('restores the defaults and no later snapshot throws', async () => {
+    const { createShellController } = await import('../../src/controller/shell-controller');
+    const { createFixtureClient } = await import('../../src/client/fixture');
+    const fake = createFakeScheduler();
+    const controller = createShellController({
+      client: createFixtureClient({ scheduler: fake, initialState: 'degraded: service-missing' }),
+      mode: 'desktop',
+      route: '/missions',
+      scheduler: fake,
+      copy: { serviceMissing: { title: 'T', body: 'B' } },
+    });
+    expect(controller.snapshot().connection.copy?.title).toBe('T');
+    expect(() => controller.setCopy(null as never)).not.toThrow();
+    expect(() => controller.snapshot()).not.toThrow();
+    expect(controller.snapshot().connection.copy?.title).toBe('Service not available');
+    controller.destroy();
+  });
+});
