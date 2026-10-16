@@ -79,7 +79,7 @@ both columns.
 | `status-transition` (M, W) | `mission:{M}`; `wp:{M}/{W}`, `wp-detail:{M}/{W}`; `missions` | `artifacts:*`, `artifact:*`, `drift:*`, `mission-names`, `ops`, `project` |
 | `mission-lifecycle` (M) | `missions`; `mission:{M}` | as above |
 | `log-truncated` (M) | every key of M; `missions` | keys of other Missions |
-| `resync` (adapter), or a shell-side resync (a non-first `connected` while the subscription is refused) | every displayed key | nothing |
+| `resync` (adapter), or a shell-side resync (a `connected` that is not the client's first, while that client's subscription is refused) | every displayed key | nothing |
 | `refused` | nothing (the notice; FR-010) | everything |
 
 Stream changes (the first three rows) coalesce. `resync` and every other trigger are bypass reads (below).
@@ -113,8 +113,11 @@ Stream changes (the first three rows) coalesce. `resync` and every other trigger
 
 ### Connection gate (FS-01, FS-02; spec FR-011, US4-1, US4-2)
 
-- Nothing is issued until the first `connected` ever, so `connecting`, and any `degraded` or `reconnecting` state
-  before that, issue nothing.
+- **Per client** (FS2-01): the gate, the "first `connected`" mark and the refused flag belong to the current client.
+  `setClient` resets all three. A client whose state is already `connected` when it is mounted, or passed to
+  `setClient`, counts as that client's first `connected` and issues the displayed set at once.
+- Nothing is issued until the client's first `connected`, so `connecting`, and any `degraded` or `reconnecting`
+  state before that, issue nothing.
 - A degraded state before the first `connected` sets the no-value slots of the displayed set to `error`, without
   reads.
 - The first `connected`, whatever came before it, issues the current displayed set itself, as bypass reads. It is not
@@ -158,10 +161,10 @@ Stream changes (the first three rows) coalesce. `resync` and every other trigger
 |---|---|---|---|
 | `connecting` | info notice, polite | gated | `loading` |
 | `connected` | none | normal | per data |
-| `reconnecting` | attention banner, polite, only once the state has lasted 1 s or more (the timer is armed after the state update, cleared on every exit, re-armed on re-entry) | normal | keep data |
-| `degraded: service-missing` | danger banner, assertive, in the same render | normal | keep data; no data means `error` |
-| `degraded: contract-mismatch` | danger banner, assertive, in the same render | normal | keep data; no data means `error` |
-| subscription refused | neutral notice "live updates are off", until remount | normal | unchanged; each non-first `connected` is a shell-side resync |
+| `reconnecting` | attention banner, polite, only once the state has lasted 1 s or more (the timer is armed after the state update, cleared on every exit, re-armed on re-entry) | gated before the first `connected`; normal after | keep data |
+| `degraded: service-missing` | danger banner, assertive, in the same render | gated before the first `connected`; normal after | keep data; no data means `error` |
+| `degraded: contract-mismatch` | danger banner, assertive, in the same render | gated before the first `connected`; normal after | keep data; no data means `error` |
+| subscription refused | neutral notice "live updates are off", until remount or `setClient` | normal | unchanged; each `connected` that is not the client's first is a shell-side resync |
 
 **One home for each part** (FS-06):
 - **core** (`src/core/connection.ts`) owns the state → condition mapping, including the refused flag and the 1 s grace

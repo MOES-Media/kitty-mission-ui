@@ -1,0 +1,247 @@
+{
+  "version": 1,
+  "mission_slug": "mission-shell-01M50D2J",
+  "mission_id": "01M50D2JBWV6TYMCYCK6ADFWKF",
+  "mission_branch": "kitty/mission-mission-shell-01M50D2J",
+  "target_branch": "feat/mission-shell-18",
+  "lanes": [
+    {
+      "lane_id": "lane-a",
+      "wp_ids": [
+        "WP01"
+      ],
+      "write_scope": [
+        "packages/mission-shell/src/core/displayed.ts",
+        "packages/mission-shell/src/core/routes.ts",
+        "packages/mission-shell/test/logic/routes.test.ts",
+        "packages/mission-shell/test/logic/sentinel.test.ts",
+        "packages/mission-shell/test/setup/**",
+        "packages/mission-shell/vitest.config.ts"
+      ],
+      "predicted_surfaces": [
+        "api",
+        "app-shell",
+        "artifact-rendering",
+        "dashboard",
+        "legacy-cleanup",
+        "tracker-integration"
+      ],
+      "depends_on_lanes": [],
+      "parallel_group": 0
+    },
+    {
+      "lane_id": "lane-g",
+      "wp_ids": [
+        "WP07"
+      ],
+      "write_scope": [
+        "eslint.config.mjs",
+        "gates/plants/eslint/**"
+      ],
+      "predicted_surfaces": [
+        "api",
+        "artifact-rendering",
+        "legacy-cleanup",
+        "tracker-integration"
+      ],
+      "depends_on_lanes": [],
+      "parallel_group": 0
+    },
+    {
+      "lane_id": "lane-b",
+      "wp_ids": [
+        "WP02"
+      ],
+      "write_scope": [
+        "gates/plants/unit-tests/**",
+        "packages/mission-shell/src/core/refresh-policy.ts",
+        "packages/mission-shell/src/core/scheduler.ts",
+        "packages/mission-shell/test/logic/refresh-policy.test.ts",
+        "packages/mission-shell/test/logic/scheduler.test.ts",
+        "packages/mission-shell/test/support/**"
+      ],
+      "predicted_surfaces": [
+        "api",
+        "app-shell",
+        "artifact-rendering",
+        "legacy-cleanup",
+        "tracker-integration"
+      ],
+      "depends_on_lanes": [
+        "lane-a"
+      ],
+      "parallel_group": 1
+    },
+    {
+      "lane_id": "lane-c",
+      "wp_ids": [
+        "WP03"
+      ],
+      "write_scope": [
+        "packages/mission-shell/src/controller/**",
+        "packages/mission-shell/src/core/connection.ts",
+        "packages/mission-shell/src/core/results.ts",
+        "packages/mission-shell/test/logic/connection.test.ts",
+        "packages/mission-shell/test/logic/controller.test.ts",
+        "packages/mission-shell/test/logic/results.test.ts"
+      ],
+      "predicted_surfaces": [
+        "api",
+        "app-shell",
+        "artifact-rendering",
+        "dashboard",
+        "tracker-integration"
+      ],
+      "depends_on_lanes": [
+        "lane-b"
+      ],
+      "parallel_group": 2
+    },
+    {
+      "lane_id": "lane-d",
+      "wp_ids": [
+        "WP04"
+      ],
+      "write_scope": [
+        "packages/mission-shell/src/core/host.ts",
+        "packages/mission-shell/src/core/links.ts",
+        "packages/mission-shell/test/logic/host.test.ts",
+        "packages/mission-shell/test/logic/links.test.ts"
+      ],
+      "predicted_surfaces": [
+        "api",
+        "app-shell",
+        "artifact-rendering",
+        "dashboard",
+        "legacy-cleanup",
+        "tracker-integration"
+      ],
+      "depends_on_lanes": [
+        "lane-c"
+      ],
+      "parallel_group": 3
+    },
+    {
+      "lane_id": "lane-e",
+      "wp_ids": [
+        "WP05"
+      ],
+      "write_scope": [
+        "gates/plants/typecheck/**",
+        "packages/mission-shell/src/generated/**",
+        "packages/mission-shell/src/intents/**",
+        "scripts/typings.mjs",
+        "scripts/typings.test.mjs"
+      ],
+      "predicted_surfaces": [
+        "api",
+        "app-shell",
+        "artifact-rendering",
+        "dashboard",
+        "legacy-cleanup"
+      ],
+      "depends_on_lanes": [
+        "lane-d"
+      ],
+      "parallel_group": 4
+    },
+    {
+      "lane_id": "lane-f",
+      "wp_ids": [
+        "WP06"
+      ],
+      "write_scope": [
+        "packages/mission-shell/package.json",
+        "packages/mission-shell/src/shell.ts",
+        "packages/mission-shell/src/ui/**",
+        "packages/mission-shell/test/package.test.ts",
+        "packages/mission-shell/test/shell/**"
+      ],
+      "predicted_surfaces": [
+        "api",
+        "app-shell",
+        "artifact-rendering",
+        "dashboard",
+        "legacy-cleanup"
+      ],
+      "depends_on_lanes": [
+        "lane-e",
+        "lane-g"
+      ],
+      "parallel_group": 5
+    },
+    {
+      "lane_id": "lane-h",
+      "wp_ids": [
+        "WP08"
+      ],
+      "write_scope": [
+        "apps/storybook/.storybook/main.ts",
+        "apps/storybook/package.json",
+        "gates/plants/storybook-build/**",
+        "gates/plants/visual/**",
+        "packages/mission-shell/src/stories/**",
+        "pnpm-lock.yaml"
+      ],
+      "predicted_surfaces": [
+        "api",
+        "app-shell",
+        "artifact-rendering",
+        "dashboard",
+        "legacy-cleanup",
+        "workspace"
+      ],
+      "depends_on_lanes": [
+        "lane-f"
+      ],
+      "parallel_group": 6
+    },
+    {
+      "lane_id": "lane-i",
+      "wp_ids": [
+        "WP09"
+      ],
+      "write_scope": [
+        "apps/storybook/tests/visual/__snapshots__/shell-*.png"
+      ],
+      "predicted_surfaces": [
+        "api",
+        "app-shell",
+        "artifact-rendering",
+        "legacy-cleanup"
+      ],
+      "depends_on_lanes": [
+        "lane-h"
+      ],
+      "parallel_group": 7
+    },
+    {
+      "lane_id": "lane-j",
+      "wp_ids": [
+        "WP10"
+      ],
+      "write_scope": [
+        ".github/workflows/ci.yml",
+        "CHANGELOG.md",
+        "README.md",
+        "packages/mission-shell/README.md"
+      ],
+      "predicted_surfaces": [
+        "api",
+        "app-shell",
+        "artifact-rendering",
+        "dashboard",
+        "tracker-integration",
+        "workspace"
+      ],
+      "depends_on_lanes": [
+        "lane-i"
+      ],
+      "parallel_group": 8
+    }
+  ],
+  "computed_at": "2026-10-16T11:09:03.929566+00:00",
+  "computed_from": "dependency_graph+ownership",
+  "planning_artifact_wps": [],
+  "planning_commit_sha": "061b5cffd4140faaaebf276a005de84be2a0f082"
+}

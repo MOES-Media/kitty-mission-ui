@@ -155,13 +155,27 @@ the round-1 statement "a `resync` follows `connecting` → degraded → `connect
 
 Raw 13, confirmed 13, refuted 0. Plants, leg times and timeouts are unchanged by this round.
 
+## Fix round 3 (re-sweep)
+
+A re-sweep of `079614e` confirmed all 13 round-2 folds and found four small items. All are folded.
+
+| Id | Sev | Finding | Verified | Disposition |
+|---|---|---|---|---|
+| FS2-01 | 3 | The gate, the first-`connected` mark and the refused flag were global, so after `setClient` a new client would never be gated, and a client already `connected` might never be read. | CONFIRMED | accepted: all three are per client and reset by `setClient`. An initial `connected` (at mount or at `setClient`) counts as that client's first `connected` and issues the displayed set at once. New Node test: `setClient(b)` with `b` going `connecting` → `connected` gets shell-issued reads and no `resync` (`data-model.md`, research R-05, plan IC-03). |
+| FS2-02 | n/g | The ConnectionPresentation table said "normal" reads for `reconnecting` and the degraded states, ignoring the gate. | CONFIRMED | accepted: those Reads cells read "gated before the first `connected`; normal after" (`data-model.md`). |
+| FS2-03 | n/g | `reads: 'unavailable'` became dead after FS-01, because the contract-mismatch story issues no reads. | CONFIRMED | accepted: the option is dropped; the story is relabelled "(no reads; `error` from the degraded gate)" (`stories.md`, research R-08). |
+| FS2-04 | n/g | "Once the reads have settled" was not mechanised for the `startConnected` stories. | CONFIRMED | accepted: `storyClient` tracks its read promises and exposes `whenSettled()`. The state switch happens on the microtask after the last read settles (`stories.md`, research R-08). |
+
+Raw 4, confirmed 4, refuted 0. Plants, leg times and timeouts are unchanged.
+
 ## Totals
 
 | Round | Raw rows | Confirmed | Refuted | Noted | Ruled (of the confirmed) |
 |---|---|---|---|---|---|
 | 1 (three delegates) | 50 | 49 | 0 | 1 | 5 |
 | 2 (fresh sweep) | 13 | 13 | 0 | 0 | 0 |
-| **All** | **63** | **62** | **0** | **1** (closed) | **5** |
+| 3 (re-sweep) | 4 | 4 | 0 | 0 | 0 |
+| **All** | **67** | **66** | **0** | **1** (closed) | **5** |
 
 - Every confirmed finding is dispositioned.
 - R6-07 was deferred to the orchestrator and is now closed (FS-09). R1-01 and R2-09 are superseded by FS-01 and FS-02.

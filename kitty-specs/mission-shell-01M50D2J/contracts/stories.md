@@ -21,11 +21,12 @@
 
 ## Story data (R2-12, R1-01)
 
-- **Client.** `storyClient({ state, reads, startConnected })` is story-local. `reads: 'fixture'` delegates to
-  `createFixtureClient(...)`, and `reads: 'unavailable'` resolves every read as
-  `{ ok: false, unavailable: 'contract-mismatch' }`.
+- **Client.** `storyClient({ state, startConnected })` is story-local, and its reads delegate to
+  `createFixtureClient(...)`. The `reads: 'unavailable'` option is dropped (FS2-03).
   - Because the shell reads nothing before the first `connected` (FS-01), a story "with data" starts its `connection`
-    in `connected`. Once the reads have settled, under the immediate scheduler, it switches to the story's `state`.
+    in `connected`.
+  - `storyClient` tracks every read promise it hands out and exposes `whenSettled()`. The switch to the story's
+    `state` happens on the microtask after the last tracked read settles (FS2-04).
   - The `connecting` story and the contract-mismatch story without data report their `state` from the start, so no
     read is ever issued and no-value slots show `loading` or `error`.
 - **Fixture.** The fixture is always created with `fixtures: { changes: { missionId: <the sequence id>, items: [] } }`,
@@ -41,7 +42,7 @@
 | Shell/Connection banners | `shell-connection-banners--connecting-1280` | `vw-1280` | project layout, Missions, `connecting` |
 | | `shell-connection-banners--reconnecting-1280` | `vw-1280` | Missions with data, `reconnecting` past the grace period |
 | | `shell-connection-banners--service-missing-1280` | `vw-1280` | Missions with data, `degraded: service-missing` |
-| | `shell-connection-banners--contract-mismatch-1280` | `vw-1280` | Missions without data (`reads: 'unavailable'`, `error`), `degraded: contract-mismatch` |
+| | `shell-connection-banners--contract-mismatch-1280` | `vw-1280` | Missions without data (no reads; `error` from the degraded gate), `degraded: contract-mismatch` from the start |
 | | `shell-connection-banners--live-updates-off-1280` | `vw-1280` | Missions with data, refused stream |
 | Shell/Layouts | `shell-layouts--project-missions-1280` | `vw-1280` | project layout, Missions, no Refresh (desktop: "All projects" footer) |
 | | `shell-layouts--project-ops-1280` | `vw-1280` | project layout, Ops, Refresh shown |

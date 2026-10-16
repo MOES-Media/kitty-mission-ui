@@ -1,0 +1,290 @@
+work_packages:
+- id: WP01
+  title: Destinations, routes and displayed sets (with the Node test project)
+  dependencies: []
+  owned_files:
+  - packages/mission-shell/vitest.config.ts
+  - packages/mission-shell/test/setup/**
+  - packages/mission-shell/src/core/routes.ts
+  - packages/mission-shell/src/core/displayed.ts
+  - packages/mission-shell/test/logic/routes.test.ts
+  - packages/mission-shell/test/logic/sentinel.test.ts
+  requirement_refs:
+  - FR-001
+  - FR-002
+  - FR-015
+  - NFR-007
+  plan_concern_refs:
+  - IC-01
+  subtasks:
+  - T001
+  - T002
+  - T003
+  - T004
+  - T005
+  prompt_file: tasks/WP01-destinations-routes-and-displayed-sets.md
+  agent_profile: frontend-freddy
+  role: implementer
+  agent: claude
+- id: WP02
+  title: 'Refresh engine: policy, read scheduler, page chains and the refresh-policy plant'
+  dependencies:
+  - WP01
+  owned_files:
+  - packages/mission-shell/src/core/refresh-policy.ts
+  - packages/mission-shell/src/core/scheduler.ts
+  - packages/mission-shell/test/support/**
+  - packages/mission-shell/test/logic/refresh-policy.test.ts
+  - packages/mission-shell/test/logic/scheduler.test.ts
+  - gates/plants/unit-tests/**
+  requirement_refs:
+  - FR-007
+  - FR-008
+  - FR-009
+  - FR-010
+  - FR-017
+  - NFR-001
+  - NFR-002
+  - NFR-003
+  - C-004
+  - SC-002
+  plan_concern_refs:
+  - IC-02
+  subtasks:
+  - T006
+  - T007
+  - T008
+  - T009
+  - T010
+  - T011
+  prompt_file: tasks/WP02-refresh-engine.md
+  agent_profile: frontend-freddy
+  role: implementer
+  agent: claude
+- id: WP03
+  title: 'Shell controller: results to view state, session, explicit refresh and connection'
+  dependencies:
+  - WP02
+  owned_files:
+  - packages/mission-shell/src/core/results.ts
+  - packages/mission-shell/src/core/connection.ts
+  - packages/mission-shell/src/controller/**
+  - packages/mission-shell/test/logic/controller.test.ts
+  - packages/mission-shell/test/logic/results.test.ts
+  - packages/mission-shell/test/logic/connection.test.ts
+  requirement_refs:
+  - FR-005
+  - FR-006
+  - FR-010
+  - FR-011
+  - FR-016
+  - NFR-004
+  - NFR-007
+  - SC-003
+  plan_concern_refs:
+  - IC-03
+  subtasks:
+  - T012
+  - T013
+  - T014
+  - T015
+  - T016
+  - T017
+  - T018
+  prompt_file: tasks/WP03-shell-controller.md
+  agent_profile: frontend-freddy
+  role: implementer
+  agent: claude
+- id: WP04
+  title: Host interface, desktop and dashboard modes, and link safety
+  dependencies:
+  - WP03
+  owned_files:
+  - packages/mission-shell/src/core/host.ts
+  - packages/mission-shell/src/core/links.ts
+  - packages/mission-shell/test/logic/host.test.ts
+  - packages/mission-shell/test/logic/links.test.ts
+  requirement_refs:
+  - FR-012
+  - FR-013
+  - FR-014
+  - FR-015
+  - NFR-007
+  plan_concern_refs:
+  - IC-04
+  subtasks:
+  - T019
+  - T020
+  - T021
+  - T022
+  prompt_file: tasks/WP04-host-interface-modes-and-links.md
+  agent_profile: frontend-freddy
+  role: implementer
+  agent: claude
+- id: WP05
+  title: Intent table and the type-level coverage check
+  dependencies:
+  - WP04
+  owned_files:
+  - scripts/typings.mjs
+  - scripts/typings.test.mjs
+  - packages/mission-shell/src/generated/**
+  - packages/mission-shell/src/intents/**
+  - gates/plants/typecheck/**
+  requirement_refs:
+  - FR-003
+  - FR-004
+  - FR-017
+  - SC-001
+  plan_concern_refs:
+  - IC-05
+  subtasks:
+  - T023
+  - T024
+  - T025
+  - T026
+  prompt_file: tasks/WP05-intent-table-and-coverage-check.md
+  agent_profile: frontend-freddy
+  role: implementer
+  agent: claude
+- id: WP06
+  title: Svelte view, intent bindings and the ./shell entry
+  dependencies:
+  - WP05
+  - WP07
+  owned_files:
+  - packages/mission-shell/src/ui/**
+  - packages/mission-shell/src/shell.ts
+  - packages/mission-shell/package.json
+  - packages/mission-shell/test/package.test.ts
+  - packages/mission-shell/test/shell/**
+  requirement_refs:
+  - FR-001
+  - FR-003
+  - FR-011
+  - FR-014
+  - FR-015
+  - FR-016
+  - FR-017
+  - NFR-001
+  - C-005
+  - SC-003
+  - SC-005
+  plan_concern_refs:
+  - IC-06
+  subtasks:
+  - T027
+  - T028
+  - T029
+  - T030
+  - T031
+  - T032
+  - T033
+  prompt_file: tasks/WP06-svelte-view-bindings-and-shell-entry.md
+  agent_profile: frontend-freddy
+  role: implementer
+  agent: claude
+- id: WP07
+  title: 'Shell lint: I/O globals, markup elements and layering'
+  dependencies: []
+  owned_files:
+  - eslint.config.mjs
+  - gates/plants/eslint/**
+  requirement_refs:
+  - C-001
+  - C-005
+  - C-007
+  - FR-017
+  plan_concern_refs:
+  - IC-07
+  subtasks:
+  - T034
+  - T035
+  - T036
+  - T037
+  prompt_file: tasks/WP07-shell-lint-io-markup-layering.md
+  agent_profile: node-norris
+  role: implementer
+  agent: claude
+- id: WP08
+  title: Shell stories, Storybook integration and candidate baselines (before CP-1)
+  dependencies:
+  - WP06
+  owned_files:
+  - packages/mission-shell/src/stories/**
+  - apps/storybook/.storybook/main.ts
+  - apps/storybook/package.json
+  - pnpm-lock.yaml
+  - gates/plants/storybook-build/**
+  - gates/plants/visual/**
+  requirement_refs:
+  - FR-017
+  - FR-018
+  - NFR-005
+  - NFR-006
+  - C-002
+  - C-006
+  - SC-006
+  plan_concern_refs:
+  - IC-08
+  subtasks:
+  - T038
+  - T039
+  - T040
+  - T041
+  - T042
+  - T043
+  prompt_file: tasks/WP08-stories-storybook-and-candidate-baselines.md
+  agent_profile: frontend-freddy
+  role: implementer
+  agent: claude
+- id: WP09
+  title: Baseline finalisation after CP-1
+  dependencies:
+  - WP08
+  owned_files:
+  - apps/storybook/tests/visual/__snapshots__/shell-*.png
+  requirement_refs:
+  - FR-018
+  - SC-007
+  plan_concern_refs:
+  - IC-08
+  subtasks:
+  - T044
+  - T045
+  - T046
+  - T047
+  prompt_file: tasks/WP09-baseline-finalisation-after-cp1.md
+  agent_profile: frontend-freddy
+  role: implementer
+  agent: claude
+- id: WP10
+  title: Provisional proof timings, documentation and frozen-surface wrap-up
+  dependencies:
+  - WP09
+  owned_files:
+  - .github/workflows/ci.yml
+  - packages/mission-shell/README.md
+  - README.md
+  - CHANGELOG.md
+  requirement_refs:
+  - C-003
+  - C-008
+  - NFR-005
+  - NFR-006
+  - SC-004
+  - SC-005
+  - SC-006
+  - SC-007
+  plan_concern_refs:
+  - IC-09
+  subtasks:
+  - T048
+  - T049
+  - T050
+  - T051
+  - T052
+  prompt_file: tasks/WP10-timings-docs-and-frozen-surface-wrap-up.md
+  agent_profile: node-norris
+  role: implementer
+  agent: claude
