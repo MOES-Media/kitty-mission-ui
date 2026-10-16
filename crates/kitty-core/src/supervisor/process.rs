@@ -251,12 +251,22 @@ impl ChildGuard {
     }
 
     /// A signal to the whole group, only while the leader has not been reaped.
-    fn signal_group(&self, sig: i32) {
+    fn signal_group(&mut self, sig: i32) {
         if self.reaped || self.child.id().is_none() {
             return;
         }
-        // The group may already be empty; there is nothing to do about ESRCH.
-        let _ = sys::kill_group(self.pgid, sig);
+        // Without process groups the only thing to stop is the leader itself, at once (ARCH-005).
+        #[cfg(not(unix))]
+        {
+            let _ = sig;
+            let _ = self.child.start_kill();
+            return;
+        }
+        #[cfg(unix)]
+        {
+            // The group may already be empty; there is nothing to do about ESRCH.
+            let _ = sys::kill_group(self.pgid, sig);
+        }
     }
 
     async fn wait_bounded(&mut self, limit: Duration) -> bool {
@@ -303,6 +313,10 @@ impl Drop for ChildGuard {
         let leader_unreaped = !self.reaped && self.child.id().is_some();
         if (leader_unreaped || self.reaped) && !self.post_reap_kill_sent {
             let _ = sys::kill_group(self.pgid, sys::KILL);
+        }
+        #[cfg(not(unix))]
+        if leader_unreaped {
+            let _ = self.child.start_kill();
         }
         for drain in &self.drains {
             drain.abort();

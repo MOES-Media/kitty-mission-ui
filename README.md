@@ -403,6 +403,8 @@ It serves the pinned contract document, so the digest check passes. The supervis
   running. Tauri's app exit ends the process that way, so call `stop().await` before exiting (`#20`).
 - On macOS, an app started by launchd gets a minimal `PATH`, so give the host a configured path. Windows `PATHEXT`
   and Job Objects are not handled yet (`#20`).
+- On Windows, `stop()` ends the service process at once: there is no process-group kill and no grace period yet, so
+  child processes of the service can survive. Job Objects follow in `#20`.
 
 **The contract document.** The stub and the digest check use `contracts/fixtures/mission-status.openapi.json`, a
 bundle that `pnpm contract:generate` writes from the vendored contract. Never edit it by hand: `Gate: contract` fails
