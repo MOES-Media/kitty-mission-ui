@@ -198,10 +198,10 @@
       "criterion_id": "FR-020",
       "description": "Verify FR-020 is satisfied",
       "proof_type": "automated_test",
-      "evidence": null,
-      "pass_fail": "pending",
-      "verified_by": null,
-      "verified_at": null,
+      "evidence": "crates/kitty-core/tests/supervision.rs (line 740) five_crashes_give_up_with_the_last_exit_status: under the recording sleeper the delays are exactly 0.5, 1, 2, 4 s and the 5th crash gives Stopped with service-missing (crashing); crates/kitty-core/src/supervisor/policy.rs unit tests under a manual clock: four_quick_crashes_back_off_then_the_fifth_gives_up, a_long_ready_resets_the_index_but_not_the_window (60 s reset), five_crashes_each_after_61_s_of_ready_still_give_up, crashes_301_s_apart_never_give_up. The 30 s cap is removed by amendment A-02",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-16T16:43:50.982848+00:00",
       "notes": "TODO: replace with a real acceptance criterion"
     },
     {
