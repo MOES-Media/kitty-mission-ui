@@ -303,8 +303,15 @@ fn kill_fakes_of(root: &Path) {
                 let Ok(cmdline) = std::fs::read(format!("/proc/{pid}/cmdline")) else {
                     continue;
                 };
-                let text = String::from_utf8_lossy(&cmdline);
-                if text.contains("kitty-fake-service") && text.contains(&needle) {
+                // Arguments are NUL-separated; match the root as the whole value of a `--flag=<root>` argument, so
+                // that a root ending in `-1` never matches one ending in `-10`.
+                let ours = cmdline.split(|b| *b == 0).any(|arg| {
+                    let arg = String::from_utf8_lossy(arg);
+                    arg.strip_suffix(&needle)
+                        .is_some_and(|flag| flag.starts_with("--") && flag.ends_with('='))
+                });
+                let is_fake = String::from_utf8_lossy(&cmdline).contains("kitty-fake-service");
+                if ours && is_fake {
                     kill_if_fake(pid);
                 }
             }
