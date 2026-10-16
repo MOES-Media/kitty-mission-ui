@@ -37,11 +37,11 @@
     {
       "criterion_id": "FR-004",
       "description": "Verify FR-004 is satisfied",
-      "proof_type": "automated_test",
-      "evidence": null,
-      "pass_fail": "pending",
-      "verified_by": null,
-      "verified_at": null,
+      "proof_type": "gate_proof",
+      "evidence": "packages/mission-shell/src/intents/coverage.ts: the check types unmapped (Exclude<Declared, Mapped>) and unknownIntent, assigned true and checked by svelte-check; Declared comes from MissionUiIntents generated from custom-elements.json by scripts/typings.mjs; packages/mission-shell/src/intents/table.ts HostedTag excludes sk-mission-sample by name. typecheck plant P-2 deletes the one-line sk-copy-command entry and fails naming 'sk-drift-screen sk-copy-command'; WP05 review: 'typecheck proven (clean 0, planted 1)', plus type probes naming a missing via pair and an undeclared pair. pnpm typecheck 0 errors at acceptance",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-16T20:08:42.328742+00:00",
       "notes": "TODO: replace with a real acceptance criterion"
     },
     {
