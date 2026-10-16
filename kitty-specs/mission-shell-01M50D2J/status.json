@@ -205,6 +205,9 @@
       "last_event_id": "01M52PVBFSMWERJ313T29EASJK",
       "last_transition_at": "2026-10-16T15:56:18.297186+00:00",
       "model": "__resolved_model_absent__",
+      "notes": [
+        "Review passed: cycle 3 fixes verified (raw-route echo skip announces non-canonical routes; client effect before route effect, no read on the replaced client); 470 tests, gates clean; P-7 anchor and token unchanged; ./shell matches the contract. Non-blocking carried to pre-merge: N1 navigation model ownership (snapshot should own it), N3 casts in ProjectsScreen, N5 unnamed mission-ui flake, effect order relies on Svelte tree order (pinned by test), one extra listMissions read on the new client in a same-tick client+route change."
+      ],
       "provider": "__resolved_provider_absent__",
       "review": null,
       "review_result": {
