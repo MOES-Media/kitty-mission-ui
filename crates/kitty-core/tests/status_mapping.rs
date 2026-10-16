@@ -344,18 +344,19 @@ async fn a_slow_receiver_gets_lagged_and_can_ask_for_the_status() {
         fast.wait_for("not found", |seen| stopped(seen) >= 1),
     )
     .await;
-    // 70 retries, each failing discovery again, each publishing a `Stopped`: 71 messages for a capacity of 64.
+    // 70 retries, each failing discovery again, each publishing a `Stopped`: 71 messages for a capacity of 64. The
+    // fast watcher sees each one before the next retry, so only the slow receiver ever falls behind.
     let mut sent = 0;
-    for _ in 0..70 {
+    for nth in 2..=71 {
         core.retry();
         sent += 1;
+        within(
+            "the retry is published",
+            fast.wait_for("the next stopped status", |seen| stopped(seen) == nth),
+        )
+        .await;
     }
     assert_eq!(sent, 70);
-    within(
-        "all published",
-        fast.wait_for("71 stopped statuses", |seen| stopped(seen) == 71),
-    )
-    .await;
     assert_eq!(discovery.calls(), 71);
     let lagged = slow.try_recv();
     assert_eq!(
