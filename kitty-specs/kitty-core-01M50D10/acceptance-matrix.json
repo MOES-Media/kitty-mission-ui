@@ -138,10 +138,10 @@
       "criterion_id": "FR-014",
       "description": "Verify FR-014 is satisfied",
       "proof_type": "automated_test",
-      "evidence": null,
-      "pass_fail": "pending",
-      "verified_by": null,
-      "verified_at": null,
+      "evidence": "crates/kitty-stub/tests/openapi.rs: serves_the_exact_bundle_bytes_as_yaml (line 33), the_route_sits_under_the_guard_and_is_get_only (line 47, wrong Host, Origin and Forwarded each 403; POST 405), the_binary_serves_the_default_bundle_byte_for_byte (line 283), an_explicit_openapi_file_is_served_instead (line 296), an_unreadable_explicit_openapi_file_exits_1_naming_only_the_base_name (line 309), a_missing_default_document_serves_404_not_an_error (line 343); crates/kitty-core/tests/contract_check.rs (line 63) uses a substitute document on the same stub",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-16T16:43:40.169388+00:00",
       "notes": "TODO: replace with a real acceptance criterion"
     },
     {
