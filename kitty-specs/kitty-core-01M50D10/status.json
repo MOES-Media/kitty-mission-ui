@@ -96,7 +96,8 @@
       "last_transition_at": "2026-10-16T12:59:24.011314+00:00",
       "model": "__resolved_model_absent__",
       "notes": [
-        "Ready for review: stub extensions in dce6341; Rust, contract, hygiene gates green; #17 stub tests byte-identical"
+        "Ready for review: stub extensions in dce6341; Rust, contract, hygiene gates green; #17 stub tests byte-identical",
+        "Review round 1 fixed: deadlines, kill-on-drop, scratch guards, unreadable-bundle test; gates green"
       ],
       "provider": "__resolved_provider_absent__",
       "review": null,
