@@ -62,7 +62,8 @@
       "last_transition_at": "2026-10-16T12:16:58.662244+00:00",
       "model": "__resolved_model_absent__",
       "notes": [
-        "Ready for review: bundled contract document (generateBundleSource), checkBundleFresh (exported from check.mjs, own try/catch), bundle committed + .gitattributes line, bundle.test.mjs, contract plant (9 plants). Two check.test.mjs expectations changed: C1 deleted-vendored-file token list gains one jsonStale; changed-vendored-example test now expects [jsonStale, jsonStale, jsonOracle] with the oracle message at index 2. One check test added. Contract gate-proof leg green, 128 s."
+        "Ready for review: bundled contract document (generateBundleSource), checkBundleFresh (exported from check.mjs, own try/catch), bundle committed + .gitattributes line, bundle.test.mjs, contract plant (9 plants). Two check.test.mjs expectations changed: C1 deleted-vendored-file token list gains one jsonStale; changed-vendored-example test now expects [jsonStale, jsonStale, jsonOracle] with the oracle message at index 2. One check test added. Contract gate-proof leg green, 128 s.",
+        "Review passed: bundle deterministic (sha256 ddebe5fd... x2 = committed), 0 $ref, anchor once; checkBundleFresh own try/catch, one problem each for missing/differing/regeneration-failure (probed); 2 check.test.mjs expectation changes justified (extra jsonStale is the bundle's; oracle index shift matches runChecks order); 5 reverts red (circular:false revert green, nit: JSON.stringify still rejects); #17 files byte-identical; plant appended, 8 entries unchanged; gate-proof contract ok 120 s; contract:check, test:contract 237/237, test:scripts 643/643, hygiene 0."
       ],
       "provider": "__resolved_provider_absent__",
       "review_result": {
