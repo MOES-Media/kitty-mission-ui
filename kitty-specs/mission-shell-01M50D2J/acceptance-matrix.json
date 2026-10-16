@@ -58,10 +58,10 @@
       "criterion_id": "FR-006",
       "description": "Verify FR-006 is satisfied",
       "proof_type": "automated_test",
-      "evidence": null,
-      "pass_fail": "pending",
-      "verified_by": null,
-      "verified_at": null,
+      "evidence": "packages/mission-shell/test/logic/controller.test.ts (line 707) '<name>: one read of that key and none of any other' for seven retry targets (line 716 'covers seven retry cases'), line 728 'sk-shell-retry re-reads only the chrome keys in error'; line 756 'Missions load-more appends one page with loadingMore true during the read and false after'; session state at line 632 (Missions query and filter survive Missions -> Pipeline -> Missions, fresh controller as control), line 643 (Drift selectedFinding), line 657 (tree expansion per Mission, drawer and flyout shell-wide); packages/mission-shell/test/logic/scheduler.test.ts line 621 load-more",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-16T20:08:45.790028+00:00",
       "notes": "TODO: replace with a real acceptance criterion"
     },
     {
