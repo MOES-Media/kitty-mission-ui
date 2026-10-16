@@ -304,7 +304,8 @@
       "last_transition_at": "2026-10-16T16:00:18.498867+00:00",
       "model": "__resolved_model_absent__",
       "notes": [
-        "WP09 implemented: facade, hint, host_exit, supervised stand-in; gates green"
+        "WP09 implemented: facade, hint, host_exit, supervised stand-in; gates green",
+        "Review passed: facade surface matches kitty-core-api.md (Core start/status/subscribe/retry/stop/ready_endpoint/read/open_stream/captured_output, Send+Sync+Clone); hint total (30 combos) and equal to port.ts strings read from disk; NotReady/ContractMismatch send nothing (request-log oracle + positive control); drop/stop/host-exit leave no process; pin checked before spawn. Rust gate, contract gate (237), hygiene green; reverts re-run (PDEATHSIG, pin-after-launch, first-status absorb) all red; 10 runs under 48 busy loops clean. Carry to pre-merge: all-zero Digest::unavailable on public Mismatch (document or add is_unavailable); unplanned out-of-map edits (contract.rs pub(crate) ctor, tests/common/claims.rs, lib.rs doc text) need owner acknowledgement; fake bin #[path]-includes a tests file; status freezes if the supervisor panics; supervised.rs asserts generation 1 with the ephemeral picker (rare self-connect retry); queued double retry() can restart twice."
       ],
       "provider": "__resolved_provider_absent__",
       "review_result": {
