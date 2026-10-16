@@ -70,7 +70,8 @@ The no-io gate stays exactly as it is.
 - **Spec**: C-001 (no I/O in the shell, including history, the clipboard and bare `window`), C-005 (`sk-*` elements
   for banners, notices and the Refresh button), C-007 (offline gates, plants required), FR-017 (every extended gate
   carries a plant).
-- **Who depends on this WP**: WP06 (IC-06) writes the Svelte view under these rules. WP01 to WP05 write `core/`,
+- **Who depends on this WP**: WP01 (IC-01) depends on it directly, so the lint blocks land first (B4, A3), and WP06
+  (IC-06) writes the Svelte view under these rules. WP01 to WP05 write `core/`,
   `controller/` and `intents/` under the layering block once it lands. Because WP07 has no dependencies, none of
   those directories may exist yet. The globs must still be correct for files that do not exist yet. The plants prove
   them.

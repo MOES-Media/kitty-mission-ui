@@ -13,6 +13,10 @@ requirement_refs:
 - NFR-007
 - SC-003
 - FR-007
+- FR-008
+- NFR-003
+- SC-002
+- C-004
 planning_base_branch: feat/mission-shell-18
 merge_target_branch: feat/mission-shell-18
 branch_strategy: Planning artifacts for this mission were generated on feat/mission-shell-18. During /spec-kitty.implement
@@ -413,11 +417,15 @@ Svelte.
     test that drives every connection state, every refusal example of T012 and every change kind through a mounted
     controller and asserts it completes (SC-003: 0 throws). Do not wrap the controller in `try/catch` in tests.
 
-11. **A8, C-004 (ownership boundary)**: assert that `client.subscribe` is called with **no scope** (the second
-    argument is `undefined`, or absent), and that no stream cursor is ever passed. Over a full mount, every change kind,
-    a reconnect with `resync`, a `setClient` and a `destroy`, the recording client sees zero `subscribe` calls with a
-    `SubscriptionScope` and zero `cursor` or `missionId` values. Positive control: the recording client does record
-    the scope of a direct test call `client.subscribe(l, { missionId: M })`, so the assertion is not vacuous.
+11. **A8, C-004 (ownership boundary), scoped to `subscribe` arguments only (B2)**:
+    - Assert that every `client.subscribe` call has **no `SubscriptionScope`**: the second argument is `undefined`, or
+      absent. So no stream `cursor` is ever passed.
+    - The test runs over a full mount, every change kind, a reconnect with `resync`, a `setClient` and a `destroy`. It
+      reads the subscribe arguments that WP02's `recording-client.ts` records.
+    - Reads are out of scope for this assertion: a read's `missionId` or `pageCursor` is not a stream cursor.
+    - Positive control: the recording client does record the scope of a direct test call
+      `client.subscribe(l, { missionId: M })`, so the assertion is not vacuous.
+    - No edit to `test/support/**` is needed (WP02 owns it).
 12. **A9, US1-2 (Mission title in the mission head)**: after navigating to Pipeline `M`, the snapshot's mission head
     `title` equals the `friendlyName` (or else `slug`) of the `getMission` value served (research R-18). Control: on
     the Missions destination the snapshot has no mission head.
@@ -433,9 +441,11 @@ Svelte.
       same reconnect sequence for the `resync` column.
     - Assert each row with the **same custom message** `` `refresh-policy mismatch on ${row.name}` `` (R6-08: no test
       title contains `refresh-policy mismatch`).
-    - Under plant P-1 this test also fails with that token, alongside WP02's test. That is expected, because P-1's
-      token is only required to appear in the planted output and be absent from the clean output (gate-proof).
-      Record in the final report that P-1's leg still passes with both tests present.
+    - Under plant P-1 this test also fails with that token, alongside WP02's test. That is expected: P-1's token is
+      only required to appear in the planted output and be absent from the clean output.
+    - **The P-1 leg proof with this file present is deferred to WP06 T033 step 4** (B1), whose unit-tests leg already
+      includes it. WP03 keeps only a clean-output check: `grep -c 'refresh-policy mismatch on missions'` on its clean
+      `heavy pnpm --filter @moes-media/mission-shell test` output must print 0.
     - This closes the gap the analyze gate found: the scheduler-level recording alone does not prove that the shipped
       controller wires the policy.
 

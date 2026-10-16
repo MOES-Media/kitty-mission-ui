@@ -84,6 +84,10 @@ work_packages:
   - NFR-007
   - SC-003
   - FR-007
+  - FR-008
+  - NFR-003
+  - SC-002
+  - C-004
   plan_concern_refs:
   - IC-03
   subtasks:
