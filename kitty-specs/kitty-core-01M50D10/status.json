@@ -194,7 +194,8 @@
       "last_transition_at": "2026-10-16T13:37:38.744108+00:00",
       "model": "__resolved_model_absent__",
       "notes": [
-        "Ready for review: contract.rs + contract_check.rs (82ab03c); gates green; dev digest median 17.2 ms"
+        "Ready for review: contract.rs + contract_check.rs (82ab03c); gates green; dev digest median 17.2 ms",
+        "Approved (82ab03c). Rust gate, contract gate (237/237), hygiene, terminology all exit 0; only contract.rs + contract_check.rs changed, no new crates, no 64-hex constant. Canonical form probed (2^53+1, -0, 1.0/1, 1440.5, UTF-8 key order, BOM/bidi round-trip, 1e400) and matches bundled-document.md. Reviewer reverts fail by name: cap > to >= -> four_mib_is_parsed_and_one_byte_more_is_refused; integer rule off -> number_rules. Carry-forward for orchestrator/WP09: (1) CheckOutcome::PinUnparseable is not in data-model.md; record it, WP09 must map it to contract-mismatch (fail closed); (2) bundled-document.md says include_str!, code uses include_bytes! per WP prompt; fix the contract text; (3) fetch_document duplicates client.rs relay (cap/Host/Accept); follow-up to parameterise relay in client.rs (WP04-owned); (4) module doc claims .inf surfaces as mismatch but yaml .inf becomes null and collides with null; (5) json_is_parsed_before_yaml does not kill a YAML-first mutant (near-equivalent). No production callers yet by design: consumers are WP08/WP09. Dev digest median 17.2 ms."
       ],
       "provider": "__resolved_provider_absent__",
       "review_result": {
