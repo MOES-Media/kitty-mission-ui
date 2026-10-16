@@ -171,6 +171,9 @@
       "last_event_id": "01M52HEYHN6NABFXMYA8TM5EJ3",
       "last_transition_at": "2026-10-16T14:22:08.949077+00:00",
       "model": "__resolved_model_absent__",
+      "notes": [
+        "INTENT_TABLE (40 pairs/23 intents), coverage check types, P-2 proven; controller dispatches via table (out-of-map edit)"
+      ],
       "provider": "__resolved_provider_absent__",
       "role": "implementer",
       "shell_pid": 230399,
