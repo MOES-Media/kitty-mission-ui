@@ -31,4 +31,5 @@ contracts/spec-kitty/** text eol=lf linguist-vendored
 contracts/fixtures/mission-status.examples.json text eol=lf linguist-generated=true
 contracts/fixtures/mission-status.fixtures.json text eol=lf linguist-generated=true
 contracts/fixtures/mission-status.routes.json text eol=lf linguist-generated=true
+contracts/fixtures/mission-status.openapi.json text eol=lf linguist-generated=true
 contracts/fixtures/mission-status.changes.json text eol=lf
