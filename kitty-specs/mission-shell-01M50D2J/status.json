@@ -1,21 +1,21 @@
 {
-  "event_count": 84,
-  "last_event_id": "01M52PQ8CBPN2JPJCPEDRJQECQ",
-  "materialized_at": "2026-10-16T15:54:04.043448+00:00",
+  "event_count": 100,
+  "last_event_id": "01M5350VTM5W9RC9FQ7S8SCZNX",
+  "materialized_at": "2026-10-16T20:03:58.932468+00:00",
   "mission_number": "",
   "mission_slug": "mission-shell-01M50D2J",
   "mission_type": "software-dev",
   "schema_version": 2,
   "summary": {
-    "approved": 6,
+    "approved": 10,
     "blocked": 0,
     "canceled": 0,
     "claimed": 0,
     "done": 0,
     "for_review": 0,
     "in_progress": 0,
-    "in_review": 1,
-    "planned": 3
+    "in_review": 0,
+    "planned": 0
   },
   "work_packages": {
     "WP01": {
@@ -197,21 +197,24 @@
     "WP06": {
       "actor": "claude",
       "agent": "claude",
-      "agent_profile": "reviewer-renata",
-      "agent_profile_version": "1.0",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
       "force_count": 2,
       "implementer_of_record": "claude",
-      "lane": "in_review",
-      "last_event_id": "01M52PQ8CBPN2JPJCPEDRJQECQ",
-      "last_transition_at": "2026-10-16T15:54:04.043448+00:00",
+      "lane": "approved",
+      "last_event_id": "01M52PVBFSMWERJ313T29EASJK",
+      "last_transition_at": "2026-10-16T15:56:18.297186+00:00",
       "model": "__resolved_model_absent__",
+      "notes": [
+        "Review passed: cycle 3 fixes verified (raw-route echo skip announces non-canonical routes; client effect before route effect, no read on the replaced client); 470 tests, gates clean; P-7 anchor and token unchanged; ./shell matches the contract. Non-blocking carried to pre-merge: N1 navigation model ownership (snapshot should own it), N3 casts in ProjectsScreen, N5 unnamed mission-ui flake, effect order relies on Svelte tree order (pinned by test), one extra listMissions read on the new client in a same-tick client+route change."
+      ],
       "provider": "__resolved_provider_absent__",
       "review": null,
       "review_result": {
-        "feedback_path": "/home/jeroennouws/dev/SK-missions/ui18/kitty-specs/mission-shell-01M50D2J/tasks/WP06-svelte-view-bindings-and-shell-entry/review-cycle-2.md",
-        "reference": "review-cycle://mission-shell-01M50D2J/WP06-svelte-view-bindings-and-shell-entry/review-cycle-2.md",
+        "feedback_path": "/home/jeroennouws/dev/SK-missions/ui18/kitty-specs/mission-shell-01M50D2J/tasks/WP06-svelte-view-bindings-and-shell-entry/review-cycle-3.md",
+        "reference": "review-cycle://mission-shell-01M50D2J/WP06-svelte-view-bindings-and-shell-entry/review-cycle-3.md",
         "reviewer": "claude",
-        "verdict": "changes_requested"
+        "verdict": "approved"
       },
       "role": "reviewer",
       "shell_pid": 817468,
@@ -259,25 +262,102 @@
       }
     },
     "WP08": {
-      "actor": "finalize-tasks",
+      "actor": "claude",
+      "agent": "claude",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
       "force_count": 0,
-      "lane": "planned",
-      "last_event_id": "01M526DCW7Z3DG968M5M68EXCV",
-      "last_transition_at": "2026-10-16T11:09:03.751538+00:00"
+      "implementer_of_record": "claude",
+      "lane": "approved",
+      "last_event_id": "01M52XEXWKNCMBB0K920CBWNM6",
+      "last_transition_at": "2026-10-16T17:51:51.187733+00:00",
+      "model": "__resolved_model_absent__",
+      "notes": [
+        "WP08 ready: stories, Storybook integration, P-5/P-6, eleven candidate baselines",
+        "Review passed: 11 shell stories at vw-1280 match the catalogue; mount option (a) with the container returned; storyClient wraps all nine reads, no exemption, no fixture state hook; lockfile touches only the apps/storybook importer and resolves to already-locked entries, frozen offline install clean; P-5 leg re-proven by the reviewer, P-6 anchor unique and leg proven; R5-01 clean; mission-ui and harness unchanged; scope = owned files plus the 11 shell PNGs. Pipeline capture variant reproduced 1 in 87 forced captures but 0 failures in 190 comparisons (sub-threshold); carried to WP09 and CI. CP-1 items and controller findings (picker now null, dashboard brand) carried in the review report."
+      ],
+      "provider": "__resolved_provider_absent__",
+      "review_result": {
+        "feedback_path": "/home/jeroennouws/dev/SK-missions/ui18/kitty-specs/mission-shell-01M50D2J/tasks/WP08-stories-storybook-and-candidate-baselines/review-cycle-1.md",
+        "reference": "review-cycle://mission-shell-01M50D2J/WP08-stories-storybook-and-candidate-baselines/review-cycle-1.md",
+        "reviewer": "claude",
+        "verdict": "approved"
+      },
+      "role": "reviewer",
+      "shell_pid": 1266325,
+      "shell_pid_created_at": "1792171389.86",
+      "subtasks": {
+        "T038": "done",
+        "T039": "done",
+        "T040": "done",
+        "T041": "done",
+        "T042": "done",
+        "T043": "done"
+      }
     },
     "WP09": {
-      "actor": "finalize-tasks",
+      "actor": "claude",
+      "agent": "claude",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
       "force_count": 0,
-      "lane": "planned",
-      "last_event_id": "01M526DCY5MNTA72K7S9340H0J",
-      "last_transition_at": "2026-10-16T11:09:03.813182+00:00"
+      "implementer_of_record": "claude",
+      "lane": "approved",
+      "last_event_id": "01M534B6C6E6VX9HFTQ2F3DKAF",
+      "last_transition_at": "2026-10-16T19:52:08.838088+00:00",
+      "model": "__resolved_model_absent__",
+      "notes": [
+        "IC-08b: CP-1 amendments A1-A5 applied, baselines regenerated, P-6 and P-7 re-proven",
+        "Review passed: A1-A5 applied per design-review.md; A1 and A5 mutations turn their tests red (reviewer-verified); 479 shell tests, gates clean; 3 regenerated PNGs match A1/A2, A3, A4; design-review.sha256 11/11 OK; R5-01 clean; P-6 and P-7 anchors unchanged; scope = granted files plus existing logic test files under the A4/A5 grant. Carry: contract copy table lacks the A2 short bodies and A3 brand (orchestrator); now test has a no-op time line; picker story clock precedes fixture data so every label is just now (WP08 story change request); possible A2 body flip when an in-flight read lands while degraded."
+      ],
+      "provider": "__resolved_provider_absent__",
+      "review_result": {
+        "feedback_path": "/home/jeroennouws/dev/SK-missions/ui18/kitty-specs/mission-shell-01M50D2J/tasks/WP09-baseline-finalisation-after-cp1/review-cycle-1.md",
+        "reference": "review-cycle://mission-shell-01M50D2J/WP09-baseline-finalisation-after-cp1/review-cycle-1.md",
+        "reviewer": "claude",
+        "verdict": "approved"
+      },
+      "role": "reviewer",
+      "shell_pid": 2262149,
+      "shell_pid_created_at": "1792180173.57",
+      "subtasks": {
+        "T044": "done",
+        "T045": "done",
+        "T046": "done",
+        "T047": "done"
+      }
     },
     "WP10": {
-      "actor": "finalize-tasks",
+      "actor": "claude",
+      "agent": "claude",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
       "force_count": 0,
-      "lane": "planned",
-      "last_event_id": "01M526DD0342JQV0N4F1BS4GMX",
-      "last_transition_at": "2026-10-16T11:09:03.875055+00:00"
+      "implementer_of_record": "claude",
+      "lane": "approved",
+      "last_event_id": "01M5350VTM5W9RC9FQ7S8SCZNX",
+      "last_transition_at": "2026-10-16T20:03:58.932468+00:00",
+      "model": "__resolved_model_absent__",
+      "notes": [
+        "Review passed: ci.yml diff is the one matrix timeout line (30 to 32, matches the plan projection and DoD; visual held at 60; job timeout-minutes frozen per C-003); reviewer re-ran T049 green, the swapped-ref negative control (exit 1, lowered timeout and all seven new plants dropped) and the job timeout-minutes mutation (named preflight.timeout-minutes); docs match src/shell.ts, the contracts and the CP-1 amendments; 341 stories confirmed on a fresh build; #17 README sections unchanged; no shell PNG touched after WP09; hygiene, terminology, test:scripts and lint green. Carry to the landing fold: the 32 is described as from local measurements but comes from the plan's CI projection (local proxy gives 30)."
+      ],
+      "provider": "__resolved_provider_absent__",
+      "review_result": {
+        "feedback_path": "/home/jeroennouws/dev/SK-missions/ui18/kitty-specs/mission-shell-01M50D2J/tasks/WP10-timings-docs-and-frozen-surface-wrap-up/review-cycle-1.md",
+        "reference": "review-cycle://mission-shell-01M50D2J/WP10-timings-docs-and-frozen-surface-wrap-up/review-cycle-1.md",
+        "reviewer": "claude",
+        "verdict": "approved"
+      },
+      "role": "reviewer",
+      "shell_pid": 2279233,
+      "shell_pid_created_at": "1792180895.04",
+      "subtasks": {
+        "T048": "done",
+        "T049": "done",
+        "T050": "done",
+        "T051": "done",
+        "T052": "done"
+      }
     }
   }
 }
