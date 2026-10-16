@@ -30,7 +30,8 @@
       "last_transition_at": "2026-10-16T12:49:38.835435+00:00",
       "model": "__resolved_model_absent__",
       "notes": [
-        "Ready for review: logic (Node) + unit (Chromium) projects, setup files, sentinel, routes, displayed sets. logic 27 tests, unit 69, total 96. No fallback."
+        "Ready for review: logic (Node) + unit (Chromium) projects, setup files, sentinel, routes, displayed sets. logic 27 tests, unit 69, total 96. No fallback.",
+        "Review cycle 1 fixed: setup files drain in afterEach+afterAll, record on globalThis; 3 probes x 2 projects fail the run; WP_ID_MAX_LENGTH copy check added"
       ],
       "provider": "__resolved_provider_absent__",
       "review": null,
