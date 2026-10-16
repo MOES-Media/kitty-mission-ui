@@ -5,7 +5,7 @@ import { flushSync, mount, unmount } from 'svelte';
 import { createFixtureClient, setConnectionState } from '../../src/client/fixture';
 import { createFakeScheduler } from '../support/fake-scheduler';
 import { recordingClient } from '../support/recording-client';
-import { M, deepQueryAll, recordingHost, screenTag, settle, type Harness } from './helpers';
+import { M, recordingHost, screenTag, settle, type Harness } from './helpers';
 import PropsHost from './PropsHost.svelte';
 
 const mounted: { app: ReturnType<typeof mount>; target: HTMLElement }[] = [];
