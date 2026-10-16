@@ -188,10 +188,10 @@
       "criterion_id": "FR-019",
       "description": "Verify FR-019 is satisfied",
       "proof_type": "automated_test",
-      "evidence": null,
-      "pass_fail": "pending",
-      "verified_by": null,
-      "verified_at": null,
+      "evidence": "crates/kitty-core/tests/supervision.rs (line 802) a_busy_port_is_retried_on_another_port: a squatter holds the first scripted port, the second launch uses a different port, Ready is reached on it, and there is no backoff; three_exits_before_ready_are_one_start_failure_on_three_ports (line 1065): 3 distinct ports, then one crash and a 500 ms backoff; crates/kitty-core/src/supervisor/ports.rs unit test the_loopback_picker_never_returns_an_excluded_port",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-16T16:43:49.174976+00:00",
       "notes": "TODO: replace with a real acceptance criterion"
     },
     {
