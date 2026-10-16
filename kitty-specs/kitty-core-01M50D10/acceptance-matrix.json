@@ -108,10 +108,10 @@
       "criterion_id": "FR-011",
       "description": "Verify FR-011 is satisfied",
       "proof_type": "automated_test",
-      "evidence": null,
-      "pass_fail": "pending",
-      "verified_by": null,
-      "verified_at": null,
+      "evidence": "crates/kitty-core/tests/contract_check.rs: pinned_document_matches (line 50) and modified_document_is_a_mismatch_with_both_digests (line 63) on the stub, same_stub_pinned_to_itself_matches_and_to_another_mismatches (line 81), absent_document_is_a_404_mismatch (line 95), unparseable_document_is_reported (line 108), four_mib_is_parsed_and_one_byte_more_is_refused (line 133); before ready: crates/kitty-core/tests/supervision.rs (line 1147) a_modified_contract_stops_the_service_with_both_digests (sequence Starting then Stopped [mismatch], never Ready); canonical-form unit tests in crates/kitty-core/src/contract.rs (key_order_does_not_matter, json_and_yaml_give_the_same_digest, number_rules). WP06 review reverts failed by name (cap > to >=, integer rule off)",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-16T16:43:34.801908+00:00",
       "notes": "TODO: replace with a real acceptance criterion"
     },
     {
