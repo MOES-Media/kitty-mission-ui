@@ -1,4 +1,16 @@
 {
+  "acceptance_history": [
+    {
+      "acceptance_mode": "local",
+      "accepted_at": "2026-10-16T16:45:31.514958+00:00",
+      "accepted_by": "claude",
+      "accepted_from_commit": "8619ae328fbca52c856d07b716c3b1a8bc210388"
+    }
+  ],
+  "acceptance_mode": "local",
+  "accepted_at": "2026-10-16T16:45:31.514958+00:00",
+  "accepted_by": "claude",
+  "accepted_from_commit": "8619ae328fbca52c856d07b716c3b1a8bc210388",
   "coordination_branch": "kitty/mission-kitty-core-01M50D10",
   "created_at": "2026-10-15T18:26:09.164818+00:00",
   "flattened": false,
