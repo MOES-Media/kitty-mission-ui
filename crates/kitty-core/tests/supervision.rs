@@ -24,10 +24,11 @@ use kitty_core::discovery::{
     DefaultDiscovery, Discovery, EnvSnapshot, MissingReason, ServiceMissing,
 };
 use kitty_core::status::{CoreStatus, DegradedReason, SupervisionState};
+#[cfg(target_os = "linux")]
+use kitty_core::supervisor::CAUSE_NOT_OWNED;
 use kitty_core::supervisor::{
     spawn_supervisor, FailureLog, ManualClock, PortPicker, RecordingSleeper, RestartPolicy,
     StatusSink, SupervisorConfig, SupervisorHandle, CAUSE_BUDGET, CAUSE_BUDGET_503,
-    CAUSE_NOT_OWNED,
 };
 use serde_json::Value;
 
@@ -222,6 +223,7 @@ fn held_ports(n: usize) -> Vec<(u16, std::net::TcpListener)> {
     held
 }
 
+#[cfg(target_os = "linux")]
 /// `n` claimed ports, each held by a squatter that answers with the pinned document.
 fn pinned_answering_squatters(n: usize) -> (Vec<u16>, Vec<SquatterGuard>) {
     held_ports(n)
@@ -264,6 +266,7 @@ fn write_scenario_with(root: &Path, launches: &[&str], extra: &[(&str, Value)]) 
         .expect("write the scenario");
 }
 
+#[cfg(target_os = "linux")]
 /// A `portModes` scenario value: these ports get a service that is alive but never binds.
 fn port_modes(ports: &[u16]) -> Value {
     Value::Object(
@@ -524,6 +527,7 @@ impl Rig {
         std::fs::write(self.root.join("crash-now"), "").expect("write the crash trigger");
     }
 
+    #[cfg(target_os = "linux")]
     /// The port of every launch that got far enough to write its record, in record order. A launch the supervisor
     /// stops before the fake has counted itself has no record, so record `n` is not always launch `n`.
     fn recorded_ports(&self) -> Vec<u16> {
