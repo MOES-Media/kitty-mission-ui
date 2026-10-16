@@ -80,7 +80,7 @@ export interface ShellController {
   loadMore(key: ResourceKey, cursor: string): void;
   rescan(missionId: string | null): void;
   copyCommand(text: string): Promise<void>;
-  // Desktop picker commands (FR-014); a dashboard controller ignores them.
+  // Desktop picker commands (FR-014); each ignores itself on a dashboard controller (no host call, no state change).
   openProject(key: string): void;
   requestOpenProject(): Promise<void>;
   retryProjects(): Promise<void>;
@@ -270,7 +270,7 @@ export function createShellController(options: ShellControllerOptions): ShellCon
     client = next;
     // Exactly one refocus registration per client. The listener is the shell's own: a throw inside it is a shell error.
     releaseRefocus = safeOnWindowRefocus(host, () => controller.windowRefocused());
-    if (destination.screen === 'projects' && mode === 'desktop') void loadProjects();
+    if (destination.screen === 'projects') void loadProjects();
     if (next === null) {
       gate.reset('connecting');
       scheduler.setDisplayed(displayedKeys(destination));
@@ -330,6 +330,9 @@ export function createShellController(options: ShellControllerOptions): ShellCon
   }
 
   // ---- the desktop picker ----
+  /** The one predicate behind FR-015: the picker and dialog commands act on the desktop only. */
+  const pickerAllowed = mode === 'desktop';
+
   /** Drops any listing in flight and closes the dialog. */
   function leavePicker(): void {
     projectsSeq += 1;
@@ -338,7 +341,7 @@ export function createShellController(options: ShellControllerOptions): ShellCon
   }
 
   async function loadProjects(): Promise<void> {
-    if (destroyed) return;
+    if (destroyed || !pickerAllowed) return;
     const seq = ++projectsSeq;
     picker = { ...picker, status: 'loading', entries: [] };
     emit();
@@ -351,7 +354,7 @@ export function createShellController(options: ShellControllerOptions): ShellCon
   }
 
   async function listFolders(location: string, selected: string | null): Promise<void> {
-    if (destroyed) return;
+    if (destroyed || !pickerAllowed) return;
     const seq = ++foldersSeq;
     picker = { ...picker, dialog: { ...picker.dialog, open: true, selected, status: 'loading' } };
     emit();
@@ -372,15 +375,17 @@ export function createShellController(options: ShellControllerOptions): ShellCon
   }
 
   const requestOpenProject = (): Promise<void> => {
-    if (destroyed) return Promise.resolve();
+    if (destroyed || !pickerAllowed) return Promise.resolve();
     picker = { ...picker, dialog: { open: true, location: '', folders: [], selected: null, status: 'loading' } };
     return listFolders('', null);
   };
 
   // ---- navigation ----
   /** Shows a destination: all the state work, and no `routeChanged`. */
-  function show(next: Destination): void {
+  function show(requested: Destination): void {
     if (destroyed) return;
+    // The picker does not exist on the dashboard: `/projects` is Missions there, as in parseRoute.
+    const next: Destination = requested.screen === 'projects' && !pickerAllowed ? { screen: 'missions' } : requested;
     const same = formatRoute(destination) === formatRoute(next);
     destination = next;
     if (next.screen !== 'projects') leavePicker();
@@ -394,7 +399,7 @@ export function createShellController(options: ShellControllerOptions): ShellCon
     const shown = new Set(displayedKeys(next).map(keyString));
     for (const id of [...loadMoreErrors.keys()]) if (!shown.has(id)) loadMoreErrors.delete(id);
     if (rescanKey !== null && !shown.has(rescanKey)) rescanKey = null;
-    if (next.screen === 'projects' && mode === 'desktop') void loadProjects();
+    if (next.screen === 'projects') void loadProjects();
     emit();
   }
 
@@ -407,6 +412,7 @@ export function createShellController(options: ShellControllerOptions): ShellCon
 
   /** A route the host set: normalised, and announced once only when it was not already canonical (no echo loop). */
   function applyHostRoute(route: string): void {
+    if (destroyed) return;
     const normalised = normaliseRoute(route, mode);
     show(normalised.destination);
     if (!normalised.canonical) safeRouteChanged(host, normalised.route);
@@ -640,14 +646,14 @@ export function createShellController(options: ShellControllerOptions): ShellCon
     rescan,
     copyCommand,
     openProject(key) {
-      if (destroyed) return;
+      if (destroyed || !pickerAllowed) return;
       safeOpenProject(host, { key });
     },
     requestOpenProject,
     retryProjects: loadProjects,
     browseFolder: (location) => listFolders(location, location),
     confirmOpenProject(location) {
-      if (destroyed) return;
+      if (destroyed || !pickerAllowed) return;
       safeOpenProject(host, { location });
     },
     retryFolders: () => listFolders(picker.dialog.location, picker.dialog.selected),

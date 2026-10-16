@@ -294,6 +294,68 @@ describe('the dashboard guard (FR-015)', () => {
   });
 });
 
+const COMMANDS: [string, (c: ShellController) => unknown, string][] = [
+  ['openProject', (c) => c.openProject('project-a'), 'openProject'],
+  ['requestOpenProject', (c) => c.requestOpenProject(), 'listFolders'],
+  ['browseFolder', (c) => c.browseFolder('folder-child'), 'listFolders'],
+  ['confirmOpenProject', (c) => c.confirmOpenProject('folder-child'), 'openProject'],
+  ['retryFolders', (c) => c.retryFolders(), 'listFolders'],
+  ['retryProjects', (c) => c.retryProjects(), 'listRecentProjects'],
+];
+
+describe('the picker commands guard themselves (FR-015)', () => {
+  it.each(COMMANDS)('%s: one host call on the desktop, none on the dashboard', async (_name, call, member) => {
+    const desktopHost = recordingHost();
+    const desktop = rig({ mode: 'desktop', route: '/projects', host: desktopHost.host }, null);
+    await settle(desktop.fake);
+    const before = desktopHost.calls.length;
+    await call(desktop.controller);
+    await settle(desktop.fake);
+    expect(desktopHost.calls.slice(before).map((c) => c.member)).toEqual([member]); // positive control
+    desktop.controller.destroy();
+
+    const dashboardHost = recordingHost();
+    const dashboard = rig({ mode: 'dashboard', route: '/missions', host: dashboardHost.host });
+    await settle(dashboard.fake);
+    const calls = dashboardHost.calls.length;
+    const snapshot = dashboard.controller.snapshot();
+    let emitted = 0;
+    const off = dashboard.controller.subscribe(() => (emitted += 1));
+    await call(dashboard.controller);
+    await settle(dashboard.fake);
+    off();
+    expect(dashboardHost.calls.length).toBe(calls);
+    expect(dashboard.controller.snapshot()).toEqual(snapshot);
+    expect(emitted).toBe(1);
+    dashboard.controller.destroy();
+  });
+
+  it('never shows the picker on the dashboard: navigate to projects is Missions', async () => {
+    const rec = recordingHost();
+    const { controller, fake } = rig({ mode: 'dashboard', route: '/ops', host: rec.host });
+    await settle(fake);
+    controller.navigate({ screen: 'projects' });
+    await settle(fake);
+    expect(controller.snapshot()).toMatchObject({ layout: 'project', destination: { screen: 'missions' } });
+    expect(rec.calls.filter((c) => c.member === 'routeChanged').map((c) => c.args[0])).toEqual(['/missions']);
+    expect(rec.count('listRecentProjects')).toBe(0);
+    controller.destroy();
+  });
+
+  it('calls no host member after destroy, setRoute included', async () => {
+    const rec = recordingHost();
+    const { controller, fake } = rig({ mode: 'desktop', route: '/missions', host: rec.host });
+    await settle(fake);
+    controller.destroy();
+    const calls = rec.calls.length;
+    controller.setRoute('/nonsense');
+    controller.navigate({ screen: 'ops' });
+    controller.refresh();
+    await settle(fake);
+    expect(rec.calls.length).toBe(calls);
+  });
+});
+
 describe('the desktop picker flows (FR-014)', () => {
   it('opens a project by key and by location, and browses with the folder as selected', async () => {
     const rec = recordingHost();
@@ -379,19 +441,35 @@ describe('the refocus subscription (R-11)', () => {
     await settle(fake);
     expect(client.take()).toEqual([]);
 
+    controller.navigate({ screen: 'artifacts', missionId: M });
+    await settle(fake);
+    client.take();
+    rec.refocus.fire();
+    await settle(fake);
+    expect(client.take().length).toBeGreaterThan(0); // Artifact re-reads its explicit-refresh keys
+
     controller.setClient(client);
     expect(rec.refocus).toMatchObject({ registered: 2, released: 1 });
     controller.destroy();
     expect(rec.refocus).toMatchObject({ registered: 2, released: 2 });
   });
 
-  it('gets no refocus refresh from a host without the member', async () => {
-    const { controller, fake, client } = rig({ mode: 'desktop', route: '/ops', host: {} });
-    await settle(fake);
-    client.take();
-    await settle(fake);
-    expect(client.take()).toEqual([]);
-    controller.destroy();
+  it('a host without the member gets no refocus refresh, while one with it does', async () => {
+    const withMember = recordingHost();
+    const a = rig({ mode: 'desktop', route: '/ops', host: withMember.host });
+    await settle(a.fake);
+    a.client.take();
+    withMember.refocus.fire();
+    await settle(a.fake);
+    expect(a.client.take()).toEqual(['listOpsInvocations {}']); // positive control
+    a.controller.destroy();
+
+    const b = rig({ mode: 'desktop', route: '/ops', host: {} });
+    await settle(b.fake);
+    b.client.take();
+    await settle(b.fake);
+    expect(b.client.take()).toEqual([]);
+    b.controller.destroy();
   });
 });
 

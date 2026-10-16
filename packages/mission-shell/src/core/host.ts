@@ -74,7 +74,7 @@ export function safeRouteChanged(host: ShellHost, route: string): void {
   }
 }
 
-/** `host.listRecentProjects()`; absent, throwing, rejecting or answering a non-list is `{ ok: false }` (the Projects screen shows `error`). */
+/** `host.listRecentProjects()` (known limit: only the container shape is checked, not the elements; the typed contract owns those); absent, throwing, rejecting or answering a non-list is `{ ok: false }` (the Projects screen shows `error`). */
 export async function safeListRecentProjects(host: ShellHost): Promise<ProjectsListing> {
   let answer: unknown;
   try {
@@ -85,7 +85,7 @@ export async function safeListRecentProjects(host: ShellHost): Promise<ProjectsL
   return Array.isArray(answer) ? { ok: true, entries: answer as ProjectEntry[] } : FAILED;
 }
 
-/** `host.listFolders(location)`; absent, throwing, rejecting or answering a malformed listing is `{ ok: false }` (the dialog shows `error`). */
+/** `host.listFolders(location)` (same element-shape limit); absent, throwing, rejecting or answering a malformed listing is `{ ok: false }` (the dialog shows `error`). */
 export async function safeListFolders(host: ShellHost, location: string): Promise<FoldersListing> {
   let answer: unknown;
   try {
