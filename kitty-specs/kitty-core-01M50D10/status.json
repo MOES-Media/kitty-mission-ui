@@ -267,7 +267,8 @@
       "model": "__resolved_model_absent__",
       "notes": [
         "Supervisor, policy, process group, spawner thread, fake service and 25 scenario tests; rust gate green (170 tests), gate-proof rust leg green twice, 10 identical determinism runs",
-        "Review cycle 1 fixed: B1 deterministic post-reap scenario, N1, N3, N4"
+        "Review cycle 1 fixed: B1 deterministic post-reap scenario, N1, N3, N4",
+        "Review passed (cycle 2): B1 fixed - scenario 12 deterministic (crash_now after Ready, exact sequence, failure log, sleeper log, live-grandchild control); post-reap SIGKILL revert caught 10/10 full parallel runs under 24-loop CPU load; 17 SEQUENCE digests identical across 50+ loaded runs; N1 owner re-check correct; N3 rig kills only exact-root fakes; N4 claims released, loop bounded, foreign dir fails by name. Carry to pre-merge: one unreproduced loaded failure (11/25, cascading via the shared panic counter) in 1 of 56 runs; N2 readiness-race test gap; N5 pin-unparseable mapping for WP09; N6 discovery on every restart; N7 unused per-launch request logs."
       ],
       "provider": "__resolved_provider_absent__",
       "review": null,
