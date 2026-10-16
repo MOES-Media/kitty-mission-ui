@@ -24,7 +24,7 @@ import {
   type ShellHost,
 } from '../core/host';
 import { isAllowedExternalHref } from '../core/links';
-import { formatRoute, normaliseRoute, parseRoute, type Destination, type ShellMode } from '../core/routes';
+import { formatRoute, isValidDestination, normaliseRoute, parseRoute, type Destination, type ShellMode } from '../core/routes';
 import {
   createConnectionGate,
   createReadScheduler,
@@ -535,7 +535,11 @@ export function createShellController(options: ShellControllerOptions): ShellCon
   };
 
   // ---- the intent commands (the table in ../intents/table.ts is the only dispatcher) ----
-  const go = (next: Destination): void => navigate(next);
+  // An intent's detail is untrusted: a destination whose ids miss their contract patterns is dropped silently, with no host
+  // call, no read and no routeChanged (CON-002).
+  const go = (next: Destination): void => {
+    if (isValidDestination(next)) navigate(next);
+  };
   const hrefDestination = (d: unknown): Destination => parseRoute((text(d, 'href') ?? '').replace(/^#/, ''), mode);
 
   function openMission(d: unknown): void {
@@ -556,10 +560,16 @@ export function createShellController(options: ShellControllerOptions): ShellCon
     const wpId = text(d, 'wpId');
     if (missionId !== undefined && wpId !== undefined) go({ screen: 'work-packages', missionId, wpId });
   }
+  function retryDrift(d: unknown): void {
+    const missionId = text(d, 'missionId');
+    const key: ResourceKey = missionId === undefined ? { kind: 'drift' } : { kind: 'drift', missionId };
+    if (isValidDestination({ screen: 'drift', ...(missionId === undefined ? {} : { missionId }) })) retry(key);
+  }
   function retryWorkPackage(d: unknown): void {
     const missionId = text(d, 'missionId');
     const wpId = text(d, 'wpId');
     if (missionId === undefined || wpId === undefined) return;
+    if (!isValidDestination({ screen: 'work-packages', missionId, wpId })) return;
     const target = text(d, 'target');
     if (target === 'work-package') retry({ kind: 'wp', missionId, wpId });
     else if (target === 'detail') retry({ kind: 'wp-detail', missionId, wpId });
@@ -569,6 +579,7 @@ export function createShellController(options: ShellControllerOptions): ShellCon
     if (missionId === undefined) return;
     const target = text(d, 'target');
     const path = text(d, 'path');
+    if (!isValidDestination({ screen: 'artifacts', missionId, ...(path === undefined ? {} : { path }) })) return;
     if (target === 'content' && path !== undefined) retry({ kind: 'artifact', missionId, path });
     else if (target === 'listing') retry({ kind: 'artifacts', missionId });
   }
@@ -597,7 +608,7 @@ export function createShellController(options: ShellControllerOptions): ShellCon
     loadMoreOps: (d) => loadMore(OPS_KEY, text(d, 'cursor') ?? ''),
     retryWorkPackage,
     retryArtifact,
-    retryDrift: (d) => retry(text(d, 'missionId') === undefined ? { kind: 'drift' } : { kind: 'drift', missionId: text(d, 'missionId') ?? '' }),
+    retryDrift,
     retryOps: (d) => retry(OPS_KEY, text(d, 'cursor')),
     selectFinding: (d) => controller.selectFinding(findingOf(d)),
     rescanDrift: (d) => rescan(text(d, 'missionId') ?? null),
