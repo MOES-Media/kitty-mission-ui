@@ -110,7 +110,7 @@ export function applyResult(slot: AppliedSlot, result: ReadResult, kindRule: Res
     return { value: slot.value, view: word, refusal: result.refusal };
   }
   if (slot.value !== undefined) return { value: slot.value, view: slot.view, refusal: slot.refusal };
-  return { value: slot.value, view: 'error', refusal: slot.refusal };
+  return { value: slot.value, view: 'error', refusal: null };
 }
 
 /** What the controller does when a load-more read fails; `results.ts` issues nothing itself. */
