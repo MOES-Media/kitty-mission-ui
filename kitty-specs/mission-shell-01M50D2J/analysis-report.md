@@ -4,7 +4,7 @@ artifact_type: spec-kitty.analysis-report
 command: /spec-kitty.analyze
 mission_slug: mission-shell-01M50D2J
 mission_id: 01M50D2JBWV6TYMCYCK6ADFWKF
-generated_at: '2026-10-16T12:02:27.928805+00:00'
+generated_at: '2026-10-16T12:03:10.349204+00:00'
 analyzer_agent: analyst-annie
 input_artifacts:
   spec.md:
@@ -21,10 +21,10 @@ input_artifacts:
     sha256: a2c150afd05fbc759da023d8ea357842418aed26b8b45c769b40532789e733ad
 verdict: ready
 issue_counts:
+  medium: 2
   critical: 0
   low: 2
   high: 0
-  medium: 2
   info: 0
 findings:
 - id: B1
