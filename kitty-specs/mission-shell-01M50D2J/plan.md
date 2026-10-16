@@ -247,7 +247,7 @@ README.md, CHANGELOG.md
   - `src/core/routes.ts`, `src/core/displayed.ts`, `test/logic/routes.test.ts`;
   - `packages/mission-shell/vitest.config.ts`, which adds `logic` with `browser: { enabled: false }`, excludes it from
     `unit`, and adds the sentinel test.
-- **Sequencing/depends-on**: none.
+- **Sequencing/depends-on**: IC-07 (the lint blocks land first, so every shell source is linted from the start).
 - **Risks**:
   - **Decoding**: a decode failure is an unknown route. Artifact paths are checked against the `ArtifactPath` pattern
     and length, and a Node test compares the copy with the contract YAML. Tested: `%`, `..%2F`, `%2F` and `%00`
@@ -289,7 +289,9 @@ README.md, CHANGELOG.md
   NFR-007, US2, US4, US6.
 - **Affected surfaces**:
   - `src/core/results.ts`, `src/core/connection.ts`, `src/controller/shell-controller.ts`;
-  - `test/logic/{controller,results,connection}.test.ts`.
+  - `test/logic/{controller,results,connection}.test.ts`;
+  - `test/logic/controller-recording.test.ts`: the literal expected recording replayed through the shipped
+    controller (analyze A1).
 - **Sequencing/depends-on**: IC-01, IC-02.
 - **Risks**:
   - **Gate and degraded states** (FS-01, FS-02; R1-01 and R2-09 superseded):
