@@ -68,10 +68,10 @@
       "criterion_id": "FR-007",
       "description": "Verify FR-007 is satisfied",
       "proof_type": "automated_test",
-      "evidence": null,
-      "pass_fail": "pending",
-      "verified_by": null,
-      "verified_at": null,
+      "evidence": "packages/mission-shell/test/logic/controller.test.ts (line 137) 'subscribes once and listens to the connection once, per client, over mount, setClient and destroy' and line 151 (0 reads after destroy, positive control before); packages/mission-shell/test/shell/mount.test.ts line 25 'mount, setClient, destroy: one subscription, one connection listener and one refocus registration per client' and line 52 'a change delivered on the replaced client, and on the destroyed one, records zero reads'; unscoped: packages/mission-shell/test/logic/controller.test.ts line 954 'passes no SubscriptionScope to any subscribe call' with a positive control at line 976",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-16T20:08:47.557599+00:00",
       "notes": "TODO: replace with a real acceptance criterion"
     },
     {
