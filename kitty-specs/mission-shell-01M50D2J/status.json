@@ -71,6 +71,9 @@
       "last_event_id": "01M529NQ171BZ5QGAYWD5HMF8R",
       "last_transition_at": "2026-10-16T12:06:02.023339+00:00",
       "model": "__resolved_model_absent__",
+      "notes": [
+        "Shell I/O, markup and layering lint blocks plus plants P-3, P-4, P-8 (commit ff6ab6f). Out-of-map edit: one line in gates/markdown-lint.selftest.ts (navigator.language -> String(performance.now())). WP06 note: 'import type { Snippet } from svelte' is reported in core/controller/intents, so Snippet-typed code must live outside them. Eslint leg 127 s, step about 0.16 min, formula 4.1 <= 8."
+      ],
       "provider": "__resolved_provider_absent__",
       "role": "implementer",
       "shell_pid": 3738498,
