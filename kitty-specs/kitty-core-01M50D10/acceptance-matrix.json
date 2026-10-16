@@ -68,10 +68,10 @@
       "criterion_id": "FR-007",
       "description": "Verify FR-007 is satisfied",
       "proof_type": "automated_test",
-      "evidence": null,
-      "pass_fail": "pending",
-      "verified_by": null,
-      "verified_at": null,
+      "evidence": "crates/kitty-core/tests/stream.rs (line 168) scoped_stream_relays_changes_json_item_by_item and (line 184) unscoped_stream_has_no_cursors: each relayed change is compared with its changes.json item (event, cursor from scopedId only when scoped, data bytes), 5 of 5, in order; heartbeats_are_never_relayed (line 250) with a wire positive control; log_truncated_is_its_own_kind_with_no_cursor (line 203); data_that_is_not_one_json_value_is_malformed_data (line 593) shows data bytes relayed unchanged; unknown event names are diagnostics, per the spec edge case (line 654)",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-16T16:43:26.341977+00:00",
       "notes": "TODO: replace with a real acceptance criterion"
     },
     {
