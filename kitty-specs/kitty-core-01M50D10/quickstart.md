@@ -40,7 +40,7 @@ cargo run -p kitty-stub -- --fixtures contracts/fixtures --select streamEvents=S
 ```bash
 cargo build -p kitty-stub
 target/debug/kitty-stub --mission-status.project-root="$(mktemp -d)" --mission-status.port=0
-# no --fixtures: <project-root>/fixtures if present, else the workspace contracts/fixtures
+# no --fixtures: <project-root>/.kitty-stub/fixtures if present, else the workspace contracts/fixtures
 ```
 
 To have a host supervise it, set its configured service path, or `KITTY_MISSION_STATUS_SERVICE`, to the absolute path of `target/debug/kitty-stub`.
@@ -60,10 +60,14 @@ KITTY_MISSION_STATUS_SERVICE=<path to the service binary> <host command>
 ## Verify the frozen surface (SC-004)
 
 ```bash
+git fetch origin main
 base="$(git merge-base HEAD origin/main)"
 git diff --exit-code "$base" -- packages/
 git diff --exit-code "$base" -- \
   contracts/fixtures/mission-status.routes.json contracts/fixtures/mission-status.examples.json \
   contracts/fixtures/mission-status.fixtures.json contracts/fixtures/mission-status.changes.json
 git diff "$base" -- Cargo.toml | grep -n '^[-+]members' && echo "members changed: FAIL" || echo "members unchanged"
+# ci.yml: the job ids and the matrix.gate list must be unchanged (timeout values may change)
+diff <(git show "$base":.github/workflows/ci.yml | grep -E '^  [a-z-]+:$') <(grep -E '^  [a-z-]+:$' .github/workflows/ci.yml) && echo "jobs unchanged"
+diff <(git show "$base":.github/workflows/ci.yml | grep -E '^ +gate: \[') <(grep -E '^ +gate: \[' .github/workflows/ci.yml) && echo "matrix.gate unchanged"
 ```

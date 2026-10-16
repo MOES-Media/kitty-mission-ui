@@ -8,7 +8,7 @@
 - The mission PR goes from `feat/kitty-core-19` into `main`.
 - The coordination branch `kitty/mission-kitty-core-01M50D10` carries status and event logs only. It is never merged into `feat/kitty-core-19`, and lanes are based on `feat/kitty-core-19` (see "Branches and merge order").
 
-**Revision**: plan-squad fix round 1. All R1–R6 findings are folded in; see `reviews/plan.squad.md`.
+**Revision**: plan-squad fix rounds 1 and 2. All R1–R6 findings and the fresh-sweep items (FS-01 to FS-17) are folded in; see `reviews/plan.squad.md`.
 **Plan decisions**: every decision is resolved. The four forks were each resolved as A on 2026-10-15, and four operator rulings from the squad round are recorded as decisions (see "Plan decisions").
 
 ## Summary
@@ -201,7 +201,7 @@ sequenceDiagram
   participant T as Spawner thread
   participant P as service group
   H->>C: Core::start(config) → (Core, Subscription{initial, rx})
-  C->>S: spawn task (Starting, generation 0)
+  C->>S: spawn task (Starting, generation 1)
   S->>S: discovery.locate()  (miss → Stopped + service-missing:not-found)
   Note over S: one start budget = start_timeout (A-03)
   loop up to 3 attempts, ports never repeated (FR-019, R2-17)
@@ -317,7 +317,7 @@ README.md, CHANGELOG.md             # IC-10
   - `Cargo.lock`.
 - **Sequencing/depends-on**: none. This IC goes first.
 - **Risks**:
-  - **Lock resolution (R3-10, R4-10).** Online resolution differs from the evidence set on three entries: `want` (0.3.2, published 2026-10-05, too young), `cfg-if` (1.0.5) and `generic-array` (0.14.9). The WP adds the dependencies, then runs `cargo update -p want --precise 0.3.1`, `cargo update -p cfg-if --precise 1.0.4` and `cargo update -p generic-array --precise 0.14.7`. It then compares the 14 new `[[package]]` entries with research R-07 by name, version and checksum source. `typenum` does not differ: 1.20.1 is both the newest release and the one in the table.
+  - **Lock resolution (R3-10, R4-10).** Online resolution differs from the evidence set on three entries: `want` (0.3.2, published 2026-10-05, too young), `cfg-if` (1.0.5) and `generic-array` (0.14.9). The WP adds the dependencies, then runs `cargo update -p want --precise 0.3.1`, `cargo update -p cfg-if --precise 1.0.4` and `cargo update -p generic-array --precise 0.14.7`. It then compares the 14 new `[[package]]` entries with research R-07 by name, version and checksum source. The lock's expected change is those 14 entries plus the two workspace dev-dependency edges (`kitty-core` → `kitty-stub`, `kitty-stub` → `kitty-core`). The edges only add names to existing members' `dependencies` lists and add no package, so the comparison excludes them (FS-01). `typenum` does not differ: 1.20.1 is both the newest release and the one in the table.
   - **No shared minimum rises**, so no workspace pin is bumped. The WP shows this with `cargo tree -i`.
   - **Build scripts and procedural macros** are re-derived from `cargo metadata`.
 
@@ -327,6 +327,7 @@ README.md, CHANGELOG.md             # IC-10
 - **Relevant requirements**: FR-012, FR-014, C-005, C-007, A-01.
 - **Affected surfaces**:
   - `scripts/contract/generate.mjs`: `FIXTURE_FILES.openapi`, `buildBundle(root)` (`$RefParser.dereference` with `circular: false`, then `jsonText`), and an entry in `generateJsonSources`.
+  - `scripts/contract/check.test.mjs`: the expectations the bundle changes (FS-02, below);
   - `scripts/contract/bundle.test.mjs`, which covers:
     - determinism;
     - no `$ref` left;
@@ -339,6 +340,12 @@ README.md, CHANGELOG.md             # IC-10
 - **Sequencing/depends-on**: none.
 - **Risks**:
   - The four #17 files stay byte-identical.
+  - **The bundle has its own try/catch (FS-02).** `generateJsonSources` builds the three #17 files exactly as today. The bundle is built in a separate try/catch, so a dereference failure (a missing or circular file) gives exactly **one** bundle-specific problem, `the bundled contract document could not be regenerated: <reason>` with token `stale generated file`, and never masks the other three files' checks.
+  - **Contract tests that change (FS-02).** The schemas `$ref` their example files (for example `schemas/StreamRefusal.yaml` → `examples/StreamRefusal.negative.yaml`), so the bundle inlines examples, and any edit to a vendored schema, path or example now also makes the bundle stale.
+    - `check.test.mjs` "C1: a deleted vendored file gives file set" (deletes `StreamRefusal.negative.yaml`) gains the bundle problem in its exact token list.
+    - "JSON staleness: a changed vendored example leaves examples.json stale" (edits the same file) gains the bundle-stale problem; its `messagesOf(r)[1]` index is re-pointed.
+    - The filter-based tests (the shrinking-floor guard, the anchor-file guard and the three-case JSON staleness loop, which edits only the generated JSON) keep their assertions. The WP confirms this by running `pnpm test:contract` and lists every changed expectation in the WP.
+    - NFR-008 ("every #17 test passes unchanged") covers the **stub** tests only; contract-script tests may change, each one listed.
   - `scripts/hygiene/gitattributes.test.mjs` is **not** changed (R5-14, R6-06), so the bundle's LF and `linguist-generated` attribute is untested. Extending that test would extend `Gate: hygiene`, which would need a hygiene plant and a hygiene leg timeout change for a one-line attribute. A diff of the `.gitattributes` line is a reviewer check instead.
   - `Gate: contract`'s job cap is 5 minutes (`ci.yml`). The gate step is 113 s today, and the bundle adds about 1 s of dereferencing.
 
@@ -355,7 +362,7 @@ README.md, CHANGELOG.md             # IC-10
     - **`--openapi <file>`.** An explicit file that cannot be read is exit 1. A missing *default* file serves 404 `no-openapi-document` (R4-07).
     - **`--select` and `--select-fixture`.** Repeatable, with exit 2 on invalid input.
     - **Upstream options.** `--mission-status.port=<n>` and `--mission-status.project-root=<dir>`, in `--name=value` form. Giving both `--port` and `--mission-status.port` is a usage error.
-    - **Fixtures directory.** `--fixtures` wins. Otherwise it is `<project-root>/fixtures` when that is a directory. Otherwise it is the compile-time workspace path `concat!(env!("CARGO_MANIFEST_DIR"), "/../../contracts/fixtures")`. The stub is a `publish = false` test stand-in run from this workspace, so a path relative to the working directory would break whenever a host starts it from elsewhere. The baked path exists only in the built binary.
+    - **Fixtures directory.** `--fixtures` wins. Otherwise it is `<project-root>/.kitty-stub/fixtures` when that is a directory (FS-10, decision `01M525WSMXB8VDB63XNDMTG80A`). Otherwise it is the compile-time workspace path `concat!(env!("CARGO_MANIFEST_DIR"), "/../../contracts/fixtures")`. The stub is a `publish = false` test stand-in run from this workspace, so a path relative to the working directory would break whenever a host starts it from elsewhere. The baked path exists only in the built binary. The stub never prints the resolved fixtures path, not in `listening` and not in errors, which name only the file's base name (FS-09).
     - **Pinned load order.** Arguments first, then the fixtures, then selections are checked against them, then the document, then `listening`.
   - New tests `openapi.rs`, `select.rs` and `upstream_flags.rs`.
   - `contracts/stub-http-delta.md`.
@@ -384,7 +391,8 @@ README.md, CHANGELOG.md             # IC-10
   - **Headers.** Reads send exactly `Host` and `Accept`. `forward()` sends exactly `Host` and the caller's `Accept`, refuses a path outside `/api/v1/`, and returns the hyper response with its body untouched. The helper `upstream_request_headers(&ServiceEndpoint, accept)` is exported (R3-07, R4-03).
   - **Limits.**
     - `read_timeout` is a **total** deadline (connect, headers and body) (R3-08).
-    - A body of 16 MiB + 1 byte is `BodyTooLarge`, with nothing partial (R5-10).
+    - A body of 16 MiB + 1 byte is `BodyTooLarge`, with nothing partial.
+    - **`forward()` (FS-08).** Its deadline (`read_timeout`) covers connecting and the response headers only. The body belongs to the caller, with no cap and no deadline from kitty-core, because #21 streams it through. Test: a forwarded event stream outlives `read_timeout` (1 s in tests) by at least 500 ms and still delivers its frames.
   - **Plant anchors.** The rust plants' anchors in `lib.rs` must survive. The reviewer checks both with `grep -c`.
   - **Terminology.** The terminology gate scans every `.rs` file in `crates/*/src` and `crates/*/tests` for the banned whole word.
 
@@ -397,16 +405,18 @@ README.md, CHANGELOG.md             # IC-10
 - **Risks**:
   - **FrameReader edge cases (R2-06).** Each case is fed byte by byte *and* whole:
     - a CRLF split across chunks; a BOM split across chunks, honoured only at stream start;
-    - the 1 MiB cap counting **all bytes since the last dispatched frame**, including a pending line with no newline and comment lines (R3-08), with a no-newline test;
+    - the 1 MiB cap counting **all bytes since the last event boundary** (a blank line, whether or not it dispatched an event), including a pending line with no newline and comment lines (R3-08, FS-13). Tests: a single line of 1 MiB + 1 with no newline, and 100,000 heartbeat frames (`: heartbeat\n\n`, more than 1 MiB in total) that must **not** trip the cap;
     - `MalformedFrame`, meaning a line that is not valid UTF-8. Checks run in this order: cap, UTF-8, then field parse;
     - a bare `data` line (no colon) counts as empty data;
     - several `data:` lines are joined with `\n`;
     - an empty `id:` sets the cursor to none, and an `id` containing NUL is ignored, both as in the SSE specification;
+    - a frame with several `id:` lines: the last one wins (R2-06, fix round 2);
     - a response with no or non-SSE `content-type` on 200 is `Unavailable(Status)` with the body;
     - a clean EOF is `Dropped`;
     - after the terminal item the stream is fused, and `next()` returns `None` forever.
   - **Opening (R1-04, R2-12).** `open_stream` returns `Result<ChangeStream, StreamOpenError>`. A test asserts nothing reached the fake's request log.
   - **Async contract (R2-13).** `next()` is cancel-safe: dropping its future loses no byte, because the buffered state lives in the stream. `ChangeStream` is `Send + 'static`.
+  - **Terminal bodies (FS-14).** The body read for `Refused` and for `Unavailable(Status)` is capped at 16 MiB and bounded by `read_timeout`. Over the cap it is `Unavailable(FrameTooLarge)` with no body; past the deadline it is `Unavailable(Idle)`. Test: a 409 whose body never ends.
   - **The 404 refusal (R1-01, A-08).** The in-process stub is built with `from_values(...)` with one in-memory `Problem` example (status 404) added to the examples value, plus `with_selections(streamEvents → that example)`. The raw-TCP 404 is a second case. The five `StreamRefusal` examples are selected with `with_selections`.
   - **Idle (R5-09).** A heartbeat every 100 ms keeps a stream with a 300 ms idle limit alive for 600 ms. A stall then ends it as `Idle`.
   - **NFR-003 method (R5-15).**
@@ -425,7 +435,7 @@ README.md, CHANGELOG.md             # IC-10
   - **Numbers (R2-10).** Every number is converted to `f64` first (JavaScript semantics), and `-0` becomes `0`. An integral value with magnitude ≤ 2^53 is written as an integer, and anything else with **one** shortest round-trip formatter (`serde_json`'s `f64` output). Tests cover `-0`, `2^53`, `2^53 + 1` (which rounds to `2^53` in both the Node and Rust paths), `1.0` against `1`, and `0.1`.
   - **Parse order (R3-11).** `serde_json::from_slice` first, then `yaml_serde` only when JSON fails. The pinned bundle never touches the YAML parser.
   - **Real bundle (R5-12).** `digest_of(bundle) == digest_of(yaml_serde::to_string(parse(bundle)))`.
-  - **Cap.** The fetched document is capped at 4 MiB. Anything over is `Mismatch { actual: Transport(BodyTooLarge) }`.
+  - **Cap.** The fetched document is capped at 4 MiB. Anything over is `Mismatch { actual: Transport(BodyTooLarge) }`. Test: a document of exactly 4 MiB + 1 byte from the raw-TCP fake is refused, and one of exactly 4 MiB is parsed (R3-08, fix round 2).
   - **Cost (R5-06).** The WP first measures `digest_of(bundle)` in the dev profile (about 80 ms locally) and records it. Readiness budgets include it: the 2 s test start timeout leaves at least 10× margin.
   - **FR-013 at `Core` level (R5-01, R2-05).**
     - A `serve-modified` fake leads to `Stopped` with `ContractMismatch`, and the child is gone.
@@ -457,9 +467,10 @@ README.md, CHANGELOG.md             # IC-10
   - `tests/supervision.rs`.
 - **Sequencing/depends-on**: IC-06 and IC-07.
 - **Risks**:
-  - **Restart policy** (decision `01M50M407F65T4SQA9TNWQYCQT`).
-    - The delays are exactly 0.5, 1, 2 and 4 s. The 5th crash within 300 s of `Clock` time gives up with `Crashing`.
-    - The backoff restarts at 0.5 s after 60 s of uninterrupted `Ready`.
+  - **Restart policy** (decision `01M50M407F65T4SQA9TNWQYCQT`). It keeps two separate counters (FS-03):
+    - a **crash window**: the timestamps of crashes in the last 300 s of `Clock` time, used only for give-up. The 5th crash in the window gives up with `Crashing`.
+    - a **consecutive-crash index**: it selects the delay (0.5, 1, 2, 4 s) and resets to 0 after 60 s of uninterrupted `Ready`. The reset does **not** clear the crash window.
+    - **Policy tests.** Crash, then 70 s of `Ready`, then crash gives 0.5 s twice (the index reset). The window still holds 2 crashes.
     - A start failure (the budget spent, or 3 exits before ready) is a crash.
     - The pure-policy test runs each sequence 10 times in a loop (R5-08).
     - Scenario tests assert the `RecordingSleeper` log as well as the states (R5-13).
@@ -472,10 +483,15 @@ README.md, CHANGELOG.md             # IC-10
     - The poll loop uses a `biased` `select!` in which the child's exit wins.
     - After a digest match, `try_wait()` must return `None` before `Ready`.
     - The busy-port test adds a *squatter* case: the chosen port is held by a listener that answers HTTP with the pinned document, and the fake exits because the port is busy. The exit must win, and the next attempt runs on a new port.
+  - **503 while starting (FS-05, A-10, decision `01M525WMWERXEBRY05X78Q6P3F`).** Before the first final answer, a 503 means "not yet ready", and the poll continues within the start budget. A start budget spent on 503s counts as a start failure, giving `Crashed`.
+  - **Socket ownership (FS-06, decision `01M525WQ8AFYF4PZAF4ACKSBXJ`).**
+    - **The squatter test is deterministic.** The squatter accepts the connection but holds its answer until the fake has exited, or for 200 ms, whichever comes first, so the child's exit is always observed before any answer.
+    - **Linux check.** Before `Ready`, the supervisor checks that the inode of the socket listening on `127.0.0.1:<port>` (from `/proc/net/tcp`) is among the socket fds of a member of the child's process group (`/proc/<pid>/fd/*` → `socket:[inode]`, for each pid whose `/proc/<pid>/stat` names the group). It uses `std` only. A mismatch is a start failure.
+    - **Elsewhere.** No check exists, which is a documented limit: another local process, even another project's service, could answer on the chosen port. "The service identifies its project root and pid" goes on #22's notes.
   - **Ports (R2-17).** The picker never returns a port already tried in the same start.
   - **Launch (A-06, R3-01, R3-02, R3-03).**
     - The argv is exactly the two `=` strings. The project root is canonicalised (`std::fs::canonicalize`), or the start is refused as `cannot-execute`.
-    - `env_clear()` plus the allowlist `PATH`, `HOME`, `LANG`, `LC_*` and `TMPDIR`.
+    - `env_clear()` plus the allowlist `PATH`, `HOME`, `LANG`, `LC_*` and `TMPDIR`, plus the platform defaults behind `cfg` (`SystemRoot` on Windows), plus `CoreConfig.env_passthrough: Vec<OsString>`, which is empty by default (FS-11). A note for #22: the real service may need, for example, `JAVA_HOME`, which a host would add there.
     - `stdin(Stdio::null())`, and `current_dir(<canonical root>)`.
     - The fake records its argv and environment, and the test asserts both.
   - **Process group (decision `01M50M42PBSJ806A432AP7M13S`).**
@@ -483,11 +499,16 @@ README.md, CHANGELOG.md             # IC-10
     - If `getppid()` differs from the parent pid captured before the fork, `pre_exec` returns `Err(io::Error::from_raw_os_error(ESRCH))`, so `spawn` fails cleanly. There is no `_exit` (R2-09, R3-04).
     - SIGTERM and SIGKILL go to `-pgid`.
     - **Forking test.** The `fork-child` fake mode starts a grandchild that writes its pid. After `stop()`, both are gone.
-  - **Signal discipline (R2-09).** Signals are sent only by the task that owns the `ChildGuard`, only while `child.id()` is `Some`, and never after `wait()` has returned.
+  - **Signal discipline (R2-09).** Signals are sent only by the task that owns the `ChildGuard`, only while `child.id()` is `Some`, and never after `wait()` has returned, with **one** exception (FS-07).
+  - **The SIGKILL after reap (FS-07).** Exactly one `kill(-pgid, SIGKILL)` is allowed immediately after the leader is reaped, to reach grandchildren that are still alive.
+    - **Why it is safe.** POSIX does not reuse a pid as a process id while it is still the id of a process group with members. If the group is empty, the call fails with `ESRCH`.
+    - **Residual risk.** If the group is empty and the pid has been reused in the microseconds between the reap and the call by a new process that is itself a group leader, the signal would hit it. That needs pid wrap-around inside that window. It is recorded, not mitigated.
+    - **Probing.** `stop()` can probe with `kill(-pgid, 0)`: `ESRCH` means the group is gone.
+    - **Test.** The leader exits while its grandchild lives on; after the post-reap SIGKILL, the grandchild is gone within 1 s.
   - **PDEATHSIG is SIGKILL (R4-05).** A dying host cannot run a grace period. It reaches only the direct child; a grandchild relies on the service handling its own group, which goes on #22's asks ("exit on parent death"). Windows Job Objects are named for #20.
   - **Host exit (R5-05, R4-06).**
-    - In `host` mode the fake runs `kitty_core::Core` on its own runtime. The grandchild writes its pid, and the host exits through `std::process::exit` without `stop()`.
-    - The test asserts the grandchild is gone within 1 s.
+    - In `host` mode the fake runs `kitty_core::Core` on its own runtime, with its own project root (a sub-directory of the test's temp dir), supervising a fake in `ready` mode. That supervised service (the host's direct child) writes its own pid to a file (FS-15). The host exits through `std::process::exit` without `stop()`.
+    - The test asserts that the supervised service, by the pid it wrote, is gone within 1 s.
     - The WP shows the test failing with `prctl` removed.
     - Unix-only modes are gated with `cfg`.
   - **Output (R1-06, R2-16).**
@@ -498,6 +519,10 @@ README.md, CHANGELOG.md             # IC-10
   - **Fake behaviour per launch (R5-04, R2-15).**
     - The scenario file has `launches: [mode, ...]`. The fake picks the entry at its launch index, kept in `<root>/kitty-fake-service.count`. Read, increment and write is safe because the supervisor never runs two children at once.
     - `crashAfterMs` counts from the first `openapi.yaml` GET served.
+  - **Generation (FS-12).** Every launch publishes a `Starting` with the new generation, including a busy-port retry and a restart after backoff. Supervisor generations start at 1. Generation 0 is reserved for `ServiceEndpoint::loopback()`.
+  - **Unit tests (R5-09, R5-10, fix round 2).**
+    - Default values: `Timings::default()` equals the production column of the table below, and `RestartPolicy::default()` equals 0.5, 1, 2, 4 s, give-up at the 5th crash in 300 s, and a reset after 60 s.
+    - The output ring: after 100 KiB written in uneven chunks, it holds exactly the newest 64 KiB.
   - **No liveness probe (R4-09).** A service that hangs while its process stays alive stays `Ready` in #19. A liveness probe goes on #22's notes.
   - **Test `Timings` (R1-08, R2-11, R2-15).**
 
@@ -526,7 +551,7 @@ README.md, CHANGELOG.md             # IC-10
   - **Start (R4-02, R5-02, R4-04).**
     - `Core::start(config) -> Result<(Core, Subscription), StartError>` uses `config.runtime`, or `Handle::try_current()`. It never panics outside a runtime.
     - The `Subscription` is pre-subscribed. `Core::subscribe()` returns the current status and a receiver atomically, under the lock that publishes.
-    - The initial status is `Starting`, generation 0, degraded `None`, `left_initial_start = false`.
+    - The initial status is `Starting`, generation 1, degraded `None`, `left_initial_start = false` (generation 0 is reserved for `loopback()`, FS-12).
     - A `SendError` (no receivers) is ignored.
   - **Generation (R3-07).** `generation` increments on every launch. A `ServiceEndpoint` carries it and is valid only until the next transition. `ready_endpoint()` returns it, and #21's proxy re-reads it on every transition.
   - **Drop (A-05).** As in "Architecture". The test drops the last handle and asserts the process group is gone within 1 s.
@@ -534,8 +559,11 @@ README.md, CHANGELOG.md             # IC-10
     - `tests/common` installs a panic hook that counts panics (chained to the default hook). Every scenario asserts the count is 0.
     - `stop()` returns `Err(SupervisorPanicked)` when the supervisor task's `JoinError` is a panic.
     - `panic_probe.rs`, as its own test binary, proves the counter catches a deliberate panic.
+  - **`left_initial_start` (FS-04).** It becomes `true` only at the first `Ready` or the first `Stopped`. `Crashed` and `Backoff` before the first `Ready` map to `connecting`: the port's SO-DES-003 meaning is "before first contact". The exhaustive hint test covers these rows.
   - **Hint (R1-08).** `connection_state_hint(&CoreStatus) -> Option<&'static str>` uses the status's own `left_initial_start` flag; there is no second parameter. The full table is in data-model.md. The test enumerates every combination and parses `CONNECTION_STATES` from `packages/mission-shell/src/client/port.ts`.
   - **Supervised stand-in (decision `01M50M47K1PNKP9KHCGGDBQZ0A`).** `supervised.rs` builds a `Core` whose `Discovery` returns `CARGO_BIN_EXE_kitty-stub`, with a temp project root. It reaches `Ready`, does one read, and streams the scripted sequence through `Core`, then `stop()`s. The stub serves the default bundle from the workspace fixtures, so the digest matches.
+    - The test's `idle_limit` is at least 2 s (FS-09), because the stub sends heartbeats every 30 s by default. The scripted sequence arrives at time scale 1, with delays of 0, 250, 250, 250 and 250 ms (about 1 s in total, each gap below 2 s), and the test reads only up to the last scripted event.
+    - `supervised.rs` is a separate test binary in another package, so it carries its own small copy of the panic-counter hook from `crates/kitty-core/tests/common` (FS-17). It is a deliberate duplicate of about 15 lines.
 
 ### IC-10 — Documentation, evidence and wrap-up
 
@@ -550,7 +578,7 @@ README.md, CHANGELOG.md             # IC-10
     - `Cargo.toml` `members`;
     - the job list and `matrix.gate` list in `ci.yml`.
 
-    Here `base="$(git merge-base HEAD origin/main)"`, after a `git fetch`, which contains #17 (`39a51a6`). It must not be the local `main`: in this checkout local `main` is stale at `9c9d83c`, where the merge-base predates #17 (R6-01). The reviewer repeats the probe.
+    Here `base="$(git merge-base HEAD origin/main)"`, after `git fetch origin main` (FS-16), which contains #17 (`39a51a6`). It must not be the local `main`: in this checkout local `main` is stale at `9c9d83c`, where the merge-base predates #17 (R6-01). The reviewer repeats the probe.
   - **Timings (R5-07).** The WP sums kitty-core's `finished in` lines from the CI log of `Gate: rust` and records the total, which must be 60 s or less.
   - **Determinism (R5-08).** The process-level supervision scenarios are run 10 times locally, with the state sequences and sleeper logs recorded. The reviewer repeats one run.
   - **Timeouts (R5-11, R6-05).** Both are re-derived from the PR's first CI run:
@@ -562,7 +590,7 @@ README.md, CHANGELOG.md             # IC-10
 | File | Owner | Requested by |
 |---|---|---|
 | root `Cargo.toml` (`[workspace.dependencies]` only) | IC-01 | — |
-| `Cargo.lock` | IC-01 | — |
+| `Cargo.lock` | IC-01 | IC-04 (dev-dep edge `kitty-core` → `kitty-stub`), IC-09 (dev-dep edge `kitty-stub` → `kitty-core`) (FS-01) |
 | `crates/kitty-core/Cargo.toml` | IC-01 | IC-04 (dev-dep `kitty-stub`), IC-08 (`[[bin]]` with its file) |
 | `crates/kitty-core/src/lib.rs` | IC-04 (pre-declares every module) | IC-09 (re-exports only) |
 | `crates/kitty-core/tests/common/mod.rs` | IC-04 | IC-05 (fault modes), IC-06, IC-08 (scenario writer), IC-09 (panic counter) |
@@ -618,6 +646,9 @@ All are resolved, and `decision verify` is clean.
 | `01M50M407F65T4SQA9TNWQYCQT` | restart policy (R2-02) | 0.5, 1, 2, 4 s, then give up at the 5th crash in 5 min. The start timeout is per start. The clock is monotonic `Instant` |
 | `01M50M42PBSJ806A432AP7M13S` | process group (R2-08) | `setpgid(0,0)`, signals to `-pgid`, a forking-fake test |
 | `01M50M453N70QGMXHK8AJX1E1H` | rust budget (R6-02, R1-05) | NFR-001 and SC-006 amended: the formula for the proof leg, and the 8-minute job stays hard |
+| `01M525WMWERXEBRY05X78Q6P3F` | 503 while starting (FS-05; coordinator) | not yet ready; a budget spent on 503s is a start failure (A-10) |
+| `01M525WQ8AFYF4PZAF4ACKSBXJ` | socket ownership (FS-06; coordinator) | deterministic squatter; Linux inode check before `Ready`; a documented limit elsewhere; a #22 note |
+| `01M525WSMXB8VDB63XNDMTG80A` | stub fixtures default (FS-10; coordinator) | `<project-root>/.kitty-stub/fixtures`, else the compiled-in `contracts/fixtures` |
 | `01M50M47K1PNKP9KHCGGDBQZ0A` | supervised stand-in (R4-01) | upstream options on the stub, a fixtures default, a supervised test through `Core`, documented for #20 and #21 |
 
 ## Supply chain (DIRECTIVE_051)
@@ -695,4 +726,4 @@ There is one PR from `feat/kitty-core-19` into `main`. A separate reviewer revie
 | SC-003 | IC-08 |
 | SC-004, SC-006 | IC-10 |
 | SC-005 | IC-09 |
-| Amendments A-01 to A-09 | A-01 IC-02, IC-10 · A-02, A-03, A-05, A-06 IC-08 · A-04 IC-10 · A-07 IC-03, IC-09 · A-08 IC-05 · A-09 IC-06 |
+| Amendments A-01 to A-10 | A-01 IC-02, IC-10 · A-02, A-03, A-05, A-06 IC-08 · A-04 IC-10 · A-07 IC-03, IC-09 · A-08 IC-05 · A-09 IC-06 · A-10 IC-08 |

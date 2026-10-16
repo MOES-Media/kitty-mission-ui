@@ -204,7 +204,7 @@ New direct crates are `yaml_serde` and `sha2`. `percent-encoding` and `libc` are
 
 | Control | Result |
 |---|---|
-| S-1 Registry authenticity | crates.io only. There is no `[patch]`, git or out-of-workspace path dependency. The only path dependency is `kitty-stub`, a workspace member, as a dev-dependency (`cargo-pins` allows a local path with no version). The WP records each new crate's repository and owners from crates.io. |
+| S-1 Registry authenticity | crates.io only. There is no `[patch]`, git or out-of-workspace path dependency. The only path dependencies are the two workspace members as each other's dev-dependencies (`kitty-core` → `kitty-stub`, `kitty-stub` → `kitty-core`). `cargo-pins` allows a local path with no version. The WP records each new crate's repository and owners from crates.io. |
 | S-2 Freshness | Every new entry is at least 14 days old, with its date above and as a comment beside each direct pin (NFR-002). Transitive drift is blocked by `--precise` and by checking the lock against this table. |
 | S-3 Lifecycle scripts | One new build script: `generic-array 0.14.7`. It probes the compiler version through `version_check` and does no I/O beyond `rustc` (the WP reads it and records that). No new procedural macro. The existing `serde_derive` and `tokio-macros` are unchanged. The WP re-derives both lists from `cargo metadata`. |
 | S-4 Lockfile installs | `Cargo.lock` is committed. CI runs `cargo fetch --locked`, then `--frozen`, as today. |
@@ -240,7 +240,7 @@ New direct crates are `yaml_serde` and `sha2`. `percent-encoding` and `libc` are
   - A raw-TCP fake in `tests/common` writes byte-exact faults: 503, malformed SSE, an oversized frame, a stall, a mid-stream drop, and a body with `null`s, an unknown field and unsorted keys.
 - **Rationale.**
   - Cargo gives an integration test `CARGO_BIN_EXE_*` only for binaries of its own package, and C-002 forbids a new member.
-  - The stub never depends on kitty-core, so there is no cycle.
+  - kitty-stub depends on kitty-core only as a dev-dependency (for `tests/supervised.rs`), so the dependency graph has a dev-only cycle (kitty-core ⇄ kitty-stub) and no normal-dependency cycle. Cargo resolves and builds it (verified with `cargo tree` and `cargo check --all-targets`).
   - Reading the scenario from the project root keeps the launch arguments exactly the two upstream flags (FR-017).
 - **Alternatives.**
   - Locating `target/debug/kitty-stub` by path: rejected, because it is not built by `cargo test -p kitty-core`.
@@ -256,7 +256,7 @@ New direct crates are `yaml_serde` and `sha2`. `percent-encoding` and `libc` are
 
 - **Decision.** Supervision separates two kinds of time:
   - **Policy time.** This is `Clock` plus `Sleeper`: the crash window, the 60 s reset and the backoff delays. Tests use a virtual clock that advances only by recorded sleeps, so the delays and states are exact and repeatable (NFR-006).
-  - **I/O time.** This is real tokio timers with durations from `Timings`: readiness poll, start timeout, stop grace, read timeout and idle limit. Tests set them between 10 and 400 ms, so no wait exceeds 1 s (NFR-001).
+  - **I/O time.** This is real tokio timers with durations from `Timings`: readiness poll, start timeout, stop grace, read timeout and idle limit. Tests set them per the `Timings` table in plan IC-08: 10 ms polling, a 2 s start budget (300 ms in the never-ready test), 300 ms grace, 1 s read timeout and 300 ms idle limit (2 s in `supervised.rs`). Only the never-ready, grace, read-timeout and idle tests actually wait for their limit, and each of those is 1 s or less (NFR-001).
 - **Rationale.** `tokio::time::pause` advances on its own whenever the runtime is idle. While the test is waiting on a real child process, that would fire the start timeout spuriously.
 - **Budget.**
   - The `Gate: rust` step measured 34 s and 20 s on the last two CI runs. The rust proof leg measured 35 s with 3 plants.
@@ -314,7 +314,7 @@ New direct crates are `yaml_serde` and `sha2`. `percent-encoding` and `libc` are
 
 ## R-14 — #21's pass-through (R3-07, R4-03)
 
-- **Decision.** `forward(endpoint, path_and_query, accept)` enforces FR-004 and FR-005 and returns the response body untouched. `upstream_request_headers()` is exported.
+- **Decision.** `ContractClient::forward(&self, path_and_query: &str, accept: HeaderValue) -> Result<http::Response<hyper::body::Incoming>, TransportFailure>` enforces FR-004 and FR-005 and returns the response body untouched. Its deadline covers connecting and the headers only; the body is the caller's (FS-08). `upstream_request_headers(&ServiceEndpoint, HeaderValue)` is exported.
 - **For #21.** #21's proxy uses pass-through for reads and for the stream, not `open_stream`. It re-reads `ready_endpoint()` on each status transition, because an endpoint carries a `generation` and is valid only until the next transition.
 
 ## Adversarial challenge
