@@ -339,6 +339,19 @@ describe('the connection gate', () => {
     expect(r.calls()).toHaveLength(1);
   });
 
+  it('F2: the window timer does not issue the trailing read after the gate closed, with nothing in flight', async () => {
+    let open = true;
+    const r = rig({ open: () => open });
+    r.sched.setDisplayed([MISSION]);
+    await r.fake.advance(10);
+    await r.settle('getMission', { v: 'first' });
+    r.sched.request(MISSION, 'stream');
+    expect(slotOf(r, MISSION).trailing).toBe(true);
+    open = false;
+    await r.fake.advance(100);
+    expect(r.calls()).toHaveLength(1);
+  });
+
   it('observe reports none, none, degraded-before-first, first-connected for connecting, reconnecting, degraded, connected', () => {
     const gate = createConnectionGate('connecting');
     expect(gate.isOpen()).toBe(false);
