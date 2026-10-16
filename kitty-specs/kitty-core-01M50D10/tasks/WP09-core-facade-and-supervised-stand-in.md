@@ -7,8 +7,10 @@ dependencies:
 requirement_refs:
 - FR-013
 - FR-016
+- FR-021
 - FR-024
 - NFR-005
+- NFR-006
 - C-003
 - SC-005
 planning_base_branch: feat/kitty-core-19
@@ -21,22 +23,25 @@ subtasks:
 - T050
 - T051
 - T052
+- T053
 history: []
 agent_profile: implementer-ivan
 authoritative_surface: crates/kitty-core/
 create_intent:
-- crates/kitty-core/src/core.rs
+- crates/kitty-core/src/facade.rs
 - crates/kitty-core/src/status.rs
 - crates/kitty-core/tests/status_mapping.rs
 - crates/kitty-core/tests/panic_probe.rs
+- crates/kitty-core/tests/host_exit.rs
 - crates/kitty-stub/tests/supervised.rs
 execution_mode: code_change
 model: ''
 owned_files:
-- crates/kitty-core/src/core.rs
+- crates/kitty-core/src/facade.rs
 - crates/kitty-core/src/status.rs
 - crates/kitty-core/tests/status_mapping.rs
 - crates/kitty-core/tests/panic_probe.rs
+- crates/kitty-core/tests/host_exit.rs
 - crates/kitty-stub/tests/supervised.rs
 role: implementer
 tags: []
@@ -83,7 +88,7 @@ Read:
 Facts:
 - **Port strings.** `packages/mission-shell/src/client/port.ts` has `export const CONNECTION_STATES = ['connecting', 'connected', 'reconnecting', 'degraded: service-missing', 'degraded: contract-mismatch'] as const;`.
 - **Pieces from other WPs.**
-  - WP08 defines the internal `StatusSink` trait, which this WP implements with `watch` plus `broadcast(64)`.
+  - WP08 defines the public `StatusSink` trait and `spawn_supervisor` entry point (`#[doc(hidden)]`), and the status types in `status.rs`. This WP implements the sink with `watch` plus `broadcast(64)`, and adds the hint.
   - `Timings` is in `client.rs` (WP04).
   - `ContractPin` is from WP06, and the discovery types from WP07.
 - **Cargo exposes `CARGO_BIN_EXE_kitty-stub` only to kitty-stub's own tests,** so the supervised stand-in test lives in `crates/kitty-stub/tests/supervised.rs`, with kitty-core as a dev-dependency of kitty-stub (verified to resolve and compile at plan time).
@@ -102,7 +107,7 @@ Implementation command (orchestrator-run): `spec-kitty agent action implement WP
 ### Subtask T047: `CoreStatus` and the hint (`status.rs`)
 
 **Steps**:
-1. Define these types as in the data model:
+1. WP08 has already defined these types in `status.rs` (its recorded out-of-map edit), because `StatusSink` needs them. Check them against the data model, and take ownership of the file:
    - `SupervisionState { Starting, Ready { endpoint }, Crashed, Backoff { delay }, Stopped }`;
    - `DegradedReason { None, ServiceMissing(ServiceMissing), ContractMismatch(Mismatch) }`;
    - `CoreStatus { state, degraded, generation, attempt, left_initial_start }`.
@@ -110,12 +115,12 @@ Implementation command (orchestrator-run): `spec-kitty agent action implement WP
 3. **`left_initial_start`** becomes `true` only at the first `Ready` or the first `Stopped` (FS-04).
 4. `pub fn connection_state_hint(&CoreStatus) -> Option<&'static str>` implements exactly the data-model table: `Starting`, `Crashed` and `Backoff` before the flag map to `connecting`; after it, to `reconnecting`; `Ready` is `connected`; and the two degraded strings follow. `Stopped` with no reason is `None`.
 
-### Subtask T048: The `Core` facade (`core.rs`)
+### Subtask T048: The `Core` facade (`facade.rs`, module `facade`; A13)
 
 **Steps**:
 1. `Core::start(config) -> Result<(Core, Subscription), StartError>`:
    - `config.runtime`, or `Handle::try_current()`; otherwise `Err(NoRuntime)`, never a panic (R4-02);
-   - spawn the supervisor task, and return a pre-subscribed `Subscription { initial, receiver }`.
+   - call WP08's public `spawn_supervisor(config, sink, runtime)` with this WP's `StatusSink` implementation (`watch` plus `broadcast(64)`), and return a pre-subscribed `Subscription { initial, receiver }`.
 2. `Core::subscribe()` is atomic: it takes the publishing lock, reads the current status and subscribes before releasing (R4-04, R5-02).
 3. **`HandleGuard`.** Each `Core` clone holds an `Arc<HandleGuard>`. The last drop aborts the supervisor task, so `ChildGuard::drop` sends SIGKILL to the group and `kill_on_drop` is the backstop (A-05).
 4. **`stop()`** runs the graceful sequence and returns `Err(SupervisorPanicked)` when the task's `JoinError` is a panic.
@@ -128,7 +133,7 @@ Implementation command (orchestrator-run): `spec-kitty agent action implement WP
 
 ### Subtask T049: Re-exports (`lib.rs`, an out-of-map edit)
 
-**Steps**: add `pub use` lines for the public surface of `contracts/kitty-core-api.md` (`Core`, `CoreConfig`, `Subscription`, `CoreStatus`, `connection_state_hint`, `ContractClient`, `ServiceEndpoint`, `ReadRequest`, `ReadOutcome`, `StreamScope`, `ChangeStream`, `StreamEvent`, `digest_of`, `ContractPin`, `Discovery`, `DefaultDiscovery`, `Timings`, `RestartPolicy`, …). Keep `version()` and the single `#[cfg(test)]` anchor untouched. The rust plants depend on them.
+**Steps**: refer to the facade as `crate::facade::…` (the module is `facade`, never `core`; A13). Add `pub use` lines for the public surface of `contracts/kitty-core-api.md` (`Core`, `CoreConfig`, `Subscription`, `CoreStatus`, `connection_state_hint`, `ContractClient`, `ServiceEndpoint`, `ReadRequest`, `ReadOutcome`, `StreamScope`, `ChangeStream`, `StreamEvent`, `digest_of`, `ContractPin`, `Discovery`, `DefaultDiscovery`, `Timings`, `RestartPolicy`, …). Keep `version()` and the single `#[cfg(test)]` anchor untouched. The rust plants depend on them.
 
 ### Subtask T050: `tests/status_mapping.rs`
 
@@ -149,9 +154,30 @@ Implementation command (orchestrator-run): `spec-kitty agent action implement WP
 3. **Subscription.** The initial status and every transition of the `ready` scenario are received in order. A slow receiver gets `Lagged` and can call `status()`.
 4. **Drop.** Dropping the last `Core` clone removes the group within 1 s, with no grace period. A positive control: dropping a non-last clone does not.
 5. **Runtime.** `Core::start` outside a runtime is `Err(NoRuntime)`.
-6. **`panic_probe.rs`** (its own test binary): install the same panic counter, cause a deliberate panic inside a spawned task, and assert the counter reads 1. This proves the check catches panics. Every other test asserts 0.
+6. **`retry()` (A8).** A toggleable injected `Discovery` (an `AtomicBool` that selects `NotFound` or the fake's path):
+   - first `NotFound` gives `Stopped + ServiceMissing(not-found)`;
+   - toggle it and `retry()`: discovery runs again, then `Starting` with generation + 1, then `Ready`;
+   - **`retry()` after `Crashing`:** five quick crashes give up; `retry()` then starts with an empty crash window, so the next crash gives `Backoff(0.5 s)`, not a give-up;
+   - **`retry()` outside `Stopped`** (while `Ready`, and while `Backoff`) is a no-op: no transition is published and the generation is unchanged.
+7. **`panic_probe.rs`** (its own test binary): install the same panic counter, cause a deliberate panic inside a spawned task, and assert the counter reads 1. This proves the check catches panics. Every other test asserts 0.
 
-### Subtask T052: The supervised stand-in (`crates/kitty-stub/tests/supervised.rs`)
+### Subtask T052: The `host` mode and the host-exit test (A1)
+
+**Purpose**: prove that no service process outlives a host that exits without `stop()` (FR-021; plan IC-08 "Host exit").
+
+**Steps**:
+1. **The `host` arm** goes in `crates/kitty-core/src/bin/kitty-fake-service.rs` (owned by WP08), as a recorded out-of-map edit, `cfg(unix)`.
+   - It runs `kitty_core::Core` on its own runtime, with its own project root `<root>/inner`, supervising another `kitty-fake-service` (found through `std::env::current_exe()`) in `ready` mode.
+   - That supervised service (the host's direct child) writes its own pid to `<root>/inner/service.pid` (FS-15).
+   - Once the status is `Ready`, the host calls `std::process::exit(0)` without `stop()`.
+2. **`crates/kitty-core/tests/host_exit.rs`** (`cfg(target_os = "linux")`):
+   - start the host directly, with `CARGO_BIN_EXE_kitty-fake-service` and the `host` scenario;
+   - wait for `service.pid`, then wait for the host to exit;
+   - assert that the inner service's pid is gone within 1 s (`kill(pid, 0)` gives ESRCH).
+   - A positive control: the pid existed before the host exited.
+3. **Red first.** Show the test failing with WP08's `prctl(PR_SET_PDEATHSIG, …)` call temporarily removed (a local edit, never committed), then restore it.
+
+### Subtask T053: The supervised stand-in (`crates/kitty-stub/tests/supervised.rs`)
 
 **Purpose**: decision `01M50M47K1PNKP9KHCGGDBQZ0A`, A-07.
 
@@ -204,6 +230,7 @@ Per-subtask completion is recorded with `spec-kitty agent tasks mark-status <Txx
 
 **Recorded out-of-map edits** (each one is committed with a plain `git add <path>`, and listed in the hand-off with a one-line rationale):
 - `crates/kitty-core/src/lib.rs` (owned by WP04): add the `pub use` re-exports only; `version()` and the `#[cfg(test)]` anchor stay unchanged.
+- `crates/kitty-core/src/bin/kitty-fake-service.rs` (owned by WP08): add the `host` mode arm only (A1).
 - `crates/kitty-stub/Cargo.toml` (owned by WP03): add `kitty-core = { path = "../kitty-core" }` to `[dev-dependencies]`.
 - `Cargo.lock` (owned by WP01): the dev-dependency edge `kitty-stub` → `kitty-core` (FS-01). No package is added.
 - `crates/kitty-core/tests/common/mod.rs` (owned by WP04): only if a `Core` helper is needed (for example `start_core_with(discovery)`); otherwise none.
@@ -221,19 +248,19 @@ Shared-file owners (`plan.md`, "Shared-file ownership"):
 | `crates/kitty-core/src/sse.rs`, `crates/kitty-core/tests/{stream,latency}.rs` | WP05 |
 | `crates/kitty-core/src/contract.rs`, `crates/kitty-core/tests/contract_check.rs` | WP06 |
 | `crates/kitty-core/src/discovery.rs`, `crates/kitty-core/tests/discovery.rs` | WP07 |
-| `crates/kitty-core/src/supervisor/**`, `crates/kitty-core/src/bin/**`, `crates/kitty-core/tests/supervision.rs` | WP08 |
-| `crates/kitty-core/src/{core,status}.rs`, `crates/kitty-core/tests/{status_mapping,panic_probe}.rs`, `crates/kitty-stub/tests/supervised.rs` | WP09 |
+| `crates/kitty-core/src/supervisor/**`, `crates/kitty-core/src/bin/**` (WP09 adds the `host` arm as a recorded out-of-map edit), `crates/kitty-core/tests/supervision.rs` | WP08 |
+| `crates/kitty-core/src/{facade,status}.rs`, `crates/kitty-core/tests/{status_mapping,panic_probe,host_exit}.rs`, `crates/kitty-stub/tests/supervised.rs` | WP09 |
 | `README.md`, `CHANGELOG.md`, `.github/workflows/ci.yml` | WP10 |
 | `gates/plants/rust/**`, `crates/kitty-core/tests/workspace.rs`, `scripts/hygiene/gitattributes.test.mjs`, `packages/**`, the four #17 files in `contracts/fixtures/` | nobody: never touched by this mission |
 
 **Gates this work package must pass before hand-off.** Each must exit 0. Run them from the lane worktree root, after confirming that `git rev-parse --show-toplevel` is that worktree.
 
-- **The Rust gate.** Run the two install steps first, then exactly the canonical string:
+- **The Rust gate.** Run the two install steps first, then the canonical string, unchanged, under `heavy` (memory safety; A11):
   ```
   rustup toolchain install && cargo fetch --locked
-  cargo fmt --all --check && cargo clippy --workspace --all-targets --frozen -- -D warnings && cargo test --workspace --frozen
+  heavy bash -c 'cargo fmt --all --check && cargo clippy --workspace --all-targets --frozen -- -D warnings && cargo test --workspace --frozen'
   ```
-- **The contract gate** (canonical string): `pnpm contract:check && pnpm test:contract`.
+- **The contract gate** (canonical string, under `heavy`): `heavy bash -c 'pnpm contract:check && pnpm test:contract'`.
 - **Hygiene and terminology:** `pnpm hygiene && pnpm test:scripts && pnpm test:terminology`. The terminology rule scans every `.rs` file under `crates/*/src` and `crates/*/tests`. The banned synonym for "mission" must not appear in any of them, not even in a `cfg(...)` attribute or a comment.
 
 - **Memory safety.** Wrap every gate-proof leg and every full test run in `heavy` (for example `heavy node scripts/gate-proof.mjs local --only contract`), and run it in the foreground. Never run browser or visual suites from this WP.

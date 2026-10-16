@@ -111,8 +111,8 @@ Implementation command (orchestrator-run): `spec-kitty agent action implement WP
 
 **Steps**:
 1. Keep `pub fn version()`, its `env!("CARGO_PKG_VERSION")` line and its single `#[cfg(test)] mod tests` block exactly as they are.
-2. Declare `pub mod routes; pub mod endpoint; pub mod client; pub mod forward; pub mod sse; pub mod contract; pub mod discovery; pub mod supervisor; pub mod status; pub mod core;`.
-3. Create **empty stub files**, each with a one-line `//!` doc naming its owner, for the modules owned by other WPs: `src/sse.rs`, `src/contract.rs`, `src/discovery.rs`, `src/supervisor/mod.rs`, `src/status.rs` and `src/core.rs`. These are recorded out-of-map creations: the files belong to WP05 to WP09, and WP04 only creates them empty.
+2. Declare `pub mod routes; pub mod endpoint; pub mod client; pub mod forward; pub mod sse; pub mod contract; pub mod discovery; pub mod supervisor; pub mod status; pub mod facade;`. The facade module is **`facade`**, never `core`: a crate-level `core` module would collide with the `core` crate in paths (A13).
+3. Create **empty stub files**, each with a one-line `//!` doc naming its owner, for the modules owned by other WPs: `src/sse.rs`, `src/contract.rs`, `src/discovery.rs`, `src/supervisor/mod.rs`, `src/status.rs` and `src/facade.rs`. These are recorded out-of-map creations: the files belong to WP05 to WP09, and WP04 only creates them empty.
 4. Re-exports (`pub use …`) are added by WP09 only.
 
 **Validation**: `grep -c 'env!("CARGO_PKG_VERSION")' src/lib.rs` returns 1, and `grep -c '^#\[cfg(test)\]' src/lib.rs` returns 1.
@@ -178,13 +178,39 @@ Implementation command (orchestrator-run): `spec-kitty agent action implement WP
 
 ### Subtask T022: The shared test harness (`tests/common/mod.rs`)
 
-**Purpose**: every kitty-core integration test uses one harness.
+**Purpose**: every kitty-core integration test uses one harness. Its API is fixed here, so WP05, WP06, WP08 and WP09 can rely on it (A9).
 
 **Steps**:
-1. **`stub(fixtures_mod: impl FnOnce(&mut FixtureValues))`.** It loads the four JSON files and the bundle from `contracts/fixtures`, lets the caller patch the values in memory (for the in-memory `Problem` example, A-08), builds `Fixtures::from_values(..)`, applies `.with_openapi_document(..)` and `.with_selections(..)`, then starts `run_server` on `127.0.0.1:0` in a task. It returns the port and an abort guard.
-2. **`RawFake`.** A `tokio` TCP listener on `127.0.0.1:0` that runs a scripted reply (a byte sequence, with optional delays, stalls, drops or a never-ending body). It records every request head (method, target with query, header names and values) in a shared `Vec`.
+1. **The stub harness:**
+   ```rust
+   pub struct FixtureValues { pub routes: Value, pub examples: Value, pub fixtures: Value, pub changes: Value }
+   pub enum Doc { Pinned, Bytes(Vec<u8>), Absent }
+   pub struct StubSpec {
+       pub patch: Option<Box<dyn FnOnce(&mut FixtureValues)>>,   // e.g. add an in-memory `Problem` example (A-08)
+       pub document: Doc,                                         // default Pinned (the committed bundle)
+       pub selections: Vec<(String, kitty_stub::Selection)>,      // start-up selection
+       pub options: kitty_stub::Options,                          // default: heartbeat 50 ms, time scale 0
+   }
+   impl Default for StubSpec { … }
+   pub struct RunningStub { pub port: u16, pub endpoint: ServiceEndpoint, /* abort guard */ }
+   pub async fn stub(spec: StubSpec) -> RunningStub;              // in-process, 127.0.0.1:0
+   pub async fn last_request(stub: &RunningStub) -> serde_json::Value;  // GET /__stub/last-request
+   ```
+   - It loads the four JSON files and the bundle from `contracts/fixtures`, applies `patch`, then builds `Fixtures::from_values(..)`, `.with_openapi_document(..)` (unless `Absent`) and `.with_selections(..)`. It runs `run_server` in a task.
+   - **What later WPs use.** WP05 needs `patch` (the in-memory `Problem` example), `selections` (the five `StreamRefusal` examples and the 404) and `options` (heartbeat, time scale). WP06 needs `Doc::{Pinned, Bytes, Absent}` and `last_request`.
+2. **The raw fake:**
+   ```rust
+   pub enum Step { Write(Vec<u8>), Sleep(Duration), Stall, Drop, Endless(Vec<u8>) }
+   pub struct RawFake { pub port: u16, pub endpoint: ServiceEndpoint, pub log: Arc<Mutex<Vec<RequestHead>>> }
+   pub struct RequestHead { pub method: String, pub target: String /* with query */, pub headers: Vec<(String, String)> /* lower-case names */ }
+   pub async fn raw_fake(script: Vec<Step>) -> RawFake;           // one scripted reply per connection
+   ```
+   It is a `tokio` TCP listener on `127.0.0.1:0`. It records every request head in `log`. WP05 uses it for the stream faults, the stream headers and the raw 404. WP06 uses it for the 4 MiB cases. WP08 uses `squatter()` (below).
 3. **`panic_counter()`.** A process-wide `AtomicUsize`, incremented by a panic hook chained to the previous hook and installed once (`Once`). `assert_no_panics()` checks it.
-4. **Helpers.** Temp-directory helpers (`std::env::temp_dir()` + a unique name; cleaned on drop) and a scenario writer for `kitty-fake-service.json` (used by WP08).
+4. **Helpers.**
+   - `TempDir` (`std::env::temp_dir()` + a unique name; cleaned on drop).
+   - `write_scenario(root, launches: &[&str], crash_after_ms: Option<u64>)` for `kitty-fake-service.json` (WP08, WP09).
+   - `squatter(port, answer: Option<Vec<u8>>, hold: Option<Duration>) -> SquatterGuard`: listens on a given port and answers at once or after `hold` (WP08).
 
 **Validation**: the harness's own smoke test in `reads.rs`.
 
@@ -241,7 +267,7 @@ Per-subtask completion is recorded with `spec-kitty agent tasks mark-status <Txx
 **Owned files.** The frontmatter `owned_files` is authoritative, and `lanes.json` `write_scope` is computed from it by the tool. Neither is hand-edited. Stage only owned files and the recorded out-of-map edits below.
 
 **Recorded out-of-map edits** (each one is committed with a plain `git add <path>`, and listed in the hand-off with a one-line rationale):
-- `crates/kitty-core/src/{sse,contract,discovery,status,core}.rs` and `crates/kitty-core/src/supervisor/mod.rs`: create each as an empty stub file with a one-line `//!` owner doc, so later WPs fill rather than edit `lib.rs` (R6-04). The owning WPs replace the content.
+- `crates/kitty-core/src/{sse,contract,discovery,status,facade}.rs` and `crates/kitty-core/src/supervisor/mod.rs`: create each as an empty stub file with a one-line `//!` owner doc, so later WPs fill rather than edit `lib.rs` (R6-04). The owning WPs replace the content.
 - `Cargo.lock`: the dev-dependency edge `kitty-core` → `kitty-stub` (FS-01). It normally already exists from WP01's manifest; record it if it changes.
 
 A change you need in a file you do not own, and that this list does not name, is a **change request** in the hand-off (file, change, reason). It is not an edit.
@@ -257,19 +283,19 @@ Shared-file owners (`plan.md`, "Shared-file ownership"):
 | `crates/kitty-core/src/sse.rs`, `crates/kitty-core/tests/{stream,latency}.rs` | WP05 |
 | `crates/kitty-core/src/contract.rs`, `crates/kitty-core/tests/contract_check.rs` | WP06 |
 | `crates/kitty-core/src/discovery.rs`, `crates/kitty-core/tests/discovery.rs` | WP07 |
-| `crates/kitty-core/src/supervisor/**`, `crates/kitty-core/src/bin/**`, `crates/kitty-core/tests/supervision.rs` | WP08 |
-| `crates/kitty-core/src/{core,status}.rs`, `crates/kitty-core/tests/{status_mapping,panic_probe}.rs`, `crates/kitty-stub/tests/supervised.rs` | WP09 |
+| `crates/kitty-core/src/supervisor/**`, `crates/kitty-core/src/bin/**` (WP09 adds the `host` arm as a recorded out-of-map edit), `crates/kitty-core/tests/supervision.rs` | WP08 |
+| `crates/kitty-core/src/{facade,status}.rs`, `crates/kitty-core/tests/{status_mapping,panic_probe,host_exit}.rs`, `crates/kitty-stub/tests/supervised.rs` | WP09 |
 | `README.md`, `CHANGELOG.md`, `.github/workflows/ci.yml` | WP10 |
 | `gates/plants/rust/**`, `crates/kitty-core/tests/workspace.rs`, `scripts/hygiene/gitattributes.test.mjs`, `packages/**`, the four #17 files in `contracts/fixtures/` | nobody: never touched by this mission |
 
 **Gates this work package must pass before hand-off.** Each must exit 0. Run them from the lane worktree root, after confirming that `git rev-parse --show-toplevel` is that worktree.
 
-- **The Rust gate.** Run the two install steps first, then exactly the canonical string:
+- **The Rust gate.** Run the two install steps first, then the canonical string, unchanged, under `heavy` (memory safety; A11):
   ```
   rustup toolchain install && cargo fetch --locked
-  cargo fmt --all --check && cargo clippy --workspace --all-targets --frozen -- -D warnings && cargo test --workspace --frozen
+  heavy bash -c 'cargo fmt --all --check && cargo clippy --workspace --all-targets --frozen -- -D warnings && cargo test --workspace --frozen'
   ```
-- **The contract gate** (canonical string): `pnpm contract:check && pnpm test:contract`.
+- **The contract gate** (canonical string, under `heavy`): `heavy bash -c 'pnpm contract:check && pnpm test:contract'`.
 - **Hygiene and terminology:** `pnpm hygiene && pnpm test:scripts && pnpm test:terminology`. The terminology rule scans every `.rs` file under `crates/*/src` and `crates/*/tests`. The banned synonym for "mission" must not appear in any of them, not even in a `cfg(...)` attribute or a comment.
 
 - **Memory safety.** Wrap every gate-proof leg and every full test run in `heavy` (for example `heavy node scripts/gate-proof.mjs local --only contract`), and run it in the foreground. Never run browser or visual suites from this WP.
