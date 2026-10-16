@@ -5,15 +5,24 @@ mod common;
 
 use std::io::{BufRead, BufReader, Read, Write};
 use std::net::{SocketAddr, TcpStream};
-use std::process::{Child, Command, Stdio};
-use std::time::Duration;
+use std::path::{Path, PathBuf};
+use std::process::{Child, ChildStdout, Command, Output, Stdio};
+use std::sync::mpsc;
+use std::time::{Duration, Instant};
 
 use axum::body::Body;
-use common::{fixtures_dir, get, oracle, send};
+use common::{fixtures_dir, get, oracle, Reply};
 use kitty_stub::{app, Fixtures, Selection};
 use serde_json::json;
 
 const CONTENT: &str = "/api/v1/missions/01JZAB3C4D5E6F7G8H9JKMNPQR/artifacts/content";
+
+/// `common::send` with a deadline: a response that never ends fails the test by name instead of hanging the run.
+async fn send(router: axum::Router, req: axum::http::Request<Body>) -> Reply {
+    tokio::time::timeout(DEADLINE, common::send(router, req))
+        .await
+        .expect("a finite response within 5 s")
+}
 
 fn loaded() -> Fixtures {
     Fixtures::load(&fixtures_dir()).expect("fixtures load")
@@ -174,6 +183,33 @@ fn a_refusal_whose_status_is_not_allowed_is_refused() {
 
 // ---- binary ----
 
+const DEADLINE: Duration = Duration::from_secs(5);
+
+/// A scratch directory under the system temp dir, removed when dropped (also when a test fails).
+#[allow(dead_code)]
+struct Scratch(PathBuf);
+
+#[allow(dead_code)]
+impl Scratch {
+    fn new(tag: &str) -> Self {
+        let dir = std::env::temp_dir().join(format!("kitty-stub-{tag}-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        Scratch(dir)
+    }
+
+    fn path(&self) -> &Path {
+        &self.0
+    }
+}
+
+impl Drop for Scratch {
+    fn drop(&mut self) {
+        let _ = std::fs::remove_dir_all(&self.0);
+    }
+}
+
+/// Kills the child on every exit path, so no stub is left running.
 struct Running(Child);
 
 impl Drop for Running {
@@ -181,6 +217,71 @@ impl Drop for Running {
         let _ = self.0.kill();
         let _ = self.0.wait();
     }
+}
+
+/// Runs `cmd` to its exit within [`DEADLINE`]; a stub that is still running then is killed and the test fails by name
+/// instead of hanging the run.
+fn run_bounded(case: &str, cmd: &mut Command, expected_code: i32) -> Output {
+    let mut child = Running(
+        cmd.stdin(Stdio::null())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .expect("kitty-stub starts"),
+    );
+    let drain = |mut pipe: Box<dyn Read + Send>| {
+        std::thread::spawn(move || {
+            let mut bytes = Vec::new();
+            let _ = pipe.read_to_end(&mut bytes);
+            bytes
+        })
+    };
+    let out = drain(Box::new(child.0.stdout.take().unwrap()));
+    let err = drain(Box::new(child.0.stderr.take().unwrap()));
+    let start = Instant::now();
+    let status = loop {
+        if let Some(status) = child.0.try_wait().unwrap() {
+            break status;
+        }
+        if start.elapsed() > DEADLINE {
+            drop(child);
+            panic!("{case}: still running after 5 s (expected exit {expected_code})");
+        }
+        std::thread::sleep(Duration::from_millis(10));
+    };
+    Output {
+        status,
+        stdout: out.join().unwrap(),
+        stderr: err.join().unwrap(),
+    }
+}
+
+/// Starts the stub and waits at most [`DEADLINE`] for its `listening` line (stderr piped, returned by `finish`).
+fn start(mut cmd: Command) -> (Running, BufReader<ChildStdout>, SocketAddr) {
+    let mut child = Running(
+        cmd.stdin(Stdio::null())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .expect("kitty-stub starts"),
+    );
+    let mut stdout = BufReader::new(child.0.stdout.take().expect("stdout piped"));
+    let (tx, rx) = mpsc::channel();
+    std::thread::spawn(move || {
+        let mut line = String::new();
+        let _ = stdout.read_line(&mut line);
+        let _ = tx.send((line, stdout));
+    });
+    let Ok((line, stdout)) = rx.recv_timeout(DEADLINE) else {
+        drop(child);
+        panic!("no listening line within 5 s");
+    };
+    let addr = line
+        .trim_end()
+        .strip_prefix("listening ")
+        .unwrap_or_else(|| panic!("announcement: {line:?}"));
+    let addr = addr.parse().expect("announced address parses");
+    (child, stdout, addr)
 }
 
 fn command(args: &[&str]) -> Command {
@@ -192,34 +293,33 @@ fn command(args: &[&str]) -> Command {
 }
 
 fn spawn(args: &[&str]) -> (Running, SocketAddr) {
-    let mut child = command(args)
-        .stdout(Stdio::piped())
-        .stderr(Stdio::inherit())
-        .spawn()
-        .expect("starts");
-    let stdout = child.stdout.take().expect("stdout piped");
-    let running = Running(child);
-    let mut line = String::new();
-    BufReader::new(stdout)
-        .read_line(&mut line)
-        .expect("first line");
-    let addr = line
-        .trim_end()
-        .strip_prefix("listening ")
-        .unwrap_or_else(|| panic!("{line:?}"));
-    (running, addr.parse().expect("address parses"))
+    let (running, _stdout, addr) = start(command(args));
+    (running, addr)
 }
 
 fn raw_get(addr: SocketAddr, path: &str) -> String {
-    let mut s = TcpStream::connect_timeout(&addr, Duration::from_secs(5)).unwrap();
-    s.set_read_timeout(Some(Duration::from_secs(5))).unwrap();
+    let mut s = TcpStream::connect_timeout(&addr, DEADLINE).unwrap();
+    s.set_read_timeout(Some(DEADLINE)).unwrap();
     write!(
         s,
         "GET {path} HTTP/1.1\r\nHost: {addr}\r\nConnection: close\r\n\r\n"
     )
     .unwrap();
     let mut out = String::new();
-    s.read_to_string(&mut out).unwrap();
+    // A stream response never ends: the head is all that is wanted, so a read timeout after data is fine.
+    let mut buf = [0u8; 4096];
+    loop {
+        match s.read(&mut buf) {
+            Ok(0) => break,
+            Ok(n) => {
+                out.push_str(&String::from_utf8_lossy(&buf[..n]));
+                if out.contains("\r\n\r\n") && out.starts_with("HTTP/1.1 4") {
+                    break;
+                }
+            }
+            Err(e) => panic!("read {path}: {e} after {out:?}"),
+        }
+    }
     out
 }
 
@@ -280,7 +380,7 @@ fn a_bad_selection_is_a_usage_error_before_listening() {
     ];
     let mut ran = 0;
     for (name, args) in cases {
-        let out = command(args).output().unwrap();
+        let out = run_bounded(name, &mut command(args), 2);
         assert_eq!(out.status.code(), Some(2), "{name}: {out:?}");
         let stdout = String::from_utf8_lossy(&out.stdout);
         assert!(!stdout.contains("listening"), "{name}: {stdout}");

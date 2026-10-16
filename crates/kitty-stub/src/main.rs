@@ -9,8 +9,8 @@
 //! The fixtures directory is the first of: `--fixtures`; `<project-root>/.kitty-stub/fixtures` when
 //! `--mission-status.project-root` names a project that has one; the workspace's `contracts/fixtures`, compiled in.
 //! The resolved path is never printed. The document served at `GET /api/v1/openapi.yaml` is `--openapi`, else
-//! `<fixtures>/mission-status.openapi.json` when it exists (otherwise the route answers 404). An explicit
-//! `--openapi` that cannot be read exits 1.
+//! `<fixtures>/mission-status.openapi.json` when it exists (otherwise the route answers 404; a default that
+//! exists but cannot be read exits 1). An explicit `--openapi` that cannot be read exits 1.
 //!
 //! Load order: arguments, fixtures, selections (exit 2 when one does not fit), the document, signal handlers, bind,
 //! router, `listening`.

@@ -5,20 +5,14 @@
 use std::io::{BufRead, BufReader, Read, Write};
 use std::net::{SocketAddr, TcpStream};
 use std::path::{Path, PathBuf};
-use std::process::{Child, Command, Stdio};
-use std::time::Duration;
+use std::process::{Child, ChildStdout, Command, Output, Stdio};
+use std::sync::mpsc;
+use std::time::{Duration, Instant};
 
 use serde_json::Value;
 
 fn workspace_fixtures() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../contracts/fixtures")
-}
-
-fn scratch(tag: &str) -> PathBuf {
-    let dir = std::env::temp_dir().join(format!("kitty-stub-{tag}-{}", std::process::id()));
-    let _ = std::fs::remove_dir_all(&dir);
-    std::fs::create_dir_all(&dir).unwrap();
-    dir
 }
 
 /// Copies every `mission-status.*.json` file (the bundle included) into `<root>/.kitty-stub/fixtures`.
@@ -32,9 +26,45 @@ fn install_fixture_copy(root: &Path) -> PathBuf {
     dir
 }
 
+const DEADLINE: Duration = Duration::from_secs(5);
+
+/// A scratch directory under the system temp dir, removed when dropped (also when a test fails).
+struct Scratch(PathBuf);
+
+impl Scratch {
+    fn new(tag: &str) -> Self {
+        let dir = std::env::temp_dir().join(format!("kitty-stub-{tag}-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        Scratch(dir)
+    }
+
+    fn path(&self) -> &Path {
+        &self.0
+    }
+
+    fn text(&self) -> &str {
+        self.0.to_str().unwrap()
+    }
+}
+
+impl Drop for Scratch {
+    fn drop(&mut self) {
+        let _ = std::fs::remove_dir_all(&self.0);
+    }
+}
+
+/// A started stub. `Drop` kills and reaps it on every exit path, so a failing assertion leaves no process behind.
 struct Running {
     child: Child,
-    stdout: BufReader<std::process::ChildStdout>,
+    stdout: BufReader<ChildStdout>,
+}
+
+impl Drop for Running {
+    fn drop(&mut self) {
+        let _ = self.child.kill();
+        let _ = self.child.wait();
+    }
 }
 
 impl Running {
@@ -55,30 +85,82 @@ impl Running {
     }
 }
 
+/// Starts the stub and waits at most [`DEADLINE`] for its `listening` line.
 fn spawn(args: &[String]) -> (Running, SocketAddr, String) {
     let mut child = Command::new(env!("CARGO_BIN_EXE_kitty-stub"))
         .args(["--time-scale", "0"])
         .args(args)
+        .stdin(Stdio::null())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()
         .expect("kitty-stub starts");
     let mut stdout = BufReader::new(child.stdout.take().unwrap());
-    let mut line = String::new();
-    stdout.read_line(&mut line).expect("first line");
-    let running = Running { child, stdout };
-    let addr = line
-        .trim_end()
-        .strip_prefix("listening ")
-        .unwrap_or_else(|| panic!("{line:?}"))
-        .to_owned();
-    let parsed = addr.parse().expect("address parses");
-    (running, parsed, line)
+    let (tx, rx) = mpsc::channel();
+    std::thread::spawn(move || {
+        let mut line = String::new();
+        let _ = stdout.read_line(&mut line);
+        let _ = tx.send((line, stdout));
+    });
+    match rx.recv_timeout(DEADLINE) {
+        Ok((line, stdout)) => {
+            let running = Running { child, stdout };
+            let addr = line
+                .trim_end()
+                .strip_prefix("listening ")
+                .unwrap_or_else(|| panic!("{line:?}"))
+                .to_owned();
+            let parsed = addr.parse().expect("address parses");
+            (running, parsed, line)
+        }
+        Err(_) => {
+            let _ = child.kill();
+            let _ = child.wait();
+            panic!("no listening line within 5 s");
+        }
+    }
+}
+
+/// Runs the stub to its exit within [`DEADLINE`]; a stub still running then is killed and the test fails by name.
+fn run_bounded(case: &str, args: &[&str], expected_code: i32) -> Output {
+    let mut child = Command::new(env!("CARGO_BIN_EXE_kitty-stub"))
+        .args(args)
+        .stdin(Stdio::null())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .expect("kitty-stub starts");
+    let drain = |mut pipe: Box<dyn Read + Send>| {
+        std::thread::spawn(move || {
+            let mut bytes = Vec::new();
+            let _ = pipe.read_to_end(&mut bytes);
+            bytes
+        })
+    };
+    let out = drain(Box::new(child.stdout.take().unwrap()));
+    let err = drain(Box::new(child.stderr.take().unwrap()));
+    let start = Instant::now();
+    let status = loop {
+        if let Some(status) = child.try_wait().unwrap() {
+            break status;
+        }
+        if start.elapsed() > DEADLINE {
+            let _ = child.kill();
+            let _ = child.wait();
+            panic!("{case}: still running after 5 s (expected exit {expected_code})");
+        }
+        std::thread::sleep(Duration::from_millis(10));
+    };
+    Output {
+        status,
+        stdout: out.join().unwrap(),
+        stderr: err.join().unwrap(),
+    }
 }
 
 fn raw_get(addr: SocketAddr, path: &str) -> (String, Vec<u8>) {
-    let mut s = TcpStream::connect_timeout(&addr, Duration::from_secs(5)).unwrap();
-    s.set_read_timeout(Some(Duration::from_secs(5))).unwrap();
+    let mut s = TcpStream::connect_timeout(&addr, DEADLINE).unwrap();
+    s.set_read_timeout(Some(DEADLINE)).unwrap();
     write!(
         s,
         "GET {path} HTTP/1.1\r\nHost: {addr}\r\nConnection: close\r\n\r\n"
@@ -108,10 +190,10 @@ fn project_name(addr: SocketAddr) -> String {
 
 #[test]
 fn the_upstream_options_alone_serve_the_workspace_fixtures_and_the_bundle() {
-    let root = scratch("flags-default");
+    let root = Scratch::new("flags-default");
     let (stub, addr, _) = spawn(&[
         "--mission-status.port=0".to_owned(),
-        format!("--mission-status.project-root={}", root.display()),
+        format!("--mission-status.project-root={}", root.text()),
     ]);
     assert_ne!(addr.port(), 0);
     assert_eq!(project_name(addr), "example-project");
@@ -122,14 +204,13 @@ fn the_upstream_options_alone_serve_the_workspace_fixtures_and_the_bundle() {
         std::fs::read(workspace_fixtures().join("mission-status.openapi.json")).unwrap()
     );
     let output = stub.finish();
-    assert!(!output.contains(root.to_str().unwrap()), "{output}");
-    let _ = std::fs::remove_dir_all(&root);
+    assert!(!output.contains(root.text()), "{output}");
 }
 
 #[test]
 fn a_project_copy_wins_over_the_workspace_fixtures() {
-    let root = scratch("flags-copy");
-    let copy = install_fixture_copy(&root);
+    let root = Scratch::new("flags-copy");
+    let copy = install_fixture_copy(root.path());
     let path = copy.join("mission-status.examples.json");
     let text = std::fs::read_to_string(&path).unwrap();
     assert_eq!(text.matches("\"example-project\"").count(), 3);
@@ -140,14 +221,11 @@ fn a_project_copy_wins_over_the_workspace_fixtures() {
     .unwrap();
     let (stub, addr, line) = spawn(&[
         "--mission-status.port=0".to_owned(),
-        format!("--mission-status.project-root={}", root.display()),
+        format!("--mission-status.project-root={}", root.text()),
     ]);
     assert_eq!(project_name(addr), "copied-project");
     let output = stub.finish();
-    assert!(
-        !format!("{line}{output}").contains(root.to_str().unwrap()),
-        "{output}"
-    );
+    assert!(!format!("{line}{output}").contains(root.text()), "{output}");
     // Control: without the project root the workspace fixtures serve.
     let (control, addr, _) = spawn(&args(&["--mission-status.port=0"]));
     assert_eq!(project_name(addr), "example-project");
@@ -156,20 +234,18 @@ fn a_project_copy_wins_over_the_workspace_fixtures() {
     let (explicit, addr, _) = spawn(&[
         "--fixtures".to_owned(),
         workspace_fixtures().display().to_string(),
-        format!("--mission-status.project-root={}", root.display()),
+        format!("--mission-status.project-root={}", root.text()),
     ]);
     assert_eq!(project_name(addr), "example-project");
     explicit.finish();
-    let _ = std::fs::remove_dir_all(&root);
 }
 
 #[test]
 fn a_project_root_without_a_copy_falls_back_to_the_workspace() {
-    let root = scratch("flags-nocopy");
-    let (stub, addr, _) = spawn(&[format!("--mission-status.project-root={}", root.display())]);
+    let root = Scratch::new("flags-nocopy");
+    let (stub, addr, _) = spawn(&[format!("--mission-status.project-root={}", root.text())]);
     assert_eq!(project_name(addr), "example-project");
     stub.finish();
-    let _ = std::fs::remove_dir_all(&root);
 }
 
 #[test]
@@ -181,10 +257,7 @@ fn both_port_spellings_together_are_a_usage_error_and_so_is_the_space_form() {
     ];
     let mut ran = 0;
     for (name, list) in cases {
-        let out = Command::new(env!("CARGO_BIN_EXE_kitty-stub"))
-            .args(list)
-            .output()
-            .unwrap();
+        let out = run_bounded(name, list, 2);
         assert_eq!(out.status.code(), Some(2), "{name}: {out:?}");
         assert!(!String::from_utf8_lossy(&out.stdout).contains("listening"));
         assert!(
@@ -198,16 +271,13 @@ fn both_port_spellings_together_are_a_usage_error_and_so_is_the_space_form() {
 
 #[test]
 fn a_load_error_never_prints_the_directory() {
-    let root = scratch("flags-broken");
-    let copy = install_fixture_copy(&root);
+    let root = Scratch::new("flags-broken");
+    let copy = install_fixture_copy(root.path());
     std::fs::remove_file(copy.join("mission-status.routes.json")).unwrap();
-    let out = Command::new(env!("CARGO_BIN_EXE_kitty-stub"))
-        .arg(format!("--mission-status.project-root={}", root.display()))
-        .output()
-        .unwrap();
+    let root_arg = format!("--mission-status.project-root={}", root.text());
+    let out = run_bounded("broken project copy", &[root_arg.as_str()], 1);
     assert_eq!(out.status.code(), Some(1), "{out:?}");
     let stderr = String::from_utf8_lossy(&out.stderr);
     assert!(stderr.contains("mission-status.routes.json"), "{stderr}");
-    assert!(!stderr.contains(root.to_str().unwrap()), "{stderr}");
-    let _ = std::fs::remove_dir_all(&root);
+    assert!(!stderr.contains(root.text()), "{stderr}");
 }
