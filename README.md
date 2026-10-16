@@ -363,6 +363,12 @@ arm: `ReadOutcome`, `StreamOpenError`, `SupervisionState`, `DegradedReason`, `Ac
 breaking a host that has the arm. The plain structs (`CoreStatus`, `Mismatch`, `ServiceMissing`) stay exhaustive. `StreamOpenError` is no longer `Copy`: it carries a `CoreStatus` or a `Mismatch`, so clone it
 or take it by reference.
 
+**Recover from a lagging subscriber.** `Subscription.receiver` is a `tokio::sync::broadcast` receiver. When it returns
+`Lagged`, it has dropped transitions, so call `core.status()` to read the current status again and carry on from there.
+
+**Know what a timeout covers.** `TransportFailure::Timeout` also covers a connect or response-head timeout, not only a
+slow read. It comes with status `None`, because no HTTP answer arrived.
+
 **Map the status to the shell.** `connection_state_hint(&status)` returns one of the five strings of
 `ConnectionState` in `packages/mission-shell/src/client/port.ts`, or `None` when there is nothing to show (a stop the
 host asked for):
@@ -401,6 +407,11 @@ It serves the pinned contract document, so the digest check passes. The supervis
   There, the service ends only when the host calls `stop().await`, or when the last `Core` clone is dropped while the
   runtime is still running. A host that ends with `std::process::exit`, is killed, or crashes leaves the service
   running. Tauri's app exit ends the process that way, so call `stop().await` before exiting (`#20`).
+- `PR_SET_PDEATHSIG` reaches only the direct child. If the host dies hard, grandchildren of the service can survive.
+- The check that the listening socket belongs to the service runs on Linux only. It also fails open: when
+  `/proc/net/tcp` cannot be read, the start goes on without the check.
+- The contract digest shows that the service serves the pinned document. It is not authentication: another local
+  process that serves the same document passes it.
 - On macOS, an app started by launchd gets a minimal `PATH`, so give the host a configured path. Windows `PATHEXT`
   and Job Objects are not handled yet (`#20`).
 - On Windows, `stop()` ends the service process at once: there is no process-group kill and no grace period yet, so
