@@ -166,6 +166,9 @@
       "last_event_id": "01M52EQJ6Y3X9XBHVZ6J4CZN9D",
       "last_transition_at": "2026-10-16T13:34:25.502865+00:00",
       "model": "__resolved_model_absent__",
+      "notes": [
+        "Ready for review: sse.rs FrameReader + ChangeStream + open_stream, tests/stream.rs (23), tests/latency.rs; Rust, contract, hygiene gates green; commit b373aa3"
+      ],
       "provider": "__resolved_provider_absent__",
       "role": "implementer",
       "shell_pid": 4070659,
