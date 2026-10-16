@@ -2,7 +2,7 @@
 // reaches the controller, and the initial values are not applied twice.
 import { afterEach, describe, expect, it } from 'vitest';
 import { flushSync, mount, unmount } from 'svelte';
-import { createFixtureClient } from '../../src/client/fixture';
+import { createFixtureClient, setConnectionState } from '../../src/client/fixture';
 import { createFakeScheduler } from '../support/fake-scheduler';
 import { recordingClient } from '../support/recording-client';
 import { M, deepQueryAll, recordingHost, screenTag, settle, type Harness } from './helpers';
@@ -128,6 +128,31 @@ describe('MissionShell used as a Svelte component', () => {
     expect(screenTag(harness.shell)).toBe('sk-ops-screen');
     expect(a.take(), 'the old client reads nothing').toEqual([]);
     expect(b.reads.filter((read) => read.startsWith('listOpsInvocations ')).length).toBe(1);
+  });
+
+  it('a changed copy prop takes effect on the shown banner (ARCH-003)', async () => {
+    const scheduler = createFakeScheduler();
+    const client = createFixtureClient({ scheduler });
+    const target = document.createElement('div');
+    document.body.append(target);
+    const app = mount(PropsHost, { target, props: { initial: { client, host: recordingHost(), mode: 'desktop', route: '/missions', scheduler } } }) as unknown as {
+      update(patch: { copy?: { serviceMissing?: { title: string; body: string } } | undefined }): void;
+    };
+    mounted.push({ app: app as never, target });
+    const harness = { target, scheduler, shell: target.querySelector('sk-mission-shell') as HTMLElement } as unknown as Harness;
+    await settle(harness);
+    setConnectionState(client, 'degraded: service-missing');
+    await settle(harness);
+    const title = (): string | undefined => harness.shell.querySelector('sk-notice')?.textContent ?? undefined;
+    expect(title()).toContain('Service not available');
+    app.update({ copy: { serviceMissing: { title: 'Prop override', body: 'Prop body.' } } });
+    flushSync();
+    await settle(harness);
+    expect(title()).toContain('Prop override');
+    app.update({ copy: undefined });
+    flushSync();
+    await settle(harness);
+    expect(title()).toContain('Service not available');
   });
 
   it('a client and a route changed in the same tick make no spurious routeChanged and no wasted read (ARCH-009)', async () => {

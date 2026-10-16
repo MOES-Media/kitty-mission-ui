@@ -100,6 +100,8 @@ export interface ShellController {
   setRoute(route: string): void;
   /** A new client: releases the old subscription and listener, drops all state and starts the new client's gate. */
   setClient(client: MissionStatusClient | null, route?: string): void;
+  /** Replaces the host's banner copy overrides as a whole (not a merge); `{}` restores the defaults. Shown on the next render. */
+  setCopy(copy: ShellCopyOverrides): void;
   destroy(): void;
   /** Re-reads the destination's own data (Artifact and Ops only). */
   refresh(): void;
@@ -195,7 +197,7 @@ export function createShellController(options: ShellControllerOptions): ShellCon
   const timers = options.scheduler ?? defaultScheduler;
   const clock = options.clock ?? ((): Date => new Date());
   const afterRender = options.afterRender ?? ((): Promise<void> => Promise.resolve());
-  const overrides: ShellCopyOverrides = options.copy ?? {};
+  let overrides: ShellCopyOverrides = options.copy ?? {};
 
   // ---- per-controller state ----
   let client: MissionStatusClient | null = null;
@@ -665,6 +667,11 @@ export function createShellController(options: ShellControllerOptions): ShellCon
       emit();
       // A given route is announced when it was not canonical; a defaulted one when it moves the host's screen.
       if (route === undefined ? target.route !== previous : !target.canonical) safeRouteChanged(host, target.route);
+    },
+    setCopy(copy) {
+      mutate(() => {
+        overrides = copy;
+      });
     },
     destroy() {
       if (destroyed) return;

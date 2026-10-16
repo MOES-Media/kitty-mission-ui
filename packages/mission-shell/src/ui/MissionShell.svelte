@@ -6,6 +6,7 @@
   import { onDestroy, tick, untrack } from 'svelte';
   import type { MissionStatusClient } from '../client/port';
   import { createShellController } from '../controller/shell-controller';
+  import type { ShellCopyOverrides } from '../core/connection';
   import { formatRoute } from '../core/routes';
   import { bindIntents } from './bind-intents';
   import ConnectionBanner from './ConnectionBanner.svelte';
@@ -36,11 +37,12 @@
     projects: ProjectsScreen,
   } as const;
 
-  // The controller takes the options once, at creation; later changes of `client` and `route` are forwarded below.
+  // The controller takes the options once, at creation; later changes of `client`, `route` and `copy` are forwarded below.
   const controller = untrack(() => createShellController({ ...options, afterRender: () => tick() }));
   const mirror = mirrorSnapshot(controller);
   let lastClient = untrack(() => options.client);
   let lastRoute = untrack(() => options.route);
+  let lastCopy = untrack(() => options.copy);
 
   export function setRoute(route: string): void {
     lastRoute = route;
@@ -53,6 +55,11 @@
     controller.setClient(client, route);
   }
 
+  export function setCopy(copy: ShellCopyOverrides): void {
+    lastCopy = copy;
+    controller.setCopy(copy);
+  }
+
   // A Svelte host that changes its props keeps working: only a changed value reaches the controller.
   // The client effect is declared first: a client and a route changed in the same tick must read the new screen on the new client.
   $effect(() => {
@@ -60,6 +67,12 @@
     // The route prop goes with the client, untracked: a client and a route changed in the same tick make one step to the new
     // route on the new client, not a default screen first (ARCH-009), and a route change alone is the route effect's job.
     if (client !== lastClient) setClient(client, untrack(() => options.route));
+  });
+  $effect(() => {
+    const copy = options.copy;
+    if (copy === lastCopy) return;
+    lastCopy = copy;
+    controller.setCopy(copy ?? {});
   });
   $effect(() => {
     const route = options.route;

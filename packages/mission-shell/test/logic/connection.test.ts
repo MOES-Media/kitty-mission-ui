@@ -276,3 +276,32 @@ describe('a duplicate state does not re-enter (ARCH-002, CON-003, TEST-003)', ()
     expect(fake.pending()).toBe(0);
   });
 });
+
+describe('setCopy on the controller (ARCH-003)', () => {
+  it('the banner text follows the overrides given last, as a whole, and {} restores the defaults', async () => {
+    const { createShellController } = await import('../../src/controller/shell-controller');
+    const { createFixtureClient } = await import('../../src/client/fixture');
+    const fake = createFakeScheduler();
+    const controller = createShellController({
+      client: createFixtureClient({ scheduler: fake, initialState: 'degraded: service-missing' }),
+      mode: 'desktop',
+      route: '/missions',
+      scheduler: fake,
+    });
+    const banner = () => controller.snapshot().connection.copy;
+    let notified = 0;
+    controller.subscribe(() => (notified += 1));
+    notified = 0;
+    expect(banner()?.title).toBe('Service not available');
+    expect(banner()?.body, 'nothing loaded: the loaded-data sentence is dropped').toBe(SHELL_COPY.degradedWithoutData['service-missing'].body);
+    controller.setCopy({ serviceMissing: { title: 'T1', body: 'B1' } });
+    expect(banner()).toEqual({ title: 'T1', body: 'B1' });
+    expect(notified, 'a render is requested').toBe(1);
+    controller.setCopy({ contractMismatch: { title: 'T2', body: 'B2' } });
+    expect(banner()?.title, 'replaced, not merged').toBe('Service not available');
+    controller.setCopy({});
+    expect(banner()?.body).toBe(SHELL_COPY.degradedWithoutData['service-missing'].body);
+    controller.destroy();
+    expect(() => controller.setCopy({})).not.toThrow();
+  });
+});

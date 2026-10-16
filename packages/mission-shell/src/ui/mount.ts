@@ -1,7 +1,8 @@
-// mountShell (contracts/shell-api.md): mounts MissionShell into a target and returns the host's three handles. Both setters
+// mountShell (contracts/shell-api.md): mounts MissionShell into a target and returns the host's four handles. Both setters
 // reach the one controller through the component's exports; destroy unmounts once, which destroys the controller.
 import { mount, unmount } from 'svelte';
 import type { MissionStatusClient } from '../client/port';
+import type { ShellCopyOverrides } from '../core/connection';
 import MissionShell from './MissionShell.svelte';
 import type { ShellOptions } from './options';
 
@@ -9,6 +10,8 @@ export interface MountedShell {
   setRoute(route: string): void;
   /** A new project: releases the old subscriptions, drops all state, subscribes the new client, and optionally sets the route in the same step. */
   setClient(client: MissionStatusClient | null, route?: string): void;
+  /** Replaces the banner copy overrides (`ShellOptions.copy`) as a whole; `{}` restores the defaults. */
+  setCopy(copy: ShellCopyOverrides): void;
   destroy(): void;
 }
 
@@ -16,6 +19,7 @@ export interface MountedShell {
 type ShellExports = {
   setRoute(route: string): void;
   setClient(client: MissionStatusClient | null, route?: string): void;
+  setCopy(copy: ShellCopyOverrides): void;
 };
 
 export function mountShell(target: Element, options: ShellOptions): MountedShell {
@@ -27,6 +31,9 @@ export function mountShell(target: Element, options: ShellOptions): MountedShell
     },
     setClient(client, route) {
       if (mounted) app.setClient(client, route);
+    },
+    setCopy(copy) {
+      if (mounted) app.setCopy(copy);
     },
     destroy() {
       if (!mounted) return;

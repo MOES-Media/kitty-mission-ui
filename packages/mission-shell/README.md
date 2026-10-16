@@ -60,11 +60,14 @@ const shell = mountShell(document.querySelector('#app')!, {
 });
 ```
 
-`mountShell` returns three methods:
+`mountShell` returns four methods:
 
 - `setRoute(route)` shows a route. Call it on back and forward.
 - `setClient(client, route?)` switches project. It releases the old subscriptions, drops the loaded data and subscribes
   the new client. It keeps the session's drawer and flyout state, and can set the route in the same step.
+- `setCopy(copy)` replaces the host's banner copy overrides (`ShellOptions.copy`) and the banner updates on the next
+  render. The overrides are replaced as a whole, not merged: `setCopy({ serviceMissing })` drops an earlier
+  `contractMismatch` override, and `setCopy({})` restores the defaults. It does nothing after `destroy`.
 - `destroy()` releases everything.
 
 A Svelte host can render `<MissionShell {client} {mode} {route} {host} />` from the same entry.
@@ -80,6 +83,8 @@ A Svelte host can render `<MissionShell {client} {mode} {route} {host} />` from 
   reconnecting grace. Tests pass a fake one.
 - `clock`: returns the current `Date`. The shell uses it for relative times, for example in the picker.
 - `copy`: overrides for the two degraded banners (`serviceMissing`, `contractMismatch`), each a `{ title, body }`.
+  A Svelte host that changes the `copy` prop gets the same effect as `setCopy`; a prop that becomes `undefined`
+  restores the defaults.
 
 ### Routes
 
@@ -128,7 +133,9 @@ design review (CP-1):
 - While a degraded banner is shown, the shell hides its own chrome error and Retry. The banner explains the cause.
 - A degraded banner says "Data that was already loaded stays visible." only when data is on screen. With nothing
   loaded, the body is the first sentence alone.
-- A host can replace the two degraded titles and bodies through `copy`. The shell shows an override as given.
+- A host can replace the two degraded titles and bodies through `copy`, or later through `setCopy`. The shell shows an
+  override as given: the loaded-data rule above applies to the default text only, and an override is the host's own
+  wording, shown in both cases. Removing an override brings the default and its rule back.
 
 ### Host interface
 

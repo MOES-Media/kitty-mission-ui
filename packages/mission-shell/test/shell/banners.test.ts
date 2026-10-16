@@ -153,6 +153,39 @@ describe('connection banners (FR-011, SC-003)', () => {
     expectNotice(harness, { ...(ROWS.serviceMissing as Row), title: 'Sample override', body: 'Sample override body.' });
   });
 
+  it('setCopy changes the shown banner on the next render; {} restores the defaults (ARCH-003)', async () => {
+    const scheduler = createFakeScheduler();
+    const client = createFixtureClient({ scheduler });
+    const harness = await mountAt('/missions', { scheduler, client });
+    setConnectionState(client, 'degraded: service-missing');
+    await settle(harness);
+    expectNotice(harness, ROWS.serviceMissing as Row);
+    harness.mounted.setCopy({ serviceMissing: { title: 'Later override', body: 'Later body.' } });
+    await settle(harness);
+    expectNotice(harness, { ...(ROWS.serviceMissing as Row), title: 'Later override', body: 'Later body.' });
+    // The overrides are replaced as a whole: the other key is not kept from an earlier call.
+    harness.mounted.setCopy({ contractMismatch: { title: 'Other', body: 'Other body.' } });
+    await settle(harness);
+    expectNotice(harness, ROWS.serviceMissing as Row);
+    harness.mounted.setCopy({});
+    await settle(harness);
+    expectNotice(harness, ROWS.serviceMissing as Row);
+  });
+
+  it('setCopy keeps the A2 nuance for the defaults: with nothing loaded the sentence is dropped, an override is shown as given', async () => {
+    const scheduler = createFakeScheduler();
+    const client = createFixtureClient({ scheduler, initialState: 'degraded: service-missing' });
+    const harness = await mountWith(scheduler, client);
+    const row = ROWS.serviceMissing as Row;
+    expectNotice(harness, { ...row, body: row.body.replace(' Data that was already loaded stays visible.', '') });
+    harness.mounted.setCopy({ serviceMissing: { title: 'Mine', body: 'Mine, verbatim. Data that was already loaded stays visible.' } });
+    await settle(harness);
+    expectNotice(harness, { ...row, title: 'Mine', body: 'Mine, verbatim. Data that was already loaded stays visible.' });
+    harness.mounted.setCopy({});
+    await settle(harness);
+    expectNotice(harness, { ...row, body: row.body.replace(' Data that was already loaded stays visible.', '') });
+  });
+
   const SENTENCE = ' Data that was already loaded stays visible.';
   const chrome = (harness: Harness): { status: string; errorMessage: string } =>
     harness.shell as unknown as { status: string; errorMessage: string };

@@ -7,6 +7,7 @@
   let { initial, echo = false }: { initial: ShellOptions; echo?: boolean } = $props();
   let client = $state.raw(untrack(() => initial.client));
   let route = $state(untrack(() => initial.route));
+  let copy = $state.raw(untrack(() => initial.copy));
 
   // An echoing host copies every routeChanged back into its route prop, as a router-bound Svelte host does.
   const host = $derived<ShellOptions['host']>(
@@ -21,13 +22,14 @@
       : initial.host,
   );
 
-  const options = $derived<ShellOptions>({ ...initial, ...(host === undefined ? {} : { host }), client, ...(route === undefined ? {} : { route }) });
+  const options = $derived<ShellOptions>({ ...initial, ...(host === undefined ? {} : { host }), client, ...(route === undefined ? {} : { route }), ...(copy === undefined ? {} : { copy }) });
 
   export function currentRoute(): string | undefined {
     return route;
   }
 
-  export function update(patch: { client?: ShellOptions['client']; route?: string }): void {
+  export function update(patch: { client?: ShellOptions['client']; route?: string; copy?: ShellOptions['copy'] }): void {
+    if ('copy' in patch) copy = patch.copy;
     if ('client' in patch) client = patch.client ?? null;
     if (patch.route !== undefined) route = patch.route;
   }
