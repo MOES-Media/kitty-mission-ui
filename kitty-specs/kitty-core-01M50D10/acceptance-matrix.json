@@ -208,10 +208,10 @@
       "criterion_id": "FR-021",
       "description": "Verify FR-021 is satisfied",
       "proof_type": "automated_test",
-      "evidence": null,
-      "pass_fail": "pending",
-      "verified_by": null,
-      "verified_at": null,
+      "evidence": "crates/kitty-core/tests/supervision.rs: stop_ends_a_ready_service_within_the_grace_period (line 1228), a_service_that_ignores_sigterm_is_killed_after_the_grace_period (line 1251), stop_during_the_start_ends_the_service (line 1272), stop_takes_the_whole_process_group (line 1315), a_grandchild_that_outlives_its_leader_is_killed_after_the_reap (line 1345), dropping_the_handle_kills_the_group_without_a_grace_period (line 1399), a_dying_host_takes_its_service_with_it (line 1565, Linux); crates/kitty-core/tests/host_exit.rs a_service_does_not_outlive_a_host_that_exits_without_stop. WP08 cycle-2 review: the post-reap SIGKILL revert was caught in 10/10 full parallel runs; WP09 review: the PDEATHSIG revert was red",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-16T16:43:52.717861+00:00",
       "notes": "TODO: replace with a real acceptance criterion"
     },
     {
