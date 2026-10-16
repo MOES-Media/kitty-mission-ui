@@ -13,8 +13,9 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex, MutexGuard};
 use std::time::{Duration, Instant};
 
+use common::claims::{claim_listener, claim_path, release_port, unique_port};
 use common::{
-    assert_no_panics, fixtures_dir, http_ok, squatter, test_timings, within, write_scenario,
+    assert_no_panics, fixtures_dir, http_ok, squatter_on, test_timings, within, write_scenario,
     SquatterGuard, TempDir,
 };
 use kitty_core::client::Timings;
@@ -208,94 +209,32 @@ impl PortPicker for ScriptedPorts {
     }
 }
 
-/// A free port that no other test is using, taken from below the ephemeral range.
-///
-/// Ports picked by `bind(0)` come from the ephemeral range, which is also where a client socket's local port comes
-/// from. A client that polls a port which nobody has bound yet can then connect to itself (a TCP simultaneous open)
-/// and occupy exactly the port the service is about to bind. That is a real, rare race of the loopback picker, and
-/// the supervisor survives it with its busy-port retry; but a scenario that asserts an exact sequence must not
-/// depend on it. So scenarios draw from 20000..30000, which the OS never hands to a client socket.
-///
-/// The choice must also hold between test processes that run side by side (two lanes, a reviewer re-running the
-/// suite, the gate proof): a port is claimed by creating `<tmp>/kitty-core-test-ports/<port>` exclusively, with the
-/// owner's pid inside. A claim whose owner is gone is stale and is taken over.
-fn unique_port(exclude: &[u16]) -> u16 {
-    use std::io::Write as _;
-    use std::sync::atomic::{AtomicU32, Ordering};
-    static NEXT: AtomicU32 = AtomicU32::new(0);
-    let claims = claim_dir();
-    let me = std::process::id();
-    let start = me.wrapping_mul(2_654_435_761) % 10_000;
-    // One full sweep of the range is the most that is ever worth trying.
-    for _ in 0..10_000 {
-        let n = NEXT.fetch_add(1, Ordering::SeqCst);
-        let port = (20_000 + (start + n) % 10_000) as u16;
-        if exclude.contains(&port) {
-            continue;
-        }
-        let claim = claims.join(port.to_string());
-        let claimed = match std::fs::OpenOptions::new()
-            .write(true)
-            .create_new(true)
-            .open(&claim)
-        {
-            Ok(mut file) => file.write_all(me.to_string().as_bytes()).is_ok(),
-            Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => {
-                let owner: Option<i32> = std::fs::read_to_string(&claim)
-                    .ok()
-                    .and_then(|t| t.trim().parse().ok());
-                // An unreadable or empty claim may still be being written; only a dead owner is taken over.
-                if let Some(pid) = owner {
-                    // SAFETY: signal 0 delivers nothing.
-                    if unsafe { libc::kill(pid, 0) } == -1 && errno() == libc::ESRCH {
-                        let _ = std::fs::remove_file(&claim);
-                    }
-                }
-                false
-            }
-            Err(e) => panic!("cannot claim test port {port} in {}: {e}", claims.display()),
-        };
-        if !claimed {
-            continue;
-        }
-        if std::net::TcpListener::bind(("127.0.0.1", port)).is_ok() {
-            return port;
-        }
-        release_port(port);
-    }
-    panic!("no free test port in 20000..30000 after a full sweep");
-}
-
-/// The claim directory, checked to be ours and writable so that a foreign one fails by name instead of looping.
-fn claim_dir() -> PathBuf {
-    use std::os::unix::fs::MetadataExt as _;
-    let dir = std::env::temp_dir().join("kitty-core-test-ports");
-    std::fs::create_dir_all(&dir).unwrap_or_else(|e| panic!("create {}: {e}", dir.display()));
-    let meta = std::fs::metadata(&dir).unwrap_or_else(|e| panic!("stat {}: {e}", dir.display()));
-    // SAFETY: geteuid has no arguments.
-    let me = unsafe { libc::geteuid() };
-    assert_eq!(
-        meta.uid(),
-        me,
-        "{} belongs to another user; remove it or set TMPDIR",
-        dir.display()
-    );
-    dir
-}
-
-/// Gives a claimed port back (its owner process wrote its pid into the claim, so only the owner removes it).
-fn release_port(port: u16) {
-    let _ = std::fs::remove_file(claim_dir().join(port.to_string()));
-}
-
-/// `n` distinct free loopback ports.
-fn free_ports(n: usize) -> Vec<u16> {
-    let mut ports: Vec<u16> = Vec::new();
+/// `n` distinct claimed ports, each with the listener that verified it free. A squatter is built from its listener
+/// (`squatter_on`), so the port is never unbound between "verified free" and "held".
+fn held_ports(n: usize) -> Vec<(u16, std::net::TcpListener)> {
+    let mut held: Vec<(u16, std::net::TcpListener)> = Vec::new();
     for _ in 0..n {
-        let port = unique_port(&ports);
-        ports.push(port);
+        let taken: Vec<u16> = held.iter().map(|(p, _)| *p).collect();
+        held.push(claim_listener(&taken));
     }
-    ports
+    held
+}
+
+/// `n` claimed ports, each held by a squatter that answers with the pinned document.
+fn pinned_answering_squatters(n: usize) -> (Vec<u16>, Vec<SquatterGuard>) {
+    held_ports(n)
+        .into_iter()
+        .map(|(port, listener)| {
+            (
+                port,
+                squatter_on(
+                    listener,
+                    Some(http_ok("application/yaml", &pinned_document())),
+                    None,
+                ),
+            )
+        })
+        .unzip()
 }
 
 /// `squatter()` frees its port when the guard's task is aborted, and the abort is asynchronous. Waits briefly for a
@@ -810,9 +749,9 @@ async fn five_crashes_give_up_with_the_last_exit_status() {
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn a_busy_port_is_retried_on_another_port() {
-    let squat = free_ports(1)[0];
-    let guard: SquatterGuard = squatter(
-        squat,
+    let (squat, listener) = held_ports(1).remove(0);
+    let guard: SquatterGuard = squatter_on(
+        listener,
         Some(http_ok("application/yaml", &pinned_document())),
         Some(Duration::from_millis(200)),
     );
@@ -846,17 +785,7 @@ async fn a_busy_port_is_retried_on_another_port() {
 async fn a_socket_that_is_not_the_services_is_not_ready() {
     // Positive control for the oracle: one squatter on a port the service binds is a busy port, handled above. Here
     // the service never binds, three squatters answer at once with the pinned document, and every answer is refused.
-    let ports = free_ports(3);
-    let squatters: Vec<SquatterGuard> = ports
-        .iter()
-        .map(|p| {
-            squatter(
-                *p,
-                Some(http_ok("application/yaml", &pinned_document())),
-                None,
-            )
-        })
-        .collect();
+    let (ports, squatters) = pinned_answering_squatters(3);
     let mut rig = Rig::new(&["alive-no-bind"], None);
     rig.policy.give_up_at = 1;
     rig.ports = ScriptedPorts::new(&ports);
@@ -914,9 +843,9 @@ async fn a_socket_that_is_not_the_services_is_not_ready() {
 #[cfg(target_os = "linux")]
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn a_foreign_listener_with_a_wrong_answer_is_retried_on_another_port() {
-    let squat = free_ports(1)[0];
-    let guard = squatter(
-        squat,
+    let (squat, listener) = held_ports(1).remove(0);
+    let guard = squatter_on(
+        listener,
         Some(b"HTTP/1.1 404 Not Found\r\ncontent-length: 0\r\n\r\n".to_vec()),
         None,
     );
@@ -976,17 +905,7 @@ async fn a_connection_reset_during_readiness_keeps_polling() {
 #[cfg(target_os = "linux")]
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn ownership_mismatches_take_no_crash_slot_and_no_backoff() {
-    let ports = free_ports(3);
-    let squatters: Vec<SquatterGuard> = ports
-        .iter()
-        .map(|p| {
-            squatter(
-                *p,
-                Some(http_ok("application/yaml", &pinned_document())),
-                None,
-            )
-        })
-        .collect();
+    let (ports, squatters) = pinned_answering_squatters(3);
     let mut rig = Rig::new(
         &["alive-no-bind", "alive-no-bind", "alive-no-bind", "ready"],
         None,
@@ -1694,6 +1613,25 @@ fn nothing_is_left_behind_by_the_scratch_directories() {
     assert!(!path.exists());
 }
 
+/// TEST-001/006: a claim is a lock that others cannot take while it is held, and releasing the port removes its file.
+#[test]
+fn a_held_claim_cannot_be_taken_and_a_released_one_leaves_no_file() {
+    use std::os::fd::AsRawFd as _;
+    let try_lock = |path: &Path| -> bool {
+        let file = std::fs::File::open(path).expect("open the claim");
+        // SAFETY: flock on a descriptor this function owns; the lock goes with the file when it drops.
+        unsafe { libc::flock(file.as_raw_fd(), libc::LOCK_EX | libc::LOCK_NB) == 0 }
+    };
+    let (port, listener) = claim_listener(&[]);
+    let claim = claim_path(port);
+    assert!(claim.exists(), "the claim file exists while held");
+    assert!(!try_lock(&claim), "a held claim cannot be locked again");
+    drop(listener);
+    release_port(port);
+    assert!(!claim.exists(), "a released claim leaves no file");
+    assert_no_panics();
+}
+
 // ---- The fake itself ------------------------------------------------------------------------------------------------
 
 /// Kills and reaps a fake that a test started by hand, whatever happens to the test.
@@ -1736,16 +1674,16 @@ fn the_fakes_crash_after_mode_counts_its_delay_from_the_first_contract_fetch() {
         child,
         root: root.clone(),
     };
+    // TEST-001: the fake writes its pid file only once it holds the port. A connection made before that can reach a
+    // socket that is not the fake's and be reset (the old flake), so nothing connects until the file exists.
     let give_up = Instant::now() + Duration::from_secs(5);
-    let mut stream = loop {
-        match std::net::TcpStream::connect(("127.0.0.1", port)) {
-            Ok(stream) => break stream,
-            Err(e) => {
-                assert!(Instant::now() < give_up, "the fake never listened: {e}");
-                std::thread::sleep(Duration::from_millis(5));
-            }
-        }
-    };
+    let pid_file = root.join("service.pid");
+    while !pid_file.exists() {
+        assert!(Instant::now() < give_up, "the fake never held its port");
+        std::thread::sleep(Duration::from_millis(5));
+    }
+    let mut stream =
+        std::net::TcpStream::connect(("127.0.0.1", port)).expect("connect to the fake");
     // Positive control: the timer does not run before the first fetch, so a fake that was only connected to
     // is still alive well after the delay.
     std::thread::sleep(Duration::from_millis(400));

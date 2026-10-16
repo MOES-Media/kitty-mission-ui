@@ -568,6 +568,16 @@ impl Drop for SquatterGuard {
 
 pub fn squatter(port: u16, answer: Option<Vec<u8>>, hold: Option<Duration>) -> SquatterGuard {
     let listener = std::net::TcpListener::bind(("127.0.0.1", port)).expect("squatter binds");
+    squatter_on(listener, answer, hold)
+}
+
+/// Like [`squatter`], on a listener that is already bound: a port claimed with `claims::claim_listener` is held
+/// without ever being released in between.
+pub fn squatter_on(
+    listener: std::net::TcpListener,
+    answer: Option<Vec<u8>>,
+    hold: Option<Duration>,
+) -> SquatterGuard {
     listener.set_nonblocking(true).expect("non-blocking");
     let listener = TcpListener::from_std(listener).expect("tokio listener");
     let task = tokio::spawn(async move {

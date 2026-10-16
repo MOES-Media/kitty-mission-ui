@@ -4,20 +4,28 @@
 //! Ports picked by `bind(0)` come from the ephemeral range, which is where a client socket's local port comes from,
 //! so a client that polls a port nobody has bound yet can connect to itself and occupy exactly the port the service
 //! is about to bind. Scenarios that assert an exact sequence therefore draw from 20000..30000, which the OS never
-//! hands to a client socket. Between test processes running side by side, a port is claimed by creating
-//! `<tmp>/kitty-core-test-ports/<port>` exclusively with the owner's pid inside; a claim whose owner is gone is
-//! stale and is taken over. Owners release their claims when they can.
+//! hands to a client socket. Between test processes running side by side, a port is claimed by holding an exclusive
+//! `flock` on `<tmp>/kitty-core-test-ports/<port>` (the owner's pid is written inside for humans). The kernel drops
+//! the lock when its owner dies, so a dead owner's claim is free at once and needs no takeover; owners also remove
+//! their claim files when they release a port and at process exit.
 #![allow(dead_code)]
 
+use std::fs::File;
 use std::io::Write as _;
+use std::net::TcpListener;
+use std::os::fd::AsRawFd as _;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicU32, Ordering};
-use std::sync::{Mutex, MutexGuard};
+use std::sync::{Mutex, MutexGuard, Once};
 
 use kitty_core::supervisor::PortPicker;
 
-fn errno() -> i32 {
-    std::io::Error::last_os_error().raw_os_error().unwrap_or(0)
+/// The claims this process holds: the claim file's path and the open file that carries its lock. The kernel drops a
+/// lock when its owner dies, so a claim never outlives its process and no takeover of a stale one is needed.
+static HELD: Mutex<Vec<(PathBuf, File)>> = Mutex::new(Vec::new());
+
+fn held() -> MutexGuard<'static, Vec<(PathBuf, File)>> {
+    HELD.lock().unwrap_or_else(|p| p.into_inner())
 }
 
 /// The claim directory, checked to be ours so that a foreign one fails by name instead of looping.
@@ -37,55 +45,103 @@ fn claim_dir() -> PathBuf {
     dir
 }
 
-/// Gives a claimed port back.
-pub fn release_port(port: u16) {
-    let _ = std::fs::remove_file(claim_dir().join(port.to_string()));
+/// The claim file of `port`.
+pub fn claim_path(port: u16) -> PathBuf {
+    claim_dir().join(port.to_string())
 }
 
-/// Claims a free port of 20000..30000 that is not in `exclude`, and returns it.
-pub fn unique_port(exclude: &[u16]) -> u16 {
+/// Removes the claim files this process still holds. Runs at process exit, so a finished test binary leaves none.
+extern "C" fn release_at_exit() {
+    if let Ok(mut claims) = HELD.try_lock() {
+        for (path, _lock) in claims.drain(..) {
+            let _ = std::fs::remove_file(path);
+        }
+    }
+}
+
+/// Gives a claimed port back (a no-op for a port this process does not hold).
+pub fn release_port(port: u16) {
+    let path = claim_dir().join(port.to_string());
+    let mut claims = held();
+    if let Some(at) = claims.iter().position(|(p, _)| *p == path) {
+        // Unlinked while the lock is still held, so a racing claimer finds the inode gone (see `try_claim`).
+        let _ = std::fs::remove_file(&path);
+        claims.remove(at);
+    }
+}
+
+/// Takes the claim file of `port`: an exclusive, non-blocking `flock` on `<claims>/<port>`. The lock is atomic, and
+/// the kernel releases it when its owner dies, so a dead owner's claim is simply free. The file is checked to still
+/// be the one at the path, because its owner unlinks it on release and a lock on an unlinked inode is worthless.
+fn try_claim(claims: &std::path::Path, port: u16) -> bool {
+    use std::os::unix::fs::MetadataExt as _;
+    let path = claims.join(port.to_string());
+    let Ok(mut file) = File::options()
+        .read(true)
+        .write(true)
+        .create(true)
+        .truncate(false)
+        .open(&path)
+    else {
+        return false;
+    };
+    // SAFETY: flock on a descriptor this function owns.
+    if unsafe { libc::flock(file.as_raw_fd(), libc::LOCK_EX | libc::LOCK_NB) } != 0 {
+        return false;
+    }
+    let same = match (file.metadata(), std::fs::metadata(&path)) {
+        (Ok(open), Ok(named)) => open.ino() == named.ino() && open.dev() == named.dev(),
+        _ => false,
+    };
+    if !same {
+        return false;
+    }
+    // A claim file written by a harness that has no lock (pid inside, no flock) is honoured while its owner lives.
+    let mut owner = String::new();
+    let _ = std::io::Read::read_to_string(&mut file, &mut owner);
+    if let Ok(pid) = owner.trim().parse::<i32>() {
+        // SAFETY: signal 0 delivers nothing.
+        if pid != std::process::id() as i32 && unsafe { libc::kill(pid, 0) } == 0 {
+            return false;
+        }
+    }
+    let _ = file.set_len(0);
+    let _ = std::io::Seek::rewind(&mut file);
+    let _ = file.write_all(std::process::id().to_string().as_bytes());
+    static EXIT_HOOK: Once = Once::new();
+    EXIT_HOOK.call_once(|| {
+        // SAFETY: registers a plain function that touches only statics.
+        unsafe { libc::atexit(release_at_exit) };
+    });
+    held().push((path, file));
+    true
+}
+
+/// Claims a free port of 20000..30000 that is not in `exclude`, and returns it with the listener that proved it free.
+/// The caller keeps the listener for as long as the port must stay taken (a squatter is built from it), so there is
+/// no gap between "verified free" and "bound".
+pub fn claim_listener(exclude: &[u16]) -> (u16, TcpListener) {
     static NEXT: AtomicU32 = AtomicU32::new(0);
     let claims = claim_dir();
-    let me = std::process::id();
-    let start = me.wrapping_mul(2_654_435_761) % 10_000;
+    let start = std::process::id().wrapping_mul(2_654_435_761) % 10_000;
     // One full sweep of the range is the most that is ever worth trying.
     for _ in 0..10_000 {
         let n = NEXT.fetch_add(1, Ordering::SeqCst);
         let port = (20_000 + (start + n) % 10_000) as u16;
-        if exclude.contains(&port) {
+        if exclude.contains(&port) || !try_claim(&claims, port) {
             continue;
         }
-        let claim = claims.join(port.to_string());
-        let claimed = match std::fs::OpenOptions::new()
-            .write(true)
-            .create_new(true)
-            .open(&claim)
-        {
-            Ok(mut file) => file.write_all(me.to_string().as_bytes()).is_ok(),
-            Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => {
-                let owner: Option<i32> = std::fs::read_to_string(&claim)
-                    .ok()
-                    .and_then(|t| t.trim().parse().ok());
-                // An unreadable or empty claim may still be being written; only a dead owner is taken over.
-                if let Some(pid) = owner {
-                    // SAFETY: signal 0 delivers nothing.
-                    if unsafe { libc::kill(pid, 0) } == -1 && errno() == libc::ESRCH {
-                        let _ = std::fs::remove_file(&claim);
-                    }
-                }
-                false
-            }
-            Err(e) => panic!("cannot claim test port {port} in {}: {e}", claims.display()),
-        };
-        if !claimed {
-            continue;
-        }
-        if std::net::TcpListener::bind(("127.0.0.1", port)).is_ok() {
-            return port;
+        if let Ok(listener) = TcpListener::bind(("127.0.0.1", port)) {
+            return (port, listener);
         }
         release_port(port);
     }
     panic!("no free test port in 20000..30000 after a full sweep");
+}
+
+/// Claims a free port of 20000..30000 that is not in `exclude`, and returns it (the verifying listener is dropped).
+pub fn unique_port(exclude: &[u16]) -> u16 {
+    claim_listener(exclude).0
 }
 
 /// A [`PortPicker`] over [`unique_port`] that remembers what it handed out, so its owner can release the claims.
