@@ -220,8 +220,8 @@ needs no `exports` change.
 
 Imported from its own entry, `@moes-media/mission-shell/testing` (`src/testing.ts`), together with its option types
 (`FixtureClientOptions`, `Scheduler`, `RouteEntry`, `ExampleTable`, `ChangesEnvelope`). The `exports` map of
-`package.json` names exactly two entries, `.` and `./testing`, so the production entry never pulls in the fixture JSON and
-no deep import reaches the package's internals.
+`package.json` names exactly three entries, `.`, `./testing` and `./shell`, so the production entry never pulls in the
+fixture JSON and no deep import reaches the package's internals.
 
 An in-memory `MissionStatusClient` over the shared files in `contracts/fixtures/` (imported as JSON, which is not I/O).
 Every read resolves to its route's default example; `subscribe` replays `mission-status.changes.json` in order.
