@@ -192,7 +192,7 @@ scheme"). The check is exact; the host still re-validates (T019 doc comment).
 5. Tests in `test/logic/links.test.ts` (T022 covers the structure): **one** `it(...)` drives the controller through
    `controller.intent('sk-artifact-screen', 'sk-open-link', { href })` with a recording host and asserts:
    - positive control: `https://example.test/x` → exactly one `openExternalLink` call, with that `href`;
-   - also passing: `HTTPS://example.test/x`, `http://example.test`, `mailto:someone@example.test` (each exactly one
+   - also passing: `HTTPS://example.test/x`, `http://example.test`, `mailto:noreply@example.test` (each exactly one
      more call);
    - every negative → zero further calls: `httpx://example.test`, `javascript:alert(1)`, `JaVaScRiPt:alert(1)`,
      `data:text/html,x`, `file:///etc/hosts`, `vbscript:msgbox(1)`, `' https://example.test'` (leading space),
