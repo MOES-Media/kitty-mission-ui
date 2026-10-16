@@ -389,8 +389,9 @@ of 480 s (44%). Every gate job stayed within 8 minutes (NFR-002); the slowest wa
 
 Issue `#18` adds shell plants to five legs: two to `unit-tests` (10 in all), one to `typecheck` (5), three to `eslint` (12)
 and one to `storybook-build` (2); the `visual` plant moves to a shell banner story (1). The `#18` timeouts are
-**provisional**: they come from local measurements under `heavy`, not from CI. Only the `unit-tests` proof leg rises,
-from 30 to 32 minutes (the formula gives 31.7 from the `#17` run's 2.15 minute gate step projected to about 2.7).
+**provisional**: no CI run of the `#18` pull request exists yet, so they are projections, not measurements. Only the
+`unit-tests` proof leg rises, from 30 to 32 minutes (the formula gives 31.7 from the plan's CI projection: the `#17` run's
+2.15 minute gate step, projected to about 2.7 for the new plants).
 `typecheck`, `eslint`, `storybook-build` and `visual` keep their values, and `visual` stays at 60 because a timeout
 never drops. A `(landing)` change re-derives all of them from the pull request's first CI run.
 

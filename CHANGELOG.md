@@ -27,8 +27,9 @@ All user-visible changes to this repository. Per-package notes live in `packages
   - Eleven Storybook stories with visual baselines (341 stories in all), the moved `visual` plant and seven new
     planted-defect proofs.
   - No new dependency version.
-  - The `unit-tests` proof-leg timeout rises from 30 to 32 minutes. It is provisional, from local measurements, and a
-    `(landing)` change re-derives it from the pull request's first CI run.
+  - The `unit-tests` proof-leg timeout rises from 30 to 32 minutes. It is provisional, a projection from the `#17` run's
+    CI timings and not a measurement of a `#18` run, and a `(landing)` change re-derives it from the pull request's first
+    CI run.
 - **Phase 0 bootstrap: Kitty Desktop and Kitty Dashboard can now be built on one shared shell, one client interface and
   a local stand-in for the Mission Status service** (`#17`). Before, the repository held only the Lit screens, with no
   host to run them in and no way to exercise them against service data. Now the hosts (#20, #21) and the next missions
