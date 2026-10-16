@@ -162,7 +162,7 @@
     },
     "WP05": {
       "actor": "claude",
-      "agent": "claude",
+      "agent": null,
       "agent_profile": "reviewer-renata",
       "agent_profile_version": "1.0",
       "force_count": 1,
@@ -175,6 +175,7 @@
         "INTENT_TABLE (40 pairs/23 intents), coverage check types, P-2 proven; controller dispatches via table (out-of-map edit)"
       ],
       "provider": "__resolved_provider_absent__",
+      "review": null,
       "review_result": {
         "feedback_path": "/home/jeroennouws/dev/SK-missions/ui18/kitty-specs/mission-shell-01M50D2J/tasks/WP05-intent-table-and-coverage-check/review-cycle-1.md",
         "reference": "review-cycle://mission-shell-01M50D2J/WP05-intent-table-and-coverage-check/review-cycle-1.md",
@@ -182,13 +183,13 @@
         "verdict": "changes_requested"
       },
       "role": "reviewer",
-      "shell_pid": 358434,
-      "shell_pid_created_at": "1792160558.16",
+      "shell_pid": null,
+      "shell_pid_created_at": null,
       "subtasks": {
-        "T023": "done",
-        "T024": "done",
-        "T025": "done",
-        "T026": "done"
+        "T023": "planned",
+        "T024": "planned",
+        "T025": "planned",
+        "T026": "planned"
       }
     },
     "WP06": {
