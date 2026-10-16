@@ -74,7 +74,7 @@ mod tests {
     #[test]
     fn keeps_exactly_the_newest_64_kib_after_uneven_chunks() {
         let ring = OutputRing::new();
-        let sizes = [1usize, 7, 4096, 65_537, 3, 12_000, 20_000, 1];
+        let sizes = [1usize, 7, 4096, 65_537, 3, 13_000, 21_000, 1];
         let mut all = Vec::new();
         for size in sizes {
             let chunk = pattern(all.len(), size);

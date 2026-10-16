@@ -286,6 +286,35 @@ fn kill_if_fake(pid: i32) {
     }
 }
 
+/// Kills, by pid, every `kitty-fake-service` whose command line names `root`: the processes this test's own
+/// scratch directory started, including a grandchild that was spawned too late to be in a pid file.
+fn kill_fakes_of(root: &Path) {
+    let needle = root.display().to_string();
+    for round in 0..2 {
+        if let Ok(entries) = std::fs::read_dir("/proc") {
+            for entry in entries.flatten() {
+                let Some(pid) = entry
+                    .file_name()
+                    .to_str()
+                    .and_then(|n| n.parse::<i32>().ok())
+                else {
+                    continue;
+                };
+                let Ok(cmdline) = std::fs::read(format!("/proc/{pid}/cmdline")) else {
+                    continue;
+                };
+                let text = String::from_utf8_lossy(&cmdline);
+                if text.contains("kitty-fake-service") && text.contains(&needle) {
+                    kill_if_fake(pid);
+                }
+            }
+        }
+        if round == 0 {
+            std::thread::sleep(Duration::from_millis(30));
+        }
+    }
+}
+
 // ---- The rig -----------------------------------------------------------------------------------------------------
 
 struct FixedDiscovery(PathBuf);
@@ -449,6 +478,7 @@ impl Drop for Rig {
         for pid in pids {
             kill_if_fake(pid);
         }
+        kill_fakes_of(&self.root);
     }
 }
 
@@ -1351,13 +1381,14 @@ async fn a_dying_host_takes_its_service_with_it() {
         .trim()
         .parse()
         .expect("pid");
-    struct Cleanup(i32);
+    struct Cleanup(i32, PathBuf);
     impl Drop for Cleanup {
         fn drop(&mut self) {
             kill_if_fake(self.0);
+            kill_fakes_of(&self.1);
         }
     }
-    let _cleanup = Cleanup(pid);
+    let _cleanup = Cleanup(pid, root.clone());
     assert!(outcome.success(), "the host exited by itself: {outcome:?}");
     wait_gone(
         "the service of a host that died",
