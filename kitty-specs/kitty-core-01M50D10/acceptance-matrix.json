@@ -88,10 +88,10 @@
       "criterion_id": "FR-009",
       "description": "Verify FR-009 is satisfied",
       "proof_type": "automated_test",
-      "evidence": null,
-      "pass_fail": "pending",
-      "verified_by": null,
-      "verified_at": null,
+      "evidence": "crates/kitty-core/tests/stream.rs (line 263) the_five_stream_refusals_are_one_refused_each: each of the 5 StreamRefusal examples selected at stub start-up gives exactly one Refused carrying status, content type and raw body, then the stream is fused; a_404_problem_from_the_stub_is_one_refused (line 299, in-process stub with an added Problem example, per amendment A-08) and a_raw_404_problem_is_one_refused_with_the_raw_body (line 479); declared_statuses_are_refused_and_every_other_status_is_unavailable (line 439)",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-16T16:43:31.178192+00:00",
       "notes": "TODO: replace with a real acceptance criterion"
     },
     {
