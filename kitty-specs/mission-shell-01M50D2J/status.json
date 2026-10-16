@@ -1,20 +1,20 @@
 {
-  "event_count": 49,
-  "last_event_id": "01M52FH7TBM0H37VJ3YRT76FVD",
-  "materialized_at": "2026-10-16T13:48:26.827087+00:00",
+  "event_count": 50,
+  "last_event_id": "01M52FWW73AN2VKA6CBFGTKFQT",
+  "materialized_at": "2026-10-16T13:54:48.163798+00:00",
   "mission_number": "",
   "mission_slug": "mission-shell-01M50D2J",
   "mission_type": "software-dev",
   "schema_version": 2,
   "summary": {
-    "approved": 3,
+    "approved": 4,
     "blocked": 0,
     "canceled": 0,
     "claimed": 0,
     "done": 0,
     "for_review": 0,
     "in_progress": 0,
-    "in_review": 1,
+    "in_review": 0,
     "planned": 6
   },
   "work_packages": {
@@ -94,18 +94,24 @@
     "WP03": {
       "actor": "claude",
       "agent": "claude",
-      "agent_profile": "reviewer-renata",
-      "agent_profile_version": "1.0",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
       "force_count": 0,
       "implementer_of_record": "claude",
-      "lane": "in_review",
-      "last_event_id": "01M52FH7TBM0H37VJ3YRT76FVD",
-      "last_transition_at": "2026-10-16T13:48:26.827087+00:00",
+      "lane": "approved",
+      "last_event_id": "01M52FWW73AN2VKA6CBFGTKFQT",
+      "last_transition_at": "2026-10-16T13:54:48.163798+00:00",
       "model": "__resolved_model_absent__",
       "notes": [
         "Ready for review: results.ts, connection.ts, createShellController (+ snapshot, read-key, host-seam), logic tests incl. literal-recording replay; typecheck, lint, lint:no-io, hygiene, heavy shell tests green"
       ],
       "provider": "__resolved_provider_absent__",
+      "review_result": {
+        "feedback_path": "/home/jeroennouws/dev/SK-missions/ui18/kitty-specs/mission-shell-01M50D2J/tasks/WP03-shell-controller/review-cycle-1.md",
+        "reference": "review-cycle://mission-shell-01M50D2J/WP03-shell-controller/review-cycle-1.md",
+        "reviewer": "claude",
+        "verdict": "approved"
+      },
       "role": "reviewer",
       "shell_pid": 37995,
       "shell_pid_created_at": "1792158505.04",
