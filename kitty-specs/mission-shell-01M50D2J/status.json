@@ -137,6 +137,9 @@
       "last_event_id": "01M52GA2KS0M3SF51C7K7W87EN",
       "last_transition_at": "2026-10-16T14:02:00.697295+00:00",
       "model": "__resolved_model_absent__",
+      "notes": [
+        "Ready for review: ShellHost wrappers, link check, picker/dashboard/refocus/routeChanged in controller, 69 new logic tests"
+      ],
       "provider": "__resolved_provider_absent__",
       "role": "implementer",
       "shell_pid": 59332,
