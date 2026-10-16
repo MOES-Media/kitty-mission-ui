@@ -478,6 +478,7 @@ README.md, CHANGELOG.md
 ```mermaid
 flowchart LR
   IC07[IC-07 lint] --> IC06
+  IC07 --> IC01
   IC01[IC-01 routes] --> IC02[IC-02 refresh engine] --> IC03[IC-03 controller] --> IC04[IC-04 host + modes] --> IC05[IC-05 intent table] --> IC06[IC-06 view + ./shell] --> IC08a[IC-08a stories + candidates] --> CP1([CP-1 operator]) --> IC08b[IC-08b finalise] --> IC09[IC-09 wrap-up]
 ```
 
@@ -593,6 +594,15 @@ Approval is recorded against exact hashes.
 ## Decisions
 
 All are resolved, and `decision verify` is clean.
+
+**Test-content note (A4, analyze remediation; no decision moment needed).** WP07 makes one granted, one-line edit to
+`gates/markdown-lint.selftest.ts`, a #17 self-test that no WP of this mission owns:
+- In the case "knows the browser globals", the sample `navigator.language` becomes `String(performance.now())`.
+- Why: that case lints its sample as a shell source (`packages/mission-shell/src/Shell.svelte`). Once C-001 bans
+  `navigator` in shell sources (research R-13), the old sample would turn `test:no-io` red.
+- It changes no rule and is not on the frozen list of research R-17. The analyst judged it an allowed test-content
+  change, consistent with C-001 and R-17.
+- The WP07 reviewer checks `git diff --numstat` shows `1	1` on that file, and WP10 pastes the diff into the PR body.
 
 | Decision | Topic | Ruling |
 |---|---|---|
