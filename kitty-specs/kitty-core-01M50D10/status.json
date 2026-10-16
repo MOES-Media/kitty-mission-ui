@@ -30,7 +30,8 @@
       "last_transition_at": "2026-10-16T12:10:19.176290+00:00",
       "model": "__resolved_model_absent__",
       "notes": [
-        "Commit 5fd755c: 4 exact pins, kitty-core manifest, Cargo.lock gains exactly the 14 R-07 packages (want 0.3.1, cfg-if 1.0.4, generic-array 0.14.7 pinned precisely). Extra lock edge not in prompt: tokio -> bytes (bytes already locked, no new package). Gates green: rust gate 44 tests, contract 231, scripts 643, terminology 13, hygiene 0 findings, cargo audit clean, cargo check 5.17s."
+        "Commit 5fd755c: 4 exact pins, kitty-core manifest, Cargo.lock gains exactly the 14 R-07 packages (want 0.3.1, cfg-if 1.0.4, generic-array 0.14.7 pinned precisely). Extra lock edge not in prompt: tokio -> bytes (bytes already locked, no new package). Gates green: rust gate 44 tests, contract 231, scripts 643, terminology 13, hygiene 0 findings, cargo audit clean, cargo check 5.17s.",
+        "Review passed: 14 R-07 entries exact, dates verified, gates green, audit clean; tokio->bytes edge from io-util is planned"
       ],
       "provider": "__resolved_provider_absent__",
       "review_result": {
