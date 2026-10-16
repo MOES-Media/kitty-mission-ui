@@ -1,7 +1,7 @@
 {
-  "event_count": 42,
-  "last_event_id": "01M52EHJ7P0Q27Y8EGC63FYK2A",
-  "materialized_at": "2026-10-16T13:31:08.918150+00:00",
+  "event_count": 43,
+  "last_event_id": "01M52EJCH68B971TMQMVDKPXNG",
+  "materialized_at": "2026-10-16T13:31:35.846613+00:00",
   "mission_number": "",
   "mission_slug": "kitty-core-01M50D10",
   "mission_type": "software-dev",
@@ -12,9 +12,9 @@
     "canceled": 0,
     "claimed": 0,
     "done": 0,
-    "for_review": 1,
+    "for_review": 0,
     "in_progress": 2,
-    "in_review": 0,
+    "in_review": 1,
     "planned": 3
   },
   "work_packages": {
@@ -174,21 +174,21 @@
     "WP06": {
       "actor": "claude",
       "agent": "claude",
-      "agent_profile": "implementer-ivan",
+      "agent_profile": "reviewer-renata",
       "agent_profile_version": "1.0",
       "force_count": 0,
       "implementer_of_record": "claude",
-      "lane": "for_review",
-      "last_event_id": "01M52EHJ7P0Q27Y8EGC63FYK2A",
-      "last_transition_at": "2026-10-16T13:31:08.918150+00:00",
+      "lane": "in_review",
+      "last_event_id": "01M52EJCH68B971TMQMVDKPXNG",
+      "last_transition_at": "2026-10-16T13:31:35.846613+00:00",
       "model": "__resolved_model_absent__",
       "notes": [
         "Ready for review: contract.rs + contract_check.rs (82ab03c); gates green; dev digest median 17.2 ms"
       ],
       "provider": "__resolved_provider_absent__",
-      "role": "implementer",
-      "shell_pid": 4071682,
-      "shell_pid_created_at": "1792156811.58",
+      "role": "reviewer",
+      "shell_pid": 4143907,
+      "shell_pid_created_at": "1792157493.84",
       "subtasks": {
         "T030": "done",
         "T031": "done",
