@@ -1,7 +1,7 @@
 {
-  "event_count": 41,
-  "last_event_id": "01M52DY15J3GYDFTBJJTQX0A1Y",
-  "materialized_at": "2026-10-16T13:20:28.846268+00:00",
+  "event_count": 45,
+  "last_event_id": "01M52EN75RMC4QZ8VTTS06CP66",
+  "materialized_at": "2026-10-16T13:33:08.664987+00:00",
   "mission_number": "",
   "mission_slug": "kitty-core-01M50D10",
   "mission_type": "software-dev",
@@ -13,8 +13,8 @@
     "claimed": 0,
     "done": 0,
     "for_review": 0,
-    "in_progress": 3,
-    "in_review": 0,
+    "in_progress": 1,
+    "in_review": 2,
     "planned": 3
   },
   "work_packages": {
@@ -174,34 +174,53 @@
     "WP06": {
       "actor": "claude",
       "agent": "claude",
-      "agent_profile": "implementer-ivan",
+      "agent_profile": "reviewer-renata",
       "agent_profile_version": "1.0",
       "force_count": 0,
       "implementer_of_record": "claude",
-      "lane": "in_progress",
-      "last_event_id": "01M52DXJRNPXCFS4WD38D1TRPA",
-      "last_transition_at": "2026-10-16T13:20:14.097309+00:00",
+      "lane": "in_review",
+      "last_event_id": "01M52EJCH68B971TMQMVDKPXNG",
+      "last_transition_at": "2026-10-16T13:31:35.846613+00:00",
       "model": "__resolved_model_absent__",
+      "notes": [
+        "Ready for review: contract.rs + contract_check.rs (82ab03c); gates green; dev digest median 17.2 ms"
+      ],
       "provider": "__resolved_provider_absent__",
-      "role": "implementer",
-      "shell_pid": 4071682,
-      "shell_pid_created_at": "1792156811.58"
+      "role": "reviewer",
+      "shell_pid": 4143907,
+      "shell_pid_created_at": "1792157493.84",
+      "subtasks": {
+        "T030": "done",
+        "T031": "done",
+        "T032": "done",
+        "T033": "done",
+        "T034": "done",
+        "T035": "done"
+      }
     },
     "WP07": {
       "actor": "claude",
       "agent": "claude",
-      "agent_profile": "implementer-ivan",
+      "agent_profile": "reviewer-renata",
       "agent_profile_version": "1.0",
       "force_count": 0,
       "implementer_of_record": "claude",
-      "lane": "in_progress",
-      "last_event_id": "01M52DY15J3GYDFTBJJTQX0A1Y",
-      "last_transition_at": "2026-10-16T13:20:28.846268+00:00",
+      "lane": "in_review",
+      "last_event_id": "01M52EN75RMC4QZ8VTTS06CP66",
+      "last_transition_at": "2026-10-16T13:33:08.664987+00:00",
       "model": "__resolved_model_absent__",
+      "notes": [
+        "Discovery trait, DefaultDiscovery, EnvSnapshot; 16 tests; Rust, contract, hygiene gates green; 6 reverts each fail named tests"
+      ],
       "provider": "__resolved_provider_absent__",
-      "role": "implementer",
-      "shell_pid": 4072257,
-      "shell_pid_created_at": "1792156819.91"
+      "role": "reviewer",
+      "shell_pid": 4162319,
+      "shell_pid_created_at": "1792157586.78",
+      "subtasks": {
+        "T036": "done",
+        "T037": "done",
+        "T038": "done"
+      }
     },
     "WP08": {
       "actor": "finalize-tasks",
