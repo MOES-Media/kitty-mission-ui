@@ -68,7 +68,8 @@
       "notes": [
         "Refresh policy, read scheduler, gate, page chains, test support, literal recording and plant P-1 done; logic project green, unit-tests gate-proof leg proven.",
         "Review cycle 1 fixes: initial connected sets the mark (F1), trailing reads gated (F2), nits.",
-        "Cycle 2: closeWindow gate guard test added."
+        "Cycle 2: closeWindow gate guard test added.",
+        "Cycle 3 approved (reviewer-renata). F1 gate first-connected mark fixed and covered (unit tests + literal recording catch a reverted bug); F2 gate guards in closeWindow and afterSettle each killed by a committed test (48def97 test fails when the closeWindow guard is removed). 178/178 mission-shell tests, token absent from clean output; lint, lint:no-io, typecheck, hygiene clean; P-1 proven in cycle 1; only owned files touched. WP03 note: issue the displayed set when gate.initial()/reset() returns first-connected; never observe the current state."
       ],
       "provider": "__resolved_provider_absent__",
       "review": null,
