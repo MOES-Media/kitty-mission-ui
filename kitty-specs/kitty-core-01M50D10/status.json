@@ -338,6 +338,9 @@
       "last_event_id": "01M52RWAAW4WZ49SESDDVXPZCC",
       "last_transition_at": "2026-10-16T16:31:47.036031+00:00",
       "model": "__resolved_model_absent__",
+      "notes": [
+        "Review passed (cycle 2): B1 macOS exit wording now true (stop().await or last-clone drop with a live runtime; process::exit, kill or crash leaves the service); B2 arithmetic correct (MAX_ATTEMPTS 3 x give_up_at 5 = up to 15 launches; backoffs 0.5+1+2+4 = 7.5 s); N1, N2 fixed. Only README and CHANGELOG changed; ci.yml still timeout-only (contract 19->21); hygiene and terminology green. Pre-merge note: 'only' omits runtime shutdown at main return, which also kills the group (errs safe); the new CHANGELOG relay line is longer than its neighbours' wrap."
+      ],
       "provider": "__resolved_provider_absent__",
       "review": null,
       "review_result": {
