@@ -6,6 +6,24 @@
   "target_branch": "feat/mission-shell-18",
   "lanes": [
     {
+      "lane_id": "lane-g",
+      "wp_ids": [
+        "WP07"
+      ],
+      "write_scope": [
+        "eslint.config.mjs",
+        "gates/plants/eslint/**"
+      ],
+      "predicted_surfaces": [
+        "api",
+        "artifact-rendering",
+        "legacy-cleanup",
+        "tracker-integration"
+      ],
+      "depends_on_lanes": [],
+      "parallel_group": 0
+    },
+    {
       "lane_id": "lane-a",
       "wp_ids": [
         "WP01"
@@ -26,26 +44,10 @@
         "legacy-cleanup",
         "tracker-integration"
       ],
-      "depends_on_lanes": [],
-      "parallel_group": 0
-    },
-    {
-      "lane_id": "lane-g",
-      "wp_ids": [
-        "WP07"
+      "depends_on_lanes": [
+        "lane-g"
       ],
-      "write_scope": [
-        "eslint.config.mjs",
-        "gates/plants/eslint/**"
-      ],
-      "predicted_surfaces": [
-        "api",
-        "artifact-rendering",
-        "legacy-cleanup",
-        "tracker-integration"
-      ],
-      "depends_on_lanes": [],
-      "parallel_group": 0
+      "parallel_group": 1
     },
     {
       "lane_id": "lane-b",
@@ -70,7 +72,7 @@
       "depends_on_lanes": [
         "lane-a"
       ],
-      "parallel_group": 1
+      "parallel_group": 2
     },
     {
       "lane_id": "lane-c",
@@ -82,6 +84,7 @@
         "packages/mission-shell/src/core/connection.ts",
         "packages/mission-shell/src/core/results.ts",
         "packages/mission-shell/test/logic/connection.test.ts",
+        "packages/mission-shell/test/logic/controller-recording.test.ts",
         "packages/mission-shell/test/logic/controller.test.ts",
         "packages/mission-shell/test/logic/results.test.ts"
       ],
@@ -95,7 +98,7 @@
       "depends_on_lanes": [
         "lane-b"
       ],
-      "parallel_group": 2
+      "parallel_group": 3
     },
     {
       "lane_id": "lane-d",
@@ -119,7 +122,7 @@
       "depends_on_lanes": [
         "lane-c"
       ],
-      "parallel_group": 3
+      "parallel_group": 4
     },
     {
       "lane_id": "lane-e",
@@ -143,7 +146,7 @@
       "depends_on_lanes": [
         "lane-d"
       ],
-      "parallel_group": 4
+      "parallel_group": 5
     },
     {
       "lane_id": "lane-f",
@@ -168,7 +171,7 @@
         "lane-e",
         "lane-g"
       ],
-      "parallel_group": 5
+      "parallel_group": 6
     },
     {
       "lane_id": "lane-h",
@@ -194,7 +197,7 @@
       "depends_on_lanes": [
         "lane-f"
       ],
-      "parallel_group": 6
+      "parallel_group": 7
     },
     {
       "lane_id": "lane-i",
@@ -213,7 +216,7 @@
       "depends_on_lanes": [
         "lane-h"
       ],
-      "parallel_group": 7
+      "parallel_group": 8
     },
     {
       "lane_id": "lane-j",
@@ -237,11 +240,11 @@
       "depends_on_lanes": [
         "lane-i"
       ],
-      "parallel_group": 8
+      "parallel_group": 9
     }
   ],
-  "computed_at": "2026-10-16T11:09:03.929566+00:00",
+  "computed_at": "2026-10-16T11:36:18.689279+00:00",
   "computed_from": "dependency_graph+ownership",
   "planning_artifact_wps": [],
-  "planning_commit_sha": "061b5cffd4140faaaebf276a005de84be2a0f082"
+  "planning_commit_sha": "7a16dac4209c784c4dc336aa1fc0c1bb7e4c75b8"
 }

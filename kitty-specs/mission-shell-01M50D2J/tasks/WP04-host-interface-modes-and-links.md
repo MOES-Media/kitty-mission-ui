@@ -319,7 +319,7 @@ the T019 wrappers for every host call.
    exactly one call with the canonical form; an unknown route → one call with `/missions`; `/projects` on the
    dashboard → one call with `/missions`; repeating the same canonical `setRoute` → still zero (no echo).
 8. **Links**: `test/logic/links.test.ts` per T020 step 5 (one test with the positive control and every negative).
-9. Every test runs under WP03's Node setup that fails on uncaught errors and unhandled rejections (NFR-007). Do not add
+9. Every test runs under WP01's `test/setup/node.ts`, which fails on uncaught errors and unhandled rejections (NFR-007). Do not add
    a global `process.on('unhandledRejection')` handler of your own.
 
 **Files**: `packages/mission-shell/test/logic/host.test.ts`, `packages/mission-shell/test/logic/links.test.ts`.

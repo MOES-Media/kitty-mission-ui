@@ -16,9 +16,15 @@ requirement_refs:
 - C-005
 - SC-003
 - SC-005
+- FR-007
+- FR-010
+- NFR-007
+- C-001
 planning_base_branch: feat/mission-shell-18
 merge_target_branch: feat/mission-shell-18
-branch_strategy: Planning artifacts for this mission were generated on feat/mission-shell-18. During /spec-kitty.implement this WP may branch from a dependency-specific base, but completed changes must merge back into feat/mission-shell-18 unless the human explicitly redirects the landing branch.
+branch_strategy: Planning artifacts for this mission were generated on feat/mission-shell-18. During /spec-kitty.implement
+  this WP may branch from a dependency-specific base, but completed changes must merge back into feat/mission-shell-18 unless
+  the human explicitly redirects the landing branch.
 subtasks:
 - T027
 - T028
@@ -354,6 +360,10 @@ public mount surface's subscriptions (R5-07), NFR-001 on a mounted property, and
 
 **Steps**:
 
+0. **A9 on a mount**: after navigating to Pipeline `M`, the `sk-mission-shell` element's `mission.title` property
+   equals the served Mission's `friendlyName`, or else its `slug` (US1-2). Re-selecting the current Ops destination
+   through its navigation item issues exactly one `listOpsInvocations` read (US6-2), while re-selecting Pipeline
+   issues none.
 1. Files live in `test/shell/` and run under `unit` (Chromium) with WP01's `test/setup/browser.ts` (add no error
    handler of your own). Mount with `mountShell` into a fresh container and `destroy()` in `afterEach`. Clients:
    `createFixtureClient` (`../../src/testing`) and WP02's `test/support/*`; shell and fixture share **one** fake

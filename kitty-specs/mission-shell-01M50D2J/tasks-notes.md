@@ -28,10 +28,11 @@ from `wps.yaml` and it carries no prose.
 ## Dependency graph
 
 ```
-WP01 ─► WP02 ─► WP03 ─► WP04 ─► WP05 ─┐
-                                       ├─► WP06 ─► WP08 ─► [CP-1] ─► WP09 ─► WP10
-WP07 ──────────────────────────────────┘
+WP07 ─► WP01 ─► WP02 ─► WP03 ─► WP04 ─► WP05 ─┐
+  └────────────────────────────────────────────┴─► WP06 ─► WP08 ─► [CP-1] ─► WP09 ─► WP10
 ```
+
+WP07 lands first (plan IC-07), so every shell source written afterwards is linted by its blocks (A3).
 
 ## CP-1: an orchestrator checkpoint, not a work package
 
@@ -62,6 +63,15 @@ The tool cannot express CP-1 as a dependency, so the orchestrator runs this proc
 | WP09 | `gates/plants/visual/plant.json` | WP08 | Re-anchoring P-6 only, if CP-1 changes the reconnecting tone (FS-04). |
 | WP09 | `packages/mission-shell/test/shell/banners.test.ts`, `packages/mission-shell/test/logic/connection.test.ts` | WP06, WP03 | Banner and copy tests that follow a CP-1 amendment (FS-04). |
 | WP10 | (none) | | Its `ci.yml` edit is matrix `timeout` values only, and only upward. |
+
+**Ownership inversion of `shell-*.png` (A7).** The eleven baselines are **owned by WP09** (IC-08b), which finalises
+them after CP-1, but they are **created by WP08** (IC-08a) as candidates, through its recorded out-of-map edit.
+- This is deliberate. The final bytes are the ones CP-1 approves and `design-review.sha256` pins, so their owner is
+  the WP that finalises them.
+- WP08's candidates are a pre-approval draft in WP08's lane. Lanes h and i are sequential, so the two writes never
+  run in parallel.
+- WP08 cites IC-08a and WP09 cites IC-08b, in their titles and prompts. `wps.yaml` `plan_concern_refs` must match
+  `IC-##`, so both carry `IC-08`.
 
 ## Proof-leg timing obligations
 

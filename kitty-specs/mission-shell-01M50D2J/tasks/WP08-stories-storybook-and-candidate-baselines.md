@@ -1,6 +1,6 @@
 ---
 work_package_id: WP08
-title: Shell stories, Storybook integration and candidate baselines (before CP-1)
+title: 'IC-08a: Shell stories, Storybook integration and candidate baselines (before CP-1)'
 dependencies:
 - WP06
 requirement_refs:
@@ -13,7 +13,9 @@ requirement_refs:
 - SC-006
 planning_base_branch: feat/mission-shell-18
 merge_target_branch: feat/mission-shell-18
-branch_strategy: Planning artifacts for this mission were generated on feat/mission-shell-18. During /spec-kitty.implement this WP may branch from a dependency-specific base, but completed changes must merge back into feat/mission-shell-18 unless the human explicitly redirects the landing branch.
+branch_strategy: Planning artifacts for this mission were generated on feat/mission-shell-18. During /spec-kitty.implement
+  this WP may branch from a dependency-specific base, but completed changes must merge back into feat/mission-shell-18 unless
+  the human explicitly redirects the landing branch.
 subtasks:
 - T038
 - T039
@@ -39,7 +41,7 @@ tags: []
 tracker_refs: []
 ---
 
-# WP08 — Shell stories, Storybook integration and candidate baselines (before CP-1)
+# WP08 — IC-08a: Shell stories, Storybook integration and candidate baselines (before CP-1)
 
 ## ⚡ Do This First: Load Agent Profile
 
