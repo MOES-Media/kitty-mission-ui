@@ -6,243 +6,243 @@
   "criteria": [
     {
       "criterion_id": "FR-001",
-      "description": "Verify FR-001 is satisfied",
+      "description": "Every read is relayed. As a host developer, I want kitty-core to relay each of the nine reads of the pinned contract (the `kind: \"read\"` operations of `contracts/fixtures/mission-status.routes.json`), filling in path and query parameters from the caller.",
       "proof_type": "automated_test",
       "evidence": "crates/kitty-core/tests/reads.rs (line 152) every_read_matches_a_raw_request: iterates every kind=read entry of contracts/fixtures/mission-status.routes.json, relays it through kitty-core with path parameters filled, compares with a direct request to the stub, and asserts exactly 9 ran; a read kitty-core cannot relay panics naming the operation ('expected an answer, got Transport(UnknownOperation(..))'); crates/kitty-core/src/routes.rs unit test the_table_has_nine_reads_and_one_stream; route table built from the generated routes.json, no typed models",
       "pass_fail": "pass",
       "verified_by": "claude",
       "verified_at": "2026-10-16T16:41:56.049627+00:00",
-      "notes": "TODO: replace with a real acceptance criterion"
+      "notes": ""
     },
     {
       "criterion_id": "FR-002",
-      "description": "Verify FR-002 is satisfied",
+      "description": "Bodies relayed byte for byte. As a host developer, I want every relayed read to return the service's status, content type and body bytes unchanged, never re-serialised through models.",
       "proof_type": "automated_test",
       "evidence": "crates/kitty-core/tests/reads.rs (line 203) the_body_is_relayed_byte_for_byte: a raw-TCP fake serves a body with nulls, an unknown field, non-alphabetical key order and irregular whitespace, and the relayed status, content type and bytes are asserted identical; reads.rs (line 152) every_read_matches_a_raw_request compares status, content-type and body bytes of all 9 reads with a direct request to the stub",
       "pass_fail": "pass",
       "verified_by": "claude",
       "verified_at": "2026-10-16T16:43:17.290795+00:00",
-      "notes": "TODO: replace with a real acceptance criterion"
+      "notes": ""
     },
     {
       "criterion_id": "FR-003",
-      "description": "Verify FR-003 is satisfied",
+      "description": "Every status relayed, none invented. As a host developer, I want declared refusals, the `default` Problem and undeclared statuses (including the service's 503 capacity answer) relayed with their status and body, and only a failure with no HTTP answer (connection refused, timeout, a body over the size limit) reported as a transport failure.",
       "proof_type": "automated_test",
       "evidence": "crates/kitty-core/tests/reads.rs (line 217) refusals_are_relayed_once: a start-up selected ArtifactRefusal.not-found is relayed as 404 problem+json with the example body, and a fake 503 is relayed with its own status and body and requested exactly once (no retry); reads.rs a_closed_port_is_connect_refused (line 482), read_timeout_is_a_total_deadline (line 441) and a_body_over_16_mib_is_refused_and_exactly_16_mib_is_relayed (line 408) cover the transport-failure-only cases",
       "pass_fail": "pass",
       "verified_by": "claude",
       "verified_at": "2026-10-16T16:43:19.138186+00:00",
-      "notes": "TODO: replace with a real acceptance criterion"
+      "notes": ""
     },
     {
       "criterion_id": "FR-004",
-      "description": "Verify FR-004 is satisfied",
+      "description": "Request headers the service accepts. As the operator, I want every request kitty-core sends to carry `Host: 127.0.0.1:<port>` exactly, and no `Origin`, `Forwarded`, `X-Forwarded-*` or credential header.",
       "proof_type": "automated_test",
       "evidence": "crates/kitty-core/tests/reads.rs (line 267) a_read_sends_exactly_host_and_accept: the recorded header list of a read is exactly host=127.0.0.1:<port> and accept, with a stub positive control (wrong Host 403, right Host 200); crates/kitty-core/tests/stream.rs (line 379) the_stream_request_carries_exactly_host_and_accept asserts exactly two headers and no origin, forwarded, x-forwarded-*, authorization, cookie or last-event-id; contract_check.rs (line 203) the_request_carries_the_check_headers. WP04 review revert: adding an Origin header made a_read_sends_exactly_host_and_accept fail",
       "pass_fail": "pass",
       "verified_by": "claude",
       "verified_at": "2026-10-16T16:43:20.934809+00:00",
-      "notes": "TODO: replace with a real acceptance criterion"
+      "notes": ""
     },
     {
       "criterion_id": "FR-005",
-      "description": "Verify FR-005 is satisfied",
+      "description": "Loopback only. As the operator, I want kitty-core to address the service only at `127.0.0.1:<port>`, and to refuse any other address when the client is built, with no option that widens it.",
       "proof_type": "automated_test",
       "evidence": "crates/kitty-core/tests/reads.rs (line 298) only_loopback_endpoints_exist_and_nothing_connects_for_a_refused_one: 0.0.0.0, 127.0.0.2, [::1], 192.0.2.1 are NotLoopback and port 0 is ZeroPort when the ServiceEndpoint is built, the fake sees no connection, and the accepted 127.0.0.1 form does reach it; crates/kitty-core/src/endpoint.rs unit tests only_127_0_0_1_with_a_port_is_accepted and every_other_address_is_refused",
       "pass_fail": "pass",
       "verified_by": "claude",
       "verified_at": "2026-10-16T16:43:22.720658+00:00",
-      "notes": "TODO: replace with a real acceptance criterion"
+      "notes": ""
     },
     {
       "criterion_id": "FR-006",
-      "description": "Verify FR-006 is satisfied",
+      "description": "Safe parameter encoding. As the operator, I want path and query values percent-encoded.",
       "proof_type": "automated_test",
       "evidence": "crates/kitty-core/tests/reads.rs (line 331) query_values_are_encoded_and_unsafe_path_values_send_nothing: a traversal artifact path is sent as path=..%2F..%2Fetc%2Fpasswd on the recorded target, and a wpId containing '/' (WP01/../x) is refused as InvalidParameter before any I/O (fake log stays at 1 request); crates/kitty-core/src/routes.rs unit tests unsafe_path_values_are_refused and values_are_percent_encoded_except_unreserved. Note: unsafe path values are refused rather than encoded, which also keeps the route fixed. WP04 review revert: dropping the '/' path refusal made this test fail",
       "pass_fail": "pass",
       "verified_by": "claude",
       "verified_at": "2026-10-16T16:43:24.532996+00:00",
-      "notes": "TODO: replace with a real acceptance criterion"
+      "notes": ""
     },
     {
       "criterion_id": "FR-007",
-      "description": "Verify FR-007 is satisfied",
+      "description": "Raw change relay. As a host developer, I want each event of an open stream relayed as one raw change, in order: the event name, the cursor (the `id:` line, or none), and the data bytes unchanged. Heartbeats are not relayed. kitty-core does not interpret, filter by kind, store cursors, emit `resync`, or reconnect (SO-DES-001). This is so the adapter and the shell own those decisions.",
       "proof_type": "automated_test",
       "evidence": "crates/kitty-core/tests/stream.rs (line 168) scoped_stream_relays_changes_json_item_by_item and (line 184) unscoped_stream_has_no_cursors: each relayed change is compared with its changes.json item (event, cursor from scopedId only when scoped, data bytes), 5 of 5, in order; heartbeats_are_never_relayed (line 250) with a wire positive control; log_truncated_is_its_own_kind_with_no_cursor (line 203); data_that_is_not_one_json_value_is_malformed_data (line 593) shows data bytes relayed unchanged; unknown event names are diagnostics, per the spec edge case (line 654)",
       "pass_fail": "pass",
       "verified_by": "claude",
       "verified_at": "2026-10-16T16:43:26.341977+00:00",
-      "notes": "TODO: replace with a real acceptance criterion"
+      "notes": ""
     },
     {
       "criterion_id": "FR-008",
-      "description": "Verify FR-008 is satisfied",
+      "description": "Stream scope and cursor pass-through. As a host developer, I want a stream opened for one Mission (optionally with a cursor, sent as `streamCursor`) or for all Missions, and a cursor without a non-empty Mission refused before any I/O.",
       "proof_type": "automated_test",
       "evidence": "crates/kitty-core/tests/stream.rs (line 216) resume_relays_only_the_items_after_the_cursor_and_sends_stream_cursor: opened with the scopedId of changes.json item 2, only items 3 to 5 arrive and nothing more, and the recorded target carries streamCursor (positive control without a cursor); stream.rs (line 340) invalid_scopes_send_nothing: a cursor without a Mission and an empty Mission are refused with nothing reaching the fake; unscoped_stream_has_no_cursors (line 184) for the all-Missions scope",
       "pass_fail": "pass",
       "verified_by": "claude",
       "verified_at": "2026-10-16T16:43:28.120861+00:00",
-      "notes": "TODO: replace with a real acceptance criterion"
+      "notes": ""
     },
     {
       "criterion_id": "FR-009",
-      "description": "Verify FR-009 is satisfied",
+      "description": "Refused stream relayed. As a host developer, I want a stream that the service refuses before any event (400 or 409 `StreamRefusal`, 404 `Problem`) to end in exactly one refused outcome carrying the status and the raw body.",
       "proof_type": "automated_test",
       "evidence": "crates/kitty-core/tests/stream.rs (line 263) the_five_stream_refusals_are_one_refused_each: each of the 5 StreamRefusal examples selected at stub start-up gives exactly one Refused carrying status, content type and raw body, then the stream is fused; a_404_problem_from_the_stub_is_one_refused (line 299, in-process stub with an added Problem example, per amendment A-08) and a_raw_404_problem_is_one_refused_with_the_raw_body (line 479); declared_statuses_are_refused_and_every_other_status_is_unavailable (line 439)",
       "pass_fail": "pass",
       "verified_by": "claude",
       "verified_at": "2026-10-16T16:43:31.178192+00:00",
-      "notes": "TODO: replace with a real acceptance criterion"
+      "notes": ""
     },
     {
       "criterion_id": "FR-010",
-      "description": "Verify FR-010 is satisfied",
+      "description": "Unavailable stream distinguished. As a host developer, I want any other end of a stream (an undeclared status such as 503 at open, a dropped connection, malformed framing, an oversized frame, or no byte within the idle limit, which defaults to 90 seconds: three heartbeat intervals) reported as an unavailable outcome with its reason, and with the status and body when there was an answer, distinct from refused.",
       "proof_type": "automated_test",
       "evidence": "crates/kitty-core/tests/stream.rs: a_503_at_open_is_unavailable_status_with_the_body (line 423), declared_statuses_are_refused_and_every_other_status_is_unavailable (line 439, 403/500/302 are Unavailable with status and body), a_drop_mid_stream_and_a_clean_eof_are_dropped (line 499), malformed_utf8_is_a_malformed_frame_after_the_changes_before_it (line 571), a_frame_over_1_mib_is_frame_too_large_and_nothing_partial_is_relayed (line 623), a_stream_with_no_byte_at_all_is_idle (line 552) and heartbeats_keep_a_stream_alive_past_the_idle_limit_then_a_stall_is_idle (line 522); 90 s idle default asserted in crates/kitty-core/src/supervisor/policy.rs defaults_equal_the_plan_values. WP05 review reverts (idle reset, dispatch-only cap reset) failed by name",
       "pass_fail": "pass",
       "verified_by": "claude",
       "verified_at": "2026-10-16T16:43:32.990534+00:00",
-      "notes": "TODO: replace with a real acceptance criterion"
+      "notes": ""
     },
     {
       "criterion_id": "FR-011",
-      "description": "Verify FR-011 is satisfied",
+      "description": "Contract digest check. As the operator, I want kitty-core to fetch `GET /api/v1/openapi.yaml` after each start, and before the service counts as ready, and compare its digest with the pinned digest. Both sides are digested in the same canonical form: parsed, references inlined, keys sorted, JSON form, SHA-256. An unequal digest, a non-200 answer or an unparseable document is contract-mismatch. This is.",
       "proof_type": "automated_test",
       "evidence": "crates/kitty-core/tests/contract_check.rs: pinned_document_matches (line 50) and modified_document_is_a_mismatch_with_both_digests (line 63) on the stub, same_stub_pinned_to_itself_matches_and_to_another_mismatches (line 81), absent_document_is_a_404_mismatch (line 95), unparseable_document_is_reported (line 108), four_mib_is_parsed_and_one_byte_more_is_refused (line 133); before ready: crates/kitty-core/tests/supervision.rs (line 1147) a_modified_contract_stops_the_service_with_both_digests (sequence Starting then Stopped [mismatch], never Ready); canonical-form unit tests in crates/kitty-core/src/contract.rs (key_order_does_not_matter, json_and_yaml_give_the_same_digest, number_rules). WP06 review reverts failed by name (cap > to >=, integer rule off)",
       "pass_fail": "pass",
       "verified_by": "claude",
       "verified_at": "2026-10-16T16:43:34.801908+00:00",
-      "notes": "TODO: replace with a real acceptance criterion"
+      "notes": ""
     },
     {
       "criterion_id": "FR-012",
-      "description": "Verify FR-012 is satisfied",
+      "description": "Pinned digest follows the pin. As the operator, I want the pinned digest derived from the vendored contract under `contracts/spec-kitty/`, bundled into one document with every reference inlined, never typed in by hand, and a test that fails when they disagree.",
       "proof_type": "gate_proof",
       "evidence": "gates/plants/contract/plant.json: new plant 'stale generated file: contracts/fixtures/mission-status.openapi.json differs' (9 contract plants in all), red in the contract gate-proof leg at WP02 review (leg ok, 120 s); scripts/contract/bundle.test.mjs 'follows the pin: a changed vendored scalar changes the bundle; an untouched copy gives the committed text' (edits StatusLane.yaml in a temp copy) and 'inlined: the bundle has no $ref key anywhere'; crates/kitty-core/src/contract.rs unit test the_pin_follows_the_embedded_file (pin digest equals the on-disk bundle digest; an edited copy differs); no hand-typed digest constant (WP06 review). WP02 review: 5 reverts red",
       "pass_fail": "pass",
       "verified_by": "claude",
       "verified_at": "2026-10-16T16:43:36.587197+00:00",
-      "notes": "TODO: replace with a real acceptance criterion"
+      "notes": ""
     },
     {
       "criterion_id": "FR-013",
-      "description": "Verify FR-013 is satisfied",
+      "description": "Mismatch blocks use. As a host developer, I want every read and stream request made while the status is contract-mismatch answered at once with contract-mismatch, without contacting the service. The supervisor then stops a service it started. This is.",
       "proof_type": "automated_test",
       "evidence": "crates/kitty-core/tests/status_mapping.rs (line 380) a_modified_contract_gives_contract_mismatch_and_sends_nothing_more: after the failed check, Core::read answers ContractMismatch and Core::open_stream answers ContractMismatch, the service request log holds only the contract fetch, and the service group is gone; crates/kitty-core/tests/supervision.rs (line 1147) a_modified_contract_stops_the_service_with_both_digests (group reaped, no restart); contract_check.rs (line 188) the_fetch_is_visible_after_a_mismatch",
       "pass_fail": "pass",
       "verified_by": "claude",
       "verified_at": "2026-10-16T16:43:38.384016+00:00",
-      "notes": "TODO: replace with a real acceptance criterion"
+      "notes": ""
     },
     {
       "criterion_id": "FR-014",
-      "description": "Verify FR-014 is satisfied",
+      "description": "Stub serves the contract document. As a test author, I want the stub to serve `GET /api/v1/openapi.yaml` (the pinned contract bundled into one document, with every reference inlined) under the same Host, Origin and forwarding rules as its other routes, and a start-up option to serve another document file instead.",
       "proof_type": "automated_test",
       "evidence": "crates/kitty-stub/tests/openapi.rs: serves_the_exact_bundle_bytes_as_yaml (line 33), the_route_sits_under_the_guard_and_is_get_only (line 47, wrong Host, Origin and Forwarded each 403; POST 405), the_binary_serves_the_default_bundle_byte_for_byte (line 283), an_explicit_openapi_file_is_served_instead (line 296), an_unreadable_explicit_openapi_file_exits_1_naming_only_the_base_name (line 309), a_missing_default_document_serves_404_not_an_error (line 343); crates/kitty-core/tests/contract_check.rs (line 63) uses a substitute document on the same stub",
       "pass_fail": "pass",
       "verified_by": "claude",
       "verified_at": "2026-10-16T16:43:40.169388+00:00",
-      "notes": "TODO: replace with a real acceptance criterion"
+      "notes": ""
     },
     {
       "criterion_id": "FR-015",
-      "description": "Verify FR-015 is satisfied",
+      "description": "Stub start-up selection. As a test author, I want a repeatable start-up option that makes a route serve a selected example or fixture without request headers (for example `--select <operationId>=<Schema.name>`). It follows the acceptance rules of the existing header selection, and a request header still takes precedence. An invalid selection is a usage error before the stub listens. This is.",
       "proof_type": "automated_test",
       "evidence": "crates/kitty-stub/tests/select.rs: each_stream_refusal_is_served_with_its_own_status_and_no_headers (line 43, all 5 StreamRefusal examples with no request headers), an_artifact_refusal_selection_is_a_404_problem_and_a_header_overrides_it (line 73, example and fixture headers win), the_binary_serves_start_up_selections (line 327, --select and --select-fixture on the real binary), a_bad_selection_is_a_usage_error_before_listening (line 351, 7 cases exit 2 with no listening line). WP03 cycle-2 review: the selection and both-ports reverts fail by name with bounded runs",
       "pass_fail": "pass",
       "verified_by": "claude",
       "verified_at": "2026-10-16T16:43:41.962608+00:00",
-      "notes": "TODO: replace with a real acceptance criterion"
+      "notes": ""
     },
     {
       "criterion_id": "FR-016",
-      "description": "Verify FR-016 is satisfied",
+      "description": "Supervision state machine. As a host developer, I want one supervisor per project, with the states `starting`, `ready`, `crashed`, `backoff` and `stopped` and the transitions in the lifecycle diagram, and each transition delivered to the host in order.",
       "proof_type": "automated_test",
       "evidence": "crates/kitty-core/tests/supervision.rs: every scenario asserts the exact state sequence with generation and attempt, for example a_crash_after_ready_backs_off_and_restarts (line 709, Starting, Ready, Crashed, Backoff(500ms), Starting, Ready) and five_crashes_give_up_with_the_last_exit_status (line 740); crates/kitty-core/tests/status_mapping.rs (line 241) the_initial_status_and_every_transition_arrive_in_order_once and (line 289) subscribe_gives_the_current_status_and_then_every_later_one. WP08 review: 17 sequence digests identical across 50+ loaded runs",
       "pass_fail": "pass",
       "verified_by": "claude",
       "verified_at": "2026-10-16T16:43:43.803531+00:00",
-      "notes": "TODO: replace with a real acceptance criterion"
+      "notes": ""
     },
     {
       "criterion_id": "FR-017",
-      "description": "Verify FR-017 is satisfied",
+      "description": "Launch. As a host developer, I want the supervisor to start the discovered binary with `--mission-status.project-root <project root>` and `--mission-status.port <chosen port>`, one process per project, with its output captured in memory up to a size limit.",
       "proof_type": "automated_test",
       "evidence": "crates/kitty-core/tests/supervision.rs (line 643) ready_launches_with_exact_argv_environment_and_null_stdin: the fake records exactly --mission-status.project-root=<root> and --mission-status.port=<ready port>, an allowlisted environment, cwd and null stdin; output_from_both_pipes_is_captured (line 1125); crates/kitty-core/src/supervisor/output.rs keeps_exactly_the_newest_64_kib_after_uneven_chunks; never attaching to a foreign service: a_socket_that_is_not_the_services_is_not_ready (line 836, Linux)",
       "pass_fail": "pass",
       "verified_by": "claude",
       "verified_at": "2026-10-16T16:43:45.601843+00:00",
-      "notes": "TODO: replace with a real acceptance criterion"
+      "notes": ""
     },
     {
       "criterion_id": "FR-018",
-      "description": "Verify FR-018 is satisfied",
+      "description": "Readiness. As a host developer, I want `ready` reported only after the service answers on its loopback port and the digest check (FR-011) has passed. A start that has not reached ready within the start timeout (10 s by default) is a start failure. This is.",
       "proof_type": "automated_test",
       "evidence": "crates/kitty-core/tests/supervision.rs: a_service_that_never_answers_is_stopped_and_counts_as_a_crash (line 1020, start budget spent, Crashed then the restart policy), a_start_budget_spent_on_503s_is_a_start_failure (line 957, amendment A-10, full backoff sequence), ready_launches_with_exact_argv_environment_and_null_stdin (line 643, Ready only after the contract fetch); 10 s default asserted in crates/kitty-core/src/supervisor/policy.rs defaults_equal_the_plan_values; crates/kitty-core/tests/status_mapping.rs (line 422) reads_and_streams_before_ready_are_not_ready_and_send_nothing",
       "pass_fail": "pass",
       "verified_by": "claude",
       "verified_at": "2026-10-16T16:43:47.386559+00:00",
-      "notes": "TODO: replace with a real acceptance criterion"
+      "notes": ""
     },
     {
       "criterion_id": "FR-019",
-      "description": "Verify FR-019 is satisfied",
+      "description": "Busy port retry. As a host developer, I want a service that exits before it is ready to be restarted at once on a different free loopback port, up to 3 attempts per start, before the attempt counts as a crash.",
       "proof_type": "automated_test",
       "evidence": "crates/kitty-core/tests/supervision.rs (line 802) a_busy_port_is_retried_on_another_port: a squatter holds the first scripted port, the second launch uses a different port, Ready is reached on it, and there is no backoff; three_exits_before_ready_are_one_start_failure_on_three_ports (line 1065): 3 distinct ports, then one crash and a 500 ms backoff; crates/kitty-core/src/supervisor/ports.rs unit test the_loopback_picker_never_returns_an_excluded_port",
       "pass_fail": "pass",
       "verified_by": "claude",
       "verified_at": "2026-10-16T16:43:49.174976+00:00",
-      "notes": "TODO: replace with a real acceptance criterion"
+      "notes": ""
     },
     {
       "criterion_id": "FR-020",
-      "description": "Verify FR-020 is satisfied",
+      "description": "Crash restart and give-up. As a host developer, I want a service that exits after `ready` to be reported `crashed`, then restarted after a `backoff` delay that grows exponentially from 0.5 s to a cap of 30 s and resets after 60 s of uninterrupted `ready`. After 5 crashes within 5 minutes it gives up: the state is `stopped` with degraded service-missing, reason `crashing`, until the host asks to retry. This is.",
       "proof_type": "automated_test",
       "evidence": "crates/kitty-core/tests/supervision.rs (line 740) five_crashes_give_up_with_the_last_exit_status: under the recording sleeper the delays are exactly 0.5, 1, 2, 4 s and the 5th crash gives Stopped with service-missing (crashing); crates/kitty-core/src/supervisor/policy.rs unit tests under a manual clock: four_quick_crashes_back_off_then_the_fifth_gives_up, a_long_ready_resets_the_index_but_not_the_window (60 s reset), five_crashes_each_after_61_s_of_ready_still_give_up, crashes_301_s_apart_never_give_up. The 30 s cap is removed by amendment A-02",
       "pass_fail": "pass",
       "verified_by": "claude",
       "verified_at": "2026-10-16T16:43:50.982848+00:00",
-      "notes": "TODO: replace with a real acceptance criterion"
+      "notes": "Backoff cap amended by A-02 (no 30 s cap; delays 0.5, 1, 2, 4 s, then give up)."
     },
     {
       "criterion_id": "FR-021",
-      "description": "Verify FR-021 is satisfied",
+      "description": "Clean shutdown. As a host developer, I want a stop request, or dropping the supervisor, to send the platform's stop signal, wait a 5 s grace period, then kill the process, and to report `stopped`.",
       "proof_type": "automated_test",
       "evidence": "crates/kitty-core/tests/supervision.rs: stop_ends_a_ready_service_within_the_grace_period (line 1228), a_service_that_ignores_sigterm_is_killed_after_the_grace_period (line 1251), stop_during_the_start_ends_the_service (line 1272), stop_takes_the_whole_process_group (line 1315), a_grandchild_that_outlives_its_leader_is_killed_after_the_reap (line 1345), dropping_the_handle_kills_the_group_without_a_grace_period (line 1399), a_dying_host_takes_its_service_with_it (line 1565, Linux); crates/kitty-core/tests/host_exit.rs a_service_does_not_outlive_a_host_that_exits_without_stop. WP08 cycle-2 review: the post-reap SIGKILL revert was caught in 10/10 full parallel runs; WP09 review: the PDEATHSIG revert was red",
       "pass_fail": "pass",
       "verified_by": "claude",
       "verified_at": "2026-10-16T16:43:52.717861+00:00",
-      "notes": "TODO: replace with a real acceptance criterion"
+      "notes": ""
     },
     {
       "criterion_id": "FR-022",
-      "description": "Verify FR-022 is satisfied",
+      "description": "Missing or unusable binary. As a user, I want a binary that is not found, or that cannot be executed (for example, quarantined or without execute permission), to give degraded service-missing with a reason (`not-found` or `cannot-execute`) and the OS error as detail, without panicking and without a retry loop. A retry happens only when the host asks. This is.",
       "proof_type": "automated_test",
       "evidence": "crates/kitty-core/tests/supervision.rs (line 1452) a_missing_or_unrunnable_binary_is_stopped_without_a_retry_loop: a not-found binary gives Stopped [missing:NotFound] with no launch, a non-executable file gives Stopped [missing:CannotExecute] with the OS 'Permission denied' detail, a vanished path gives CannotExecute with 'No such file or directory', with an empty backoff log each time; a_project_root_that_does_not_exist_is_cannot_execute (line 1413); retry only on host request: retry_from_stopped_starts_again_with_a_clean_history (line 1200)",
       "pass_fail": "pass",
       "verified_by": "claude",
       "verified_at": "2026-10-16T16:43:54.462796+00:00",
-      "notes": "TODO: replace with a real acceptance criterion"
+      "notes": ""
     },
     {
       "criterion_id": "FR-023",
-      "description": "Verify FR-023 is satisfied",
+      "description": "Discovery behind an interface. As a host developer, I want discovery behind a replaceable interface. Its default implementation applies these lookup rules in order: a path from host configuration wins and, if invalid, fails loudly with no fallback; otherwise one environment variable; otherwise a PATH search for a configurable binary name; nothing found is service-missing. Each rule is tested. This is.",
       "proof_type": "automated_test",
       "evidence": "crates/kitty-core/tests/discovery.rs: configured_valid_path_wins_over_env_and_path (line 110), configured_relative_path_is_not_found_without_fallback (line 124), env_valid_value_is_used_when_nothing_is_configured (line 173), env_relative_missing_or_non_executable_is_not_found_without_fallback (line 183), path_skips_relative_and_empty_entries_and_a_later_absolute_entry_wins (line 220), nothing_anywhere_is_not_found_on_path (line 330), an_injected_discovery_is_used_unchanged (line 356); end to end the supervision rig injects its own discovery (crates/kitty-core/tests/supervision.rs). WP07 review reverts failed by name (empty filter, is_absolute check)",
       "pass_fail": "pass",
       "verified_by": "claude",
       "verified_at": "2026-10-16T16:43:56.201765+00:00",
-      "notes": "TODO: replace with a real acceptance criterion"
+      "notes": ""
     },
     {
       "criterion_id": "FR-024",
-      "description": "Verify FR-024 is satisfied",
+      "description": "Degraded-mode signal. As a host developer, I want one observable status that combines the supervision state with a degraded reason: none, `service-missing` (with its reason) or `contract-mismatch` (with the expected and the actual digest). I also want a documented mapping from it to the port's `ConnectionState` for adapters to apply. Both hosts can then show the same banner, while the port's types stay unchanged.",
       "proof_type": "automated_test",
       "evidence": "crates/kitty-core/tests/status_mapping.rs (line 125) the_hint_is_total_over_the_status_space: connection_state_hint is checked on all 30 combinations of state, initial-start flag and degraded reason; (line 172) the_hint_strings_are_exactly_the_port_strings reads CONNECTION_STATES from packages/mission-shell/src/client/port.ts on disk; scenario tests assert the status and degraded reason, for example (line 380) a_modified_contract_gives_contract_mismatch_and_sends_nothing_more with both digests; the mapping is documented in the README. Note: the test table is in the test, not parsed from the README",
       "pass_fail": "pass",
       "verified_by": "claude",
       "verified_at": "2026-10-16T16:43:57.942683+00:00",
-      "notes": "TODO: replace with a real acceptance criterion"
+      "notes": ""
     }
   ],
   "negative_invariants": []
