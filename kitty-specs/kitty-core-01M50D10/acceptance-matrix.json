@@ -228,10 +228,10 @@
       "criterion_id": "FR-023",
       "description": "Verify FR-023 is satisfied",
       "proof_type": "automated_test",
-      "evidence": null,
-      "pass_fail": "pending",
-      "verified_by": null,
-      "verified_at": null,
+      "evidence": "crates/kitty-core/tests/discovery.rs: configured_valid_path_wins_over_env_and_path (line 110), configured_relative_path_is_not_found_without_fallback (line 124), env_valid_value_is_used_when_nothing_is_configured (line 173), env_relative_missing_or_non_executable_is_not_found_without_fallback (line 183), path_skips_relative_and_empty_entries_and_a_later_absolute_entry_wins (line 220), nothing_anywhere_is_not_found_on_path (line 330), an_injected_discovery_is_used_unchanged (line 356); end to end the supervision rig injects its own discovery (crates/kitty-core/tests/supervision.rs). WP07 review reverts failed by name (empty filter, is_absolute check)",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-16T16:43:56.201765+00:00",
       "notes": "TODO: replace with a real acceptance criterion"
     },
     {
