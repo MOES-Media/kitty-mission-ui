@@ -8,10 +8,10 @@
       "criterion_id": "FR-001",
       "description": "Verify FR-001 is satisfied",
       "proof_type": "automated_test",
-      "evidence": null,
-      "pass_fail": "pending",
-      "verified_by": null,
-      "verified_at": null,
+      "evidence": "crates/kitty-core/tests/reads.rs (line 152) every_read_matches_a_raw_request: iterates every kind=read entry of contracts/fixtures/mission-status.routes.json, relays it through kitty-core with path parameters filled, compares with a direct request to the stub, and asserts exactly 9 ran; a read kitty-core cannot relay panics naming the operation ('expected an answer, got Transport(UnknownOperation(..))'); crates/kitty-core/src/routes.rs unit test the_table_has_nine_reads_and_one_stream; route table built from the generated routes.json, no typed models",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-16T16:41:56.049627+00:00",
       "notes": "TODO: replace with a real acceptance criterion"
     },
     {
