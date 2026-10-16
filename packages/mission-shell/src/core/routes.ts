@@ -55,7 +55,16 @@ function isWpId(value: string): boolean {
   return value.length <= WP_ID_MAX_LENGTH && WP_ID.test(value);
 }
 
+// A lone UTF-16 surrogate matches the pattern's `[^/\\\x00]` under the `u` flag but makes `encodeURIComponent` throw.
+const LONE_SURROGATE = /\p{Cs}/u;
+
+/** Whether the string holds no lone UTF-16 surrogate, so `encodeURIComponent` cannot throw on it. */
+export function isWellFormed(value: string): boolean {
+  return !LONE_SURROGATE.test(value);
+}
+
 function isArtifactPath(value: string): boolean {
+  if (!isWellFormed(value)) return false;
   const length = [...value].length;
   return length >= ARTIFACT_PATH_MIN_LENGTH && length <= ARTIFACT_PATH_MAX_LENGTH && ARTIFACT_PATH.test(value);
 }
