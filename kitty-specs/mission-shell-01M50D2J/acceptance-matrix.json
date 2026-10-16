@@ -167,11 +167,11 @@
     {
       "criterion_id": "FR-017",
       "description": "Verify FR-017 is satisfied",
-      "proof_type": "automated_test",
-      "evidence": null,
-      "pass_fail": "pending",
-      "verified_by": null,
-      "verified_at": null,
+      "proof_type": "gate_proof",
+      "evidence": "7 new plants plus 1 moved, in gates/plants/*/plant.json: unit-tests P-1 (refresh-policy mismatch on missions) and P-7 (mounted screen mismatch on drift); typecheck P-2 (sk-drift-screen sk-copy-command, the intent-coverage check); eslint P-3 (shell-markup: raw controls), P-4 (shell-io: navigator is forbidden), P-8 (shell-layering:); storybook-build P-5 (plant-shell-storybook-missing); visual P-6 moved to the reconnecting banner. Proofs: P-1 WP02 leg and WP03 review; P-2 WP05 review (typecheck proven, clean 0, planted 1); P-3, P-4, P-8 WP07 review (eslint leg green, 13 runs); P-5 re-proven by the WP08 reviewer; P-6 proven in WP08 and re-proven in WP09; P-7 proven in WP06 and re-proven in WP09. P-1 and P-7 re-checked by hand at acceptance. WP10 review: the swapped-ref negative control drops all seven new plants (exit 1)",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-16T20:09:29.113361+00:00",
       "notes": "TODO: replace with a real acceptance criterion"
     },
     {
