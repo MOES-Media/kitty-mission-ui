@@ -2,7 +2,7 @@
   "mission_slug": "kitty-core-01M50D10",
   "mission_number": "",
   "mission_type": "software-dev",
-  "overall_verdict": "pending",
+  "overall_verdict": "pass",
   "criteria": [
     {
       "criterion_id": "FR-001",
@@ -238,10 +238,10 @@
       "criterion_id": "FR-024",
       "description": "Verify FR-024 is satisfied",
       "proof_type": "automated_test",
-      "evidence": null,
-      "pass_fail": "pending",
-      "verified_by": null,
-      "verified_at": null,
+      "evidence": "crates/kitty-core/tests/status_mapping.rs (line 125) the_hint_is_total_over_the_status_space: connection_state_hint is checked on all 30 combinations of state, initial-start flag and degraded reason; (line 172) the_hint_strings_are_exactly_the_port_strings reads CONNECTION_STATES from packages/mission-shell/src/client/port.ts on disk; scenario tests assert the status and degraded reason, for example (line 380) a_modified_contract_gives_contract_mismatch_and_sends_nothing_more with both digests; the mapping is documented in the README. Note: the test table is in the test, not parsed from the README",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-16T16:43:57.942683+00:00",
       "notes": "TODO: replace with a real acceptance criterion"
     }
   ],
