@@ -56,7 +56,7 @@
     },
     "WP02": {
       "actor": "claude",
-      "agent": "claude",
+      "agent": null,
       "agent_profile": "reviewer-renata",
       "agent_profile_version": "1.0",
       "force_count": 1,
@@ -69,6 +69,7 @@
         "Refresh policy, read scheduler, gate, page chains, test support, literal recording and plant P-1 done; logic project green, unit-tests gate-proof leg proven."
       ],
       "provider": "__resolved_provider_absent__",
+      "review": null,
       "review_result": {
         "feedback_path": "/home/jeroennouws/dev/SK-missions/ui18/kitty-specs/mission-shell-01M50D2J/tasks/WP02-refresh-engine/review-cycle-1.md",
         "reference": "review-cycle://mission-shell-01M50D2J/WP02-refresh-engine/review-cycle-1.md",
@@ -76,15 +77,15 @@
         "verdict": "changes_requested"
       },
       "role": "reviewer",
-      "shell_pid": 3998772,
-      "shell_pid_created_at": "1792156335.02",
+      "shell_pid": null,
+      "shell_pid_created_at": null,
       "subtasks": {
-        "T006": "done",
-        "T007": "done",
-        "T008": "done",
-        "T009": "done",
-        "T010": "done",
-        "T011": "done"
+        "T006": "planned",
+        "T007": "planned",
+        "T008": "planned",
+        "T009": "planned",
+        "T010": "planned",
+        "T011": "planned"
       }
     },
     "WP03": {
