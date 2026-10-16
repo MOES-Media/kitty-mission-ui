@@ -414,8 +414,8 @@ openapi: 3.0.3
     }
 
     #[test]
-    fn json_is_parsed_before_yaml() {
-        // Valid JSON that YAML refuses (a surrogate-pair escape): only a JSON-first parse gives a digest.
+    fn valid_json_that_yaml_refuses_still_digests() {
+        // Valid JSON that YAML refuses (a surrogate-pair escape): a digest proves the JSON-only document parses.
         let doc = br#"{"a":"\ud83d\ude00"}"#;
         assert!(yaml_serde::from_slice::<Value>(doc).is_err());
         assert_eq!(
