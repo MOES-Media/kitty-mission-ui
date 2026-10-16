@@ -78,10 +78,10 @@
       "criterion_id": "FR-008",
       "description": "Verify FR-008 is satisfied",
       "proof_type": "automated_test",
-      "evidence": null,
-      "pass_fail": "pending",
-      "verified_by": null,
-      "verified_at": null,
+      "evidence": "crates/kitty-core/tests/stream.rs (line 216) resume_relays_only_the_items_after_the_cursor_and_sends_stream_cursor: opened with the scopedId of changes.json item 2, only items 3 to 5 arrive and nothing more, and the recorded target carries streamCursor (positive control without a cursor); stream.rs (line 340) invalid_scopes_send_nothing: a cursor without a Mission and an empty Mission are refused with nothing reaching the fake; unscoped_stream_has_no_cursors (line 184) for the all-Missions scope",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-16T16:43:28.120861+00:00",
       "notes": "TODO: replace with a real acceptance criterion"
     },
     {
