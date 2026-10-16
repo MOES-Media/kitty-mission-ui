@@ -61,7 +61,7 @@
       "wp": null
     },
     "#21": {
-      "evidence_ref": "<link or commit>",
+      "evidence_ref": "Sibling Phase 0 mission (#21), cited for design context and hand-off notes only; not changed by this mission.",
       "fr": null,
       "nfr": null,
       "repo": null,
@@ -69,7 +69,7 @@
       "scope": null,
       "source_file": "spec.md",
       "title": "<fill at WP-implementation time>",
-      "verdict": "unknown",
+      "verdict": "not-applicable",
       "wp": null
     },
     "#22": {
