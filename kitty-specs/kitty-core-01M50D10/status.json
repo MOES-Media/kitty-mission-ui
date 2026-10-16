@@ -167,7 +167,8 @@
       "last_transition_at": "2026-10-16T13:39:16.158745+00:00",
       "model": "__resolved_model_absent__",
       "notes": [
-        "Ready for review: sse.rs FrameReader + ChangeStream + open_stream, tests/stream.rs (23), tests/latency.rs; Rust, contract, hygiene gates green; commit b373aa3"
+        "Ready for review: sse.rs FrameReader + ChangeStream + open_stream, tests/stream.rs (23), tests/latency.rs; Rust, contract, hygiene gates green; commit b373aa3",
+        "Review passed (reviewer-renata): FrameReader edge cases verified whole/bytewise plus all 2-cut splits and 3000-case fuzz; cap counts from event boundary (CRLF heartbeats x100k ok); one terminal then fused; Refused only for routes.json 400/404/409; 16 MiB/read_timeout terminal bodies; exact Host+Accept, streamCursor via raw log; ENCODE identical to routes.rs; reverts (idle reset, dispatch-only cap reset) fail by name; Rust gate exit 0 (stream 23/23, 0.82s), hygiene 0 findings; latency debug p50 60us p95 114us. Low notes: CRLF blank-line LF counted toward next frame's cap (1-byte off), duplicated ENCODE/header builder vs routes.rs/forward.rs, latency runs on current_thread runtime."
       ],
       "provider": "__resolved_provider_absent__",
       "review_result": {
