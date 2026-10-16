@@ -98,10 +98,10 @@
       "criterion_id": "FR-010",
       "description": "Verify FR-010 is satisfied",
       "proof_type": "automated_test",
-      "evidence": null,
-      "pass_fail": "pending",
-      "verified_by": null,
-      "verified_at": null,
+      "evidence": "packages/mission-shell/test/shell/banners.test.ts (line 121) 'B3: a refused change stream shows the live-updates-off notice and a read still applies afterwards' (fixture stream refusal StreamRefusal.content-mismatch), positive control at line 139 'the same mount without a refusal shows no notice'; packages/mission-shell/test/logic/controller.test.ts line 481 'shows live-updates-off, keeps reading, and re-reads the whole set on each later connected with 0 new subscribes', control at line 505; no thrown error: the harness fails on any uncaught error (NFR-007 test at controller.test.ts line 992)",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-16T20:09:16.885292+00:00",
       "notes": "TODO: replace with a real acceptance criterion"
     },
     {
