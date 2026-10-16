@@ -65,6 +65,23 @@ const svelteRecommended = svelte.configs.recommended
 // was met, because scripts/typings.mjs emits output that is lint-clean under this config, eslint.no-io.config.mjs and
 // eslint.data-driven.config.mjs. The file is linted like every other source.
 
+// The import boundary patterns of the shell (SO-BND-005, CODE-BOUNDARY-003). One list, read by the boundary block and
+// re-spread by the layering block, so a block that replaces `no-restricted-imports` cannot drop the boundary.
+const SHELL_BOUNDARY_PATTERNS = [
+    { group: ['**/client/fixture', '**/fixture'], message: 'Shell sources must not import the fixture adapter: it is reached only through the ./testing entry.' },
+    { group: ['**/harness/**'], message: 'Shell sources must not import the binding harness: it is for the shell tests only.' },
+    { group: ['**/contracts/fixtures/*.json'], message: 'Shell sources must not import the fixture JSON: only the fixture adapter reads it.' },
+];
+
+const SHELL_LAYERING_MESSAGE = 'shell-layering: core, controller and intents import neither svelte nor the mission-ui runtime';
+
+// Shell I/O (C-001, research R-13): the globals and properties that no-io does not cover.
+const SHELL_IO_GLOBALS = ['history', 'navigator', 'open', 'postMessage', 'print', 'alert', 'confirm', 'prompt'];
+const shellIoMessage = (name) => `shell-io: ${name} is forbidden in the shell; go through the host interface (C-001)`;
+
+// Shell markup (C-001, C-005, research R-13): raw controls, links and forms, embedding, resource loading and media.
+const SHELL_MARKUP_ELEMENTS = ['button', 'input', 'select', 'textarea', 'a', 'form', 'iframe', 'object', 'embed', 'img', 'link', 'audio', 'video', 'source'];
+
 export default tseslint.config(
   {
     // Plants are non-source overlays and target/ is build output; nothing lintable lives there. No other broad ignores.
@@ -442,10 +459,62 @@ export default tseslint.config(
         'error',
         {
           patterns: [
-            { group: ['**/client/fixture', '**/fixture'], message: 'Shell sources must not import the fixture adapter: it is reached only through the ./testing entry.' },
-            { group: ['**/harness/**'], message: 'Shell sources must not import the binding harness: it is for the shell tests only.' },
-            { group: ['**/contracts/fixtures/*.json'], message: 'Shell sources must not import the fixture JSON: only the fixture adapter reads it.' },
+            ...SHELL_BOUNDARY_PATTERNS,
           ],
+        },
+      ],
+    },
+  },
+  {
+    // Layering of the shell (research R-01, R-13 / R4-04; plan IC-07, P-8): core/, controller/ and intents/ import neither
+    // svelte nor the mission-ui runtime. Type imports from @moes-media/mission-ui stay allowed. This block REPLACES
+    // `no-restricted-imports` for its files, so it sits after the boundary block and re-spreads the boundary patterns; its
+    // globs do not meet the boundary block's `ignores`, so the boundary stays in force for every file here. `svelte` has
+    // no `allowTypeImports`, so `import type` from svelte is reported too.
+    files: ['packages/mission-shell/src/{core,controller,intents}/**'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            { name: 'svelte', message: SHELL_LAYERING_MESSAGE },
+            { name: '@moes-media/mission-ui', allowTypeImports: true, message: SHELL_LAYERING_MESSAGE },
+          ],
+          patterns: [
+            ...SHELL_BOUNDARY_PATTERNS,
+            { group: ['svelte/*'], message: SHELL_LAYERING_MESSAGE },
+            { group: ['@moes-media/mission-ui/*'], allowTypeImports: true, message: SHELL_LAYERING_MESSAGE },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    // Shell I/O (C-001; research R-13; plan IC-07): no-io is unchanged and bans `location` and bare `window`; this block
+    // adds the rest. No `ignores`: testing.ts, client/fixture.ts and harness/** are shell sources too.
+    // Known limitation: `no-restricted-globals` matches free references only, so a local of the same name shadows it, and
+    // `globalThis.navigator` or `self.navigator` is not caught (plan IC-07 "Risks").
+    files: ['packages/mission-shell/src/**'],
+    rules: {
+      'no-restricted-globals': ['error', ...SHELL_IO_GLOBALS.map((name) => ({ name, message: shellIoMessage(name) }))],
+      'no-restricted-properties': [
+        'error',
+        { object: 'document', property: 'execCommand', message: shellIoMessage('document.execCommand') },
+        { object: 'document', property: 'location', message: shellIoMessage('document.location') },
+      ],
+    },
+  },
+  {
+    // Shell markup (C-001, C-005; research R-13; plan IC-07): Svelte markup uses the sk-* elements, never raw controls or
+    // resource-loading elements (the Lit-template restrictions do not see Svelte markup).
+    // Known limitation: `<svelte:element this={tag}>` with a run-time tag is not detectable statically.
+    files: ['packages/mission-shell/src/**/*.svelte'],
+    rules: {
+      'svelte/no-restricted-html-elements': [
+        'error',
+        {
+          elements: SHELL_MARKUP_ELEMENTS,
+          message: 'shell-markup: raw controls and resource-loading elements are forbidden in shell markup; use the sk-* elements (C-001, C-005)',
         },
       ],
     },
