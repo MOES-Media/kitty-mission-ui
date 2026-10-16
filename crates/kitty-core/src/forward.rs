@@ -21,7 +21,7 @@ pub fn upstream_request_headers(endpoint: &ServiceEndpoint, accept: HeaderValue)
 }
 
 /// True when `target` cannot climb out of `/api/v1/` or smuggle a separator (SEC-001): no `.` or `..` segment (also
-/// spelled with `%2e`), no `\`, `%2f`, `%5c` or `//` in the path, and no `#` or non-ASCII byte anywhere. The query
+/// spelled with `%2e`), no `\`, `;`, `%3b`, `%2f`, `%5c` or `//` in the path, and no `#` or non-ASCII byte anywhere. The query
 /// string is relayed as given, apart from those last two rules.
 fn is_safe_target(target: &str) -> bool {
     if !target.is_ascii() || target.contains('#') || target.contains('\\') {
@@ -29,7 +29,12 @@ fn is_safe_target(target: &str) -> bool {
     }
     let path = target.split_once('?').map_or(target, |(path, _)| path);
     let lower = path.to_ascii_lowercase();
-    if path.contains("//") || lower.contains("%2f") || lower.contains("%5c") {
+    if path.contains("//")
+        || path.contains(';')
+        || lower.contains("%2f")
+        || lower.contains("%5c")
+        || lower.contains("%3b")
+    {
         return false;
     }
     !lower

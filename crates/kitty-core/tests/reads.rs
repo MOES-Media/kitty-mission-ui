@@ -611,6 +611,11 @@ async fn forward_refuses_traversal_separator_and_non_ascii_targets() {
         "/api/v1//project",
         "/api/v1/project//x",
         "/api/v1/caf\u{e9}",
+        "/api/v1/missions/..;/project",
+        "/api/v1/..;/actuator",
+        "/api/v1/project;jsessionid=1",
+        "/api/v1/missions/%3b/x",
+        "/api/v1/missions/..%3B/project",
         "/api/v1/project#frag",
         "/api/v1/project?x=\u{e9}",
     ];
@@ -636,6 +641,8 @@ async fn forward_refuses_traversal_separator_and_non_ascii_targets() {
         "/api/v1/missions/m-1/work-packages",
         "/api/v1/missions?limit=10&cursor=a..b",
         "/api/v1/project?x=1",
+        "/api/v1/project?a=b;c=d",
+        "/api/v1/project?a=%3b",
     ];
     for path in allowed {
         let fake = raw_fake(vec![Step::Write(http_ok("application/json", b"{}"))]).await;

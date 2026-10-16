@@ -366,8 +366,13 @@ or take it by reference.
 **Recover from a lagging subscriber.** `Subscription.receiver` is a `tokio::sync::broadcast` receiver. When it returns
 `Lagged`, it has dropped transitions, so call `core.status()` to read the current status again and carry on from there.
 
+**Resume a forwarded stream with `streamCursor`.** `forward()` sends only `Host` and `Accept`, never `Last-Event-ID`. A
+proxy, as in `#21`, resumes by putting the last `streamCursor` it saw in the request target. `streamCursor` resumes only
+a stream scoped by `missionId`; an unscoped stream ignores it.
+
 **Know what a timeout covers.** `TransportFailure::Timeout` also covers a connect or response-head timeout, not only a
-slow read. It comes with status `None`, because no HTTP answer arrived.
+slow read. `TransportFailure` carries no HTTP status, because no answer arrived. (On the change stream, the same failure
+reaches a host as `StreamEvent::Unavailable` with status `None`.)
 
 **Map the status to the shell.** `connection_state_hint(&status)` returns one of the five strings of
 `ConnectionState` in `packages/mission-shell/src/client/port.ts`, or `None` when there is nothing to show (a stop the

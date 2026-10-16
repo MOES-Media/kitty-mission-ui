@@ -1,6 +1,6 @@
 //! The change stream (IC-05): `GET /api/v1/events` relayed as raw changes, in order (FR-007 to FR-010).
 //!
-//! [`FrameReader`] is a pure, byte-fed SSE parser. [`ChangeStream`] owns one connection and one reader, and yields
+//! [`ChangeStream`] owns one connection and one byte-fed SSE parser (no I/O), and yields
 //! [`StreamEvent`]s: any number of changes and diagnostics, then at most one terminal item, then `None` forever.
 //! Nothing is interpreted, reconnected or remembered here: reconnect, cursor bookkeeping and `resync` belong to the
 //! adapters (C-003).
@@ -139,8 +139,9 @@ impl FrameReader {
     }
 
     fn push(&mut self, byte: u8, out: &mut Vec<Frame>) -> Result<(), FrameError> {
-        if self.after_cr && byte == b'\n' {
-            // The LF of a CRLF pair belongs to the line ending already counted at the CR (CON-001).
+        if self.after_cr && byte == b'\n' && self.since_boundary == 0 {
+            // The LF that completes a CRLF event boundary is not counted against the next frame (CON-001). An LF
+            // inside a frame still counts: the cap is "all bytes since the last event boundary" (IC-05).
             self.after_cr = false;
             return Ok(());
         }
@@ -752,15 +753,30 @@ mod tests {
             let mut input = b"data: x".to_vec();
             input.extend_from_slice(ending);
             let mut body = b"data: ".to_vec();
-            // The line plus its two terminating CR or LF bytes make exactly FRAME_CAP counted bytes in every case
-            // (an LF that follows a CR is swallowed and never counted).
-            body.resize(FRAME_CAP - 2, b'a');
+            // Exactly FRAME_CAP counted bytes in every case: the LF inside the frame (after the data line's CR) counts,
+            // the final LF of a CRLF boundary does not.
+            let inner_lf = usize::from(ending.starts_with(b"\r\n"));
+            body.resize(FRAME_CAP - 2 - inner_lf, b'a');
             input.extend_from_slice(&body);
             input.extend_from_slice(ending);
             let (frames, error) = both(&input);
             assert_eq!(error, None, "ending {ending:?}");
             assert_eq!(frames.len(), 2, "ending {ending:?}");
         }
+    }
+
+    #[test]
+    fn lfs_inside_a_crlf_frame_count_toward_the_cap() {
+        // R2-NEW-003: only the LF that completes a CRLF event boundary goes uncounted. Twelve bytes per line.
+        let line = b"data: abcd\r\n";
+        let lines = FRAME_CAP / line.len();
+        let over = line.repeat(lines + 100);
+        assert!(over.len() > FRAME_CAP);
+        assert_eq!(both(&over), (vec![], Some(FrameError::TooLarge)));
+        // Positive control: the same lines, just under the cap, are fine.
+        let under = line.repeat(lines - 100);
+        assert!(under.len() < FRAME_CAP);
+        assert_eq!(both(&under), (vec![], None));
     }
 
     #[test]

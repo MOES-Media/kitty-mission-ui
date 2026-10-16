@@ -561,12 +561,7 @@ impl Machine {
             };
             match outcome {
                 CheckOutcome::Match { .. } => {
-                    // The exit wins over a match: a squatter may have answered for a service that already died.
-                    if let Some(exited) = exit_beats_match(guard) {
-                        return exited;
-                    }
-                    #[cfg(target_os = "linux")]
-                    if let Some(refused) = foreign_listener(guard, port) {
+                    if let Some(refused) = match_verdict(guard, |g| owner_check(g, port)) {
                         return refused;
                     }
                     self.publish(
@@ -605,6 +600,32 @@ impl Machine {
             }
         }
     }
+}
+
+/// The Linux ownership check; elsewhere there is none and the match stands.
+fn owner_check(guard: &mut ChildGuard, port: u16) -> Option<Attempt> {
+    #[cfg(target_os = "linux")]
+    {
+        foreign_listener(guard, port)
+    }
+    #[cfg(not(target_os = "linux"))]
+    {
+        let _ = (guard, port);
+        None
+    }
+}
+
+/// What a contract match is worth: the exit wins over it (a squatter may have answered for a service that already
+/// died), then `owner_check` may refuse it. `None` means the match stands. `owner_check` is a parameter so that a test
+/// can run the exit guard alone, as it is on targets without the ownership check.
+fn match_verdict(
+    guard: &mut ChildGuard,
+    owner_check: impl FnOnce(&mut ChildGuard) -> Option<Attempt>,
+) -> Option<Attempt> {
+    if let Some(exited) = exit_beats_match(guard) {
+        return Some(exited);
+    }
+    owner_check(guard)
 }
 
 /// `Some(Attempt::Exited)` when the leader has exited: an answer from the port then came from a squatter (or from a
@@ -683,6 +704,18 @@ mod tests {
                 Raced::Cmd(_) => panic!("round {round}: a command won"),
                 Raced::Done(()) => panic!("round {round}: the ready future beat the exit"),
             }
+        }
+    }
+
+    /// R2-NEW-006: `match_verdict` itself, with the ownership check replaced by "owned", as on macOS and Windows. A
+    /// real exited child (a zombie, waited for by nothing) is deterministic: only the exit guard can refuse the match,
+    /// so removing the `exit_beats_match` call from `match_verdict` makes this fail.
+    #[tokio::test]
+    async fn the_exit_guard_alone_refuses_a_match_from_an_exited_child() {
+        let mut guard = exited_guard().await;
+        match match_verdict(&mut guard, |_| None) {
+            Some(Attempt::Exited(cause)) => assert_eq!(cause, "service exited: exit status: 3"),
+            _ => panic!("the exit did not win over the match"),
         }
     }
 
