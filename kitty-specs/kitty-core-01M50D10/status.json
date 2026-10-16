@@ -54,6 +54,9 @@
       "last_event_id": "01M529TWXZ6JEZS5M01YMVBN4K",
       "last_transition_at": "2026-10-16T12:08:51.903781+00:00",
       "model": "__resolved_model_absent__",
+      "notes": [
+        "Ready for review: bundled contract document (generateBundleSource), checkBundleFresh (exported from check.mjs, own try/catch), bundle committed + .gitattributes line, bundle.test.mjs, contract plant (9 plants). Two check.test.mjs expectations changed: C1 deleted-vendored-file token list gains one jsonStale; changed-vendored-example test now expects [jsonStale, jsonStale, jsonOracle] with the oracle message at index 2. One check test added. Contract gate-proof leg green, 128 s."
+      ],
       "provider": "__resolved_provider_absent__",
       "role": "implementer",
       "shell_pid": 3739460,
