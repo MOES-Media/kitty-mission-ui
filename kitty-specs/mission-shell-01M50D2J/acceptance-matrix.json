@@ -148,10 +148,10 @@
       "criterion_id": "FR-015",
       "description": "Verify FR-015 is satisfied",
       "proof_type": "automated_test",
-      "evidence": null,
-      "pass_fail": "pending",
-      "verified_by": null,
-      "verified_at": null,
+      "evidence": "packages/mission-shell/test/logic/host.test.ts (line 243) 'the dashboard guard (FR-015)': each of the six picker and dialog intents gives one host call on the desktop (positive control) and none on the dashboard; line 307 the picker commands guard themselves; line 333 'never shows the picker on the dashboard'. packages/mission-shell/test/shell/modes.test.ts line 61 'modes: dashboard <case>': no footer item, no Projects rail item, no sk-projects-screen or sk-open-project-dialog, /projects lands on Missions, 0 listRecentProjects calls; line 78 dashboard with no client. WP04 review cycle 2: direct dashboard calls give 0 host calls, no emit, no state change",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-16T20:09:25.648470+00:00",
       "notes": "TODO: replace with a real acceptance criterion"
     },
     {
