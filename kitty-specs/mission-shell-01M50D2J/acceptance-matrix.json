@@ -18,10 +18,10 @@
       "criterion_id": "FR-002",
       "description": "Verify FR-002 is satisfied",
       "proof_type": "automated_test",
-      "evidence": null,
-      "pass_fail": "pending",
-      "verified_by": null,
-      "verified_at": null,
+      "evidence": "packages/mission-shell/test/logic/routes.test.ts (line 61) 'parses every formatted destination back to a deep-equal destination' and line 71 'covers every screen'; line 142 'parses each to Missions and reports /missions as the canonical form' over the unknown routes, with positive controls at line 154; decoding negatives at lines 168-198 (%, dot-dot, %2F, NUL, 513 code points); line 108 non-canonical encoding. Host sets the route from outside: packages/mission-shell/test/shell/mount.test.ts line 98 'setRoute shows the destination and announces only a non-canonical route'; packages/mission-shell/test/logic/host.test.ts lines 497-560 (routeChanged). No browser navigation: shell lint plant P-4 'shell-io: navigator is forbidden' and the unchanged no-io gate",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-16T20:08:38.859370+00:00",
       "notes": "TODO: replace with a real acceptance criterion"
     },
     {
