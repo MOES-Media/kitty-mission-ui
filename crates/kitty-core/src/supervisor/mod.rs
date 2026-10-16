@@ -564,16 +564,8 @@ impl Machine {
                         }
                     }
                     #[cfg(target_os = "linux")]
-                    if process::procfs::group_owns_listener(guard.pgid(), port) == Some(false) {
-                        // The scan reads every process and takes a while; a leader that died meanwhile has no fds
-                        // left, so "not owned" would name the wrong cause.
-                        return match guard.try_wait() {
-                            Ok(Some(status)) => Attempt::Exited(describe_exit(&status)),
-                            Ok(None) => Attempt::NotOwned,
-                            Err(e) => {
-                                Attempt::Exited(format!("waiting for the service failed: {e}"))
-                            }
-                        };
+                    if let Some(refused) = foreign_listener(guard, port) {
+                        return refused;
                     }
                     self.publish(
                         SupervisionState::Ready { endpoint },
@@ -591,7 +583,15 @@ impl Machine {
                     ) => {}
                     // Not yet ready (A-10).
                     Actual::Status { status: 503 } => saw_503 = true,
-                    _ => return Attempt::Mismatch(mismatch),
+                    _ => {
+                        // A final answer only blames the service when the service gave it: a foreign listener on the
+                        // picked port is retried on another port instead (an unreadable /proc keeps the mismatch).
+                        #[cfg(target_os = "linux")]
+                        if let Some(refused) = foreign_listener(guard, port) {
+                            return refused;
+                        }
+                        return Attempt::Mismatch(mismatch);
+                    }
                 },
                 CheckOutcome::PinUnparseable { detail } => return Attempt::PinUnparseable(detail),
             }
@@ -603,4 +603,20 @@ impl Machine {
             }
         }
     }
+}
+
+/// `Some` when `port` is answered by a socket that is not the launched group's: [`Attempt::NotOwned`], or
+/// [`Attempt::Exited`] when the leader died meanwhile. `None` when the group owns the listener or the check cannot tell.
+#[cfg(target_os = "linux")]
+fn foreign_listener(guard: &mut ChildGuard, port: u16) -> Option<Attempt> {
+    if process::procfs::group_owns_listener(guard.pgid(), port) != Some(false) {
+        return None;
+    }
+    // The scan reads every process and takes a while; a leader that died meanwhile has no fds left, so "not owned"
+    // would name the wrong cause.
+    Some(match guard.try_wait() {
+        Ok(Some(status)) => Attempt::Exited(describe_exit(&status)),
+        Ok(None) => Attempt::NotOwned,
+        Err(e) => Attempt::Exited(format!("waiting for the service failed: {e}")),
+    })
 }

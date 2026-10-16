@@ -899,6 +899,43 @@ async fn a_socket_that_is_not_the_services_is_not_ready() {
     assert_no_panics();
 }
 
+/// SEC-002: a foreign listener that answers something other than the pinned document (here a bare 404) is not the
+/// service speaking, so it must not become a terminal `ContractMismatch` that blames the service.
+#[cfg(target_os = "linux")]
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn a_foreign_listener_with_a_wrong_answer_is_retried_on_another_port() {
+    let squat = free_ports(1)[0];
+    let guard = squatter(
+        squat,
+        Some(b"HTTP/1.1 404 Not Found\r\ncontent-length: 0\r\n\r\n".to_vec()),
+        None,
+    );
+    let mut rig = Rig::new(&["alive-no-bind", "ready"], None);
+    rig.ports = ScriptedPorts::new(&[squat]);
+    rig.go();
+    let seen = rig
+        .sink
+        .wait_for_state("ready on another port", "Ready", 1)
+        .await;
+    assert_eq!(
+        sequence(&seen),
+        strings(&["Starting g1 a0", "Starting g2 a1", "Ready g2 a1"])
+    );
+    assert_invariants(&seen);
+    assert_ne!(ready_port(&seen), squat);
+    assert_eq!(rig.ports.excludes(), vec![vec![], vec![squat]]);
+    assert!(
+        rig.sleeper.log().is_empty(),
+        "no backoff for a foreign listener"
+    );
+    assert_eq!(rig.sink.failure_causes(), vec![CAUSE_NOT_OWNED.to_owned()]);
+    rig.stop().await;
+    report("foreign-404", &rig.sink.all(), &rig.sleeper.log());
+    drop(guard);
+    port_is_free_again(squat).await;
+    assert_no_panics();
+}
+
 #[cfg(target_os = "linux")]
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn ownership_mismatches_take_no_crash_slot_and_no_backoff() {
