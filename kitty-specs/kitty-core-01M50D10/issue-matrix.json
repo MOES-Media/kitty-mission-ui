@@ -37,7 +37,7 @@
       "wp": null
     },
     "#19": {
-      "evidence_ref": "<link or commit>",
+      "evidence_ref": "This mission implements issue #19 (M3 kitty-core); closed by the mission PR after WP10.",
       "fr": null,
       "nfr": null,
       "repo": null,
@@ -45,8 +45,8 @@
       "scope": null,
       "source_file": "spec.md",
       "title": "<fill at WP-implementation time>",
-      "verdict": "unknown",
-      "wp": null
+      "verdict": "in-mission",
+      "wp": "WP10"
     },
     "#20": {
       "evidence_ref": "<link or commit>",
