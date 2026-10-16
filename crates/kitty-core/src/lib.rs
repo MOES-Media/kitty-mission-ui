@@ -3,6 +3,17 @@
 //! This crate is a skeleton. Its real content (the host-side model and services) arrives with #19; for now it
 //! carries only enough to be built, linted and tested by `Gate: rust`.
 
+pub mod client;
+pub mod contract;
+pub mod discovery;
+pub mod endpoint;
+pub mod facade;
+pub mod forward;
+pub mod routes;
+pub mod sse;
+pub mod status;
+pub mod supervisor;
+
 /// The version of this crate, as declared in its `Cargo.toml`.
 pub fn version() -> &'static str {
     env!("CARGO_PKG_VERSION")

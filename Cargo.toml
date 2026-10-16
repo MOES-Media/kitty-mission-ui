@@ -18,3 +18,7 @@ tower = { version = "=0.5.3", features = ["util"] }
 # Already in Cargo.lock through axum: serving with them directly gives hyper a timer, so the header-read timeout works.
 hyper = { version = "=1.11.1", features = ["http1", "server"] }
 hyper-util = { version = "=0.1.21", features = ["http1", "server", "service", "tokio"] }
+yaml_serde = "=0.10.7"          # published 2026-08-18
+sha2 = "=0.10.9"                # published 2025-04-30
+percent-encoding = "=2.3.2"     # published 2025-08-21
+libc = "=0.2.189"               # published 2026-07-21
