@@ -175,18 +175,42 @@ impl PortPicker for ScriptedPorts {
             assert!(!exclude.contains(&port), "the script repeats a tried port");
             return Ok(port);
         }
-        kitty_core::supervisor::LoopbackPortPicker.pick(exclude)
+        Ok(unique_port(exclude))
+    }
+}
+
+/// A free port that no other test in this process is using, taken from below the ephemeral range.
+///
+/// Ports picked by `bind(0)` come from the ephemeral range, which is also where a client socket's local port comes
+/// from. A client that polls a port which nobody has bound yet can then connect to itself (a TCP simultaneous open)
+/// and occupy exactly the port the service is about to bind. That is a real, rare race of the loopback picker, and
+/// the supervisor survives it with its busy-port retry; but a scenario that asserts an exact sequence must not
+/// depend on it. So scenarios draw from 20000..30000, which the OS never hands to a client socket, in a sequence
+/// that is private to this process.
+fn unique_port(exclude: &[u16]) -> u16 {
+    use std::sync::atomic::{AtomicU32, Ordering};
+    static NEXT: AtomicU32 = AtomicU32::new(0);
+    let seed = std::process::id().wrapping_mul(2_654_435_761) % 10_000;
+    loop {
+        let n = NEXT.fetch_add(1, Ordering::SeqCst);
+        let port = 20_000 + ((seed + n) % 10_000) as u16;
+        if exclude.contains(&port) {
+            continue;
+        }
+        if std::net::TcpListener::bind(("127.0.0.1", port)).is_ok() {
+            return port;
+        }
     }
 }
 
 /// `n` distinct free loopback ports.
 fn free_ports(n: usize) -> Vec<u16> {
-    let held: Vec<std::net::TcpListener> = (0..n)
-        .map(|_| std::net::TcpListener::bind(("127.0.0.1", 0)).expect("bind"))
-        .collect();
-    held.iter()
-        .map(|l| l.local_addr().expect("address").port())
-        .collect()
+    let mut ports: Vec<u16> = Vec::new();
+    for _ in 0..n {
+        let port = unique_port(&ports);
+        ports.push(port);
+    }
+    ports
 }
 
 /// `squatter()` frees its port when the guard's task is aborted, and the abort is asynchronous. Waits briefly for a
@@ -1344,7 +1368,7 @@ fn host_process_for_the_parent_death_test() {
         contract: ContractPin::embedded(),
         timings: test_timings(),
         policy: RestartPolicy::default(),
-        ports: Arc::new(kitty_core::supervisor::LoopbackPortPicker),
+        ports: ScriptedPorts::new(&[]),
         sleeper: Arc::new(RecordingSleeper::new(clock.clone())),
         clock,
         env_passthrough: Vec::new(),
