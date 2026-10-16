@@ -48,6 +48,8 @@ StreamEvent =
 
 UnavailableReason = Status | ConnectRefused | Dropped | Idle { limit } | MalformedFrame | MalformedData
                   | FrameTooLarge { limit: 1 MiB }
+                  | BodyTooLarge { limit: 16 MiB }   // a terminal (refused or Status) body over the cap (FS2-04)
+                  | Timeout                          // a terminal body still incomplete at read_timeout (FS2-04)
 ```
 
 **Rules.**
@@ -70,7 +72,7 @@ UnavailableReason = Status | ConnectRefused | Dropped | Idle { limit } | Malform
   - `retry:` and comments are never relayed.
   - A leading BOM is honoured only at the start of the stream.
 - **No cursor store.** kitty-core keeps no cursor.
-- **Terminal bodies (FS-14).** The body of `Refused` and of `Unavailable(Status)` is read under the 16 MiB cap and `read_timeout`.
+- **Terminal bodies (FS-14, FS2-04).** The body of `Refused` and of `Unavailable(Status)` is read under the 16 MiB cap and `read_timeout`. Over the cap it is `Unavailable(BodyTooLarge)`; past the deadline it is `Unavailable(Timeout)`. A declared refusal with such a body therefore becomes `Unavailable` (a note for #20 and #21).
 
 ## Contract check
 
@@ -133,13 +135,13 @@ Every arrow is one `broadcast` message, in order. A send with no receivers is ig
 | `Starting` | child exits before ready (wins a biased select), attempt < 3, budget left | `Starting` (port not yet tried, attempt + 1, generation + 1; published) | None |
 | `Starting` | 503 before the first final answer, budget left | `Starting` (keep polling; no message) (A-10) | None |
 | `Starting` | start budget spent while every answer was 503 | `Crashed` (after the full stop sequence; a start failure) (A-10) | None |
-| `Starting` | Linux: the listening socket's inode is not one of the child group's fds | `Crashed` (after the full stop sequence; a start failure) (FS-06) | None |
+| `Starting` | Linux: the listening socket's inode is not one of the child group's fds, attempt < 3, budget left | `Starting` (group stopped; an untried port, attempt + 1, generation + 1; published; no crash-window slot, no backoff) (FS-06, FS2-02) | None |
 | `Starting` | 200 + digest equal + `try_wait() == None` (+ the Linux socket check) | `Ready { endpoint }` | None |
 | `Starting` | first final answer not 200, unparseable, or unequal digest | `Stopped` (group stopped) | ContractMismatch |
 | `Starting` | start budget spent, or 3 exits before ready | `Crashed` (after the full stop sequence) | None |
 | `Ready` | child exits | `Crashed` | None |
 | `Crashed` | policy: fewer than 5 crashes in the window | `Backoff { delay = delays[min(index, 3)] }`, then index + 1 | None |
-| `Crashed` | policy: the 5th crash in the window (300 s) | `Stopped` | ServiceMissing(crashing, last exit status or signal) |
+| `Crashed` | policy: the 5th crash in the window (300 s) | `Stopped` | ServiceMissing(crashing, cause of the last failure: "start budget spent on 503s", "listening socket not owned by the service", or the exit status or signal) (FS2-03) |
 | `Backoff` | delay elapsed | `Starting` (generation + 1; published) | None |
 | any but `Stopped` | `stop()` | `Stopped` (SIGTERM to the group, grace, SIGKILL to the group) | unchanged |
 | any | last host handle dropped | (task aborted; SIGKILL to the group; no further message) | — |
@@ -147,7 +149,7 @@ Every arrow is one `broadcast` message, in order. A send with no receivers is ig
 
 **Invariants.**
 - A supervisor owns at most one child process group, and only one it started.
-- Only the supervisor task signals, and only while `child.id()` is `Some` (R2-09). There is one exception: a single `kill(-pgid, SIGKILL)` immediately after the leader is reaped, to reach surviving members (FS-07).
+- Only the supervisor task signals, and only while `child.id()` is `Some` (R2-09). There are two exceptions after the leader is reaped. First, a single `kill(-pgid, SIGKILL)` immediately after the reap, to reach surviving members (FS-07). Second, the probe `kill(-pgid, 0)`, which delivers no signal and only reports whether the group still exists (ESRCH when it does not), so it is harmless even if the pid were reused (FS2-05).
 - No process of the group outlives `stop()` or the drop of the last handle.
 - Captured output is at most 64 KiB, newest kept. The most recent child's output is kept after it exits.
 

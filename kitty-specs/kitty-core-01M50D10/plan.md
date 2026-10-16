@@ -416,7 +416,11 @@ README.md, CHANGELOG.md             # IC-10
     - after the terminal item the stream is fused, and `next()` returns `None` forever.
   - **Opening (R1-04, R2-12).** `open_stream` returns `Result<ChangeStream, StreamOpenError>`. A test asserts nothing reached the fake's request log.
   - **Async contract (R2-13).** `next()` is cancel-safe: dropping its future loses no byte, because the buffered state lives in the stream. `ChangeStream` is `Send + 'static`.
-  - **Terminal bodies (FS-14).** The body read for `Refused` and for `Unavailable(Status)` is capped at 16 MiB and bounded by `read_timeout`. Over the cap it is `Unavailable(FrameTooLarge)` with no body; past the deadline it is `Unavailable(Idle)`. Test: a 409 whose body never ends.
+  - **Terminal bodies (FS-14, FS2-04).** The body read for `Refused` and for `Unavailable(Status)` is capped at 16 MiB and bounded by `read_timeout`.
+    - Over the cap, it is `Unavailable(BodyTooLarge { limit })` with no body.
+    - Past the deadline, it is `Unavailable(Timeout)`.
+    - Tests: a 409 whose body never ends, and a 409 whose body is 16 MiB + 1.
+    - **Note for #20 and #21.** A declared refusal with a huge or endless body arrives as `Unavailable`, not `Refused`.
   - **The 404 refusal (R1-01, A-08).** The in-process stub is built with `from_values(...)` with one in-memory `Problem` example (status 404) added to the examples value, plus `with_selections(streamEvents → that example)`. The raw-TCP 404 is a second case. The five `StreamRefusal` examples are selected with `with_selections`.
   - **Idle (R5-09).** A heartbeat every 100 ms keeps a stream with a 300 ms idle limit alive for 600 ms. A stall then ends it as `Idle`.
   - **NFR-003 method (R5-15).**
@@ -471,6 +475,7 @@ README.md, CHANGELOG.md             # IC-10
     - a **crash window**: the timestamps of crashes in the last 300 s of `Clock` time, used only for give-up. The 5th crash in the window gives up with `Crashing`.
     - a **consecutive-crash index**: it selects the delay (0.5, 1, 2, 4 s) and resets to 0 after 60 s of uninterrupted `Ready`. The reset does **not** clear the crash window.
     - **Policy tests.** Crash, then 70 s of `Ready`, then crash gives 0.5 s twice (the index reset). The window still holds 2 crashes.
+    - Five crashes, each after 61 s of `Ready`, all within 300 s, still give up: every delay is 0.5 s, but the window reaches 5 (FS2-01).
     - A start failure (the budget spent, or 3 exits before ready) is a crash.
     - The pure-policy test runs each sequence 10 times in a loop (R5-08).
     - Scenario tests assert the `RecordingSleeper` log as well as the states (R5-13).
@@ -484,9 +489,13 @@ README.md, CHANGELOG.md             # IC-10
     - After a digest match, `try_wait()` must return `None` before `Ready`.
     - The busy-port test adds a *squatter* case: the chosen port is held by a listener that answers HTTP with the pinned document, and the fake exits because the port is busy. The exit must win, and the next attempt runs on a new port.
   - **503 while starting (FS-05, A-10, decision `01M525WMWERXEBRY05X78Q6P3F`).** Before the first final answer, a 503 means "not yet ready", and the poll continues within the start budget. A start budget spent on 503s counts as a start failure, giving `Crashed`.
+    - Test: the `serve-503` fake mode stays `Starting` until the budget is spent, then `Crashed`, then the policy (FS2-01).
   - **Socket ownership (FS-06, decision `01M525WQ8AFYF4PZAF4ACKSBXJ`).**
     - **The squatter test is deterministic.** The squatter accepts the connection but holds its answer until the fake has exited, or for 200 ms, whichever comes first, so the child's exit is always observed before any answer.
-    - **Linux check.** Before `Ready`, the supervisor checks that the inode of the socket listening on `127.0.0.1:<port>` (from `/proc/net/tcp`) is among the socket fds of a member of the child's process group (`/proc/<pid>/fd/*` → `socket:[inode]`, for each pid whose `/proc/<pid>/stat` names the group). It uses `std` only. A mismatch is a start failure.
+    - **Linux check.** Before `Ready`, the supervisor checks that the inode of the socket listening on `127.0.0.1:<port>` (from `/proc/net/tcp`) is among the socket fds of a member of the child's process group (`/proc/<pid>/fd/*` → `socket:[inode]`, for each pid whose `/proc/<pid>/stat` names the group). It uses `std` only.
+    - **A mismatch is treated as a busy-port attempt (FS2-02).** The group is stopped, and the start retries with attempt + 1 on an untried port. It takes no crash-window slot and no backoff. Three attempts used up are a start failure, as for a busy port.
+    - **Test.** In the `alive-no-bind` fake mode, the fake stays alive and never binds, while a squatter answers at once with the pinned document. The test asserts the start failure and that `Ready` never occurs. It is gated on `cfg(target_os = "linux")` (FS2-01).
+    - **Note for #22.** A service that calls `setsid` or `setpgid` itself leaves the group, so it would always fail this check.
     - **Elsewhere.** No check exists, which is a documented limit: another local process, even another project's service, could answer on the chosen port. "The service identifies its project root and pid" goes on #22's notes.
   - **Ports (R2-17).** The picker never returns a port already tried in the same start.
   - **Launch (A-06, R3-01, R3-02, R3-03).**
@@ -500,6 +509,7 @@ README.md, CHANGELOG.md             # IC-10
     - SIGTERM and SIGKILL go to `-pgid`.
     - **Forking test.** The `fork-child` fake mode starts a grandchild that writes its pid. After `stop()`, both are gone.
   - **Signal discipline (R2-09).** Signals are sent only by the task that owns the `ChildGuard`, only while `child.id()` is `Some`, and never after `wait()` has returned, with **one** exception (FS-07).
+  - **The probe after reap (FS2-05).** `kill(-pgid, 0)` after the reap is the second exception. Signal 0 delivers nothing: it only reports whether the group exists, so even a reused pid would receive no signal.
   - **The SIGKILL after reap (FS-07).** Exactly one `kill(-pgid, SIGKILL)` is allowed immediately after the leader is reaped, to reach grandchildren that are still alive.
     - **Why it is safe.** POSIX does not reuse a pid as a process id while it is still the id of a process group with members. If the group is empty, the call fails with `ESRCH`.
     - **Residual risk.** If the group is empty and the pid has been reused in the microseconds between the reap and the call by a new process that is itself a group leader, the signal would hit it. That needs pid wrap-around inside that window. It is recorded, not mitigated.
@@ -514,7 +524,7 @@ README.md, CHANGELOG.md             # IC-10
   - **Output (R1-06, R2-16).**
     - Pipes are drained continuously.
     - The **most recent child's** output is kept after it exits.
-    - The `Crashing` detail carries the last exit status or signal.
+    - The `Crashing` detail carries the cause of the last start failure: "start budget spent on 503s", "listening socket not owned by the service", or the exit status or signal (FS2-03).
     - A macOS-quarantined binary killed by the OS shows as a signal exit, so 5 of them give `crashing`. That note goes to #20.
   - **Fake behaviour per launch (R5-04, R2-15).**
     - The scenario file has `launches: [mode, ...]`. The fake picks the entry at its launch index, kept in `<root>/kitty-fake-service.count`. Read, increment and write is safe because the supervisor never runs two children at once.

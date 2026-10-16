@@ -1,0 +1,227 @@
+{
+  "version": 1,
+  "mission_slug": "kitty-core-01M50D10",
+  "mission_id": "01M50D10J2DWR9J76F7APJQJDP",
+  "mission_branch": "kitty/mission-kitty-core-01M50D10",
+  "target_branch": "feat/kitty-core-19",
+  "lanes": [
+    {
+      "lane_id": "lane-a",
+      "wp_ids": [
+        "WP01"
+      ],
+      "write_scope": [
+        "Cargo.lock",
+        "Cargo.toml",
+        "crates/kitty-core/Cargo.toml"
+      ],
+      "predicted_surfaces": [
+        "api",
+        "tracker-integration",
+        "workspace"
+      ],
+      "depends_on_lanes": [],
+      "parallel_group": 0
+    },
+    {
+      "lane_id": "lane-b",
+      "wp_ids": [
+        "WP02"
+      ],
+      "write_scope": [
+        ".gitattributes",
+        "contracts/fixtures/mission-status.openapi.json",
+        "gates/plants/contract/**",
+        "scripts/contract/bundle.test.mjs",
+        "scripts/contract/check.mjs",
+        "scripts/contract/check.test.mjs",
+        "scripts/contract/generate.mjs"
+      ],
+      "predicted_surfaces": [
+        "api",
+        "app-shell",
+        "tracker-integration",
+        "workspace"
+      ],
+      "depends_on_lanes": [],
+      "parallel_group": 0
+    },
+    {
+      "lane_id": "lane-c",
+      "wp_ids": [
+        "WP03"
+      ],
+      "write_scope": [
+        "crates/kitty-stub/Cargo.toml",
+        "crates/kitty-stub/src/**",
+        "crates/kitty-stub/tests/openapi.rs",
+        "crates/kitty-stub/tests/select.rs",
+        "crates/kitty-stub/tests/upstream_flags.rs"
+      ],
+      "predicted_surfaces": [
+        "api",
+        "artifact-rendering",
+        "workspace"
+      ],
+      "depends_on_lanes": [
+        "lane-b"
+      ],
+      "parallel_group": 1
+    },
+    {
+      "lane_id": "lane-d",
+      "wp_ids": [
+        "WP04"
+      ],
+      "write_scope": [
+        "crates/kitty-core/src/client.rs",
+        "crates/kitty-core/src/endpoint.rs",
+        "crates/kitty-core/src/forward.rs",
+        "crates/kitty-core/src/lib.rs",
+        "crates/kitty-core/src/routes.rs",
+        "crates/kitty-core/tests/common/**",
+        "crates/kitty-core/tests/reads.rs"
+      ],
+      "predicted_surfaces": [
+        "api",
+        "artifact-rendering",
+        "legacy-cleanup",
+        "tests",
+        "workspace"
+      ],
+      "depends_on_lanes": [
+        "lane-a",
+        "lane-c"
+      ],
+      "parallel_group": 2
+    },
+    {
+      "lane_id": "lane-e",
+      "wp_ids": [
+        "WP05"
+      ],
+      "write_scope": [
+        "crates/kitty-core/src/sse.rs",
+        "crates/kitty-core/tests/latency.rs",
+        "crates/kitty-core/tests/stream.rs"
+      ],
+      "predicted_surfaces": [
+        "api",
+        "tracker-integration",
+        "workspace"
+      ],
+      "depends_on_lanes": [
+        "lane-d"
+      ],
+      "parallel_group": 3
+    },
+    {
+      "lane_id": "lane-f",
+      "wp_ids": [
+        "WP06"
+      ],
+      "write_scope": [
+        "crates/kitty-core/src/contract.rs",
+        "crates/kitty-core/tests/contract_check.rs"
+      ],
+      "predicted_surfaces": [
+        "api",
+        "legacy-cleanup",
+        "workspace"
+      ],
+      "depends_on_lanes": [
+        "lane-b",
+        "lane-d"
+      ],
+      "parallel_group": 3
+    },
+    {
+      "lane_id": "lane-g",
+      "wp_ids": [
+        "WP07"
+      ],
+      "write_scope": [
+        "crates/kitty-core/src/discovery.rs",
+        "crates/kitty-core/tests/discovery.rs"
+      ],
+      "predicted_surfaces": [
+        "api",
+        "tracker-integration",
+        "workspace"
+      ],
+      "depends_on_lanes": [
+        "lane-d"
+      ],
+      "parallel_group": 3
+    },
+    {
+      "lane_id": "lane-h",
+      "wp_ids": [
+        "WP08"
+      ],
+      "write_scope": [
+        "crates/kitty-core/src/bin/**",
+        "crates/kitty-core/src/supervisor/**",
+        "crates/kitty-core/tests/supervision.rs"
+      ],
+      "predicted_surfaces": [
+        "api",
+        "legacy-cleanup",
+        "tracker-integration",
+        "workspace"
+      ],
+      "depends_on_lanes": [
+        "lane-f",
+        "lane-g"
+      ],
+      "parallel_group": 4
+    },
+    {
+      "lane_id": "lane-i",
+      "wp_ids": [
+        "WP09"
+      ],
+      "write_scope": [
+        "crates/kitty-core/src/core.rs",
+        "crates/kitty-core/src/status.rs",
+        "crates/kitty-core/tests/panic_probe.rs",
+        "crates/kitty-core/tests/status_mapping.rs",
+        "crates/kitty-stub/tests/supervised.rs"
+      ],
+      "predicted_surfaces": [
+        "api",
+        "legacy-cleanup",
+        "tracker-integration",
+        "workspace"
+      ],
+      "depends_on_lanes": [
+        "lane-e",
+        "lane-h"
+      ],
+      "parallel_group": 5
+    },
+    {
+      "lane_id": "lane-j",
+      "wp_ids": [
+        "WP10"
+      ],
+      "write_scope": [
+        ".github/workflows/ci.yml",
+        "CHANGELOG.md",
+        "README.md"
+      ],
+      "predicted_surfaces": [
+        "api",
+        "workspace"
+      ],
+      "depends_on_lanes": [
+        "lane-i"
+      ],
+      "parallel_group": 6
+    }
+  ],
+  "computed_at": "2026-10-16T11:34:24.488966+00:00",
+  "computed_from": "dependency_graph+ownership",
+  "planning_artifact_wps": [],
+  "planning_commit_sha": "ed54bfe0e04eb6c407d577d8df913279e4f73cd8"
+}
