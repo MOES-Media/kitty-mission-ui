@@ -121,5 +121,21 @@
         "source": "PlantC7.svelte.plant"
       }
     ]
+  },
+  {
+    "gate": "contract",
+    "ciCommand": "pnpm contract:check && pnpm test:contract",
+    "expectFailPattern": "stale generated file: contracts/fixtures/mission-status.openapi.json differs",
+    "overlays": [
+      {
+        "target": "contracts/fixtures/mission-status.openapi.json",
+        "edits": [
+          {
+            "find": "\"version\": \"1.0.0-SNAPSHOT\"",
+            "replace": "\"version\": \"1.0.0-PLANTED\""
+          }
+        ]
+      }
+    ]
   }
 ]
