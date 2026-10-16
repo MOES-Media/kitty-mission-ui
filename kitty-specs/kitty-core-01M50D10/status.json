@@ -131,6 +131,9 @@
       "last_event_id": "01M52DKY90XVXDTJKP8E7D3QBX",
       "last_transition_at": "2026-10-16T13:14:58.208105+00:00",
       "model": "__resolved_model_absent__",
+      "notes": [
+        "Contract client, read relay, forward(), harness and reads.rs in c4aa556. Rust gate, contract gate, hygiene/scripts/terminology and gate-proof --only rust all green."
+      ],
       "provider": "__resolved_provider_absent__",
       "role": "implementer",
       "shell_pid": 3973044,
