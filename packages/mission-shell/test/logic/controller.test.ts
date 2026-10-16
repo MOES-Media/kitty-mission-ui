@@ -558,13 +558,13 @@ describe('now', () => {
     let time = new Date('2026-10-01T10:00:00.000Z');
     const { deferred, controller, fake } = deferredRig('/missions', 'connected', { clock: () => time });
     expect(controller.snapshot().now).toBe('2026-10-01T10:00:00.000Z'); // A4: set from the clock at creation
-    time = new Date('2026-10-01T10:00:00.000Z');
+    time = new Date('2026-10-01T10:01:00.000Z');
     deferred.resolveNext('getProject', ok('getProject', { name: 'p' }));
     await flushMicrotasks();
-    expect(controller.snapshot().now).toBe('2026-10-01T10:00:00.000Z');
+    expect(controller.snapshot().now).toBe('2026-10-01T10:01:00.000Z'); // moved by the applied read
     time = new Date('2026-10-01T10:05:00.000Z');
     await fake.advance(60_000);
-    expect(controller.snapshot().now).toBe('2026-10-01T10:00:00.000Z'); // no ticking timers
+    expect(controller.snapshot().now).toBe('2026-10-01T10:01:00.000Z'); // no ticking timers
     deferred.resolveNext('listMissions', ok('listMissions', page('p1', null)));
     await flushMicrotasks();
     expect(controller.snapshot().now).toBe('2026-10-01T10:05:00.000Z');
