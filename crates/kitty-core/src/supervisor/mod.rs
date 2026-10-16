@@ -256,6 +256,8 @@ enum Attempt {
     Mismatch(Mismatch),
     PinUnparseable(String),
     Exited(String),
+    /// Only the Linux ownership check can tell (it reads `/proc`).
+    #[cfg(target_os = "linux")]
     NotOwned,
     BudgetSpent {
         saw_503: bool,
@@ -497,6 +499,7 @@ impl Machine {
                     cause = c;
                     true
                 }
+                #[cfg(target_os = "linux")]
                 Attempt::NotOwned => {
                     guard.stop(grace).await;
                     cause = CAUSE_NOT_OWNED.to_owned();

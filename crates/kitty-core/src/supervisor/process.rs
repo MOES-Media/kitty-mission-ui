@@ -230,6 +230,7 @@ impl ChildGuard {
         }
     }
 
+    #[cfg(target_os = "linux")]
     pub fn pgid(&self) -> i32 {
         self.pgid
     }
