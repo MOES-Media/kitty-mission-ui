@@ -22,6 +22,11 @@ flag and is confirmed or amended by the operator at CP-1 (`plan.md`, "Design rev
 | `degraded: contract-mismatch` | `shell-connection-banners--contract-mismatch-1280` | `danger` | `assertive` | Incompatible service | The Mission Status service speaks a different contract version than this app. Data that was already loaded stays visible. |
 | subscription `refused` | `shell-connection-banners--live-updates-off-1280` | `neutral` | `polite` | Live updates are off | The service refused the change stream. Views are not updated automatically; navigate or refresh to read again. |
 
+- **When no data has been loaded yet** (CP-1 amendment A2), the two degraded banners drop the sentence "Data that was
+  already loaded stays visible.": `service-missing` reads "The Mission Status service could not be found or started."
+  and `contract-mismatch` reads "The Mission Status service speaks a different contract version than this app."
+  Titles, tones and announce levels are unchanged. Host overrides are shown as given.
+- **While a degraded banner is shown** (CP-1 amendment A1), the shell does not show the chrome error or its Retry.
 - The two degraded bodies can be overridden by the host through `ShellOptions.copy` (`contracts/shell-api.md`), for
   example to explain an unsigned or quarantined service binary on the desktop.
 - **Timing (NFR-004)**:
@@ -49,6 +54,7 @@ flag and is confirmed or amended by the operator at CP-1 (`plan.md`, "Design rev
 |---|---|
 | Project head eyebrow | Project |
 | Mission sidebar back link (confirmed at CP-1) | All Missions |
+| Brand (CP-1 amendment A3) | kitty desktop (desktop mode), kitty dashboard (dashboard mode) |
 | Mission not found (Pipeline `errorMessage`) | This Mission could not be found. It may have been removed. |
 | Read failed with no data (`errorMessage`, where the screen has no refusal property) | The data could not be loaded. |
 | Shell chrome error (`sk-mission-shell` `errorMessage`) | The project could not be loaded. |
