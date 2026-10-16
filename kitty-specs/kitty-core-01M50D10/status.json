@@ -1,17 +1,17 @@
 {
-  "event_count": 84,
-  "last_event_id": "01M52SPH7CYG97HHC3JY6FYP9Y",
-  "materialized_at": "2026-10-16T16:46:06.060450+00:00",
+  "event_count": 85,
+  "last_event_id": "01M52SPHVT7HMTWBCT16HRRHEF",
+  "materialized_at": "2026-10-16T16:46:06.714234+00:00",
   "mission_number": "5",
   "mission_slug": "kitty-core-01M50D10",
   "mission_type": "software-dev",
   "schema_version": 2,
   "summary": {
-    "approved": 1,
+    "approved": 0,
     "blocked": 0,
     "canceled": 0,
     "claimed": 0,
-    "done": 9,
+    "done": 10,
     "for_review": 0,
     "in_progress": 0,
     "in_review": 0,
@@ -328,15 +328,15 @@
       }
     },
     "WP10": {
-      "actor": "claude",
+      "actor": "merge",
       "agent": "claude",
       "agent_profile": "__resolved_profile_absent__",
       "agent_profile_version": "__resolved_profile_version_absent__",
       "force_count": 1,
       "implementer_of_record": "claude",
-      "lane": "approved",
-      "last_event_id": "01M52RWAAW4WZ49SESDDVXPZCC",
-      "last_transition_at": "2026-10-16T16:31:47.036031+00:00",
+      "lane": "done",
+      "last_event_id": "01M52SPHVT7HMTWBCT16HRRHEF",
+      "last_transition_at": "2026-10-16T16:46:06.714234+00:00",
       "model": "__resolved_model_absent__",
       "notes": [
         "Review passed (cycle 2): B1 macOS exit wording now true (stop().await or last-clone drop with a live runtime; process::exit, kill or crash leaves the service); B2 arithmetic correct (MAX_ATTEMPTS 3 x give_up_at 5 = up to 15 launches; backoffs 0.5+1+2+4 = 7.5 s); N1, N2 fixed. Only README and CHANGELOG changed; ci.yml still timeout-only (contract 19->21); hygiene and terminology green. Pre-merge note: 'only' omits runtime shutdown at main return, which also kills the group (errs safe); the new CHANGELOG relay line is longer than its neighbours' wrap."
