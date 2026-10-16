@@ -108,10 +108,10 @@
       "criterion_id": "FR-011",
       "description": "Verify FR-011 is satisfied",
       "proof_type": "automated_test",
-      "evidence": null,
-      "pass_fail": "pending",
-      "verified_by": null,
-      "verified_at": null,
+      "evidence": "packages/mission-shell/test/shell/banners.test.ts (lines 75-112): connecting notice at once and removed by connected in the same render; reconnecting nothing at 999 ms, banner at 1000 ms; service-missing and contract-mismatch without advancing time, loaded data kept; each asserts one sk-notice with its tone, announce level, heading and body, above the hosted screen; CP-1 amendments A1/A2 at lines 161-183. packages/mission-shell/test/logic/connection.test.ts line 29 'gives each state its condition at once, and none for connected' (5 of 5); packages/mission-shell/test/logic/controller.test.ts line 298 (connecting: 0 reads until the first connected), line 316 (degraded: no-value slots error), line 433 (degraded after data keeps the data). WP03 review: reverting the grace-timer clear fails 3 named tests",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-16T20:09:18.661454+00:00",
       "notes": "TODO: replace with a real acceptance criterion"
     },
     {
