@@ -173,7 +173,8 @@
       "model": "__resolved_model_absent__",
       "notes": [
         "INTENT_TABLE (40 pairs/23 intents), coverage check types, P-2 proven; controller dispatches via table (out-of-map edit)",
-        "F1 fixed: own-property intent lookup + regression test"
+        "F1 fixed: own-property intent lookup + regression test",
+        "Review passed (cycle 2): F1 fixed; resolveHandler uses Object.hasOwn at tag, event and via target, calls only functions, follows only string vias. Original probes resolve; intent-dispatch.test.ts red-first verified (19/32 fail against the cycle-1 lookup). 40 pairs/23 events/5 via/6 desktopOnly per intent-map; R-09 coverage and via constraints probed; P-2 proven (typecheck leg 35.7 s); typecheck 0/0, lint, no-io, hygiene 0, manifest current, test:scripts 646, mission-shell 358/358; diff limited to owned files plus shell-controller.ts and intent-dispatch.test.ts. Non-blocking: N1 detail typing ends at IntentCommands(unknown); N2 via admits any same-event same-detail host."
       ],
       "provider": "__resolved_provider_absent__",
       "review": null,
