@@ -87,22 +87,165 @@ helped:
   summary: WP09 completed without rejection cycles
   evidence_refs:
   - e-014
+- id: h-009
+  category: process
+  summary: The landing second opinion closed three port gaps before consumers built on them
+  evidence_refs:
+  - e-020
+  - e-021
+  details: 'Three opus lenses reviewed the PR at landing and found about 35 findings, 9 of them MAJOR. They included three
+    port gaps that earlier squads missed and that needed operator decisions: the missing connecting state, the missing in-band
+    resync on reconnect, and stub resume. The operator closed all three inside #17 (spec amendment of 2026-10-15), so #18
+    and #19 start without changing the client interface (SC-004).'
+- id: h-010
+  category: process
+  summary: Landing folds were single-purpose commits, and the PR was squash-merged
+  evidence_refs:
+  - e-020
+  - e-021
+  details: The folds were single-purpose (landing) commits on two fold branches. Plants went from 21 to 24, and proof-leg
+    timeouts were re-derived from CI. The PR was squash-merged so that machine-local paths in intermediate commits stay out
+    of main.
 not_helpful:
 - id: n-002
   category: doc
   summary: analysis-report.md records 5 finding(s)
   evidence_refs:
   - e-016
-  details: The analysis-report.md artifact for this mission records 5 finding(s) in its structured frontmatter. Review
-    them to understand documented issues and decisions.
+  details: The analysis-report.md artifact for this mission records 5 finding(s) in its structured frontmatter. Review them
+    to understand documented issues and decisions.
 - id: n-001
   category: review_loop
   summary: WP04 required 1 rejection cycle(s) before approval
   evidence_refs:
   - e-015
   details: WP WP04 was sent back to an earlier lane with documented review feedback 1 time(s).
-gaps: []
-proposals: []
+- id: n-003
+  category: tooling
+  summary: Full test, gate-proof and browser runs exhausted memory and systemd-oomd killed every agent session
+  evidence_refs:
+  - e-014
+  details: 'Running the full pnpm test, the gate-proof legs and the browser runs on one machine exhausted memory, and systemd-oomd
+    killed every agent session, not only the heavy run. The fix was the heavy wrapper: a memory-capped cgroup plus a machine-wide
+    lock so that only one heavy run goes at a time. Heavy proofs are now left to CI.'
+- id: n-004
+  category: tooling
+  summary: spec-kitty consolidate refused the squash strategy and rolled back
+  evidence_refs:
+  - e-001
+  details: spec-kitty consolidate refused with "SQUASH reconciliation refused..." and rolled back. Re-running with --strategy
+    merge worked.
+- id: n-005
+  category: process
+  summary: Accept, merge and the retrospective ran before the PR landing, so the records described a state main never had
+  evidence_refs:
+  - e-001
+  - e-021
+  details: The acceptance matrix, meta.json and this retrospective were written against the consolidated branch. The landing
+    then added fold commits and a squash merge, so meta.json merged_commit points at a commit main does not contain, and the
+    acceptance evidence went stale (four connection states, 18 plants, no resume tests, as the later folds changed these).
+    The records were repaired after the landing by a records pass on the mission (landed_commit and landed_via were added
+    to meta.json).
+- id: n-006
+  category: review_loop
+  summary: Earlier squads yielded only low-severity findings; the late design lens found the major ones
+  evidence_refs:
+  - e-017
+  - e-018
+  - e-019
+  - e-020
+  details: 'The pre-merge R1 round produced 26 findings, all at or below severity 3, which took two fix branches. R2 and R3
+    found only 3 nits. The landing second opinion (3 opus lenses) found about 35 findings, 9 of them MAJOR, including the
+    3 port gaps (connecting, resync, stub resume) that earlier squads missed and that needed operator decisions. Lesson: put
+    a design lens that reads the consumer missions into the plan and pre-merge squads.'
+- id: n-007
+  category: tooling
+  summary: Main first post-merge CI run failed on infrastructure only
+  evidence_refs:
+  - e-021
+  details: pnpm setup took 3.5 minutes against a 3-minute job limit. No code was at fault. A re-run passed.
+gaps:
+- id: g-001
+  category: process
+  summary: No records refresh step exists between a PR landing and the mission records
+  evidence_refs:
+  - e-001
+  - e-021
+  details: For a pr_bound mission, accept, merge and the retrospective can run before the PR lands, and nothing re-checks
+    the records afterwards. meta.json merged_commit, the acceptance matrix and the retrospective are then left describing
+    a state that main never had.
+- id: g-002
+  category: design
+  summary: Conformance vectors for the port are deferred (SO-BND-001)
+  evidence_refs:
+  - e-020
+  details: Conformance vectors for the port (SO-BND-001) were deferred at the landing.
+- id: g-003
+  category: design
+  summary: Gate-proof fan-out is deferred (SO-DES-017)
+  evidence_refs:
+  - e-020
+  details: Gate-proof fan-out (SO-DES-017) was deferred at the landing.
+- id: g-004
+  category: design
+  summary: Source sets and gate ids have no single source of truth (SO-BND-003, SO-BND-004)
+  evidence_refs:
+  - e-020
+  details: A single source of truth for source sets and gate ids (SO-BND-003 and SO-BND-004) was deferred at the landing.
+proposals:
+- id: p-001
+  category: process
+  risk_class: structural
+  auto_applicable: false
+  summary: For pr_bound missions, accept after the PR landing, or refresh the records after the merge
+  evidence_refs:
+  - e-001
+  - e-021
+  suggested_action: Run the accept gate after the PR lands, or add a records refresh step after the merge that rewrites meta.json
+    landed fields, re-verifies the acceptance matrix against main and regenerates the retrospective.
+  details: Addresses n-005 and g-001.
+- id: p-002
+  category: process
+  risk_class: structural
+  auto_applicable: false
+  summary: Put a design lens that reads the consumer missions into the plan squad and the pre-merge squad
+  evidence_refs:
+  - e-017
+  - e-018
+  - e-020
+  details: Addresses n-006.
+  suggested_action: 'Add a lens to both squads that reads the missions consuming the output (here #18 to #21) and asks whether
+    each can build without changing the interface.'
+- id: p-003
+  category: tooling
+  risk_class: structural
+  auto_applicable: false
+  summary: Make the heavy wrapper the documented way to run full tests, gate proofs and browser runs locally
+  evidence_refs:
+  - e-014
+  details: Addresses n-003.
+  suggested_action: Document the memory-capped cgroup and machine-wide lock for local heavy runs, and leave heavy proofs to
+    CI.
+- id: p-004
+  category: tooling
+  risk_class: structural
+  auto_applicable: false
+  summary: Fix the squash strategy refusal of spec-kitty consolidate
+  evidence_refs:
+  - e-001
+  details: Addresses n-004.
+  suggested_action: Investigate why consolidate refused with "SQUASH reconciliation refused..." and rolled back; until then
+    use --strategy merge.
+- id: p-005
+  category: other
+  risk_class: structural
+  auto_applicable: false
+  summary: Pick up the deferred architecture items in later missions
+  evidence_refs:
+  - e-020
+  details: Addresses g-002, g-003 and g-004.
+  suggested_action: 'Plan conformance vectors (SO-BND-001), gate-proof fan-out (SO-DES-017), and one source of truth for source
+    sets and gate ids (SO-BND-003, SO-BND-004), ahead of or alongside #19 to #21.'
 evidence_refs:
 - id: e-001
   kind: file
@@ -153,5 +296,20 @@ evidence_refs:
 - id: e-016
   kind: file
   path: kitty-specs/phase0-bootstrap-01M4V5KK/analysis-report.md
+- id: e-017
+  kind: file
+  path: kitty-specs/phase0-bootstrap-01M4V5KK/reviews/plan.squad.md
+- id: e-018
+  kind: file
+  path: kitty-specs/phase0-bootstrap-01M4V5KK/reviews/premerge-r1-findings.md
+- id: e-019
+  kind: file
+  path: kitty-specs/phase0-bootstrap-01M4V5KK/reviews/premerge-r3-verify.md
+- id: e-020
+  kind: file
+  path: kitty-specs/phase0-bootstrap-01M4V5KK/reviews/landing-second-opinion.md
+- id: e-021
+  kind: external
+  url: https://github.com/MOES-Media/kitty-mission-ui/pull/32
 generator_version: '1.0'
 provenance_history: []
