@@ -221,7 +221,8 @@
       "last_transition_at": "2026-10-16T13:37:07.933589+00:00",
       "model": "__resolved_model_absent__",
       "notes": [
-        "Discovery trait, DefaultDiscovery, EnvSnapshot; 16 tests; Rust, contract, hygiene gates green; 6 reverts each fail named tests"
+        "Discovery trait, DefaultDiscovery, EnvSnapshot; 16 tests; Rust, contract, hygiene gates green; 6 reverts each fail named tests",
+        "Review passed (reviewer-renata): 4 lookup rules exact, no fallback after an explicit choice; 17 hijack probes refused (relative/./empty PATH entries, relative env+cfg, link->plain, dangling, dir); link->exec accepted, link returned. env read only in EnvSnapshot::from_process, no env mutation. Reviewer reverts fail by name (empty-filter -> empty_env_value_counts_as_unset; usable is_absolute -> configured_relative/env_relative). Rust gate, hygiene, terminology green; only the 2 owned files changed, no deps. Non-blocking: binary_name not validated (absolute or ../ name escapes PATH entries); PATH-entry skip redundant with usable() so covered only jointly; empty-entry test name overclaims; panic counter asserted in one test only."
       ],
       "provider": "__resolved_provider_absent__",
       "review_result": {
