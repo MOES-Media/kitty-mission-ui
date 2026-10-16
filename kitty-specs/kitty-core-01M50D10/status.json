@@ -265,6 +265,9 @@
       "last_event_id": "01M52HWXA08T7S798WW8GKVNQX",
       "last_transition_at": "2026-10-16T14:29:46.432425+00:00",
       "model": "__resolved_model_absent__",
+      "notes": [
+        "Supervisor, policy, process group, spawner thread, fake service and 25 scenario tests; rust gate green (170 tests), gate-proof rust leg green twice, 10 identical determinism runs"
+      ],
       "provider": "__resolved_provider_absent__",
       "role": "implementer",
       "shell_pid": 9203,
