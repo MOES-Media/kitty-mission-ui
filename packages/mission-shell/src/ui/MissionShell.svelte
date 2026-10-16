@@ -64,9 +64,13 @@
   // The client effect is declared first: a client and a route changed in the same tick must read the new screen on the new client.
   $effect(() => {
     const client = options.client;
-    // The route prop goes with the client, untracked: a client and a route changed in the same tick make one step to the new
-    // route on the new client, not a default screen first (ARCH-009), and a route change alone is the route effect's job.
-    if (client !== lastClient) setClient(client, untrack(() => options.route));
+    // The route goes with the client only when it changed since the last value forwarded, untracked: a client and a route
+    // changed in the same tick make one step to the new route on the new client (ARCH-009). A client-only change passes
+    // none, so the new project opens at its default route, as the handle's setClient does (ARCH-001).
+    if (client !== lastClient) {
+      const route = untrack(() => options.route);
+      setClient(client, route !== lastRoute ? route : undefined);
+    }
   });
   $effect(() => {
     const copy = options.copy;

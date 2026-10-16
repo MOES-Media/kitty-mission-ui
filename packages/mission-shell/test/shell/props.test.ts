@@ -44,14 +44,57 @@ describe('MissionShell used as a Svelte component', () => {
     await settle(harness);
     expect(a.counts.unsubscribe).toBe(1);
     expect(b.counts.subscribe).toBe(1);
-    expect(deepQueryAll(target, 'sk-ops-screen').length).toBe(1);
-    expect(b.reads.some((read) => read.startsWith('listOpsInvocations'))).toBe(true);
+    // A client-only change takes the default route of the new project, as the mountShell handle does (ARCH-001).
+    expect(screenTag(harness.shell)).toBe('sk-missions-screen');
+    expect(b.reads.some((read) => read.startsWith('listMissions'))).toBe(true);
+    expect(b.reads.some((read) => read.startsWith('listOpsInvocations'))).toBe(false);
 
     // The same values again change nothing.
     app.update({ client: b, route: '/ops' });
     flushSync();
     await settle(harness);
     expect(b.counts.subscribe).toBe(1);
+  });
+
+  it('a null client on the picker route, then a client prop: the shell leaves the picker (R2-NEW-001a)', async () => {
+    const scheduler = createFakeScheduler();
+    const a = recordingClient(createFixtureClient({ scheduler }));
+    const target = document.createElement('div');
+    document.body.append(target);
+    const app = mount(PropsHost, { target, props: { initial: { client: null, host: recordingHost(), mode: 'desktop', route: '/projects', scheduler } } }) as unknown as {
+      update(patch: { client?: typeof a }): void;
+    };
+    mounted.push({ app: app as never, target });
+    const harness = { target, scheduler, shell: target.querySelector('sk-mission-shell') as HTMLElement } as unknown as Harness;
+    await settle(harness);
+    expect(screenTag(harness.shell)).toBe('sk-projects-screen');
+    app.update({ client: a });
+    flushSync();
+    await settle(harness);
+    expect(screenTag(harness.shell)).toBe('sk-missions-screen');
+    expect(a.reads.some((read) => read.startsWith('listMissions'))).toBe(true);
+  });
+
+  it('an echoing host switching project inside a Mission does not read that Mission on the new client (R2-NEW-001b)', async () => {
+    const scheduler = createFakeScheduler();
+    const a = recordingClient(createFixtureClient({ scheduler }));
+    const b = recordingClient(createFixtureClient({ scheduler }));
+    const target = document.createElement('div');
+    document.body.append(target);
+    const app = mount(PropsHost, { target, props: { echo: true, initial: { client: a, host: recordingHost(), mode: 'desktop', route: `/missions/${M}`, scheduler } } }) as unknown as {
+      update(patch: { client?: typeof a }): void;
+      currentRoute(): string | undefined;
+    };
+    mounted.push({ app: app as never, target });
+    const harness = { target, scheduler, shell: target.querySelector('sk-mission-shell') as HTMLElement } as unknown as Harness;
+    await settle(harness);
+    expect(screenTag(harness.shell)).toBe('sk-pipeline-screen');
+    app.update({ client: b });
+    flushSync();
+    await settle(harness);
+    expect(screenTag(harness.shell)).toBe('sk-missions-screen');
+    expect(b.reads.some((read) => read.includes(M))).toBe(false);
+    expect(app.currentRoute(), 'the echoed route prop follows').toBe('/missions');
   });
 
   it('a host that echoes routeChanged into its route prop does not double-read Ops or Artifacts (B1)', async () => {
