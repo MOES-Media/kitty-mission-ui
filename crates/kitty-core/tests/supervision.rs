@@ -313,6 +313,16 @@ fn pinned_document() -> Vec<u8> {
     std::fs::read(fixtures_dir().join("mission-status.openapi.json")).expect("read the bundle")
 }
 
+/// Rewrites the scenario of `root` with extra top-level fields.
+fn write_scenario_with(root: &Path, launches: &[&str], extra: &[(&str, Value)]) {
+    let mut scenario = serde_json::json!({ "launches": launches });
+    for (key, value) in extra {
+        scenario[*key] = value.clone();
+    }
+    std::fs::write(root.join("kitty-fake-service.json"), scenario.to_string())
+        .expect("write the scenario");
+}
+
 // ---- Processes ---------------------------------------------------------------------------------------------------
 
 fn errno() -> i32 {
@@ -933,6 +943,33 @@ async fn a_foreign_listener_with_a_wrong_answer_is_retried_on_another_port() {
     report("foreign-404", &rig.sink.all(), &rig.sleeper.log());
     drop(guard);
     port_is_free_again(squat).await;
+    assert_no_panics();
+}
+
+/// TEST-003b: a connection reset during readiness is "no answer yet", not a final mismatch. The fake resets the first
+/// three contract fetches; the supervisor keeps polling the same launch and reaches Ready on it.
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn a_connection_reset_during_readiness_keeps_polling() {
+    let mut rig = Rig::new(&["reset-first"], None);
+    write_scenario_with(&rig.root, &["reset-first"], &[("resetFirst", 3.into())]);
+    rig.go();
+    let seen = rig
+        .sink
+        .wait_for_state("ready after the resets", "Ready", 1)
+        .await;
+    assert_eq!(sequence(&seen), strings(&["Starting g1 a0", "Ready g1 a0"]));
+    assert_invariants(&seen);
+    let resets = std::fs::read_to_string(rig.root.join("resets.log")).unwrap_or_default();
+    assert_eq!(resets.lines().count(), 3, "the fake reset three fetches");
+    assert_eq!(rig.launch_count(), 1, "one launch served it all");
+    assert_eq!(
+        rig.requests().len(),
+        1,
+        "one fetch was served after the resets"
+    );
+    assert!(rig.sleeper.log().is_empty());
+    rig.stop().await;
+    report("reset-then-ready", &rig.sink.all(), &rig.sleeper.log());
     assert_no_panics();
 }
 
