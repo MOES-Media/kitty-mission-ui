@@ -1,7 +1,7 @@
 //! Supervision of one service process group per project (IC-08; FR-016 to FR-022, amended by A-02, A-03, A-05, A-06
 //! and A-10).
 //!
-//! One task owns the state machine of `data-model.md` (Supervision) and the only [`ChildGuard`]. It publishes every
+//! One task owns the state machine of `data-model.md` (Supervision) and the only `ChildGuard`. It publishes every
 //! transition through a [`StatusSink`]; the facade (WP09) implements the sink with `watch` plus `broadcast`.
 //!
 //! A *start* is up to [`MAX_ATTEMPTS`] launches under **one** `start_timeout` budget (A-03). A launch that dies
@@ -32,7 +32,7 @@ use crate::discovery::{Discovery, MissingReason, ServiceMissing};
 use crate::endpoint::ServiceEndpoint;
 use crate::status::{CoreStatus, DegradedReason, SupervisionState};
 
-pub use output::{OutputCapture, OutputRing};
+use output::OutputCapture;
 pub use policy::{
     BoxSleep, Clock, Decision, ManualClock, MonotonicClock, PolicyState, RecordingSleeper,
     RestartPolicy, Sleeper, TokioSleeper,
@@ -257,7 +257,9 @@ enum Attempt {
     PinUnparseable(String),
     Exited(String),
     NotOwned,
-    BudgetSpent { saw_503: bool },
+    BudgetSpent {
+        saw_503: bool,
+    },
     Cmd(Cmd),
 }
 
