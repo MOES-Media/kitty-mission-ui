@@ -26,7 +26,7 @@
       "last_event_id": "01M535DYNZY49F5A9HWYTB4DJH",
       "last_transition_at": "2026-10-16T20:11:07.839174+00:00",
       "review_result": {
-        "feedback_path": "/home/jeroennouws/dev/SK-missions/ui18/kitty-specs/mission-shell-01M50D2J/tasks/WP01-destinations-routes-and-displayed-sets/review-cycle-3.md",
+        "feedback_path": "kitty-specs/mission-shell-01M50D2J/tasks/WP01-destinations-routes-and-displayed-sets/review-cycle-3.md",
         "reference": "review-cycle://mission-shell-01M50D2J/WP01-destinations-routes-and-displayed-sets/review-cycle-3.md",
         "reviewer": "claude",
         "verdict": "approved"
@@ -43,7 +43,7 @@
       "last_event_id": "01M535DZ9MG6T69SV4MP49NJX2",
       "last_transition_at": "2026-10-16T20:11:08.468538+00:00",
       "review_result": {
-        "feedback_path": "/home/jeroennouws/dev/SK-missions/ui18/kitty-specs/mission-shell-01M50D2J/tasks/WP02-refresh-engine/review-cycle-3.md",
+        "feedback_path": "kitty-specs/mission-shell-01M50D2J/tasks/WP02-refresh-engine/review-cycle-3.md",
         "reference": "review-cycle://mission-shell-01M50D2J/WP02-refresh-engine/review-cycle-3.md",
         "reviewer": "claude",
         "verdict": "approved"
@@ -60,7 +60,7 @@
       "last_event_id": "01M535DZXP59JVQ0GB1KGR2S30",
       "last_transition_at": "2026-10-16T20:11:09.110989+00:00",
       "review_result": {
-        "feedback_path": "/home/jeroennouws/dev/SK-missions/ui18/kitty-specs/mission-shell-01M50D2J/tasks/WP03-shell-controller/review-cycle-1.md",
+        "feedback_path": "kitty-specs/mission-shell-01M50D2J/tasks/WP03-shell-controller/review-cycle-1.md",
         "reference": "review-cycle://mission-shell-01M50D2J/WP03-shell-controller/review-cycle-1.md",
         "reviewer": "claude",
         "verdict": "approved"
@@ -77,7 +77,7 @@
       "last_event_id": "01M535E0HS1W6GMA2RP5CGBGYY",
       "last_transition_at": "2026-10-16T20:11:09.753620+00:00",
       "review_result": {
-        "feedback_path": "/home/jeroennouws/dev/SK-missions/ui18/kitty-specs/mission-shell-01M50D2J/tasks/WP04-host-interface-modes-and-links/review-cycle-2.md",
+        "feedback_path": "kitty-specs/mission-shell-01M50D2J/tasks/WP04-host-interface-modes-and-links/review-cycle-2.md",
         "reference": "review-cycle://mission-shell-01M50D2J/WP04-host-interface-modes-and-links/review-cycle-2.md",
         "reviewer": "claude",
         "verdict": "approved"
@@ -94,7 +94,7 @@
       "last_event_id": "01M535E15H81P7NDB82EN43WNW",
       "last_transition_at": "2026-10-16T20:11:10.385556+00:00",
       "review_result": {
-        "feedback_path": "/home/jeroennouws/dev/SK-missions/ui18/kitty-specs/mission-shell-01M50D2J/tasks/WP05-intent-table-and-coverage-check/review-cycle-2.md",
+        "feedback_path": "kitty-specs/mission-shell-01M50D2J/tasks/WP05-intent-table-and-coverage-check/review-cycle-2.md",
         "reference": "review-cycle://mission-shell-01M50D2J/WP05-intent-table-and-coverage-check/review-cycle-2.md",
         "reviewer": "claude",
         "verdict": "approved"
@@ -111,7 +111,7 @@
       "last_event_id": "01M535E1SQC0CC96RR60TKBBH7",
       "last_transition_at": "2026-10-16T20:11:11.031138+00:00",
       "review_result": {
-        "feedback_path": "/home/jeroennouws/dev/SK-missions/ui18/kitty-specs/mission-shell-01M50D2J/tasks/WP06-svelte-view-bindings-and-shell-entry/review-cycle-3.md",
+        "feedback_path": "kitty-specs/mission-shell-01M50D2J/tasks/WP06-svelte-view-bindings-and-shell-entry/review-cycle-3.md",
         "reference": "review-cycle://mission-shell-01M50D2J/WP06-svelte-view-bindings-and-shell-entry/review-cycle-3.md",
         "reviewer": "claude",
         "verdict": "approved"
@@ -128,7 +128,7 @@
       "last_event_id": "01M535DY27ZFYS8TBJ6HD0QMN6",
       "last_transition_at": "2026-10-16T20:11:07.207157+00:00",
       "review_result": {
-        "feedback_path": "/home/jeroennouws/dev/SK-missions/ui18/kitty-specs/mission-shell-01M50D2J/tasks/WP07-shell-lint-io-markup-layering/review-cycle-1.md",
+        "feedback_path": "kitty-specs/mission-shell-01M50D2J/tasks/WP07-shell-lint-io-markup-layering/review-cycle-1.md",
         "reference": "review-cycle://mission-shell-01M50D2J/WP07-shell-lint-io-markup-layering/review-cycle-1.md",
         "reviewer": "claude",
         "verdict": "approved"
@@ -145,7 +145,7 @@
       "last_event_id": "01M535E2DNWPV8WSQ988ST880W",
       "last_transition_at": "2026-10-16T20:11:11.669343+00:00",
       "review_result": {
-        "feedback_path": "/home/jeroennouws/dev/SK-missions/ui18/kitty-specs/mission-shell-01M50D2J/tasks/WP08-stories-storybook-and-candidate-baselines/review-cycle-1.md",
+        "feedback_path": "kitty-specs/mission-shell-01M50D2J/tasks/WP08-stories-storybook-and-candidate-baselines/review-cycle-1.md",
         "reference": "review-cycle://mission-shell-01M50D2J/WP08-stories-storybook-and-candidate-baselines/review-cycle-1.md",
         "reviewer": "claude",
         "verdict": "approved"
@@ -162,7 +162,7 @@
       "last_event_id": "01M535E318KVG23GDDV2Q5FQY8",
       "last_transition_at": "2026-10-16T20:11:12.296406+00:00",
       "review_result": {
-        "feedback_path": "/home/jeroennouws/dev/SK-missions/ui18/kitty-specs/mission-shell-01M50D2J/tasks/WP09-baseline-finalisation-after-cp1/review-cycle-1.md",
+        "feedback_path": "kitty-specs/mission-shell-01M50D2J/tasks/WP09-baseline-finalisation-after-cp1/review-cycle-1.md",
         "reference": "review-cycle://mission-shell-01M50D2J/WP09-baseline-finalisation-after-cp1/review-cycle-1.md",
         "reviewer": "claude",
         "verdict": "approved"
@@ -179,7 +179,7 @@
       "last_event_id": "01M535E3N0BSXABWHVRE5B3DH1",
       "last_transition_at": "2026-10-16T20:11:12.928399+00:00",
       "review_result": {
-        "feedback_path": "/home/jeroennouws/dev/SK-missions/ui18/kitty-specs/mission-shell-01M50D2J/tasks/WP10-timings-docs-and-frozen-surface-wrap-up/review-cycle-1.md",
+        "feedback_path": "kitty-specs/mission-shell-01M50D2J/tasks/WP10-timings-docs-and-frozen-surface-wrap-up/review-cycle-1.md",
         "reference": "review-cycle://mission-shell-01M50D2J/WP10-timings-docs-and-frozen-surface-wrap-up/review-cycle-1.md",
         "reviewer": "claude",
         "verdict": "approved"
