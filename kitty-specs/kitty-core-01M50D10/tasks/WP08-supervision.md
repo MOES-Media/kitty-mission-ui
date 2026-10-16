@@ -13,8 +13,10 @@ requirement_refs:
 - FR-021
 - FR-022
 - NFR-001
+- NFR-004
 - NFR-005
 - NFR-006
+- C-002
 - C-006
 - SC-003
 planning_base_branch: feat/kitty-core-19
@@ -97,7 +99,9 @@ Facts:
 - **`Timings`** is defined by WP04 in `client.rs`. Use it, and do not redefine it.
 - **The digest check** (`ContractClient::check_contract`, `ContractPin`) comes from WP06, and **discovery** from WP07.
 - **The `[[bin]]` stanza** goes in `crates/kitty-core/Cargo.toml`, owned by WP01, as a recorded out-of-map edit made together with the binary file (R6-03).
-- **`CoreStatus` and `connection_state_hint`** live in `status.rs` (WP09). This WP publishes transitions through a small internal `StatusSink` trait that WP09 implements. Define the trait here, in `supervisor/mod.rs`.
+- **`CoreStatus` and `connection_state_hint`** live in `status.rs` (WP09). This WP publishes transitions through a **public** `pub trait StatusSink` (`#[doc(hidden)]` is fine), defined in `supervisor/mod.rs`, and a public entry point `pub fn spawn_supervisor(config, sink, runtime) -> SupervisorHandle` (`#[doc(hidden)]`). Both are listed in `contracts/kitty-core-api.md` under the supervisor seam (A2). WP09 implements the sink with `watch` plus `broadcast(64)`.
+- **Status types first.** `StatusSink::publish` takes a `CoreStatus`. WP08 needs that type before WP09 exists, so WP08 defines `SupervisionState`, `DegradedReason` and `CoreStatus` in `status.rs` as a recorded out-of-map edit (the file is WP09's). WP09 adds `connection_state_hint` and owns the file from then on.
+- **The `host` mode is not built here (A1).** It needs `kitty_core::Core`, which WP09 builds. This binary has **no** `host` arm, so it compiles at every WP08 commit. WP09 adds the arm and its test.
 
 ## Branch Strategy
 
@@ -116,7 +120,7 @@ Implementation command (orchestrator-run): `spec-kitty agent action implement WP
 
 **Steps**:
 1. `pub trait Clock: Send + Sync { fn now(&self) -> Instant; }`, with `MonotonicClock` in production and a `ManualClock` test type (`advance(Duration)`).
-2. `pub trait Sleeper: Send + Sync { fn sleep(&self, d: Duration) -> BoxFuture<'static, ()>; }`, with `TokioSleeper` in production and `RecordingSleeper` in tests (records each `d`, advances its `ManualClock`, returns at once).
+2. `pub type BoxSleep = Pin<Box<dyn Future<Output = ()> + Send + 'static>>` (std only; no `futures` crate, A12) and `pub trait Sleeper: Send + Sync { fn sleep(&self, d: Duration) -> BoxSleep; }`, with `TokioSleeper` in production and `RecordingSleeper` in tests (records each `d`, advances its `ManualClock`, returns at once).
 3. `RestartPolicy { delays: [500 ms, 1 s, 2 s, 4 s], window: 300 s, give_up_at: 5, reset_after_ready: 60 s }` (the `Default` values).
 4. `PolicyState { window: VecDeque<Instant>, index: usize }`, with these methods:
    - `on_ready_for(d)`: if `d ≥ 60 s`, set `index = 0`, but do **not** clear `window`.
@@ -194,7 +198,8 @@ Implementation command (orchestrator-run): `spec-kitty agent action implement WP
 7. **A start failure** runs the full stop sequence, then `Crashed`, then the policy. **Give-up** is `Stopped + ServiceMissing(Crashing, detail = the last failure cause or exit status or signal)` (FS2-03).
 8. **A mismatch** stops the group and gives `Stopped + ContractMismatch`, with no restart.
 9. **`retry()`** from `Stopped` clears the policy state and runs discovery again.
-10. **Publishing** goes through `StatusSink`. A send with no receiver is ignored.
+10. **Publishing** goes through the public `StatusSink`. A send with no receiver is ignored.
+11. **The public entry point.** `spawn_supervisor(config, sink, runtime) -> SupervisorHandle { stop(), retry(), join() }` is `#[doc(hidden)]` and `pub` (A2). WP09's `Core` wraps it, and tests can drive it with a recording sink.
 
 ### Subtask T044: `kitty-fake-service` and its `[[bin]]`
 
@@ -218,29 +223,34 @@ Implementation command (orchestrator-run): `spec-kitty agent action implement WP
    - `serve-modified`: `info.version` changed.
    - `serve-503`: every request gets 503.
    - `alive-no-bind`: alive, never binds.
-   - `fork-child`: spawns a grandchild copy in an idle mode that writes `<root>/grandchild.pid`, then serves `ready`.
-   - `host`: runs `kitty_core::Core` on its own runtime, with its own project root `<root>/inner`, supervising another `kitty-fake-service` in `ready` mode (located with `std::env::current_exe()`). When the inner service is `Ready`, it calls `std::process::exit(0)` without `stop()`.
-5. **Platform gating.** `ignore-term`, `fork-child` and `host` are `cfg(unix)`. Never print absolute paths to stdout.
+   - `fork-child`: spawns a grandchild copy in an idle mode that writes `<root>/grandchild.pid`, then serves as in `ready`. It honours `crashAfterMs`: the leader exits after that delay while the grandchild lives on (A5).
+   - **No `host` arm.** WP09 adds it (A1). An unknown mode makes the fake exit 2 with a message.
+5. **Platform gating.** `ignore-term` and `fork-child` are `cfg(unix)`. Never print absolute paths to stdout.
 
 ### Subtask T045: Supervision scenarios (`tests/supervision.rs`)
 
 **Purpose**: SC-003 and FR-016 to FR-022. Every scenario asserts the exact state sequence, the `RecordingSleeper` log, the generations, and no panics.
 
-**Steps**: one test per scenario, using the `Timings` test table (poll 10 ms, start 2 s, never-ready 300 ms, grace 300 ms):
+**Steps**: one test per scenario, using the `Timings` test table: poll 10 ms, start 2 s, grace 300 ms, and a **300 ms start budget in every budget-exhaustion scenario** (never-ready, serve-503, alive-no-bind; A3). Drive the supervisor through `spawn_supervisor` with a recording `StatusSink`.
 1. **`ready`:** `Starting(1)` then `Ready(1)`. The launch file shows exactly the two argv strings, with the canonical root, and an environment equal to the allowlist present in the test process. stdin is null: the fake asserts that a read returns EOF.
 2. **`crash-after` then `ready`:** `Ready`, `Crashed`, `Backoff(0.5 s)`, `Starting(2)`, `Ready(2)`. The sleeper log is `[0.5 s]`.
 3. **Five crashes:** the log is `[0.5, 1, 2, 4]`, then `Stopped + Crashing`, with the detail naming the last exit status.
 4. **Busy port.** The first scripted port is held by a squatter that accepts but holds its answer until the fake exits or for 200 ms. The fake exits (bind error), the exit wins, and the next attempt uses a different port and reaches `Ready`.
-5. **`alive-no-bind` with an immediate squatter** serving the pinned document, `cfg(target_os = "linux")`: the socket-ownership check fails on all 3 attempts. The result is a start failure and then the policy. `Ready` never occurs.
-6. **`serve-503`:** `Starting` until the budget is spent, then `Crashed`, then the policy, with the detail "start budget spent on 503s".
+5. **`alive-no-bind`, `cfg(target_os = "linux")` (A4).** Script the `PortPicker` with exactly 3 free ports, and run a `squatter` on each that answers at once with the pinned document. The socket-ownership check fails on all 3 attempts. Assert:
+   - 3 distinct ports were tried (from the launch files);
+   - the failure cause is "listening socket not owned by the service";
+   - `Ready` never occurs;
+   - the mismatches took **no** crash-window slot. The scenario file is `launches: [alive-no-bind, alive-no-bind, alive-no-bind, ready]`, and the picker then hands out free ports. The three mismatches make one start failure, so the sleeper log is exactly `[0.5 s]`, and the second start reaches `Ready` with generation 4 (attempts 1 to 3 were generations 1 to 3).
+6. **`serve-503`** (300 ms budget): `Starting` until the budget is spent, then `Crashed`, then the policy, with the detail "start budget spent on 503s" once the policy gives up.
 7. **`never-ready`** (300 ms start budget): a start failure, the full stop sequence (the pid is gone), then `Crashed`.
 8. **`exit-at-start` ×3:** a start failure after 3 attempts on 3 distinct ports.
 9. **`serve-modified`:** `Stopped + ContractMismatch`, with both digests, and the process group gone.
 10. **`stop()`:** `ready` stops within the grace period; `ignore-term` is killed after the 300 ms grace. In both cases `kill(pid, 0)` gives ESRCH afterwards.
 11. **`fork-child`:** after `stop()`, both the service and the grandchild pid are gone.
-12. **The leader exits, the grandchild lives (FS-07):** after the reap, the post-reap SIGKILL removes the grandchild within 1 s.
-13. **`host` mode** (`cfg(target_os = "linux")`): the test starts the host process directly, waits for `<root>/inner/service.pid`, waits for the host to exit, and asserts the inner service's pid is gone within 1 s. The WP proves this test red with the `prctl` call temporarily removed.
-14. **Missing binary** (`Discovery` returns `NotFound`): `Stopped + ServiceMissing(not-found)`. A non-executable file gives `Stopped + ServiceMissing(cannot-execute)`, with the OS error. Both have no retry loop: the sleeper log is empty.
+12. **The leader exits, the grandchild lives (FS-07, A5):** `fork-child` with `crashAfterMs: 50`. The leader exits and is reaped, and the post-reap SIGKILL removes the grandchild within 1 s.
+13. **The `host` mode scenario** is WP09's `tests/host_exit.rs` (A1). It is not here.
+14. **A project root that does not exist (A10):** `Stopped + ServiceMissing(cannot-execute)`, with the OS error from `canonicalize`. The sleeper log is empty, and no process was started.
+15. **Missing binary** (`Discovery` returns `NotFound`): `Stopped + ServiceMissing(not-found)`. A non-executable file gives `Stopped + ServiceMissing(cannot-execute)`, with the OS error. Both have no retry loop: the sleeper log is empty.
 
 ### Subtask T046: Determinism evidence (R5-08, NFR-006)
 
@@ -285,6 +295,7 @@ Per-subtask completion is recorded with `spec-kitty agent tasks mark-status <Txx
 
 **Recorded out-of-map edits** (each one is committed with a plain `git add <path>`, and listed in the hand-off with a one-line rationale):
 - `crates/kitty-core/Cargo.toml` (owned by WP01): add the `[[bin]] kitty-fake-service` stanza (`test = false`, `doc = false`) together with `src/bin/kitty-fake-service.rs` (R6-03).
+- `crates/kitty-core/src/status.rs` (owned by WP09; created empty by WP04): define `SupervisionState`, `DegradedReason` and `CoreStatus`, because the public `StatusSink` needs them (A2). WP09 adds `connection_state_hint` and owns the file from then on.
 
 A change you need in a file you do not own, and that this list does not name, is a **change request** in the hand-off (file, change, reason). It is not an edit.
 
@@ -299,19 +310,19 @@ Shared-file owners (`plan.md`, "Shared-file ownership"):
 | `crates/kitty-core/src/sse.rs`, `crates/kitty-core/tests/{stream,latency}.rs` | WP05 |
 | `crates/kitty-core/src/contract.rs`, `crates/kitty-core/tests/contract_check.rs` | WP06 |
 | `crates/kitty-core/src/discovery.rs`, `crates/kitty-core/tests/discovery.rs` | WP07 |
-| `crates/kitty-core/src/supervisor/**`, `crates/kitty-core/src/bin/**`, `crates/kitty-core/tests/supervision.rs` | WP08 |
-| `crates/kitty-core/src/{core,status}.rs`, `crates/kitty-core/tests/{status_mapping,panic_probe}.rs`, `crates/kitty-stub/tests/supervised.rs` | WP09 |
+| `crates/kitty-core/src/supervisor/**`, `crates/kitty-core/src/bin/**` (WP09 adds the `host` arm as a recorded out-of-map edit), `crates/kitty-core/tests/supervision.rs` | WP08 |
+| `crates/kitty-core/src/{facade,status}.rs`, `crates/kitty-core/tests/{status_mapping,panic_probe,host_exit}.rs`, `crates/kitty-stub/tests/supervised.rs` | WP09 |
 | `README.md`, `CHANGELOG.md`, `.github/workflows/ci.yml` | WP10 |
 | `gates/plants/rust/**`, `crates/kitty-core/tests/workspace.rs`, `scripts/hygiene/gitattributes.test.mjs`, `packages/**`, the four #17 files in `contracts/fixtures/` | nobody: never touched by this mission |
 
 **Gates this work package must pass before hand-off.** Each must exit 0. Run them from the lane worktree root, after confirming that `git rev-parse --show-toplevel` is that worktree.
 
-- **The Rust gate.** Run the two install steps first, then exactly the canonical string:
+- **The Rust gate.** Run the two install steps first, then the canonical string, unchanged, under `heavy` (memory safety; A11):
   ```
   rustup toolchain install && cargo fetch --locked
-  cargo fmt --all --check && cargo clippy --workspace --all-targets --frozen -- -D warnings && cargo test --workspace --frozen
+  heavy bash -c 'cargo fmt --all --check && cargo clippy --workspace --all-targets --frozen -- -D warnings && cargo test --workspace --frozen'
   ```
-- **The contract gate** (canonical string): `pnpm contract:check && pnpm test:contract`.
+- **The contract gate** (canonical string, under `heavy`): `heavy bash -c 'pnpm contract:check && pnpm test:contract'`.
 - **Hygiene and terminology:** `pnpm hygiene && pnpm test:scripts && pnpm test:terminology`. The terminology rule scans every `.rs` file under `crates/*/src` and `crates/*/tests`. The banned synonym for "mission" must not appear in any of them, not even in a `cfg(...)` attribute or a comment.
 
 - **Memory safety.** Wrap every gate-proof leg and every full test run in `heavy` (for example `heavy node scripts/gate-proof.mjs local --only contract`), and run it in the foreground. Never run browser or visual suites from this WP.

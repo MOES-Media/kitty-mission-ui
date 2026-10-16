@@ -87,6 +87,7 @@
         "artifact-rendering",
         "legacy-cleanup",
         "tests",
+        "tracker-integration",
         "workspace"
       ],
       "depends_on_lanes": [
@@ -182,8 +183,9 @@
         "WP09"
       ],
       "write_scope": [
-        "crates/kitty-core/src/core.rs",
+        "crates/kitty-core/src/facade.rs",
         "crates/kitty-core/src/status.rs",
+        "crates/kitty-core/tests/host_exit.rs",
         "crates/kitty-core/tests/panic_probe.rs",
         "crates/kitty-core/tests/status_mapping.rs",
         "crates/kitty-stub/tests/supervised.rs"
@@ -220,8 +222,8 @@
       "parallel_group": 6
     }
   ],
-  "computed_at": "2026-10-16T11:34:24.488966+00:00",
+  "computed_at": "2026-10-16T11:48:46.441240+00:00",
   "computed_from": "dependency_graph+ownership",
   "planning_artifact_wps": [],
-  "planning_commit_sha": "ed54bfe0e04eb6c407d577d8df913279e4f73cd8"
+  "planning_commit_sha": "307ba66ecc4dcfd67b7c6dde16e7db0a4f2d622f"
 }
