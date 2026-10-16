@@ -147,9 +147,26 @@ function driftScope(destination: Destination): string | null {
 }
 
 /** The table read by run-time strings: any (tag, event) may be absent. */
-type IntentLookup = Readonly<
-  Record<string, Readonly<Record<string, ((commands: IntentCommands, detail: unknown) => void | Promise<void>) | { readonly via: string }>> | undefined>
->;
+type IntentHandler = (commands: IntentCommands, detail: unknown) => void | Promise<void>;
+type IntentEntry = IntentHandler | { readonly via: string };
+type IntentLookup = Readonly<Record<string, Readonly<Record<string, IntentEntry>>>>;
+
+const table = INTENT_TABLE as unknown as IntentLookup;
+
+function ownEntry(tag: string, event: string): IntentEntry | undefined {
+  const events = Object.hasOwn(table, tag) ? table[tag] : undefined;
+  return events !== undefined && Object.hasOwn(events, event) ? events[event] : undefined;
+}
+
+function resolveHandler(tag: string, event: string): IntentHandler | undefined {
+  const entry = ownEntry(tag, event);
+  if (typeof entry === 'function') return entry;
+  if (typeof entry === 'object' && entry !== null && typeof entry.via === 'string') {
+    const hosted = ownEntry(entry.via, event);
+    return typeof hosted === 'function' ? hosted : undefined;
+  }
+  return undefined;
+}
 
 const CLOSED_DIALOG: PickerState['dialog'] = { open: false, location: '', folders: [], selected: null, status: 'ready' };
 const FRESH_PICKER: PickerState = { status: 'loading', entries: [], dialog: CLOSED_DIALOG };
@@ -628,12 +645,10 @@ export function createShellController(options: ShellControllerOptions): ShellCon
     },
     windowRefocused: () => explicitRefresh('refocus'),
     intent(tag, event, detail) {
-      // One hop at most: a nested element's `via` names the hosting element whose entry handles the same event.
-      const table = INTENT_TABLE as unknown as IntentLookup;
-      const entry = table[tag]?.[event];
-      const handler = entry !== undefined && 'via' in entry ? table[entry.via]?.[event] : entry;
-      if (handler === undefined || 'via' in handler) return Promise.resolve();
-      return Promise.resolve(handler(intentCommands, detail));
+      // Own properties only: a name inherited from Object.prototype is no pair. One hop at most: a nested element's `via`
+      // names the hosting element whose entry handles the same event.
+      const handler = resolveHandler(tag, event);
+      return handler === undefined ? Promise.resolve() : Promise.resolve(handler(intentCommands, detail));
     },
     setQuery: (value) => mutate(() => (query = value)),
     setFilter: (value) => mutate(() => (filter = value)),
