@@ -5,7 +5,7 @@
   "friendly_name": "mission-shell: shared Svelte 5 shell over the MissionStatusClient port",
   "mid8": "01M50D2J",
   "mission_id": "01M50D2JBWV6TYMCYCK6ADFWKF",
-  "mission_number": null,
+  "mission_number": 5,
   "mission_slug": "mission-shell-01M50D2J",
   "mission_type": "software-dev",
   "pr_bound": true,
