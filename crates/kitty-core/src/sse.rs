@@ -1,6 +1,6 @@
 //! The change stream (IC-05): `GET /api/v1/events` relayed as raw changes, in order (FR-007 to FR-010).
 //!
-//! [`FrameReader`] is a pure, byte-fed SSE parser. [`ChangeStream`] owns one connection and one reader, and yields
+//! [`ChangeStream`] owns one connection and one byte-fed SSE parser (no I/O), and yields
 //! [`StreamEvent`]s: any number of changes and diagnostics, then at most one terminal item, then `None` forever.
 //! Nothing is interpreted, reconnected or remembered here: reconnect, cursor bookkeeping and `resync` belong to the
 //! adapters (C-003).
