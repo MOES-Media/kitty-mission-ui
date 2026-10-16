@@ -48,6 +48,7 @@ flag and is confirmed or amended by the operator at CP-1 (`plan.md`, "Design rev
 | Where | Copy |
 |---|---|
 | Project head eyebrow | Project |
+| Mission sidebar back link (confirmed at CP-1) | All Missions |
 | Mission not found (Pipeline `errorMessage`) | This Mission could not be found. It may have been removed. |
 | Read failed with no data (`errorMessage`, where the screen has no refusal property) | The data could not be loaded. |
 | Shell chrome error (`sk-mission-shell` `errorMessage`) | The project could not be loaded. |
