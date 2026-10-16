@@ -13,7 +13,7 @@
       "wp": null
     },
     "#17": {
-      "evidence_ref": "<link or commit>",
+      "evidence_ref": "Predecessor mission (M1 Bootstrap), merged as PR #32; cited for the port, stub and SC-004 freeze only.",
       "fr": null,
       "nfr": null,
       "repo": null,
@@ -21,7 +21,7 @@
       "scope": null,
       "source_file": "spec.md",
       "title": "<fill at WP-implementation time>",
-      "verdict": "unknown",
+      "verdict": "not-applicable",
       "wp": null
     },
     "#18": {
