@@ -32,7 +32,8 @@
       "notes": [
         "Ready for review: logic (Node) + unit (Chromium) projects, setup files, sentinel, routes, displayed sets. logic 27 tests, unit 69, total 96. No fallback.",
         "Review cycle 1 fixed: setup files drain in afterEach+afterAll, record on globalThis; 3 probes x 2 projects fail the run; WP_ID_MAX_LENGTH copy check added",
-        "Review cycle 2 fixed: setup files intercept nothing; 4 probes x 2 projects exit 1 with setup and control"
+        "Review cycle 2 fixed: setup files intercept nothing; 4 probes x 2 projects exit 1 with setup and control",
+        "Cycle 3 approved (64ec162). Setup files are inert (comment + export {}), so failure handling is Vitest's default. 16 probes (in-test, afterAll async, afterAll sync, --isolate=false cross-file; logic and unit; each with a no-setupFiles control) all exit 1. Listener throw during dispatchEvent in Chromium also exits 1. Passing run 96 = logic 27 + unit 69. Routes, displayed sets (literal oracle), WP_ID_MAX_LENGTH YAML pin, lint, no-io, typecheck, hygiene, terminology and frozen surface verified in cycles 1-2; only owned files touched. Note for WP03/WP06: NFR-007 relies on Vitest's run-level Unhandled Errors exit 1, so do not add catch-and-log in shell code, do not set dangerouslyIgnoreUnhandledErrors, and do not register consuming process/window listeners in tests. No passive observer is needed."
       ],
       "provider": "__resolved_provider_absent__",
       "review": null,
