@@ -385,7 +385,10 @@ public mount surface's subscriptions (R5-07), NFR-001 on a mounted property, and
 4. **Via exactly once**: for each `via` entry, spy on `controller.intent`-observable effects (a recording client or
    host call count, or a `routeChanged` count) and assert exactly **one** effect per dispatch, not two.
 5. `banners.test.ts` (FR-011, SC-003, NFR-004): drive the fixture's connection state (its test hook, imported by
-   relative path as WP03 does) through all five conditions and assert the `sk-notice`'s `tone` and `announce`
+   relative path as WP03 does) through all five conditions. Four come from the connection state (`connecting`,
+   `reconnecting`, `degraded: service-missing`, `degraded: contract-mismatch`). **The fifth (B3)** is a fixture created
+   with `examples: { streamEvents: 'StreamRefusal.content-mismatch' }`: assert the live-updates-off `sk-notice`, and
+   that a read still applies afterwards. For all five, and assert the `sk-notice`'s `tone` and `announce`
    attributes and its title against `contracts/connection-presentation.md`; `connected` shows no `sk-notice` in the
    same render. Timing with the fake scheduler: `reconnecting` shows nothing at 999 ms and the banner at 1000 ms; a
    degraded banner appears without advancing time. Zero thrown errors across the five (the setup file enforces it).
@@ -455,7 +458,9 @@ public mount surface's subscriptions (R5-07), NFR-001 on a mounted property, and
 3. Run `heavy pnpm test:no-io` and `pnpm test:data-driven` (Node-only Vitest runs; both self-tests name the kept
    `src/Shell.svelte`).
 4. Run `heavy pnpm gate-proof leg --gate unit-tests` in the foreground: the base run is green and every plant,
-   including P-1 and P-7, turns red on its token. Record the local leg time in the final report (IC-09 sets the
+   including P-1 and P-7, turns red on its token. This leg also proves P-1 with WP03's
+   `test/logic/controller-recording.test.ts` present (B1): both that test and WP02's fail with
+   `refresh-policy mismatch on missions` under P-1, and the token is absent from the clean run. Record the local leg time in the final report (IC-09 sets the
    provisional matrix timeout from it).
 
 **Files**: `gates/plants/unit-tests/plant.json` (out-of-map).

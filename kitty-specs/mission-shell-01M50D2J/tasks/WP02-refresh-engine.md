@@ -320,7 +320,9 @@ port (R5-08, C-003).
 4. `test/support/recording-client.ts`: a recording proxy over any client. Each read records
    `"<op> <canonical params>"`, where canonical params are JSON with recursively sorted keys and `undefined` dropped
    (`getMission {"path":{"missionId":"…"}}`, `listMissions {}`). It also counts `subscribe`, unsubscribe,
-   `connection.onChange` and its releases (WP03's FR-007 test). It delegates everything else. Note:
+   `connection.onChange` and its releases (WP03's FR-007 test). It **records each `subscribe` call's arguments** (the
+   scope, or `undefined`; B2), so that WP03 can assert no `SubscriptionScope` or stream cursor is ever passed, with no
+   edit to `test/support/**`. It delegates everything else. Note:
    `setConnectionState` must be called on the **inner fixture client** (the fixture keys its hook by instance).
 5. `test/support/engine-harness.ts`: `mountEngine({ client, destination, scheduler })`, test-only: one unscoped
    subscription; stream changes → `refreshKeys` → `request(key, 'stream')`; `resync` → `requestAll('resync')`;
