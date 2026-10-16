@@ -69,10 +69,9 @@ const slotOf = (r: Rig, key: ResourceKey): ResourceSlot => {
 };
 
 describe('transitions (data-model "Read scheduling")', () => {
-  it('a stream request on an idle slot issues at once, goes in flight and arms the window', () => {
+  it('a navigation onto a new key issues at once, goes in flight and arms the window', () => {
     const r = rig();
     r.sched.setDisplayed([MISSION]);
-    r.fake.pending();
     expect(r.calls()).toHaveLength(1);
     const slot = slotOf(r, MISSION);
     expect(slot.inFlight).toBe(true);
@@ -236,7 +235,7 @@ describe('navigation (data-model "Navigation")', () => {
     expect(second).toBeGreaterThan(first);
     expect(third).toBeGreaterThan(second);
     expect(r.calls()).toHaveLength(3);
-    // The reads settle in reverse order: the first A read last.
+    // The first A read settles first and is dropped (its slot was removed); the third read is shown.
     await r.settle('getMission', { v: 'A1' });
     r.client.resolveAt(2, ok('getMission', { v: 'A2' }));
     await flushMicrotasks();
@@ -328,6 +327,18 @@ describe('the connection gate', () => {
     expect(r.calls()).toHaveLength(1);
   });
 
+  it('F2: a trailing read is not issued by the window timer or a settle once the gate has closed', async () => {
+    let open = true;
+    const r = rig({ open: () => open });
+    r.sched.setDisplayed([MISSION]);
+    r.sched.request(MISSION, 'stream');
+    open = false;
+    await r.fake.advance(100);
+    expect(r.calls()).toHaveLength(1);
+    await r.settle('getMission', { v: 'x' });
+    expect(r.calls()).toHaveLength(1);
+  });
+
   it('observe reports none, none, degraded-before-first, first-connected for connecting, reconnecting, degraded, connected', () => {
     const gate = createConnectionGate('connecting');
     expect(gate.isOpen()).toBe(false);
@@ -346,17 +357,30 @@ describe('the connection gate', () => {
     expect(gate.observe('connected')).toBe('none');
   });
 
-  it('an initial connected is already open and reports first-connected once', () => {
+  it('an initial connected is open, reports first-connected as its initial observation, and needs no observe', () => {
     const gate = createConnectionGate('connected');
     expect(gate.isOpen()).toBe(true);
-    expect(gate.observe('connected')).toBe('first-connected');
-    expect(gate.observe('connected')).toBe('none');
+    expect(gate.initial()).toBe('first-connected');
+  });
+
+  it('F1: after an initial connected, reconnecting then connected is reconnected', () => {
+    const gate = createConnectionGate('connected');
+    expect(gate.observe('reconnecting')).toBe('none');
+    expect(gate.observe('connected')).toBe('reconnected');
+  });
+
+  it('F1: after reset onto a connected client, reconnecting then connected is reconnected', () => {
+    const gate = createConnectionGate('connecting');
+    gate.observe('connected');
+    expect(gate.reset('connected')).toBe('first-connected');
+    expect(gate.observe('reconnecting')).toBe('none');
+    expect(gate.observe('connected')).toBe('reconnected');
   });
 
   it('an initial degraded state is degraded-before-first until the first connected', () => {
     const gate = createConnectionGate('degraded: contract-mismatch');
     expect(gate.isOpen()).toBe(false);
-    expect(gate.observe('degraded: contract-mismatch')).toBe('degraded-before-first');
+    expect(gate.initial()).toBe('degraded-before-first');
     expect(gate.observe('connected')).toBe('first-connected');
   });
 
@@ -372,9 +396,9 @@ describe('the connection gate', () => {
   it('FS2-01: reset onto a connected client reports first-connected at once', () => {
     const gate = createConnectionGate('connecting');
     gate.observe('connected');
-    gate.reset('connected');
+    expect(gate.reset('connected')).toBe('first-connected');
     expect(gate.isOpen()).toBe(true);
-    expect(gate.observe('connected')).toBe('first-connected');
+    expect(gate.initial()).toBe('first-connected');
   });
 });
 

@@ -82,7 +82,6 @@ export function mountEngine(options: EngineOptions): Engine {
   });
   const changes: Change[] = [];
 
-  gate.observe(client.connection.state);
   scheduler.setDisplayed(displayed);
 
   const unsubscribe = client.subscribe((change) => {

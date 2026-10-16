@@ -131,7 +131,7 @@ export function createReadScheduler(options: ReadSchedulerOptions): ReadSchedule
     if (entry.removed) return;
     const { slot } = entry;
     slot.windowTimer = null;
-    if (slot.trailing && !slot.inFlight) {
+    if (slot.trailing && !slot.inFlight && isOpen()) {
       slot.trailing = false;
       issue(entry);
       armWindow(entry);
@@ -157,7 +157,7 @@ export function createReadScheduler(options: ReadSchedulerOptions): ReadSchedule
         return;
       }
     }
-    if (slot.trailing && slot.windowTimer === null) {
+    if (slot.trailing && slot.windowTimer === null && isOpen()) {
       slot.trailing = false;
       issue(entry);
       armWindow(entry);
@@ -283,10 +283,8 @@ export function createReadScheduler(options: ReadSchedulerOptions): ReadSchedule
     },
     requestAll(trigger) {
       if (!isOpen()) return;
-      for (const entry of entries.values()) {
-        void trigger;
-        bypass(entry);
-      }
+      void trigger;
+      for (const entry of entries.values()) bypass(entry);
     },
     loadMore,
     restartFromFirstPage(key) {
@@ -311,27 +309,34 @@ export function createReadScheduler(options: ReadSchedulerOptions): ReadSchedule
 export type GateObservation = 'first-connected' | 'reconnected' | 'degraded-before-first' | 'none';
 
 export interface ConnectionGate {
-  /** Classifies the next state of the client's connection. */
+  /** Classifies the next state of the client's connection (a change reported by `connection.onChange`). */
   observe(next: ConnectionState): GateObservation;
   /** False until the client's first `connected`; while false nothing is read. */
   isOpen(): boolean;
-  /** `setClient`: forgets the mark and starts again from the new client's state. */
-  reset(state: ConnectionState): void;
+  /** The classification of the state the gate was created or last reset with: `first-connected` for a client that is
+   *  already `connected`, `degraded-before-first` for a `degraded` one, `none` otherwise. The port's `onChange` does not
+   *  replay the current state, so the caller does NOT call `observe` for it: when this is `first-connected` the caller
+   *  issues the displayed set (a bypass, not a `resync`). */
+  initial(): GateObservation;
+  /** `setClient`: forgets the mark and starts again from the new client's state. Returns `initial()`. */
+  reset(state: ConnectionState): GateObservation;
 }
 
 /**
  * The gate and the first-`connected` mark of one client (FS-01, FS-02, FS2-01). Pure logic: no timers, no I/O. A client
- * that is already `connected` when the gate is created or reset is open at once and reports `first-connected` once. The
- * first `connected` is not a `resync`: the caller issues the displayed set itself.
+ * that is already `connected` when the gate is created or reset counts as having had its first `connected`: the gate is
+ * open and the mark is set, so a later `connected` after `reconnecting` is `reconnected`. The first `connected` is not a
+ * `resync`: the caller issues the displayed set itself.
  */
 export function createConnectionGate(initial: ConnectionState): ConnectionGate {
   let open = false;
-  let reported = false;
   let last: ConnectionState = initial;
-  const start = (state: ConnectionState): void => {
+  let first: GateObservation = 'none';
+  const start = (state: ConnectionState): GateObservation => {
     open = state === 'connected';
-    reported = false;
     last = state;
+    first = open ? 'first-connected' : state.startsWith('degraded') ? 'degraded-before-first' : 'none';
+    return first;
   };
   start(initial);
   return {
@@ -339,8 +344,7 @@ export function createConnectionGate(initial: ConnectionState): ConnectionGate {
       const previous = last;
       last = next;
       if (next === 'connected') {
-        if (!reported) {
-          reported = true;
+        if (!open) {
           open = true;
           return 'first-connected';
         }
@@ -349,6 +353,7 @@ export function createConnectionGate(initial: ConnectionState): ConnectionGate {
       return !open && next.startsWith('degraded') ? 'degraded-before-first' : 'none';
     },
     isOpen: () => open,
+    initial: () => first,
     reset: start,
   };
 }
