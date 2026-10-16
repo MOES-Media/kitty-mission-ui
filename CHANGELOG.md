@@ -6,6 +6,46 @@ All user-visible changes to this repository. Per-package notes live in `packages
 
 ### Added
 
+- **Kitty core: the shared host core that finds, supervises and reads from the Mission Status service** (`#19`). Before,
+  `crates/kitty-core` was a skeleton, so each host would have had to start the service and talk to it on its own. Now
+  Kitty Desktop (#20) and Kitty Dashboard (#21) get one tested core.
+  - **Discovery.** A configured absolute path, then `KITTY_MISSION_STATUS_SERVICE`, then a `PATH` search for
+    `mission-status-api` over absolute entries. An explicit choice that is invalid never falls back. Discovery runs at
+    the first start, on `retry()` and at every restart after a crash.
+  - **Supervision.** One service process group per `Core`, started with only the two upstream launch options and a
+    cleared environment. A crashed service restarts after 0.5, 1, 2 and 4 s; the 5th crash within 300 s stops it.
+    On Linux the service dies with its parent. Dropping the last `Core` clone kills the group; `stop().await` stops it
+    gracefully.
+  - **The digest check.** Before a service counts as `Ready`, its contract document must hash to the pinned digest.
+    A mismatch stops the service and answers every read and stream with `ContractMismatch`, without sending a request.
+  - **Relay.** `Core::read` and `Core::open_stream` return the service's answer unchanged (reads never reject), and
+    `forward()` passes a request through for the dashboard. Relay latency measured here: p50 138 us, p95 157 us in a
+    debug build, and p50 34 us, p95 48 us in a release build.
+  - **Host API.** `CoreConfig` has no `Default` and no builder: a host fills all ten fields. `ReadOutcome` and
+    `StreamOpenError` are `#[non_exhaustive]`, so a host's `match` needs a `_ =>` arm. `StreamOpenError` is not `Copy`.
+    `connection_state_hint` maps a status to the five `ConnectionState` strings of the shell's port. A pin that cannot
+    be parsed gives `Stopped` with `ContractMismatch`, an all-zero `expected` digest that a host must not show or
+    compare, and an `Unparseable` `actual`.
+  - **Stub extensions.** `kitty-stub` accepts `--openapi`, `--select`, `--select-fixture` and the service's own launch
+    options `--mission-status.port` and `--mission-status.project-root`, and reads `<project-root>/.kitty-stub/fixtures`
+    by default, so Kitty core can supervise it as a stand-in for the service.
+  - **A generated contract bundle.** `contracts/fixtures/mission-status.openapi.json`, written by
+    `pnpm contract:generate` and checked by `Gate: contract`. One new planted defect (a stale bundle) proves the check.
+  - **Proof-leg timeouts.** The `contract` proof leg rises from 19 to 21 minutes, by the formula for the larger plant
+    set. The `rust` leg stays at 5. Both are re-derived from the pull request's first CI run.
+
+  Notes for #20, #21 and #22:
+  - **#20.** Windows needs Job Objects and `PATHEXT` handling, which Kitty core does not have. A GUI app started by
+    launchd on macOS gets a minimal `PATH`, so configure a service path. macOS has no parent-death signal, so a
+    killed host leaves the service running. A macOS-quarantined binary that the system kills shows as a signal exit, so
+    five such exits give `service-missing` with the reason `crashing`.
+  - **#21.** `forward()` sends exactly a `Host` and the caller's `Accept` header, and puts no cap and no deadline on the
+    response body: apply your own limits. A refused stream whose body is over 16 MiB or never ends arrives as
+    `Unavailable`, not `Refused`.
+  - **#22.** The service needs a liveness endpoint, because a hung service whose process stays alive stays `Ready`. It
+    should exit when its parent dies, identify its project and pid, run in its own session (`setsid`), accept
+    `JAVA_HOME` through `env_passthrough`, and say whether its contract document is bundled or unbundled.
+
 - **Phase 0 bootstrap: Kitty Desktop and Kitty Dashboard can now be built on one shared shell, one client interface and
   a local stand-in for the Mission Status service** (`#17`). Before, the repository held only the Lit screens, with no
   host to run them in and no way to exercise them against service data. Now the hosts (#20, #21) and the next missions
