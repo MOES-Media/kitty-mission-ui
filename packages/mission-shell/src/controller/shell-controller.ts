@@ -187,7 +187,8 @@ export function createShellController(options: ShellControllerOptions): ShellCon
   const initial = normaliseRoute(options.route ?? (options.client === null && mode === 'desktop' ? '/projects' : '/missions'), mode);
   let destination: Destination = initial.destination;
   let destroyed = false;
-  let now: string | null = null;
+  // The clock when the controller is created, and again whenever a port read or a host result is applied (CP-1 A4).
+  let now: string | null = clock().toISOString();
   let copyResult: DriftCopyResult | null = null;
   let copyToken = 0;
   let rescanKey: string | null = null;
@@ -370,8 +371,7 @@ export function createShellController(options: ShellControllerOptions): ShellCon
     filter = '';
     selected = null;
     expandedByMission.clear();
-    drawerOpen = false;
-    flyoutOpen = false;
+    // drawerOpen and flyoutOpen are shell-wide, for the life of the mounted shell: a client swap keeps them (CP-1 A5).
     copyResult = null;
     copyToken += 1;
     rescanKey = null;
@@ -397,6 +397,7 @@ export function createShellController(options: ShellControllerOptions): ShellCon
     emit();
     const answer = await safeListRecentProjects(host);
     if (destroyed || seq !== projectsSeq) return;
+    now = clock().toISOString();
     picker = answer.ok
       ? { ...picker, status: answer.entries.length === 0 ? 'empty' : 'ready', entries: answer.entries }
       : { ...picker, status: 'error', entries: [] };
@@ -410,6 +411,7 @@ export function createShellController(options: ShellControllerOptions): ShellCon
     emit();
     const answer = await safeListFolders(host, location);
     if (destroyed || seq !== foldersSeq) return;
+    now = clock().toISOString();
     const dialog = picker.dialog;
     const folders: readonly FolderEntry[] = answer.ok ? answer.folders : dialog.folders;
     picker = {

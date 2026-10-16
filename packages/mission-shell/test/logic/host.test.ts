@@ -423,6 +423,24 @@ describe('the desktop picker flows (FR-014)', () => {
   });
 });
 
+describe('A4: now follows host results', () => {
+  it('is set at creation and moves when the project listing and a folder listing are applied', async () => {
+    let time = new Date('2026-10-01T10:00:00.000Z');
+    const rec = recordingHost();
+    const { controller, fake } = rig({ mode: 'desktop', route: '/projects', host: rec.host, clock: () => time }, null);
+    expect(controller.snapshot().now).toBe('2026-10-01T10:00:00.000Z');
+    time = new Date('2026-10-01T10:07:00.000Z');
+    await settle(fake);
+    expect(controller.snapshot().screen).toMatchObject({ status: 'ready' });
+    expect(controller.snapshot().now).toBe('2026-10-01T10:07:00.000Z');
+    time = new Date('2026-10-01T10:09:00.000Z');
+    void controller.intent('sk-projects-screen', 'sk-request-open-project', {});
+    await settle(fake);
+    expect(controller.snapshot().now).toBe('2026-10-01T10:09:00.000Z');
+    controller.destroy();
+  });
+});
+
 describe('the refocus subscription (R-11)', () => {
   it('registers once, re-reads on Ops only, releases on setClient and destroy', async () => {
     const rec = recordingHost();

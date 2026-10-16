@@ -326,7 +326,8 @@ describe('the connection gate (FS-01, FS-02), observed before the fake scheduler
     expect(snapshot.screen).toMatchObject({ status: 'error' });
     expect(snapshot.chrome.status).toBe('error');
     expect(snapshot.connection.condition).toBe('service-missing');
-    expect(snapshot.connection.copy).toEqual(SHELL_COPY.banners['service-missing']);
+    // A2: nothing was loaded, so the sentence about loaded data is dropped.
+    expect(snapshot.connection.copy).toEqual(SHELL_COPY.degradedWithoutData['service-missing']);
     setConnectionState(inner, 'connected');
     expect(sorted(client.take())).toEqual(INITIAL_MISSIONS);
     expect(tap.kinds).not.toContain('resync');
@@ -556,7 +557,8 @@ describe('now', () => {
   it('is the clock at apply time; advancing the fake scheduler alone does not change it', async () => {
     let time = new Date('2026-10-01T10:00:00.000Z');
     const { deferred, controller, fake } = deferredRig('/missions', 'connected', { clock: () => time });
-    expect(controller.snapshot().now).toBeNull();
+    expect(controller.snapshot().now).toBe('2026-10-01T10:00:00.000Z'); // A4: set from the clock at creation
+    time = new Date('2026-10-01T10:00:00.000Z');
     deferred.resolveNext('getProject', ok('getProject', { name: 'p' }));
     await flushMicrotasks();
     expect(controller.snapshot().now).toBe('2026-10-01T10:00:00.000Z');
@@ -566,6 +568,27 @@ describe('now', () => {
     deferred.resolveNext('listMissions', ok('listMissions', page('p1', null)));
     await flushMicrotasks();
     expect(controller.snapshot().now).toBe('2026-10-01T10:05:00.000Z');
+  });
+});
+
+describe('A4: now before any port read', () => {
+  it('is the clock at creation, with no client and no read', () => {
+    const { controller } = rig('/projects', {}, { client: null, clock: () => new Date('2026-10-01T09:00:00.000Z') });
+    expect(controller.snapshot().now).toBe('2026-10-01T09:00:00.000Z');
+  });
+});
+
+describe('A5: setClient keeps the shell-wide session flags', () => {
+  it('keeps drawerOpen and flyoutOpen over a client swap, and still resets the per-client session', () => {
+    const { controller, fake } = rig(`/missions/${M}/artifacts`);
+    controller.intent('sk-mission-shell', 'sk-toggle-drawer', { open: true, reason: 'hamburger' });
+    controller.intent('sk-mission-shell', 'sk-toggle-flyout', { open: true, reason: 'activate' });
+    controller.setQuery('abc');
+    expect(controller.snapshot().session).toMatchObject({ drawerOpen: true, flyoutOpen: true });
+    controller.setClient(createFixtureClient({ scheduler: fake }));
+    expect(controller.snapshot().session).toMatchObject({ drawerOpen: true, flyoutOpen: true });
+    controller.setClient(null);
+    expect(controller.snapshot().session).toMatchObject({ drawerOpen: true, flyoutOpen: true });
   });
 });
 

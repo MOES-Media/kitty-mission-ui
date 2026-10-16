@@ -18,7 +18,7 @@ import type {
   WpScreenStatus,
 } from '@moes-media/mission-ui';
 import { bannerCopy, SHELL_COPY, type BannerText, type ConnectionCondition, type ShellCopyOverrides } from '../core/connection';
-import type { ResourceKey } from '../core/displayed';
+import { displayedKeys, type ResourceKey } from '../core/displayed';
 import { LAYOUT, routeHref, type Destination, type Layout, type ShellMode } from '../core/routes';
 
 /** What the builder reads of a slot: the value, the EFFECTIVE view (loading/degraded rules applied) and the refusal. */
@@ -466,6 +466,11 @@ function screenOf(input: SnapshotInput): ScreenModel {
   }
 }
 
+/** Whether any data is on screen: a key the destination displays holds a value (CP-1 A2). */
+function dataLoaded(input: SnapshotInput): boolean {
+  return displayedKeys(input.destination).some((key) => input.read(key).value !== undefined);
+}
+
 export function buildSnapshot(input: SnapshotInput): ShellSnapshot {
   const { destination } = input;
   return {
@@ -477,7 +482,7 @@ export function buildSnapshot(input: SnapshotInput): ShellSnapshot {
     connection: {
       state: input.connectionState,
       condition: input.condition,
-      copy: input.condition === null ? null : bannerCopy(input.condition, input.copyOverrides),
+      copy: input.condition === null ? null : bannerCopy(input.condition, input.copyOverrides, dataLoaded(input)),
       refused: input.refused,
     },
     session: { expanded: input.expanded === undefined ? NO_FOLDERS : input.expanded, drawerOpen: input.drawerOpen, flyoutOpen: input.flyoutOpen },

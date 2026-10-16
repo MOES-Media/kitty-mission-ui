@@ -9,6 +9,7 @@
   import { formatRoute } from '../core/routes';
   import { bindIntents } from './bind-intents';
   import ConnectionBanner from './ConnectionBanner.svelte';
+  import { UI_COPY } from './copy';
   import { navigationOf } from './navigation';
   import type { ShellOptions } from './options';
   import RefreshButton from './RefreshButton.svelte';
@@ -78,6 +79,11 @@
   const snapshot = $derived(mirror.snapshot);
   const navigation = $derived(navigationOf(snapshot));
   const Screen = $derived(SCREENS[snapshot.destination.screen]);
+  // While a degraded banner explains the cause, the chrome shows no error and no Retry of its own (CP-1 A1). Any other
+  // chrome error, with no banner, is shown as before.
+  const degraded = $derived(snapshot.connection.condition === 'service-missing' || snapshot.connection.condition === 'contract-mismatch');
+  const chromeStatus = $derived(degraded && snapshot.chrome.status === 'error' ? 'ready' : snapshot.chrome.status);
+  const chromeError = $derived(degraded ? '' : snapshot.chrome.errorMessage);
 </script>
 
 <sk-mission-shell
@@ -90,11 +96,12 @@
   footerItem={navigation.footerItem}
   project={snapshot.chrome.project}
   mission={snapshot.chrome.mission}
-  status={snapshot.chrome.status}
-  errorMessage={snapshot.chrome.errorMessage}
+  status={chromeStatus}
+  errorMessage={chromeError}
   drawerOpen={snapshot.session.drawerOpen}
   flyoutOpen={snapshot.session.flyoutOpen}
 >
+  <span slot="brand">{UI_COPY.brand[snapshot.mode]}</span>
   <RefreshButton {snapshot} {controller} />
   <Trees {snapshot} />
   <ConnectionBanner {snapshot} />

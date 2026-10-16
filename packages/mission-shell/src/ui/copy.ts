@@ -15,6 +15,11 @@ export const UI_COPY = {
     workPackages: 'Work Packages',
     artifacts: 'Artifacts',
   },
+  /** The product name beside the mark; it follows the mode (CP-1 A3). */
+  brand: {
+    desktop: 'kitty desktop',
+    dashboard: 'kitty dashboard',
+  },
   refresh: {
     label: 'Refresh',
     artifacts: 'Refresh artifacts',

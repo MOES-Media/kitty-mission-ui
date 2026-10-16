@@ -40,6 +40,14 @@ export const SHELL_COPY = {
       body: 'The service refused the change stream. Views are not updated automatically; navigate or refresh to read again.',
     },
   } as const satisfies Record<ConnectionCondition, BannerText>,
+  /** The two degraded bodies when no data has been loaded: the loaded-data sentence is dropped (CP-1 A2). */
+  degradedWithoutData: {
+    'service-missing': { title: 'Service not available', body: 'The Mission Status service could not be found or started.' },
+    'contract-mismatch': {
+      title: 'Incompatible service',
+      body: 'The Mission Status service speaks a different contract version than this app.',
+    },
+  } as const satisfies Partial<Record<ConnectionCondition, BannerText>>,
   projectEyebrow: 'Project',
   missionNotFound: 'This Mission could not be found. It may have been removed.',
   readFailed: 'The data could not be loaded.',
@@ -49,10 +57,15 @@ export const SHELL_COPY = {
   backToMissions: 'All Missions',
 } as const;
 
-/** The title and body of a condition; only the two degraded ones take an override. */
-export function bannerCopy(condition: ConnectionCondition, overrides: ShellCopyOverrides = {}): BannerText {
+/**
+ * The title and body of a condition; only the two degraded ones take an override (a host override is shown as given).
+ * `dataLoaded` is whether any data is on screen: the two degraded defaults say "Data that was already loaded stays visible."
+ * only then (CP-1 A2).
+ */
+export function bannerCopy(condition: ConnectionCondition, overrides: ShellCopyOverrides = {}, dataLoaded = true): BannerText {
   if (condition === 'service-missing' && overrides.serviceMissing) return overrides.serviceMissing;
   if (condition === 'contract-mismatch' && overrides.contractMismatch) return overrides.contractMismatch;
+  if (!dataLoaded && (condition === 'service-missing' || condition === 'contract-mismatch')) return SHELL_COPY.degradedWithoutData[condition];
   return SHELL_COPY.banners[condition];
 }
 

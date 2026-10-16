@@ -206,6 +206,25 @@ describe('the copy (contracts/connection-presentation.md)', () => {
     expect(bannerCopy('service-missing')).toEqual(SHELL_COPY.banners['service-missing']);
   });
 
+  it('A2: the degraded bodies drop the loaded-data sentence when nothing is loaded, and keep it otherwise', () => {
+    const sentence = 'Data that was already loaded stays visible.';
+    for (const condition of ['service-missing', 'contract-mismatch'] as const) {
+      const full = bannerCopy(condition, {}, true);
+      const bare = bannerCopy(condition, {}, false);
+      expect(full).toEqual(SHELL_COPY.banners[condition]);
+      expect(bannerCopy(condition)).toEqual(full);
+      expect(full.body).toContain(sentence);
+      expect(bare.body).not.toContain(sentence);
+      expect(bare.body).toBe(full.body.replace(` ${sentence}`, ''));
+      expect(bare.title).toBe(full.title);
+    }
+    for (const condition of ['connecting', 'reconnecting', 'live-updates-off'] as const) {
+      expect(bannerCopy(condition, {}, false)).toEqual(SHELL_COPY.banners[condition]);
+    }
+    const copy = { serviceMissing: { title: 'T', body: 'B' } };
+    expect(bannerCopy('service-missing', copy, false)).toEqual(copy.serviceMissing);
+  });
+
   it('holds no tone or announce (FS-06)', () => {
     const text = JSON.stringify(SHELL_COPY);
     expect(text).not.toMatch(/tone|announce/);

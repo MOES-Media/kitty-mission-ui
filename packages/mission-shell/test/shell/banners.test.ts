@@ -152,4 +152,51 @@ describe('connection banners (FR-011, SC-003)', () => {
     await settle(harness);
     expectNotice(harness, { ...(ROWS.serviceMissing as Row), title: 'Sample override', body: 'Sample override body.' });
   });
+
+  const SENTENCE = ' Data that was already loaded stays visible.';
+  const chrome = (harness: Harness): { status: string; errorMessage: string } =>
+    harness.shell as unknown as { status: string; errorMessage: string };
+
+  for (const state of ['degraded: service-missing', 'degraded: contract-mismatch'] as const) {
+    it(`A1/A2: ${state} from the start (nothing loaded) hides the chrome error and Retry, and drops the loaded-data sentence`, async () => {
+      const scheduler = createFakeScheduler();
+      const client = createFixtureClient({ scheduler, initialState: state });
+      const harness = await mountWith(scheduler, client);
+      const row = state === 'degraded: service-missing' ? ROWS.serviceMissing : ROWS.contractMismatch;
+      expectNotice(harness, { ...(row as Row), body: (row as Row).body.replace(SENTENCE, '') });
+      expect(chrome(harness).status, 'no chrome error while degraded').not.toBe('error');
+      expect(chrome(harness).errorMessage).toBe('');
+      const retry = deepQueryAll(harness.shell.shadowRoot as ShadowRoot, 'sk-button').filter((button) => button.textContent?.includes('Retry'));
+      expect(retry.length, 'no chrome Retry while degraded').toBe(0);
+    });
+  }
+
+  it('A2: a degraded banner keeps the sentence when data is on screen', async () => {
+    const scheduler = createFakeScheduler();
+    const client = createFixtureClient({ scheduler });
+    const harness = await mountWith(scheduler, client);
+    setConnectionState(client, 'degraded: contract-mismatch');
+    await settle(harness);
+    expectNotice(harness, ROWS.contractMismatch as Row);
+  });
+
+  it('A1: a plain read failure with no banner still shows the chrome error and its Retry', async () => {
+    const scheduler = createFakeScheduler();
+    const inner = createFixtureClient({ scheduler });
+    const client: MissionStatusClient = { ...inner, getProject: () => Promise.resolve({ ok: false, unavailable: 'transport' }) };
+    const harness = await mountWith(scheduler, client);
+    expect(notices(harness).filter((notice) => notice.closest('.banners') !== null).length, 'no banner').toBe(0);
+    expect(chrome(harness).status).toBe('error');
+    expect(chrome(harness).errorMessage).toBe('The project could not be loaded.');
+    const retry = deepQueryAll(harness.shell.shadowRoot as ShadowRoot, 'sk-button').filter((button) => button.textContent?.includes('Retry'));
+    expect(retry.length).toBe(1);
+  });
+
+  it('A3: the brand follows the mode', async () => {
+    const brand = (harness: Harness): string | undefined => harness.shell.querySelector(':scope > [slot="brand"]')?.textContent?.trim();
+    const desktop = await mountAt('/missions', { mode: 'desktop' });
+    expect(brand(desktop)).toBe('kitty desktop');
+    const dashboard = await mountAt('/missions', { mode: 'dashboard' });
+    expect(brand(dashboard)).toBe('kitty dashboard');
+  });
 });
