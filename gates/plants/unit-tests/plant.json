@@ -139,5 +139,21 @@
         ]
       }
     ]
+  },
+  {
+    "gate": "unit-tests",
+    "ciCommand": "pnpm test",
+    "expectFailPattern": "refresh-policy mismatch on missions",
+    "overlays": [
+      {
+        "target": "packages/mission-shell/src/core/refresh-policy.ts",
+        "edits": [
+          {
+            "find": "  'mission-lifecycle': ['missions', 'mission'],\n",
+            "replace": "  'mission-lifecycle': ['mission'],\n"
+          }
+        ]
+      }
+    ]
   }
 ]
