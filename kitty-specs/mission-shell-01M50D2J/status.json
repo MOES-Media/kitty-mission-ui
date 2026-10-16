@@ -330,11 +330,16 @@
     "WP10": {
       "actor": "claude",
       "agent": "claude",
+      "agent_profile": "node-norris",
+      "agent_profile_version": "1.0",
       "force_count": 0,
       "implementer_of_record": "claude",
       "lane": "in_progress",
       "last_event_id": "01M534CJNW0W871KPV19K4R7WZ",
       "last_transition_at": "2026-10-16T19:52:54.201198+00:00",
+      "model": "__resolved_model_absent__",
+      "provider": "__resolved_provider_absent__",
+      "role": "implementer",
       "shell_pid": 2266783,
       "shell_pid_created_at": "1792180371.84"
     }
