@@ -48,10 +48,10 @@
       "criterion_id": "FR-005",
       "description": "Verify FR-005 is satisfied",
       "proof_type": "automated_test",
-      "evidence": null,
-      "pass_fail": "pending",
-      "verified_by": null,
-      "verified_at": null,
+      "evidence": "packages/mission-shell/test/logic/results.test.ts (line 94) 'applies each refusal, with and without a value, to the word its screen declares' over the 17 (operation, refusal) pairs counted from routes.json (line 84); line 123 'passes the value through unchanged (identity) and marks it ready'; line 139 'is empty exactly where a screen defines empty' with a non-empty control each; FR-005 amendment at lines 172 and 189 (unavailable keeps value and view on a slot with data, error without). packages/mission-shell/test/logic/scheduler.test.ts line 287 (loading only without a value); packages/mission-shell/test/logic/controller.test.ts line 210 'passes contract values to the screens unchanged (FR-005)'. Amended 2026-10-15",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-16T20:08:44.066945+00:00",
       "notes": "TODO: replace with a real acceptance criterion"
     },
     {
