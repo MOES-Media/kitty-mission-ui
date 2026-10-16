@@ -1,7 +1,8 @@
 ---
 work_package_id: WP01
 title: Destinations, routes and displayed sets (with the Node test project)
-dependencies: []
+dependencies:
+- WP07
 requirement_refs:
 - FR-001
 - FR-002
@@ -9,7 +10,9 @@ requirement_refs:
 - NFR-007
 planning_base_branch: feat/mission-shell-18
 merge_target_branch: feat/mission-shell-18
-branch_strategy: Planning artifacts for this mission were generated on feat/mission-shell-18. During /spec-kitty.implement this WP may branch from a dependency-specific base, but completed changes must merge back into feat/mission-shell-18 unless the human explicitly redirects the landing branch.
+branch_strategy: Planning artifacts for this mission were generated on feat/mission-shell-18. During /spec-kitty.implement
+  this WP may branch from a dependency-specific base, but completed changes must merge back into feat/mission-shell-18 unless
+  the human explicitly redirects the landing branch.
 subtasks:
 - T001
 - T002
@@ -66,8 +69,9 @@ existing Chromium `unit` project, each with a setup file that fails the run on a
   report for `routeChanged`; the view (IC-06) renders `href`s and re-exports `formatRoute`, `parseRoute`,
   `Destination` and `ShellMode` from `src/shell.ts`. Every Node test written later lands in `test/logic/**` and runs in
   the project created here.
-- **Dependencies.** None. The base already carries #17 (port, fixture adapter, `Shell.svelte`, the Chromium `unit`
-  project).
+- **Dependencies.** WP07 (A3): the shell lint blocks (I/O globals, markup, layering) land first, so every file written
+  here is linted by them from the start (plan IC-07, "It lands first"). The base already carries #17 (port, fixture
+  adapter, `Shell.svelte`, the Chromium `unit` project).
 - **Read first** (authoritative; cite, do not re-derive):
   - `plan.md`: IC-01, "Testing" in Technical Context, "Shared-file ownership" (`vitest.config.ts` is owned by IC-01,
     requested by IC-03 and IC-06), "Plants" (P-1, ruling `01M50K4NSNYD9TEQ12T4J7KVHT`), Timeline risk 6.

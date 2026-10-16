@@ -406,6 +406,10 @@ All three are proven with `heavy pnpm gate-proof leg --gate eslint` (12 eslint p
 
 ## Reviewer Guidance
 
+- **The granted self-test edit (A4)**: `git diff --numstat "$base" -- gates/markdown-lint.selftest.ts` shows exactly
+  `1	1`, and the changed line swaps `navigator.language` for `String(performance.now())` and nothing else (plan
+  "Decisions", the WP07 self-test note).
+
 - Diff the R-13 lists against the config: the 8 globals, the 2 properties and the 14 elements, with the messages
   exactly as R-13 gives them (`shell-io: <name> is forbidden in the shell; go through the host interface (C-001)`,
   and the one `shell-markup:` sentence, and the `shell-layering:` sentence).

@@ -1,7 +1,8 @@
 work_packages:
 - id: WP01
   title: Destinations, routes and displayed sets (with the Node test project)
-  dependencies: []
+  dependencies:
+  - WP07
   owned_files:
   - packages/mission-shell/vitest.config.ts
   - packages/mission-shell/test/setup/**
@@ -72,6 +73,7 @@ work_packages:
   - packages/mission-shell/test/logic/controller.test.ts
   - packages/mission-shell/test/logic/results.test.ts
   - packages/mission-shell/test/logic/connection.test.ts
+  - packages/mission-shell/test/logic/controller-recording.test.ts
   requirement_refs:
   - FR-005
   - FR-006
@@ -81,6 +83,7 @@ work_packages:
   - NFR-004
   - NFR-007
   - SC-003
+  - FR-007
   plan_concern_refs:
   - IC-03
   subtasks:
@@ -170,6 +173,10 @@ work_packages:
   - C-005
   - SC-003
   - SC-005
+  - FR-007
+  - FR-010
+  - NFR-007
+  - C-001
   plan_concern_refs:
   - IC-06
   subtasks:
@@ -207,7 +214,7 @@ work_packages:
   role: implementer
   agent: claude
 - id: WP08
-  title: Shell stories, Storybook integration and candidate baselines (before CP-1)
+  title: 'IC-08a: Shell stories, Storybook integration and candidate baselines (before CP-1)'
   dependencies:
   - WP06
   owned_files:
@@ -239,7 +246,7 @@ work_packages:
   role: implementer
   agent: claude
 - id: WP09
-  title: Baseline finalisation after CP-1
+  title: 'IC-08b: Baseline finalisation after CP-1'
   dependencies:
   - WP08
   owned_files:
@@ -276,6 +283,7 @@ work_packages:
   - SC-005
   - SC-006
   - SC-007
+  - C-002
   plan_concern_refs:
   - IC-09
   subtasks:

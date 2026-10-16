@@ -1,6 +1,6 @@
 ---
 work_package_id: WP09
-title: Baseline finalisation after CP-1
+title: 'IC-08b: Baseline finalisation after CP-1'
 dependencies:
 - WP08
 requirement_refs:
@@ -8,7 +8,9 @@ requirement_refs:
 - SC-007
 planning_base_branch: feat/mission-shell-18
 merge_target_branch: feat/mission-shell-18
-branch_strategy: Planning artifacts for this mission were generated on feat/mission-shell-18. During /spec-kitty.implement this WP may branch from a dependency-specific base, but completed changes must merge back into feat/mission-shell-18 unless the human explicitly redirects the landing branch.
+branch_strategy: Planning artifacts for this mission were generated on feat/mission-shell-18. During /spec-kitty.implement
+  this WP may branch from a dependency-specific base, but completed changes must merge back into feat/mission-shell-18 unless
+  the human explicitly redirects the landing branch.
 subtasks:
 - T044
 - T045
@@ -27,7 +29,7 @@ tags: []
 tracker_refs: []
 ---
 
-# WP09 — Baseline finalisation after CP-1
+# WP09 — IC-08b: Baseline finalisation after CP-1
 
 ## ⚡ Do This First: Load Agent Profile
 

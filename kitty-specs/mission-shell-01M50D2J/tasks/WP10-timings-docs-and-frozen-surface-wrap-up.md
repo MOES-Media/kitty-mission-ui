@@ -12,9 +12,12 @@ requirement_refs:
 - SC-005
 - SC-006
 - SC-007
+- C-002
 planning_base_branch: feat/mission-shell-18
 merge_target_branch: feat/mission-shell-18
-branch_strategy: Planning artifacts for this mission were generated on feat/mission-shell-18. During /spec-kitty.implement this WP may branch from a dependency-specific base, but completed changes must merge back into feat/mission-shell-18 unless the human explicitly redirects the landing branch.
+branch_strategy: Planning artifacts for this mission were generated on feat/mission-shell-18. During /spec-kitty.implement
+  this WP may branch from a dependency-specific base, but completed changes must merge back into feat/mission-shell-18 unless
+  the human explicitly redirects the landing branch.
 subtasks:
 - T048
 - T049
@@ -125,6 +128,10 @@ Close the mission:
 local measurements standing in for the CI run that does not exist yet.
 
 **Steps**:
+0. **A6: re-measure eslint and typecheck on this lane.** WP06, WP08 and WP09 land Svelte and TS sources after WP05
+   (typecheck) and WP07 (eslint) recorded their legs, so those two recordings understate the final gate step. Run
+   `heavy pnpm gate-proof leg --gate eslint`, then `heavy pnpm gate-proof leg --gate typecheck`, one at a time, in the
+   foreground, on this lane. Use these values, not the earlier ones, for those two legs.
 1. Collect the recorded local leg times from the earlier WPs' final reports, one per leg:
 
    | Leg | Plants after (plan "Plants") | Runs (1 + plants) | Recorded by |
@@ -393,6 +400,8 @@ every input into the final report, ready to paste. Write nothing under `kitty-sp
 
 **Steps**: put these sections in the final report, in this order:
 1. **Frozen-surface output**: T049 steps 1 to 5, the commands and their output verbatim, with the base SHA.
+   - Also paste `git diff "$base" -- gates/markdown-lint.selftest.ts` verbatim: the one granted line of WP07 (A4,
+     plan "Decisions"). Its `--numstat` must be `1	1`.
 2. **Design review** (SC-007): the `design-review.md` content copied verbatim (the dated `CP-1 confirmed` entry and
    any amendments), plus the `sha256sum -c` output and the set-equality line.
 3. **Supply chain** (R-16, NFR-006): the R-16 table, with the evidence below.

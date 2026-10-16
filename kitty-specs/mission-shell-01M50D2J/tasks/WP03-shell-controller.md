@@ -12,9 +12,12 @@ requirement_refs:
 - NFR-004
 - NFR-007
 - SC-003
+- FR-007
 planning_base_branch: feat/mission-shell-18
 merge_target_branch: feat/mission-shell-18
-branch_strategy: Planning artifacts for this mission were generated on feat/mission-shell-18. During /spec-kitty.implement this WP may branch from a dependency-specific base, but completed changes must merge back into feat/mission-shell-18 unless the human explicitly redirects the landing branch.
+branch_strategy: Planning artifacts for this mission were generated on feat/mission-shell-18. During /spec-kitty.implement
+  this WP may branch from a dependency-specific base, but completed changes must merge back into feat/mission-shell-18 unless
+  the human explicitly redirects the landing branch.
 subtasks:
 - T012
 - T013
@@ -32,6 +35,7 @@ create_intent:
 - packages/mission-shell/test/logic/controller.test.ts
 - packages/mission-shell/test/logic/results.test.ts
 - packages/mission-shell/test/logic/connection.test.ts
+- packages/mission-shell/test/logic/controller-recording.test.ts
 execution_mode: code_change
 model: ''
 owned_files:
@@ -41,6 +45,7 @@ owned_files:
 - packages/mission-shell/test/logic/controller.test.ts
 - packages/mission-shell/test/logic/results.test.ts
 - packages/mission-shell/test/logic/connection.test.ts
+- packages/mission-shell/test/logic/controller-recording.test.ts
 role: implementer
 tags: []
 tracker_refs: []
@@ -119,6 +124,8 @@ Owned files (verbatim):
 - `packages/mission-shell/test/logic/controller.test.ts`
 - `packages/mission-shell/test/logic/results.test.ts`
 - `packages/mission-shell/test/logic/connection.test.ts`
+- `packages/mission-shell/test/logic/controller-recording.test.ts` (A1: the recording replayed through the shipped
+  controller)
 
 **Out-of-map edits**: none. (Later edits by others, recorded in their own WPs: WP04 adds host-facing commands to
 `src/controller/shell-controller.ts`; WP09 may edit `src/core/connection.ts` for CP-1 amendments.)
@@ -406,7 +413,33 @@ Svelte.
     test that drives every connection state, every refusal example of T012 and every change kind through a mounted
     controller and asserts it completes (SC-003: 0 throws). Do not wrap the controller in `try/catch` in tests.
 
-**Files**: `test/logic/controller.test.ts`.
+11. **A8, C-004 (ownership boundary)**: assert that `client.subscribe` is called with **no scope** (the second
+    argument is `undefined`, or absent), and that no stream cursor is ever passed. Over a full mount, every change kind,
+    a reconnect with `resync`, a `setClient` and a `destroy`, the recording client sees zero `subscribe` calls with a
+    `SubscriptionScope` and zero `cursor` or `missionId` values. Positive control: the recording client does record
+    the scope of a direct test call `client.subscribe(l, { missionId: M })`, so the assertion is not vacuous.
+12. **A9, US1-2 (Mission title in the mission head)**: after navigating to Pipeline `M`, the snapshot's mission head
+    `title` equals the `friendlyName` (or else `slug`) of the `getMission` value served (research R-18). Control: on
+    the Missions destination the snapshot has no mission head.
+13. **A9, US6-2 (re-selecting the current destination reads fresh)**: on Artifact `M`, `P` and on Ops, navigating to
+    the destination that is already current issues exactly one read of each of its explicit-refreshed keys
+    (`artifacts:M` and `artifact:M:P`; `ops`), as bypass reads, and none of its chrome keys. Control: re-selecting
+    Pipeline `M` issues none.
+14. **A1, the recording through the shipped controller** (`test/logic/controller-recording.test.ts`):
+    - Replay WP02's literal `test/support/expected-recording.ts`, row by row, through `createShellController`, not
+      through WP02's scheduler-level harness.
+    - Use the same set-up as `contracts/refresh-policy.md` "The test set-up": the same injected changes copy with
+      item 1 at `delayMs: 250`, the same fake scheduler for fixture and controller, the same recording proxy, and the
+      same reconnect sequence for the `resync` column.
+    - Assert each row with the **same custom message** `` `refresh-policy mismatch on ${row.name}` `` (R6-08: no test
+      title contains `refresh-policy mismatch`).
+    - Under plant P-1 this test also fails with that token, alongside WP02's test. That is expected, because P-1's
+      token is only required to appear in the planted output and be absent from the clean output (gate-proof).
+      Record in the final report that P-1's leg still passes with both tests present.
+    - This closes the gap the analyze gate found: the scheduler-level recording alone does not prove that the shipped
+      controller wires the policy.
+
+**Files**: `test/logic/controller.test.ts`; `test/logic/controller-recording.test.ts` (new).
 
 **Validation**: every count is an equality; every "none", "0 reads" or "no `resync`" assertion has a positive control
 on the same fixture; every loop asserts its iteration count. Make one deliberate local revert per test file (for
@@ -441,6 +474,10 @@ time is recorded (IC-03 is not in plan IC-09's timing list).
 
 ## Definition of Done
 
+- `test/logic/controller-recording.test.ts` replays the literal expected recording through `createShellController`
+  with the message `refresh-policy mismatch on ${row.name}` and passes. Under P-1 it fails with that token (A1).
+- The subscription is unscoped, and no cursor is ever passed (A8, C-004). US1-2 and US6-2 are asserted at controller
+  level (A9).
 - `applyResult` implements "Applying a result" including the FR-005 amendment, the per-screen empty rule, the 404
   `not-found` rule, the refused-cursor and Ops load-more outcomes, and the refusal coverage of research R-06, all
   typed against the screens' own status vocabularies.
