@@ -14,6 +14,9 @@ requirement_refs:
 planning_base_branch: feat/kitty-core-19
 merge_target_branch: feat/kitty-core-19
 branch_strategy: Planning artifacts for this mission were generated on feat/kitty-core-19. During /spec-kitty.implement this WP may branch from a dependency-specific base, but completed changes must merge back into feat/kitty-core-19 unless the human explicitly redirects the landing branch.
+base_branch: kitty/mission-kitty-core-01M50D10
+base_commit: c405dc8295c6b0641b1b9e8d0ff5e0b0897c71a3
+created_at: '2026-10-16T13:19:53.999716+00:00'
 subtasks:
 - T024
 - T025
