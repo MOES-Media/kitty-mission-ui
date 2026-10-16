@@ -300,6 +300,7 @@ dependencies = [
  "http-body-util",
  "hyper",
  "hyper-util",
+ "kitty-core",
  "serde",
  "serde_json",
  "tokio",

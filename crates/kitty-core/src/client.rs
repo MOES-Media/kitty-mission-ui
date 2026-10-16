@@ -15,8 +15,10 @@ use hyper_util::rt::TokioIo;
 use tokio::net::TcpStream;
 use tokio::task::JoinHandle;
 
+use crate::contract::Mismatch;
 use crate::endpoint::ServiceEndpoint;
 use crate::routes::ReadRequest;
+use crate::status::CoreStatus;
 
 /// A response body larger than this is refused (NFR-004).
 pub const BODY_CAP: usize = 16 * 1024 * 1024;
@@ -54,8 +56,8 @@ impl fmt::Display for TransportFailure {
 
 impl std::error::Error for TransportFailure {}
 
-/// The outcome of one read. `#[non_exhaustive]`: `Core` adds `NotReady` and `ContractMismatch` later, so a `match`
-/// outside this crate needs a wildcard arm (B1).
+/// The outcome of one read. `#[non_exhaustive]`, so a `match` outside this crate needs a wildcard arm (B1). The last
+/// two variants come from `Core` only; `ContractClient` never returns them.
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum ReadOutcome {
@@ -67,6 +69,10 @@ pub enum ReadOutcome {
     },
     /// No HTTP answer.
     Transport(TransportFailure),
+    /// `Core` only: the service is not `Ready`. Nothing was sent.
+    NotReady(CoreStatus),
+    /// `Core` only: the service's contract does not match the pin, and the service is stopped. Nothing was sent.
+    ContractMismatch(Mismatch),
 }
 
 /// The durations the client and the supervisor use. `Default` is the production column of plan IC-08.

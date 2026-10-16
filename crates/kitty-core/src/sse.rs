@@ -20,7 +20,9 @@ use tokio::time::{timeout_at, Instant};
 use crate::client::{
     connect, hyper_failure, Connection, ContractClient, TransportFailure, BODY_CAP,
 };
+use crate::contract::Mismatch;
 use crate::routes::{entry, API_PREFIX};
+use crate::status::CoreStatus;
 
 /// The most bytes one frame may span, counted from the last event boundary (FS-13).
 pub const FRAME_CAP: usize = 1024 * 1024;
@@ -229,15 +231,19 @@ pub enum StreamScope {
     },
 }
 
-/// Why `open_stream` refused before any I/O. `#[non_exhaustive]`: `Core` adds `NotReady` and `ContractMismatch`
-/// later, so a `match` outside this crate needs a wildcard arm (B1).
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// Why `open_stream` refused before any I/O. `#[non_exhaustive]`, so a `match` outside this crate needs a wildcard
+/// arm (B1). The last two variants come from `Core` only; `ContractClient` never returns them.
+#[derive(Debug, Clone, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum StreamOpenError {
     /// A cursor came with an empty mission id.
     CursorWithoutMission,
     /// A mission scope with an empty mission id and no cursor.
     EmptyMission,
+    /// `Core` only: the service is not `Ready`. Nothing was sent.
+    NotReady(CoreStatus),
+    /// `Core` only: the service's contract does not match the pin, and the service is stopped. Nothing was sent.
+    ContractMismatch(Mismatch),
 }
 
 impl fmt::Display for StreamOpenError {
@@ -247,6 +253,10 @@ impl fmt::Display for StreamOpenError {
                 f.write_str("a stream cursor needs a mission id")
             }
             StreamOpenError::EmptyMission => f.write_str("the mission id is empty"),
+            StreamOpenError::NotReady(_) => f.write_str("the service is not ready"),
+            StreamOpenError::ContractMismatch(_) => {
+                f.write_str("the service's contract does not match the pinned one")
+            }
         }
     }
 }

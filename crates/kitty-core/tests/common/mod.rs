@@ -5,6 +5,8 @@
 //! guard drops, and scratch directories are removed on drop, so a failing test leaves nothing behind.
 #![allow(dead_code)]
 
+pub mod claims;
+
 use std::future::Future;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -508,4 +510,310 @@ pub fn squatter(port: u16, answer: Option<Vec<u8>>, hold: Option<Duration>) -> S
         }
     });
     SquatterGuard { task }
+}
+
+// ---- Processes (Linux) ----------------------------------------------------------------------------------------
+
+/// A process that exited but is still a zombie waiting for a foreign parent runs nothing: it counts as gone.
+#[cfg(target_os = "linux")]
+pub fn gone(pid: i32) -> bool {
+    match std::fs::read_to_string(format!("/proc/{pid}/stat")) {
+        Err(_) => true,
+        Ok(text) => text
+            .rfind(')')
+            .and_then(|i| text[i + 1..].split_whitespace().next().map(|s| s == "Z"))
+            .unwrap_or(true),
+    }
+}
+
+/// Waits until `pid` is gone, failing by name after `limit`.
+#[cfg(target_os = "linux")]
+pub async fn wait_gone(what: &str, pid: i32, limit: Duration) {
+    let started = std::time::Instant::now();
+    loop {
+        if gone(pid) {
+            return;
+        }
+        assert!(
+            started.elapsed() < limit,
+            "{what}: pid {pid} still alive {limit:?} later"
+        );
+        tokio::time::sleep(Duration::from_millis(5)).await;
+    }
+}
+
+/// The pids of the `kitty-fake-service` processes whose command line names `root` as the whole value of a flag
+/// (`--flag=<root>`): the exact scratch root, so another test's fake, or one of a nested root, never matches.
+#[cfg(target_os = "linux")]
+pub fn live_fakes_of(root: &Path) -> Vec<i32> {
+    let needle = root.display().to_string();
+    let mut pids = Vec::new();
+    for entry in std::fs::read_dir("/proc").expect("/proc").flatten() {
+        let Some(pid) = entry
+            .file_name()
+            .to_str()
+            .and_then(|n| n.parse::<i32>().ok())
+        else {
+            continue;
+        };
+        let Ok(cmdline) = std::fs::read(format!("/proc/{pid}/cmdline")) else {
+            continue;
+        };
+        let ours = cmdline.split(|b| *b == 0).any(|arg| {
+            let arg = String::from_utf8_lossy(arg);
+            arg.strip_suffix(&needle)
+                .is_some_and(|flag| flag.starts_with("--") && flag.ends_with('='))
+        });
+        if ours && String::from_utf8_lossy(&cmdline).contains("kitty-fake-service") {
+            pids.push(pid);
+        }
+    }
+    pids
+}
+
+/// Fails by name unless no fake of this root is left within `limit`.
+#[cfg(target_os = "linux")]
+pub async fn wait_no_fakes(what: &str, root: &Path, limit: Duration) {
+    let started = std::time::Instant::now();
+    loop {
+        let left = live_fakes_of(root);
+        if left.is_empty() {
+            return;
+        }
+        assert!(
+            started.elapsed() < limit,
+            "{what}: {left:?} still running {limit:?} later"
+        );
+        tokio::time::sleep(Duration::from_millis(5)).await;
+    }
+}
+
+/// Kills, by pid, every fake whose command line names `root` exactly: only what this scratch directory started.
+#[cfg(target_os = "linux")]
+pub fn kill_fakes_of(root: &Path) {
+    for round in 0..2 {
+        for pid in live_fakes_of(root) {
+            if pid > 1 {
+                // SAFETY: one pid that `live_fakes_of` just matched by its exact scratch-root argument.
+                unsafe { libc::kill(pid, libc::SIGKILL) };
+            }
+        }
+        if round == 0 {
+            std::thread::sleep(Duration::from_millis(30));
+        }
+    }
+}
+
+// ---- Core -----------------------------------------------------------------------------------------------------------
+
+use kitty_core::discovery::{Discovery, ServiceMissing};
+use kitty_core::supervisor::{ManualClock, RecordingSleeper, TokioSleeper};
+use kitty_core::{
+    ContractPin, CoreConfig, CoreStatus, RestartPolicy, Subscription, SupervisionState,
+};
+
+/// Discovery that always returns one path.
+pub struct FixedDiscovery(pub PathBuf);
+
+impl Discovery for FixedDiscovery {
+    fn locate(&self) -> Result<PathBuf, ServiceMissing> {
+        Ok(self.0.clone())
+    }
+}
+
+/// Discovery that is `NotFound` while `found` is false and the fake's path once it is true; counts its calls.
+pub struct ToggleDiscovery {
+    pub found: std::sync::atomic::AtomicBool,
+    pub path: PathBuf,
+    pub calls: AtomicUsize,
+}
+
+impl ToggleDiscovery {
+    pub fn new(path: PathBuf, found: bool) -> Arc<Self> {
+        Arc::new(Self {
+            found: std::sync::atomic::AtomicBool::new(found),
+            path,
+            calls: AtomicUsize::new(0),
+        })
+    }
+
+    pub fn set_found(&self, found: bool) {
+        self.found.store(found, Ordering::SeqCst);
+    }
+
+    pub fn calls(&self) -> usize {
+        self.calls.load(Ordering::SeqCst)
+    }
+}
+
+impl Discovery for ToggleDiscovery {
+    fn locate(&self) -> Result<PathBuf, ServiceMissing> {
+        self.calls.fetch_add(1, Ordering::SeqCst);
+        if self.found.load(Ordering::SeqCst) {
+            Ok(self.path.clone())
+        } else {
+            Err(ServiceMissing {
+                reason: kitty_core::discovery::MissingReason::NotFound,
+                detail: "toggled off".to_owned(),
+            })
+        }
+    }
+}
+
+/// A scratch project root with a fake-service scenario, test timings and ports claimed below the ephemeral range.
+/// Dropping it kills every fake of its root (by the exact root argument) and releases its ports.
+pub struct CoreRig {
+    pub dir: TempDir,
+    pub root: PathBuf,
+    pub ports: Arc<claims::ClaimingPorts>,
+    pub clock: Arc<ManualClock>,
+    pub sleeper: Arc<RecordingSleeper>,
+    pub timings: Timings,
+    pub policy: RestartPolicy,
+    /// Backoff waits for real (`TokioSleeper`) instead of being recorded; for tests that need a lasting `Backoff`.
+    pub real_sleeper: bool,
+}
+
+impl CoreRig {
+    pub fn new(launches: &[&str], crash_after_ms: Option<u64>) -> Self {
+        let dir = TempDir::new("core");
+        let root = std::fs::canonicalize(dir.path()).expect("canonical scratch directory");
+        write_scenario(&root, launches, crash_after_ms);
+        let clock = Arc::new(ManualClock::new());
+        CoreRig {
+            sleeper: Arc::new(RecordingSleeper::new(clock.clone())),
+            clock,
+            dir,
+            root,
+            ports: Arc::new(claims::ClaimingPorts::default()),
+            timings: test_timings(),
+            policy: RestartPolicy::default(),
+            real_sleeper: false,
+        }
+    }
+
+    pub fn config(&self, discovery: Arc<dyn Discovery>) -> CoreConfig {
+        let sleeper: Arc<dyn kitty_core::supervisor::Sleeper> = if self.real_sleeper {
+            Arc::new(TokioSleeper)
+        } else {
+            self.sleeper.clone()
+        };
+        CoreConfig {
+            project_root: self.dir.path().to_path_buf(),
+            discovery,
+            contract: ContractPin::embedded(),
+            timings: self.timings,
+            policy: self.policy.clone(),
+            ports: self.ports.clone(),
+            clock: self.clock.clone(),
+            sleeper,
+            runtime: None,
+            env_passthrough: Vec::new(),
+        }
+    }
+
+    pub fn launch(&self, n: usize) -> Value {
+        let path = self.root.join(format!("launch-{n}.json"));
+        let text =
+            std::fs::read_to_string(&path).unwrap_or_else(|e| panic!("launch-{n}.json: {e}"));
+        serde_json::from_str(&text).expect("launch record is JSON")
+    }
+
+    pub fn launch_pid(&self, n: usize) -> i32 {
+        self.launch(n)["pid"].as_i64().expect("pid") as i32
+    }
+
+    pub fn launch_exists(&self, n: usize) -> bool {
+        self.root.join(format!("launch-{n}.json")).exists()
+    }
+
+    /// Asks the running fake to crash now (exit status 3), at an exact moment.
+    pub fn crash_now(&self) {
+        std::fs::write(self.root.join("crash-now"), "").expect("write the crash trigger");
+    }
+
+    /// The request lines the fake logged, in order.
+    pub fn requests(&self) -> Vec<String> {
+        std::fs::read_to_string(self.root.join("requests.log"))
+            .unwrap_or_default()
+            .lines()
+            .map(str::to_owned)
+            .collect()
+    }
+}
+
+impl Drop for CoreRig {
+    fn drop(&mut self) {
+        #[cfg(target_os = "linux")]
+        kill_fakes_of(&self.root);
+        self.ports.release_all();
+    }
+}
+
+/// A status as `Starting g1 a0`, `Backoff(500ms) g1 a0`, `Stopped g5 a0 [missing:Crashing]`.
+pub fn project(s: &CoreStatus) -> String {
+    use kitty_core::DegradedReason;
+    let state = match &s.state {
+        SupervisionState::Starting => "Starting".to_owned(),
+        SupervisionState::Ready { .. } => "Ready".to_owned(),
+        SupervisionState::Crashed => "Crashed".to_owned(),
+        SupervisionState::Backoff { delay } => format!("Backoff({}ms)", delay.as_millis()),
+        SupervisionState::Stopped => "Stopped".to_owned(),
+    };
+    let degraded = match &s.degraded {
+        DegradedReason::None => String::new(),
+        DegradedReason::ServiceMissing(m) => format!(" [missing:{:?}]", m.reason),
+        DegradedReason::ContractMismatch(_) => " [mismatch]".to_owned(),
+    };
+    format!("{state} g{} a{}{degraded}", s.generation, s.attempt)
+}
+
+/// Collects what a subscriber observes: the initial status, then every message, in order.
+pub struct Watcher {
+    pub seen: Vec<CoreStatus>,
+    receiver: tokio::sync::broadcast::Receiver<CoreStatus>,
+}
+
+impl Watcher {
+    pub fn new(subscription: Subscription) -> Self {
+        Self {
+            seen: vec![subscription.initial],
+            receiver: subscription.receiver,
+        }
+    }
+
+    pub fn sequence(&self) -> Vec<String> {
+        self.seen.iter().map(project).collect()
+    }
+
+    /// Receives until `done` holds for what was seen, failing by name at the harness deadline.
+    pub async fn wait_for(&mut self, what: &str, done: impl Fn(&[CoreStatus]) -> bool) {
+        while !done(&self.seen) {
+            let next = tokio::time::timeout(HARNESS_DEADLINE, self.receiver.recv()).await;
+            match next {
+                Ok(Ok(status)) => self.seen.push(status),
+                other => panic!("{what}: {other:?}; seen {:?}", self.sequence()),
+            }
+        }
+    }
+
+    pub async fn wait_for_nth(&mut self, what: &str, state: &str, nth: usize) {
+        let state = state.to_owned();
+        self.wait_for(what, move |seen| {
+            seen.iter()
+                .filter(|s| project(s).starts_with(&state))
+                .count()
+                >= nth
+        })
+        .await
+    }
+
+    /// What is queued right now, without waiting.
+    pub fn try_next(&mut self) -> Result<CoreStatus, tokio::sync::broadcast::error::TryRecvError> {
+        self.receiver.try_recv()
+    }
+}
+
+pub fn strings(expected: &[&str]) -> Vec<String> {
+    expected.iter().map(|s| (*s).to_owned()).collect()
 }

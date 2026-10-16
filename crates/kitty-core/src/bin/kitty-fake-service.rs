@@ -10,7 +10,12 @@
 //! lets a test crash the service at an exact moment instead of racing a timer.
 //!
 //! Modes: `ready`, `crash-after`, `exit-at-start`, `never-ready`, `ignore-term`, `serve-modified`, `serve-503`,
-//! `alive-no-bind`, `fork-child`. There is no `host` mode here: WP09 adds it.
+//! `alive-no-bind`, `fork-child`, `host`.
+//!
+//! `host` (unix; added by WP09) is a host that dies: it runs `kitty_core::Core` on its own runtime with the project
+//! root `<root>/inner`, supervising another copy of this binary (whose scenario the test wrote to `<root>/inner`),
+//! and calls `std::process::exit(0)` without `stop()` once that service is `Ready` and `<root>/host-exit-now`
+//! exists (it writes `<root>/host-ready` first, so the test can check the service is alive before the host dies).
 
 use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
@@ -27,6 +32,10 @@ static BUNDLE: &[u8] = include_bytes!(concat!(
     env!("CARGO_MANIFEST_DIR"),
     "/../../contracts/fixtures/mission-status.openapi.json"
 ));
+
+#[cfg(unix)]
+#[path = "../../tests/common/claims.rs"]
+mod claims;
 
 const ROOT_FLAG: &str = "--mission-status.project-root=";
 const PORT_FLAG: &str = "--mission-status.port=";
@@ -144,11 +153,106 @@ fn run() -> i32 {
             }
             serve(&root, port, &mode, crash_after, n)
         }
+        #[cfg(unix)]
+        "host" => host(&root),
         other => {
             eprintln!("unknown mode {other}");
             2
         }
     }
+}
+
+/// The `host` mode: supervise a `ready` copy of this binary through `Core`, then exit without `stop()`.
+#[cfg(unix)]
+fn host(root: &Path) -> i32 {
+    use kitty_core::discovery::{Discovery, ServiceMissing};
+    use kitty_core::{
+        ContractPin, Core, CoreConfig, MonotonicClock, RestartPolicy, SupervisionState, Timings,
+        TokioSleeper,
+    };
+
+    struct Itself(PathBuf);
+    impl Discovery for Itself {
+        fn locate(&self) -> Result<PathBuf, ServiceMissing> {
+            Ok(self.0.clone())
+        }
+    }
+
+    let Ok(me) = std::env::current_exe() else {
+        eprintln!("cannot find this executable");
+        return 2;
+    };
+    let Ok(runtime) = tokio::runtime::Builder::new_multi_thread()
+        .worker_threads(2)
+        .enable_all()
+        .build()
+    else {
+        eprintln!("cannot build a runtime");
+        return 2;
+    };
+    let config = CoreConfig {
+        project_root: root.join("inner"),
+        discovery: Arc::new(Itself(me)),
+        contract: ContractPin::embedded(),
+        timings: Timings {
+            poll_interval: Duration::from_millis(10),
+            start_timeout: Duration::from_secs(5),
+            stop_grace: Duration::from_millis(300),
+            read_timeout: Duration::from_secs(1),
+            idle_limit: Duration::from_millis(300),
+        },
+        policy: RestartPolicy::default(),
+        ports: Arc::new(claims::ClaimingPorts::default()),
+        sleeper: Arc::new(TokioSleeper),
+        clock: Arc::new(MonotonicClock),
+        runtime: Some(runtime.handle().clone()),
+        env_passthrough: Vec::new(),
+    };
+    let Ok((core, subscription)) = Core::start(config) else {
+        eprintln!("cannot start the core");
+        return 2;
+    };
+    let mut receiver = subscription.receiver;
+    let mut state = subscription.initial.state;
+    let ready = runtime.block_on(async {
+        let waiting = async {
+            loop {
+                if matches!(state, SupervisionState::Ready { .. }) {
+                    return true;
+                }
+                match receiver.recv().await {
+                    Ok(status) => state = status.state,
+                    Err(tokio::sync::broadcast::error::RecvError::Lagged(_)) => {
+                        state = core.status().state;
+                    }
+                    Err(_) => return false,
+                }
+            }
+        };
+        tokio::time::timeout(Duration::from_secs(10), waiting)
+            .await
+            .unwrap_or(false)
+    });
+    if !ready {
+        eprintln!("the supervised service did not become ready");
+        return 2;
+    }
+    // Tell the test the service runs, and wait for its word: the test checks the service is alive before the host dies,
+    // and the exit happens at an exact moment instead of after a guessed delay.
+    if std::fs::write(root.join("host-ready"), "").is_err() {
+        return 2;
+    }
+    let go = root.join("host-exit-now");
+    let deadline = std::time::Instant::now() + Duration::from_secs(10);
+    while !go.exists() {
+        if std::time::Instant::now() >= deadline {
+            eprintln!("no word to exit");
+            return 2;
+        }
+        std::thread::sleep(Duration::from_millis(2));
+    }
+    // A host that dies: no stop(), no drop of the core. Its service must go with it.
+    std::process::exit(0);
 }
 
 fn read_json(path: &Path) -> Option<Value> {

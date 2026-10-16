@@ -45,6 +45,12 @@ const MAX_EXACT: f64 = 9_007_199_254_740_992.0;
 pub struct Digest([u8; 32]);
 
 impl Digest {
+    /// A placeholder for "there is no expected digest": all zero. Only the facade uses it, for a pin that cannot be
+    /// parsed (WP09): a `Mismatch` needs an `expected`, and no document hashes to this value.
+    pub(crate) const fn unavailable() -> Self {
+        Digest([0; 32])
+    }
+
     pub fn as_bytes(&self) -> &[u8; 32] {
         &self.0
     }
