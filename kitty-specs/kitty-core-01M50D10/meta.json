@@ -5,7 +5,7 @@
   "friendly_name": "kitty-core: shared Rust core (contract client, change stream, supervision)",
   "mid8": "01M50D10",
   "mission_id": "01M50D10J2DWR9J76F7APJQJDP",
-  "mission_number": null,
+  "mission_number": 5,
   "mission_slug": "kitty-core-01M50D10",
   "mission_type": "software-dev",
   "pr_bound": true,
