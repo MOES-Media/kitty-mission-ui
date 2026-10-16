@@ -307,7 +307,8 @@
       "last_transition_at": "2026-10-16T19:52:08.838088+00:00",
       "model": "__resolved_model_absent__",
       "notes": [
-        "IC-08b: CP-1 amendments A1-A5 applied, baselines regenerated, P-6 and P-7 re-proven"
+        "IC-08b: CP-1 amendments A1-A5 applied, baselines regenerated, P-6 and P-7 re-proven",
+        "Review passed: A1-A5 applied per design-review.md; A1 and A5 mutations turn their tests red (reviewer-verified); 479 shell tests, gates clean; 3 regenerated PNGs match A1/A2, A3, A4; design-review.sha256 11/11 OK; R5-01 clean; P-6 and P-7 anchors unchanged; scope = granted files plus existing logic test files under the A4/A5 grant. Carry: contract copy table lacks the A2 short bodies and A3 brand (orchestrator); now test has a no-op time line; picker story clock precedes fixture data so every label is just now (WP08 story change request); possible A2 body flip when an in-flight read lands while degraded."
       ],
       "provider": "__resolved_provider_absent__",
       "review_result": {
