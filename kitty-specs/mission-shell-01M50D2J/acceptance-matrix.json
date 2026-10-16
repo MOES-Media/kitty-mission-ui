@@ -77,11 +77,11 @@
     {
       "criterion_id": "FR-008",
       "description": "Verify FR-008 is satisfied",
-      "proof_type": "automated_test",
-      "evidence": null,
-      "pass_fail": "pending",
-      "verified_by": null,
-      "verified_at": null,
+      "proof_type": "gate_proof",
+      "evidence": "packages/mission-shell/test/logic/refresh-policy.test.ts (line 28) 'recording: <row>' against the literal oracle test/support/expected-recording.ts (12 rows, imports nothing from the policy), positive control at line 54; packages/mission-shell/test/logic/controller-recording.test.ts line 15 'replays row: <row>' through the shipped controller. unit-tests plant P-1 (refresh-policy.ts mission-lifecycle row drops missions) red on 'refresh-policy mismatch on missions', proven in the WP02 gate-proof leg and in the WP03 review, re-checked by hand at acceptance (4 failed, token present; file restored). WP02 review cycle 3: a reverted first-connected fix is caught by the recording",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-16T20:08:49.304274+00:00",
       "notes": "TODO: replace with a real acceptance criterion"
     },
     {
