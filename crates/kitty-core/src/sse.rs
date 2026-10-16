@@ -46,6 +46,7 @@ const BOM: [u8; 3] = [0xEF, 0xBB, 0xBF];
 
 /// What the `id:` lines of one frame said.
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[doc(hidden)]
 pub enum IdField {
     /// No usable `id:` line.
     Unset,
@@ -56,6 +57,7 @@ pub enum IdField {
 
 /// One dispatched frame: it had at least one `data` line.
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[doc(hidden)]
 pub struct Frame {
     /// `None` when there was no `event:` line or its value was empty.
     pub event: Option<String>,
@@ -66,6 +68,7 @@ pub struct Frame {
 
 /// Why a byte stream is not an SSE stream this reader accepts.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[doc(hidden)]
 pub enum FrameError {
     /// More than [`FRAME_CAP`] bytes since the last event boundary.
     TooLarge,
@@ -76,6 +79,7 @@ pub enum FrameError {
 /// A byte-fed SSE parser with no I/O. Feeding the same bytes whole or one by one gives the same frames and the same
 /// error. After an error the reader stays failed.
 #[derive(Debug)]
+#[doc(hidden)]
 pub struct FrameReader {
     /// A BOM is honoured only at the very start; until the start is settled, matched BOM bytes are held back.
     start_open: bool,
@@ -135,6 +139,11 @@ impl FrameReader {
     }
 
     fn push(&mut self, byte: u8, out: &mut Vec<Frame>) -> Result<(), FrameError> {
+        if self.after_cr && byte == b'\n' {
+            // The LF of a CRLF pair belongs to the line ending already counted at the CR (CON-001).
+            self.after_cr = false;
+            return Ok(());
+        }
         self.since_boundary += 1;
         if self.since_boundary > FRAME_CAP {
             return Err(FrameError::TooLarge);
@@ -276,12 +285,14 @@ pub struct RawChange {
 
 /// A note about the stream itself, not a change.
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
 pub enum StreamDiagnostic {
     UnknownEvent { event: String },
 }
 
 /// Why the stream is over, when it did not end with a declared refusal.
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
 pub enum UnavailableReason {
     /// An answer that is not a stream and not a declared refusal, or a 200 that is not `text/event-stream`.
     Status,
@@ -307,6 +318,7 @@ pub enum UnavailableReason {
 
 /// One item of a [`ChangeStream`].
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
 pub enum StreamEvent {
     Change(RawChange),
     Diagnostic(StreamDiagnostic),
@@ -731,6 +743,24 @@ mod tests {
         // Positive control: exactly the cap is still fine (no error, nothing dispatched yet).
         over.truncate(FRAME_CAP);
         assert_eq!(both(&over), (vec![], None));
+    }
+
+    #[test]
+    fn a_frame_of_exactly_the_cap_parses_after_either_line_ending() {
+        // CON-001: the LF swallowed after a CR must not count against the next frame.
+        for ending in [&b"\n\n"[..], &b"\r\n\r\n"[..], &b"\r\r"[..]] {
+            let mut input = b"data: x".to_vec();
+            input.extend_from_slice(ending);
+            let mut body = b"data: ".to_vec();
+            // The line plus its two terminating CR or LF bytes make exactly FRAME_CAP counted bytes in every case
+            // (an LF that follows a CR is swallowed and never counted).
+            body.resize(FRAME_CAP - 2, b'a');
+            input.extend_from_slice(&body);
+            input.extend_from_slice(ending);
+            let (frames, error) = both(&input);
+            assert_eq!(error, None, "ending {ending:?}");
+            assert_eq!(frames.len(), 2, "ending {ending:?}");
+        }
     }
 
     #[test]

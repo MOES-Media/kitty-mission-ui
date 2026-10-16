@@ -21,7 +21,7 @@ impl OutputRing {
         Self::default()
     }
 
-    /// Appends `chunk`; only the newest [`RING_CAPACITY`] bytes survive.
+    /// Appends `chunk`; only the newest `RING_CAPACITY` bytes survive.
     pub fn push(&self, chunk: &[u8]) {
         let mut bytes = lock(&self.bytes);
         let chunk = if chunk.len() > RING_CAPACITY {

@@ -344,6 +344,40 @@ fn nothing_anywhere_is_not_found_on_path() {
     );
 }
 
+/// SEC-004: a binary name is a bare file name. An absolute name, one with a separator, `.` and `..` are refused even
+/// when joining them to a PATH entry would reach a real executable.
+#[test]
+fn a_binary_name_that_is_not_a_bare_file_name_is_not_found() {
+    let dir = TempDir::new("disc-binary-name");
+    let bin = dir.path().join("bin");
+    let other = dir.path().join("other");
+    std::fs::create_dir(&bin).expect("mkdir");
+    std::fs::create_dir(&other).expect("mkdir");
+    let target = make_exe(&bin, NAME);
+    let snapshot = env(None, Some(join_paths(&[&other])));
+    let escaping = format!("../bin/{NAME}");
+    let nested = format!("bin/{NAME}");
+    let absolute = target.as_os_str().to_owned();
+    let bad: [(&str, OsString); 6] = [
+        ("parent escape", OsString::from(escaping)),
+        ("path separator", OsString::from(nested)),
+        ("absolute", absolute),
+        ("dot", OsString::from(".")),
+        ("dot dot", OsString::from("..")),
+        ("empty", OsString::new()),
+    ];
+    for (what, name) in bad {
+        let result = DefaultDiscovery::new(None, snapshot.clone(), name).locate();
+        expect_missing(result, what);
+    }
+    // Positive control: the same layout with a bare name finds the executable.
+    let good = env(None, Some(join_paths(&[&bin])));
+    let found = DefaultDiscovery::new(None, good, OsString::from(NAME))
+        .locate()
+        .expect("bare name is found");
+    assert_eq!(found, target);
+}
+
 #[test]
 fn details_do_not_echo_the_path_variable() {
     let empty = TempDir::new("disc-secret-dir-xyzzy");

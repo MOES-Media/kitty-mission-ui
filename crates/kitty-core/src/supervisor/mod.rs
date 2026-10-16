@@ -9,11 +9,11 @@
 //! retry takes no slot in the crash window and no backoff (FS2-02). A start that fails (the budget spent, or every
 //! attempt used) is a crash. A contract mismatch is final.
 
-pub mod output;
+pub(crate) mod output;
 pub mod policy;
 pub mod ports;
-pub mod process;
-pub mod spawner;
+pub(crate) mod process;
+pub(crate) mod spawner;
 
 use std::future::Future;
 use std::io;
@@ -111,6 +111,7 @@ pub struct SupervisorHandle {
 
 /// The cause of every launch that did not reach `Ready` and of every crash, oldest first. For diagnostics: a test
 /// that fails on an unexpected sequence prints it.
+#[doc(hidden)]
 pub type FailureLog = Arc<std::sync::Mutex<Vec<String>>>;
 
 impl SupervisorHandle {

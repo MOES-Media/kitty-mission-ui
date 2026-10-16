@@ -338,12 +338,14 @@ A configured path or variable that is invalid gives `Stopped` with `service-miss
 Discovery runs at the first start, on `retry()` and at every restart after a crash, so a binary removed while the
 service was crashing gives `service-missing` at the next restart.
 
-**Start Kitty core.** `CoreConfig` has no `Default` and no builder. A host fills all ten fields:
+**Start Kitty core.** `CoreConfig::new(project_root)` fills every field with the value in the second column below, so a
+host writes `CoreConfig { timings, ..CoreConfig::new(root) }` to change one. `CoreConfig` has no `Default`, no builder and
+is not `#[non_exhaustive]`. The ten fields and their defaults:
 
-| Field | Usual value |
+| Field | Default from `CoreConfig::new` |
 |---|---|
 | `project_root` | the project directory (canonicalised at start) |
-| `discovery` | `Arc::new(DefaultDiscovery::from_process(configured_path, binary_name))` |
+| `discovery` | `Arc::new(DefaultDiscovery::from_process(None, DEFAULT_BINARY_NAME))`; pass your own `configured_path` or binary name by building a `DefaultDiscovery` |
 | `contract` | `ContractPin::embedded()` |
 | `timings` | `Timings::default()` |
 | `policy` | `RestartPolicy::default()` (restart after 0.5, 1, 2 and 4 s; give up at the 5th crash in 300 s; the count resets after 60 s of `Ready`) |
@@ -351,13 +353,21 @@ service was crashing gives `service-missing` at the next restart.
 | `clock` | `Arc::new(MonotonicClock)` |
 | `sleeper` | `Arc::new(TokioSleeper)` |
 | `runtime` | `None` to use the runtime the caller is in |
-| `env_passthrough` | `Vec::new()`, or the extra variable names the service needs |
+| `env_passthrough` | `Vec::new()`; add the extra variable names the service needs |
 
 `Core::start` returns `Err(StartError::NoRuntime)` outside a runtime. It never panics.
 
-**Match on the outcomes with a wildcard arm.** `ReadOutcome` and `StreamOpenError` are `#[non_exhaustive]`, so a host's
-`match` needs a `_ =>` arm. `StreamOpenError` is no longer `Copy`: it carries a `CoreStatus` or a `Mismatch`, so clone it
+**Match on the outcomes with a wildcard arm.** These enums are `#[non_exhaustive]`, so a host's `match` needs a `_ =>`
+arm: `ReadOutcome`, `StreamOpenError`, `SupervisionState`, `DegradedReason`, `Actual`, `MissingReason`,
+`TransportFailure`, `UnavailableReason`, `StreamEvent` and `StreamDiagnostic`. A later release can add a variant without
+breaking a host that has the arm. The plain structs (`CoreStatus`, `Mismatch`, `ServiceMissing`) stay exhaustive. `StreamOpenError` is no longer `Copy`: it carries a `CoreStatus` or a `Mismatch`, so clone it
 or take it by reference.
+
+**Recover from a lagging subscriber.** `Subscription.receiver` is a `tokio::sync::broadcast` receiver. When it returns
+`Lagged`, it has dropped transitions, so call `core.status()` to read the current status again and carry on from there.
+
+**Know what a timeout covers.** `TransportFailure::Timeout` also covers a connect or response-head timeout, not only a
+slow read. It comes with status `None`, because no HTTP answer arrived.
 
 **Map the status to the shell.** `connection_state_hint(&status)` returns one of the five strings of
 `ConnectionState` in `packages/mission-shell/src/client/port.ts`, or `None` when there is nothing to show (a stop the
@@ -397,8 +407,15 @@ It serves the pinned contract document, so the digest check passes. The supervis
   There, the service ends only when the host calls `stop().await`, or when the last `Core` clone is dropped while the
   runtime is still running. A host that ends with `std::process::exit`, is killed, or crashes leaves the service
   running. Tauri's app exit ends the process that way, so call `stop().await` before exiting (`#20`).
+- `PR_SET_PDEATHSIG` reaches only the direct child. If the host dies hard, grandchildren of the service can survive.
+- The check that the listening socket belongs to the service runs on Linux only. It also fails open: when
+  `/proc/net/tcp` cannot be read, the start goes on without the check.
+- The contract digest shows that the service serves the pinned document. It is not authentication: another local
+  process that serves the same document passes it.
 - On macOS, an app started by launchd gets a minimal `PATH`, so give the host a configured path. Windows `PATHEXT`
   and Job Objects are not handled yet (`#20`).
+- On Windows, `stop()` ends the service process at once: there is no process-group kill and no grace period yet, so
+  child processes of the service can survive. Job Objects follow in `#20`.
 
 **The contract document.** The stub and the digest check use `contracts/fixtures/mission-status.openapi.json`, a
 bundle that `pnpm contract:generate` writes from the vendored contract. Never edit it by hand: `Gate: contract` fails

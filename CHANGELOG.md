@@ -21,8 +21,9 @@ All user-visible changes to this repository. Per-package notes live in `packages
   - **Relay.** `Core::read` and `Core::open_stream` return the service's answer unchanged (a non-2xx answer is relayed as it is, not turned into an error; before `Ready`, or on a mismatch, a read returns `NotReady` or `ContractMismatch` instead), and
     `forward()` passes a request through for the dashboard. Relay latency measured here: p50 138 us, p95 157 us in a
     debug build, and p50 34 us, p95 48 us in a release build.
-  - **Host API.** `CoreConfig` has no `Default` and no builder: a host fills all ten fields. `ReadOutcome` and
-    `StreamOpenError` are `#[non_exhaustive]`, so a host's `match` needs a `_ =>` arm. `StreamOpenError` is not `Copy`.
+  - **Host API.** `CoreConfig::new(project_root)` fills all ten fields with the documented defaults, and a host overrides one with `CoreConfig { x, ..CoreConfig::new(root) }`. `CoreConfig` has no `Default` and is not `#[non_exhaustive]`. `ReadOutcome`,
+    `StreamOpenError`, `SupervisionState`, `DegradedReason`, `Actual`, `MissingReason`, `TransportFailure`,
+    `UnavailableReason`, `StreamEvent` and `StreamDiagnostic` are `#[non_exhaustive]`, so a host's `match` needs a `_ =>` arm. `StreamOpenError` is not `Copy`.
     `connection_state_hint` maps a status to the five `ConnectionState` strings of the shell's port. A pin that cannot
     be parsed gives `Stopped` with `ContractMismatch`, an all-zero `expected` digest that a host must not show or
     compare, and an `Unparseable` `actual`.
@@ -42,8 +43,12 @@ All user-visible changes to this repository. Per-package notes live in `packages
     new port, up to three launches per start, without using a crash slot. After five failed starts (up to fifteen
     launches, 7.5 s of backoff in total) the status is `service-missing` with the reason `crashing`.
   - **#21.** `forward()` sends exactly a `Host` and the caller's `Accept` header, and puts no cap and no deadline on the
-    response body: apply your own limits. A refused stream whose body is over 16 MiB or never ends arrives as
+    response body: apply your own limits. `forward()` does not send `Last-Event-ID`, so to resume a stream, pass the `streamCursor` you last saw. A refused stream whose body is over 16 MiB or never ends arrives as
     `Unavailable`, not `Refused`.
+  - **Limits that hold for every host.** `PR_SET_PDEATHSIG` reaches only the direct child, so grandchildren of the
+    service can survive a hard host death. The socket-ownership check is Linux-only and fails open when `/proc/net/tcp`
+    cannot be read. The contract digest is not authentication. `TransportFailure::Timeout` also covers connect and
+    head timeouts, with status `None`. On `Lagged` from `Subscription.receiver`, re-read `core.status()`.
   - **#22.** The service needs a liveness endpoint, because a hung service whose process stays alive stays `Ready`. It
     should exit when its parent dies, identify its project and pid, run in its own session (`setsid`), accept
     `JAVA_HOME` through `env_passthrough`, and say whether its contract document is bundled or unbundled.

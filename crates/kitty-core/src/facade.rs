@@ -13,14 +13,14 @@ use tokio::sync::{broadcast, watch};
 
 use crate::client::{ContractClient, ReadOutcome, Timings};
 use crate::contract::{Actual, ContractPin, Digest, Mismatch};
-use crate::discovery::Discovery;
+use crate::discovery::{DefaultDiscovery, Discovery, DEFAULT_BINARY_NAME};
 use crate::endpoint::ServiceEndpoint;
 use crate::routes::ReadRequest;
 use crate::sse::{ChangeStream, StreamOpenError, StreamScope};
 use crate::status::{CoreStatus, DegradedReason, SupervisionState};
 use crate::supervisor::{
-    spawn_supervisor, Clock, PortPicker, RestartPolicy, Sleeper, StatusSink, SupervisorConfig,
-    SupervisorHandle, SupervisorPanicked,
+    spawn_supervisor, Clock, LoopbackPortPicker, MonotonicClock, PortPicker, RestartPolicy,
+    Sleeper, StatusSink, SupervisorConfig, SupervisorHandle, SupervisorPanicked, TokioSleeper,
 };
 
 /// How many transitions a slow subscriber can fall behind before it gets `Lagged` (NFR-004).
@@ -41,6 +41,30 @@ pub struct CoreConfig {
     pub runtime: Option<Handle>,
     /// Extra variable names passed to the child; empty by default (FS-11).
     pub env_passthrough: Vec<std::ffi::OsString>,
+}
+
+impl CoreConfig {
+    /// The documented defaults for `project_root`: discovery from the process environment with the default binary
+    /// name, the embedded contract pin, production timings and restart policy, the loopback port picker, the
+    /// monotonic clock, the tokio sleeper, the caller's runtime and an empty passthrough. A host that needs another
+    /// value writes `CoreConfig { field, ..CoreConfig::new(root) }`.
+    pub fn new(project_root: impl Into<std::path::PathBuf>) -> Self {
+        Self {
+            project_root: project_root.into(),
+            discovery: Arc::new(DefaultDiscovery::from_process(
+                None,
+                DEFAULT_BINARY_NAME.into(),
+            )),
+            contract: ContractPin::embedded(),
+            timings: Timings::default(),
+            policy: RestartPolicy::default(),
+            ports: Arc::new(LoopbackPortPicker),
+            clock: Arc::new(MonotonicClock),
+            sleeper: Arc::new(TokioSleeper),
+            runtime: None,
+            env_passthrough: Vec::new(),
+        }
+    }
 }
 
 /// Why `Core::start` did not start.
