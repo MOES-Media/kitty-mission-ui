@@ -74,6 +74,7 @@ describe('routing on real screens (FR-001)', () => {
     expect(served.length).toBeGreaterThan(1);
     expect(tree.items.map((leaf) => leaf.href)).toEqual(served.map((id) => `#/missions/${M}/work-packages/${id}`));
     expect(tree.current).toBe('WP04');
+    expect((tree as unknown as Element).getAttribute('slot'), 'trees are slotted into the sidebar').toBe('sidebar-section');
     // The lane word is passed through from the Mission detail (positive control: at least one row carries it).
     expect(tree.items.filter((leaf) => typeof leaf.meta === 'string' && leaf.meta !== '').length).toBeGreaterThan(0);
   });

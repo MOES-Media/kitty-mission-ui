@@ -4,7 +4,6 @@
  */
 export { default as MissionShell } from './ui/MissionShell.svelte';
 export { mountShell } from './ui/mount';
-export type { MountedShell } from './ui/mount';
 export { formatRoute, parseRoute } from './core/routes';
 export type { Destination, ShellMode } from './core/routes';
 export type { ShellHost } from './core/host';

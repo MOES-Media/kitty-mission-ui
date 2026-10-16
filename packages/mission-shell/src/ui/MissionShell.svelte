@@ -6,6 +6,7 @@
   import { onDestroy, tick, untrack } from 'svelte';
   import type { MissionStatusClient } from '../client/port';
   import { createShellController } from '../controller/shell-controller';
+  import { formatRoute, normaliseRoute } from '../core/routes';
   import { bindIntents } from './bind-intents';
   import ConnectionBanner from './ConnectionBanner.svelte';
   import { navigationOf } from './navigation';
@@ -54,7 +55,13 @@
   // A Svelte host that changes its props keeps working: only a changed value reaches the controller.
   $effect(() => {
     const route = options.route;
-    if (route !== undefined && route !== lastRoute) setRoute(route);
+    if (route === undefined || route === lastRoute) return;
+    // A host that echoes routeChanged back into its route prop sends the route the shell already shows: not a navigation.
+    if (normaliseRoute(route, untrack(() => options.mode)).route === formatRoute(untrack(() => controller.snapshot().destination))) {
+      lastRoute = route;
+      return;
+    }
+    setRoute(route);
   });
   $effect(() => {
     const client = options.client;

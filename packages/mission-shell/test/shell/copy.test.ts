@@ -1,6 +1,8 @@
 // FS-03 / R-18 "Copy protocol" on a real screen: a host whose copyText answers 'copied' twice. The controller sets
-// copyResult = null, lets the view flush (afterRender = Svelte's tick), then awaits the host. So the second 'copied' is a
-// change for the element, not a repeat of the first.
+// copyResult = null, lets the view flush, then awaits the host. This test pins the observable sequence the element sees
+// (null, copied, null, copied); it goes red when the controller's null step is removed. It does NOT prove that the
+// afterRender = tick() flush is needed: replacing it by Promise.resolve() leaves the test green (Svelte's own flush
+// microtask is queued first). That flush is verified by inspection only.
 import { afterEach, describe, expect, it } from 'vitest';
 import { destroyAll, mountAt, recordingHost, screenElement, settle } from './helpers';
 

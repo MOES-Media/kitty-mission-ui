@@ -33,8 +33,11 @@ describe('the ./shell entry', () => {
     expectTypeOf<shell.ShellOptions>().toHaveProperty('copy');
     expectTypeOf<shell.ShellOptions['copy']>().toEqualTypeOf<shell.ShellCopyOverrides | undefined>();
     expectTypeOf<{ title: string; body: string }>().toExtend<NonNullable<shell.ShellCopyOverrides['serviceMissing']>>();
-    expectTypeOf<ReturnType<typeof shell.mountShell>>().toEqualTypeOf<shell.MountedShell>();
-    expectTypeOf<shell.MountedShell['setClient']>().toEqualTypeOf<(client: MissionStatusClient | null, route?: string) => void>();
+    expectTypeOf<ReturnType<typeof shell.mountShell>>().toEqualTypeOf<{
+      setRoute(route: string): void;
+      setClient(client: MissionStatusClient | null, route?: string): void;
+      destroy(): void;
+    }>();
     expectTypeOf(shell.formatRoute).toEqualTypeOf<(destination: shell.Destination) => string>();
     expectTypeOf(shell.parseRoute).toEqualTypeOf<(route: string, mode: shell.ShellMode) => shell.Destination>();
   });
