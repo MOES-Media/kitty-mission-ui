@@ -24,8 +24,9 @@ use kitty_core::discovery::{
 };
 use kitty_core::status::{CoreStatus, DegradedReason, SupervisionState};
 use kitty_core::supervisor::{
-    spawn_supervisor, ManualClock, PortPicker, RecordingSleeper, RestartPolicy, StatusSink,
-    SupervisorConfig, SupervisorHandle, CAUSE_BUDGET_503, CAUSE_NOT_OWNED,
+    spawn_supervisor, FailureLog, ManualClock, PortPicker, RecordingSleeper, RestartPolicy,
+    StatusSink, SupervisorConfig, SupervisorHandle, CAUSE_BUDGET, CAUSE_BUDGET_503,
+    CAUSE_NOT_OWNED,
 };
 use serde_json::Value;
 
@@ -40,6 +41,7 @@ fn lock<T>(m: &Mutex<T>) -> MutexGuard<'_, T> {
 #[derive(Default)]
 struct RecordingSink {
     statuses: Mutex<Vec<CoreStatus>>,
+    failures: Mutex<Option<FailureLog>>,
 }
 
 impl StatusSink for RecordingSink {
@@ -53,8 +55,15 @@ impl RecordingSink {
         lock(&self.statuses).clone()
     }
 
+    fn failure_causes(&self) -> Vec<String> {
+        lock(&self.failures)
+            .as_ref()
+            .map(|log| lock(log).clone())
+            .unwrap_or_default()
+    }
+
     async fn wait_for(&self, what: &str, done: impl Fn(&[CoreStatus]) -> bool) -> Vec<CoreStatus> {
-        within(what, async {
+        let waited = tokio::time::timeout(common::HARNESS_DEADLINE, async {
             loop {
                 let seen = self.all();
                 if done(&seen) {
@@ -63,7 +72,15 @@ impl RecordingSink {
                 tokio::time::sleep(Duration::from_millis(5)).await;
             }
         })
-        .await
+        .await;
+        match waited {
+            Ok(seen) => seen,
+            Err(_) => panic!(
+                "{what}: no result within the deadline; seen {:?}; failures {:?}",
+                sequence(&self.all()),
+                self.failure_causes()
+            ),
+        }
     }
 
     async fn wait_for_state(&self, what: &str, state: &str, nth: usize) -> Vec<CoreStatus> {
@@ -153,6 +170,7 @@ fn report(name: &str, seen: &[CoreStatus], sleeper: &[Duration]) {
 struct ScriptedPorts {
     script: Mutex<VecDeque<u16>>,
     excludes: Mutex<Vec<Vec<u16>>>,
+    picked: Mutex<Vec<u16>>,
 }
 
 impl ScriptedPorts {
@@ -160,41 +178,84 @@ impl ScriptedPorts {
         Arc::new(Self {
             script: Mutex::new(script.iter().copied().collect()),
             excludes: Mutex::new(Vec::new()),
+            picked: Mutex::new(Vec::new()),
         })
     }
 
     fn excludes(&self) -> Vec<Vec<u16>> {
         lock(&self.excludes).clone()
     }
+
+    /// Every port handed out, in order.
+    fn picked(&self) -> Vec<u16> {
+        lock(&self.picked).clone()
+    }
 }
 
 impl PortPicker for ScriptedPorts {
     fn pick(&self, exclude: &[u16]) -> std::io::Result<u16> {
         lock(&self.excludes).push(exclude.to_vec());
-        if let Some(port) = lock(&self.script).pop_front() {
-            assert!(!exclude.contains(&port), "the script repeats a tried port");
-            return Ok(port);
-        }
-        Ok(unique_port(exclude))
+        let scripted = lock(&self.script).pop_front();
+        let port = match scripted {
+            Some(port) => {
+                assert!(!exclude.contains(&port), "the script repeats a tried port");
+                port
+            }
+            None => unique_port(exclude),
+        };
+        lock(&self.picked).push(port);
+        Ok(port)
     }
 }
 
-/// A free port that no other test in this process is using, taken from below the ephemeral range.
+/// A free port that no other test is using, taken from below the ephemeral range.
 ///
 /// Ports picked by `bind(0)` come from the ephemeral range, which is also where a client socket's local port comes
 /// from. A client that polls a port which nobody has bound yet can then connect to itself (a TCP simultaneous open)
 /// and occupy exactly the port the service is about to bind. That is a real, rare race of the loopback picker, and
 /// the supervisor survives it with its busy-port retry; but a scenario that asserts an exact sequence must not
-/// depend on it. So scenarios draw from 20000..30000, which the OS never hands to a client socket, in a sequence
-/// that is private to this process.
+/// depend on it. So scenarios draw from 20000..30000, which the OS never hands to a client socket.
+///
+/// The choice must also hold between test processes that run side by side (two lanes, a reviewer re-running the
+/// suite, the gate proof): a port is claimed by creating `<tmp>/kitty-core-test-ports/<port>` exclusively, with the
+/// owner's pid inside. A claim whose owner is gone is stale and is taken over.
 fn unique_port(exclude: &[u16]) -> u16 {
+    use std::io::Write as _;
     use std::sync::atomic::{AtomicU32, Ordering};
     static NEXT: AtomicU32 = AtomicU32::new(0);
-    let seed = std::process::id().wrapping_mul(2_654_435_761) % 10_000;
+    let claims = std::env::temp_dir().join("kitty-core-test-ports");
+    std::fs::create_dir_all(&claims).expect("create the port claim directory");
+    let me = std::process::id();
+    let start = me.wrapping_mul(2_654_435_761) % 10_000;
     loop {
         let n = NEXT.fetch_add(1, Ordering::SeqCst);
-        let port = 20_000 + ((seed + n) % 10_000) as u16;
+        let port = (20_000 + (start + n) % 10_000) as u16;
         if exclude.contains(&port) {
+            continue;
+        }
+        let claim = claims.join(port.to_string());
+        let claimed = match std::fs::OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(&claim)
+        {
+            Ok(mut file) => file.write_all(me.to_string().as_bytes()).is_ok(),
+            Err(_) => {
+                let owner: Option<i32> = std::fs::read_to_string(&claim)
+                    .ok()
+                    .and_then(|t| t.trim().parse().ok());
+                // An unreadable or empty claim may still be being written; only a dead owner is taken over.
+                match owner {
+                    // SAFETY: signal 0 delivers nothing.
+                    Some(pid) if unsafe { libc::kill(pid, 0) } == -1 && errno() == libc::ESRCH => {
+                        let _ = std::fs::remove_file(&claim);
+                        false
+                    }
+                    _ => false,
+                }
+            }
+        };
+        if !claimed {
             continue;
         }
         if std::net::TcpListener::bind(("127.0.0.1", port)).is_ok() {
@@ -310,35 +371,55 @@ fn kill_if_fake(pid: i32) {
     }
 }
 
+/// The pids of the `kitty-fake-service` processes whose command line names `root` as the whole value of a flag.
+fn live_fakes_of(root: &Path) -> Vec<i32> {
+    let needle = root.display().to_string();
+    let mut pids = Vec::new();
+    for entry in std::fs::read_dir("/proc").expect("/proc").flatten() {
+        let Some(pid) = entry
+            .file_name()
+            .to_str()
+            .and_then(|n| n.parse::<i32>().ok())
+        else {
+            continue;
+        };
+        let Ok(cmdline) = std::fs::read(format!("/proc/{pid}/cmdline")) else {
+            continue;
+        };
+        let ours = cmdline.split(|b| *b == 0).any(|arg| {
+            let arg = String::from_utf8_lossy(arg);
+            arg.strip_suffix(&needle)
+                .is_some_and(|flag| flag.starts_with("--") && flag.ends_with('='))
+        });
+        if ours && String::from_utf8_lossy(&cmdline).contains("kitty-fake-service") {
+            pids.push(pid);
+        }
+    }
+    pids
+}
+
+/// Fails by name unless no fake of this root is left within `limit`.
+async fn wait_no_fakes(what: &str, root: &Path, limit: Duration) {
+    let started = Instant::now();
+    loop {
+        let left = live_fakes_of(root);
+        if left.is_empty() {
+            return;
+        }
+        assert!(
+            started.elapsed() < limit,
+            "{what}: {left:?} still running {limit:?} later"
+        );
+        tokio::time::sleep(Duration::from_millis(5)).await;
+    }
+}
+
 /// Kills, by pid, every `kitty-fake-service` whose command line names `root`: the processes this test's own
 /// scratch directory started, including a grandchild that was spawned too late to be in a pid file.
 fn kill_fakes_of(root: &Path) {
-    let needle = root.display().to_string();
     for round in 0..2 {
-        if let Ok(entries) = std::fs::read_dir("/proc") {
-            for entry in entries.flatten() {
-                let Some(pid) = entry
-                    .file_name()
-                    .to_str()
-                    .and_then(|n| n.parse::<i32>().ok())
-                else {
-                    continue;
-                };
-                let Ok(cmdline) = std::fs::read(format!("/proc/{pid}/cmdline")) else {
-                    continue;
-                };
-                // Arguments are NUL-separated; match the root as the whole value of a `--flag=<root>` argument, so
-                // that a root ending in `-1` never matches one ending in `-10`.
-                let ours = cmdline.split(|b| *b == 0).any(|arg| {
-                    let arg = String::from_utf8_lossy(arg);
-                    arg.strip_suffix(&needle)
-                        .is_some_and(|flag| flag.starts_with("--") && flag.ends_with('='))
-                });
-                let is_fake = String::from_utf8_lossy(&cmdline).contains("kitty-fake-service");
-                if ours && is_fake {
-                    kill_if_fake(pid);
-                }
-            }
+        for pid in live_fakes_of(root) {
+            kill_if_fake(pid);
         }
         if round == 0 {
             std::thread::sleep(Duration::from_millis(30));
@@ -411,6 +492,7 @@ impl Rig {
             self.sink.clone(),
             &tokio::runtime::Handle::current(),
         );
+        *lock(&self.sink.failures) = Some(handle.failure_log());
         self.handle = Some(handle);
     }
 
@@ -431,6 +513,12 @@ impl Rig {
         serde_json::from_str(&text).expect("launch record is JSON")
     }
 
+    /// Launch `n`'s record, when the fake got far enough to write it (a fake stopped during its start has none).
+    fn launch_record(&self, n: usize) -> Option<Value> {
+        let text = std::fs::read_to_string(self.root.join(format!("launch-{n}.json"))).ok()?;
+        serde_json::from_str(&text).ok()
+    }
+
     fn launch_pid(&self, n: usize) -> i32 {
         self.launch(n)["pid"].as_i64().expect("pid") as i32
     }
@@ -444,6 +532,11 @@ impl Rig {
             .parse()
             .expect("port number");
         port
+    }
+
+    /// Asks the running fake to crash now (exit status 3), at an exact moment.
+    fn crash_now(&self) {
+        std::fs::write(self.root.join("crash-now"), "").expect("write the crash trigger");
     }
 
     fn launch_count(&self) -> usize {
@@ -605,8 +698,12 @@ async fn a_current_thread_runtime_supervises_too() {
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn a_crash_after_ready_backs_off_and_restarts() {
-    let mut rig = Rig::new(&["crash-after", "ready"], Some(400));
+    let mut rig = Rig::new(&["crash-after", "ready"], None);
     rig.go();
+    rig.sink
+        .wait_for_state("the first launch is ready", "Ready", 1)
+        .await;
+    rig.crash_now();
     let seen = rig
         .sink
         .wait_for_state("the restarted service becomes ready", "Ready", 2)
@@ -632,8 +729,14 @@ async fn a_crash_after_ready_backs_off_and_restarts() {
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn five_crashes_give_up_with_the_last_exit_status() {
-    let mut rig = Rig::new(&["crash-after"], Some(400));
+    let mut rig = Rig::new(&["crash-after"], None);
     rig.go();
+    for nth in 1..=5 {
+        rig.sink
+            .wait_for_state(&format!("launch {nth} is ready"), "Ready", nth)
+            .await;
+        rig.crash_now();
+    }
     let seen = rig
         .sink
         .wait_for_state("the supervisor gives up", "Stopped", 1)
@@ -758,16 +861,27 @@ async fn a_socket_that_is_not_the_services_is_not_ready() {
         DegradedReason::ServiceMissing(m) => assert_eq!(m.detail, CAUSE_NOT_OWNED),
         other => panic!("expected ServiceMissing, got {other:?}"),
     }
-    let tried: Vec<u16> = (0..3).map(|n| rig.launch_port(n)).collect();
-    assert_eq!(tried, ports, "three distinct ports, in the scripted order");
-    assert_eq!(rig.launch_count(), 3);
+    assert_eq!(
+        rig.ports.picked(),
+        ports,
+        "three distinct ports, in the scripted order"
+    );
+    // A service stopped while it was still starting has no record; one that has a record names its port.
+    for (n, port) in ports.iter().enumerate() {
+        if rig.launch_record(n).is_some() {
+            assert_eq!(rig.launch_port(n), *port);
+        }
+    }
     assert!(
         rig.sleeper.log().is_empty(),
         "no backoff: the policy gave up"
     );
-    for n in 0..3 {
-        assert!(reaped(rig.launch_pid(n)), "launch {n} was stopped");
-    }
+    wait_no_fakes(
+        "every launch was stopped",
+        &rig.root,
+        Duration::from_secs(1),
+    )
+    .await;
     drop(squatters);
     for p in ports {
         port_is_free_again(p).await;
@@ -812,8 +926,12 @@ async fn ownership_mismatches_take_no_crash_slot_and_no_backoff() {
         ])
     );
     assert_invariants(&seen);
-    let tried: Vec<u16> = (0..3).map(|n| rig.launch_port(n)).collect();
-    assert_eq!(tried, ports);
+    assert_eq!(rig.ports.picked()[..3], ports[..]);
+    for (n, port) in ports.iter().enumerate() {
+        if rig.launch_record(n).is_some() {
+            assert_eq!(rig.launch_port(n), *port);
+        }
+    }
     assert_eq!(rig.sleeper.log(), vec![Duration::from_millis(500)]);
     assert!(!ports.contains(&ready_port(&seen)));
     rig.stop().await;
@@ -878,44 +996,58 @@ async fn a_start_budget_spent_on_503s_is_a_start_failure() {
     assert!(requests
         .iter()
         .all(|r| r == "GET /api/v1/openapi.yaml HTTP/1.1"));
-    for n in 0..5 {
-        assert!(reaped(rig.launch_pid(n)), "launch {n} was stopped");
-    }
+    wait_no_fakes(
+        "every launch was stopped",
+        &rig.root,
+        Duration::from_secs(1),
+    )
+    .await;
     report("serve-503", &seen, &rig.sleeper.log());
     assert_no_panics();
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn a_service_that_never_answers_is_stopped_and_counts_as_a_crash() {
-    let mut rig = Rig::new(&["never-ready", "ready"], None);
+    let mut rig = Rig::new(&["never-ready"], None);
     rig.timings.start_timeout = Duration::from_millis(300);
+    // One crash is enough to give up: the scenario is the first start only, so a slow machine cannot change it.
+    rig.policy.give_up_at = 1;
     rig.go();
     let seen = rig
         .sink
-        .wait_for_state("the second launch is ready", "Ready", 1)
+        .wait_for_state("the supervisor gives up", "Stopped", 1)
         .await;
     assert_eq!(
         sequence(&seen),
         strings(&[
             "Starting g1 a0",
             "Crashed g1 a0",
-            "Backoff(500ms) g1 a0",
-            "Starting g2 a0",
-            "Ready g2 a0",
+            "Stopped g1 a0 [missing:Crashing]"
         ])
     );
     assert_invariants(&seen);
-    assert!(
-        reaped(rig.launch_pid(0)),
-        "the full stop sequence ended the silent service"
+    match &seen.last().expect("last").degraded {
+        DegradedReason::ServiceMissing(m) => {
+            assert_eq!(
+                (m.reason, m.detail.as_str()),
+                (MissingReason::Crashing, CAUSE_BUDGET)
+            )
+        }
+        other => panic!("expected ServiceMissing, got {other:?}"),
+    }
+    assert_eq!(
+        rig.sink.failure_causes(),
+        vec![CAUSE_BUDGET.to_owned()],
+        "positive control: a service was started and failed once"
     );
-    assert!(
-        alive(rig.launch_pid(1)),
-        "positive control: the ready service runs"
-    );
-    assert_eq!(rig.sleeper.log(), vec![Duration::from_millis(500)]);
-    rig.stop().await;
-    report("never-ready", &rig.sink.all(), &rig.sleeper.log());
+    wait_no_fakes(
+        "the full stop sequence ended the silent service",
+        &rig.root,
+        Duration::from_secs(1),
+    )
+    .await;
+    assert!(rig.sleeper.log().is_empty());
+    report("never-ready", &seen, &rig.sleeper.log());
     assert_no_panics();
 }
 
@@ -1084,6 +1216,8 @@ async fn retry_from_stopped_starts_again_with_a_clean_history() {
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn stop_ends_a_ready_service_within_the_grace_period() {
     let mut rig = Rig::new(&["ready"], None);
+    // A long grace period: a service that obeys SIGTERM must be gone long before it ends, even on a busy machine.
+    rig.timings.stop_grace = Duration::from_secs(3);
     rig.go();
     rig.sink.wait_for_state("ready", "Ready", 1).await;
     let pid = rig.launch_pid(0);
@@ -1439,4 +1573,85 @@ fn nothing_is_left_behind_by_the_scratch_directories() {
         assert!(Path::new(&path).exists());
     }
     assert!(!path.exists());
+}
+
+// ---- The fake itself ------------------------------------------------------------------------------------------------
+
+/// Kills and reaps a fake that a test started by hand, whatever happens to the test.
+struct HandStarted {
+    child: std::process::Child,
+    root: PathBuf,
+}
+
+impl Drop for HandStarted {
+    fn drop(&mut self) {
+        let _ = self.child.kill();
+        let _ = self.child.wait();
+        kill_fakes_of(&self.root);
+    }
+}
+
+#[test]
+fn the_fakes_crash_after_mode_counts_its_delay_from_the_first_contract_fetch() {
+    use std::io::{Read, Write};
+    let dir = TempDir::new("supervision-fake");
+    let root = std::fs::canonicalize(dir.path()).expect("canonical");
+    write_scenario(&root, &["crash-after"], Some(150));
+    let port = unique_port(&[]);
+    let child = std::process::Command::new(FAKE)
+        .arg(format!("--mission-status.project-root={}", root.display()))
+        .arg(format!("--mission-status.port={port}"))
+        .stdin(std::process::Stdio::null())
+        .stdout(std::process::Stdio::null())
+        .stderr(std::process::Stdio::null())
+        .spawn()
+        .expect("start the fake");
+    let mut fake = HandStarted {
+        child,
+        root: root.clone(),
+    };
+    let give_up = Instant::now() + Duration::from_secs(5);
+    let mut stream = loop {
+        match std::net::TcpStream::connect(("127.0.0.1", port)) {
+            Ok(stream) => break stream,
+            Err(e) => {
+                assert!(Instant::now() < give_up, "the fake never listened: {e}");
+                std::thread::sleep(Duration::from_millis(5));
+            }
+        }
+    };
+    // Positive control: the timer does not run before the first fetch, so a fake that was only connected to
+    // is still alive well after the delay.
+    std::thread::sleep(Duration::from_millis(400));
+    assert!(
+        fake.child.try_wait().expect("try_wait").is_none(),
+        "the fake exited before any fetch"
+    );
+    let fetched = Instant::now();
+    stream
+        .write_all(b"GET /api/v1/openapi.yaml HTTP/1.1\r\nHost: x\r\nConnection: close\r\n\r\n")
+        .expect("write the request");
+    let mut reply = Vec::new();
+    stream.read_to_end(&mut reply).expect("read the reply");
+    assert!(
+        reply.starts_with(b"HTTP/1.1 200 OK"),
+        "the document is served"
+    );
+    let status = loop {
+        if let Some(status) = fake.child.try_wait().expect("try_wait") {
+            break status;
+        }
+        assert!(
+            fetched.elapsed() < Duration::from_secs(5),
+            "the fake never crashed"
+        );
+        std::thread::sleep(Duration::from_millis(2));
+    };
+    assert!(
+        fetched.elapsed() >= Duration::from_millis(150),
+        "crashed after {:?}",
+        fetched.elapsed()
+    );
+    assert_eq!(status.code(), Some(3));
+    assert_no_panics();
 }

@@ -106,7 +106,12 @@ pub struct SupervisorHandle {
     commands: mpsc::UnboundedSender<Cmd>,
     task: Option<JoinHandle<()>>,
     capture: Arc<OutputCapture>,
+    failures: FailureLog,
 }
+
+/// The cause of every launch that did not reach `Ready` and of every crash, oldest first. For diagnostics: a test
+/// that fails on an unexpected sequence prints it.
+pub type FailureLog = Arc<std::sync::Mutex<Vec<String>>>;
 
 impl SupervisorHandle {
     /// SIGTERM to the group, the grace period, SIGKILL; resolves when the group is gone and `Stopped` is published.
@@ -140,6 +145,11 @@ impl SupervisorHandle {
     pub fn captured_output(&self) -> Vec<u8> {
         self.capture.snapshot()
     }
+
+    /// The causes of every failed launch and crash so far.
+    pub fn failure_log(&self) -> FailureLog {
+        self.failures.clone()
+    }
 }
 
 impl Drop for SupervisorHandle {
@@ -160,7 +170,9 @@ pub fn spawn_supervisor(
 ) -> SupervisorHandle {
     let (commands, rx) = mpsc::unbounded_channel();
     let capture = Arc::new(OutputCapture::new());
+    let failures = FailureLog::default();
     let machine = Machine {
+        failures: failures.clone(),
         policy: PolicyState::new(config.policy.clone()),
         cfg: config,
         sink,
@@ -176,6 +188,7 @@ pub fn spawn_supervisor(
         commands,
         task: Some(task),
         capture,
+        failures,
     }
 }
 
@@ -267,6 +280,7 @@ struct Machine {
     rx: mpsc::UnboundedReceiver<Cmd>,
     runtime: Handle,
     capture: Arc<OutputCapture>,
+    failures: FailureLog,
     policy: PolicyState,
     generation: u64,
     published_any: bool,
@@ -297,6 +311,13 @@ impl Machine {
             self.generation += 1;
         }
         self.publish(SupervisionState::Starting, DegradedReason::None, attempt);
+    }
+
+    fn note_failure(&self, cause: &str) {
+        self.failures
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .push(cause.to_owned());
     }
 
     fn publish_stopped(&mut self, degraded: DegradedReason) {
@@ -381,6 +402,7 @@ impl Machine {
 
     /// `Crashed`, then the policy: a backoff and a new start, or the give-up.
     async fn crashed(&mut self, cause: String, ready_for: Option<Duration>) -> Flow {
+        self.note_failure(&cause);
         self.publish(SupervisionState::Crashed, DegradedReason::None, 0);
         if let Some(d) = ready_for {
             self.policy.on_ready_for(d);
@@ -488,6 +510,9 @@ impl Machine {
                     false
                 }
             };
+            if retryable {
+                self.note_failure(&cause);
+            }
             if !retryable || Instant::now() >= deadline {
                 return StartOutcome::Failed(cause);
             }
