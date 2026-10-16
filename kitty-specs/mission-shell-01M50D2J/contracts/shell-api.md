@@ -68,8 +68,13 @@ export { default as MissionShell } from './ui/MissionShell.svelte';   // props: 
 export function mountShell(target: Element, options: ShellOptions): {
   setRoute(route: string): void;
   /** A new project: releases the old subscriptions, drops all state, subscribes the new client, and optionally sets
-   *  the route in the same step. */
+   *  the route in the same step. Without a route it resets to the default route for (client, mode): `/missions`, or
+   *  `/projects` for a null client on the desktop, and fires `routeChanged` when that differs from the screen shown.
+   *  (Pre-merge fold ARCH-001.) */
   setClient(client: MissionStatusClient | null, route?: string): void;
+  /** Replaces the degraded-banner overrides (not a merge; `{}` restores the defaults). The banner updates on the
+   *  next render. A no-op after destroy. (Pre-merge fold ARCH-003, operator-approved.) */
+  setCopy(copy: ShellCopyOverrides): void;
   destroy(): void;
 };
 
@@ -95,6 +100,14 @@ export type { Destination } from './core/routes';
   `host.onWindowRefocus` (when the member exists). All three are released on `destroy` and on `setClient`.
   - After a refused stream, the shell never subscribes again before a client change.
   - Each later reconnect is a shell-side resync.
+- **Null client on the desktop.** The only destination is `projects`: an initial route, `setRoute`, `navigate` and
+  `setClient` are coerced to it, and the coerced route is announced through `routeChanged`.
+- **Canonical destinations only.** A destination built from an intent detail must match the id patterns (Mission id,
+  WP id, artifact path, with no lone UTF-16 surrogates); an invalid one is dropped with no read, host call or
+  `routeChanged`. `parseRoute(formatRoute(d))` deep-equals every destination the shell shows.
+- **The `copy` prop** of `MissionShell` is watched: a new object replaces the overrides, `undefined` restores the
+  defaults. An override is shown as given; the "Data that was already loaded stays visible." rule (CP-1 A2) applies to
+  the default text only.
 - **Never throws** (NFR-007). A host member's throw or rejection becomes its fallback. Dashboard intents of the picker
   or dialog do nothing.
 - **Not part of this surface**: adapters (#20, #21), `kitty-core` (#19), any write path, and a per-parameter fixture
