@@ -1,6 +1,7 @@
 // pnpm contract:generate: regenerate types.generated.ts and fixtures.generated.ts from the vendored contract, and the
 // language-neutral JSON files of contracts/fixtures/ (examples, valid fixtures, routes) that the stub and the shell read.
 // Exports the pure generators too: check.mjs regenerates in memory and byte-compares (C2, C3).
+import $RefParser from '@apidevtools/json-schema-ref-parser';
 import openapiTS, { astToString } from 'openapi-typescript';
 import { parse } from 'yaml';
 import { mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
@@ -76,12 +77,13 @@ export async function generateFixturesSource(root = ROOT, deps = {}) {
 
 // ---- contracts/fixtures/: the JSON the stub (crates/kitty-stub) and the shell's fixture adapter read ----------------
 
-/** The four files of contracts/fixtures/. The generator writes the first three; changes.json is authored by hand. */
+/** The files of contracts/fixtures/. The generator writes all but changes.json (the bundle is a separate generator); changes.json is authored by hand. */
 export const FIXTURE_FILES = {
   examples: 'contracts/fixtures/mission-status.examples.json',
   fixtures: 'contracts/fixtures/mission-status.fixtures.json',
   routes: 'contracts/fixtures/mission-status.routes.json',
   changes: 'contracts/fixtures/mission-status.changes.json',
+  openapi: 'contracts/fixtures/mission-status.openapi.json',
 };
 
 /**
@@ -192,14 +194,25 @@ export async function generateJsonSources(root = ROOT) {
   };
 }
 
+/**
+ * The bundled contract document: the pinned openapi.yaml with every `$ref` inlined, as formatted JSON. A separate function,
+ * not part of generateJsonSources: a dereference failure must not throw away the results for the three other files (FS-02).
+ * A circular reference is an error, so the document stays plain JSON.
+ */
+export async function generateBundleSource(root = ROOT) {
+  const doc = await new $RefParser().dereference(join(root, LAYOUT.openapi), { dereference: { circular: false } });
+  return jsonText(doc);
+}
+
 export async function generateAll(root = ROOT) {
   writeFileSync(join(root, LAYOUT.types), await generateTypesSource(root));
   writeFileSync(join(root, LAYOUT.fixtures), await generateFixturesSource(root));
   mkdirSync(join(root, dirname(FIXTURE_FILES.examples)), { recursive: true });
   for (const [rel, text] of Object.entries(await generateJsonSources(root))) writeFileSync(join(root, rel), text);
+  writeFileSync(join(root, FIXTURE_FILES.openapi), await generateBundleSource(root));
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   await generateAll();
-  process.stdout.write(`contract:generate: wrote types.generated.ts, fixtures.generated.ts, ${[FIXTURE_FILES.examples, FIXTURE_FILES.fixtures, FIXTURE_FILES.routes].map((f) => basename(f)).join(', ')}\n`);
+  process.stdout.write(`contract:generate: wrote types.generated.ts, fixtures.generated.ts, ${[FIXTURE_FILES.examples, FIXTURE_FILES.fixtures, FIXTURE_FILES.routes, FIXTURE_FILES.openapi].map((f) => basename(f)).join(', ')}\n`);
 }
