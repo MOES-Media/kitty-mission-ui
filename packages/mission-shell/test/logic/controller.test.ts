@@ -5,6 +5,7 @@ import { createFixtureClient, setConnectionState, type ExampleTable, type Fixtur
 import { CONNECTION_STATES, type Change, type ConnectionState, type MissionStatusClient, type ReadOp } from '../../src/client/port';
 import { createShellController, type ShellController, type ShellControllerOptions } from '../../src/controller/shell-controller';
 import { SHELL_COPY } from '../../src/core/connection';
+import { formatRoute, type Destination } from '../../src/core/routes';
 import { sequenceCopy } from '../support/changes';
 import { createDeferredClient, type DeferredClient } from '../support/deferred-client';
 import { M, O, P } from '../support/expected-recording';
@@ -579,16 +580,35 @@ describe('A4: now before any port read', () => {
 });
 
 describe('A5: setClient keeps the shell-wide session flags', () => {
-  it('keeps drawerOpen and flyoutOpen over a client swap, and still resets the per-client session', () => {
-    const { controller, fake } = rig(`/missions/${M}/artifacts`);
+  // A null client on the desktop may only show the picker, where there is nothing to read the session through: the
+  // no-client swap is checked on a dashboard controller, which keeps the screen.
+  it.each([
+    ['a new client', 'desktop', false],
+    ['no client', 'dashboard', true],
+  ] as const)('keeps drawerOpen and flyoutOpen over a swap to %s, and still resets the per-client session', (_name, mode, toNull) => {
+    const { controller, fake } = rig(`/missions/${M}/artifacts`, {}, { mode });
     controller.intent('sk-mission-shell', 'sk-toggle-drawer', { open: true, reason: 'hamburger' });
     controller.intent('sk-mission-shell', 'sk-toggle-flyout', { open: true, reason: 'activate' });
+    const artifacts: Destination = { screen: 'artifacts', missionId: M };
+    // query and filter are the Missions screen's; the folder map is the Mission layout's. Navigation keeps all of them.
+    const missionsScreen = (): { query: string; filter: string } => {
+      controller.navigate({ screen: 'missions' });
+      const screen = controller.snapshot().screen;
+      if (screen.screen !== 'missions') throw new Error('expected Missions');
+      return screen;
+    };
+    controller.toggleFolder('folder:tasks', true);
     controller.setQuery('abc');
+    controller.setFilter('active');
+    expect(controller.snapshot().session.expanded).toEqual({ 'folder:tasks': true });
+    expect(missionsScreen()).toMatchObject({ query: 'abc', filter: 'active' });
+    controller.navigate(artifacts);
+    expect(controller.snapshot().session.expanded, 'navigation keeps the folders').toEqual({ 'folder:tasks': true });
+
+    controller.setClient(toNull ? null : createFixtureClient({ scheduler: fake }), formatRoute(artifacts));
     expect(controller.snapshot().session).toMatchObject({ drawerOpen: true, flyoutOpen: true });
-    controller.setClient(createFixtureClient({ scheduler: fake }));
-    expect(controller.snapshot().session).toMatchObject({ drawerOpen: true, flyoutOpen: true });
-    controller.setClient(null);
-    expect(controller.snapshot().session).toMatchObject({ drawerOpen: true, flyoutOpen: true });
+    expect(controller.snapshot().session.expanded).toEqual({});
+    expect(missionsScreen()).toMatchObject({ query: '', filter: '' });
   });
 });
 
