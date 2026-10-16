@@ -243,7 +243,7 @@ kitty-specs/kitty-core-01M50D10/
 │   ├── kitty-core-api.md   # public Rust surface (SC-005), supervised stand-in route for #20/#21
 │   ├── bundled-document.md # the generated bundle and the canonical digest form
 │   └── stub-http-delta.md  # the stub's new route and options
-├── decisions/              # 5 specify rulings, 4 plan forks, 4 squad-round operator rulings (all resolved)
+├── decisions/              # 16 decisions: 5 specify rulings, 4 plan forks, 4 round-1 operator rulings, 3 round-2 coordinator decisions (all resolved)
 ├── reviews/plan.squad.md
 └── checklists/requirements.md
 ```
@@ -262,7 +262,7 @@ crates/kitty-core/
 │   ├── contract.rs                 # IC-06
 │   ├── discovery.rs                # IC-07
 │   ├── supervisor/{mod,policy,process,spawner,ports,output}.rs   # IC-08
-│   ├── status.rs  core.rs          # IC-09
+│   ├── status.rs  facade.rs        # IC-09 (the facade module is `facade`, not `core`: a crate-level `core` module would shadow the `core` crate in paths; A13)
 │   └── bin/kitty-fake-service.rs   # IC-08 (modes in contracts/kitty-core-api.md)
 └── tests/
     ├── workspace.rs                # UNCHANGED
@@ -326,7 +326,8 @@ README.md, CHANGELOG.md             # IC-10
 - **Purpose**: one generated document with every reference inlined, kept current by `Gate: contract`.
 - **Relevant requirements**: FR-012, FR-014, C-005, C-007, A-01.
 - **Affected surfaces**:
-  - `scripts/contract/generate.mjs`: `FIXTURE_FILES.openapi`, `buildBundle(root)` (`$RefParser.dereference` with `circular: false`, then `jsonText`), and an entry in `generateJsonSources`.
+  - `scripts/contract/generate.mjs`: `FIXTURE_FILES.openapi` and a separate `generateBundleSource(root)` (`$RefParser.dereference` with `circular: false`, then `jsonText`). It is **not** an entry in `generateJsonSources` (FS-02); `generateAll` writes it.
+  - `scripts/contract/check.mjs`: `checkBundleFresh(root)`, with its own try/catch, called right after `checkJsonFresh`.
   - `scripts/contract/check.test.mjs`: the expectations the bundle changes (FS-02, below);
   - `scripts/contract/bundle.test.mjs`, which covers:
     - determinism;
@@ -340,7 +341,7 @@ README.md, CHANGELOG.md             # IC-10
 - **Sequencing/depends-on**: none.
 - **Risks**:
   - The four #17 files stay byte-identical.
-  - **The bundle has its own try/catch (FS-02).** `generateJsonSources` builds the three #17 files exactly as today. The bundle is built in a separate try/catch, so a dereference failure (a missing or circular file) gives exactly **one** bundle-specific problem, `the bundled contract document could not be regenerated: <reason>` with token `stale generated file`, and never masks the other three files' checks.
+  - **The bundle has its own try/catch (FS-02).** `generateJsonSources` builds the three #17 files exactly as today. `checkBundleFresh` calls `generateBundleSource` in a separate try/catch, so a dereference failure (a missing or circular file) gives exactly **one** bundle-specific problem, `the bundled contract document could not be regenerated: <reason>` with token `stale generated file`, and never masks the other three files' checks.
   - **Contract tests that change (FS-02).** The schemas `$ref` their example files (for example `schemas/StreamRefusal.yaml` → `examples/StreamRefusal.negative.yaml`), so the bundle inlines examples, and any edit to a vendored schema, path or example now also makes the bundle stale.
     - `check.test.mjs` "C1: a deleted vendored file gives file set" (deletes `StreamRefusal.negative.yaml`) gains the bundle problem in its exact token list.
     - "JSON staleness: a changed vendored example leaves examples.json stale" (edits the same file) gains the bundle-stale problem; its `messagesOf(r)[1]` index is re-pointed.
@@ -516,7 +517,7 @@ README.md, CHANGELOG.md             # IC-10
     - **Probing.** `stop()` can probe with `kill(-pgid, 0)`: `ESRCH` means the group is gone.
     - **Test.** The leader exits while its grandchild lives on; after the post-reap SIGKILL, the grandchild is gone within 1 s.
   - **PDEATHSIG is SIGKILL (R4-05).** A dying host cannot run a grace period. It reaches only the direct child; a grandchild relies on the service handling its own group, which goes on #22's asks ("exit on parent death"). Windows Job Objects are named for #20.
-  - **Host exit (R5-05, R4-06).**
+  - **Host exit (R5-05, R4-06; moved to IC-09 by analyze finding A1).** The `host` mode needs `kitty_core::Core`, which IC-09 builds, so the mode and its test (`tests/host_exit.rs`) belong to IC-09. IC-08's binary has **no** `host` arm, so it compiles at every IC-08 commit. IC-09 adds the arm as a recorded out-of-map edit.
     - In `host` mode the fake runs `kitty_core::Core` on its own runtime, with its own project root (a sub-directory of the test's temp dir), supervising a fake in `ready` mode. That supervised service (the host's direct child) writes its own pid to a file (FS-15). The host exits through `std::process::exit` without `stop()`.
     - The test asserts that the supervised service, by the pid it wrote, is gone within 1 s.
     - The WP shows the test failing with `prctl` removed.
@@ -539,19 +540,20 @@ README.md, CHANGELOG.md             # IC-10
     | Field | Production | Tests |
     |---|---|---|
     | `poll_interval` | 50 ms | 10 ms |
-    | `start_timeout` | 10 s | 2 s; 300 ms in the never-ready test only |
+    | `start_timeout` | 10 s | 2 s; 300 ms in every budget-exhaustion scenario: never-ready, serve-503 and alive-no-bind (A3) |
     | `stop_grace` | 5 s | 300 ms |
     | `read_timeout` | 30 s | 1 s |
     | `idle_limit` | 90 s | 300 ms |
 
-    A test may wait in real time for at most 1 s, so a 2 s start timeout is never actually reached except in the never-ready test, which uses 300 ms. Reviewers check every test against this table (R5-07).
+    A test may wait in real time for at most 1 s, so a 2 s start timeout is never actually reached; the three budget-exhaustion scenarios (never-ready, serve-503, alive-no-bind) use 300 ms (A3). Reviewers check every test against this table (R5-07).
 
 ### IC-09 — Core facade, the degraded signal and the supervised stand-in
 
 - **Purpose**: the one public surface the hosts build on, proven against the real stub.
 - **Relevant requirements**: FR-013, FR-016, FR-024, SC-005, C-003, A-05, A-07.
 - **Affected surfaces**:
-  - `src/{core,status}.rs`;
+  - `src/{facade,status}.rs` (the module is named `facade`, so no path can be confused with the `core` crate; A13);
+  - `crates/kitty-core/tests/host_exit.rs`, and the `host` mode of `kitty-fake-service`, added as a recorded out-of-map edit to WP08's binary (A1);
   - `tests/status_mapping.rs`;
   - `tests/panic_probe.rs`;
   - `crates/kitty-stub/tests/supervised.rs` and the dev-dependency on kitty-core in `crates/kitty-stub/Cargo.toml` (both requested from IC-03);
@@ -603,6 +605,7 @@ README.md, CHANGELOG.md             # IC-10
 | `Cargo.lock` | IC-01 | IC-04 (dev-dep edge `kitty-core` → `kitty-stub`), IC-09 (dev-dep edge `kitty-stub` → `kitty-core`) (FS-01) |
 | `crates/kitty-core/Cargo.toml` | IC-01 | IC-04 (dev-dep `kitty-stub`), IC-08 (`[[bin]]` with its file) |
 | `crates/kitty-core/src/lib.rs` | IC-04 (pre-declares every module) | IC-09 (re-exports only) |
+| `crates/kitty-core/src/bin/kitty-fake-service.rs` | IC-08 | IC-09 (the `host` mode arm; A1) |
 | `crates/kitty-core/tests/common/mod.rs` | IC-04 | IC-05 (fault modes), IC-06, IC-08 (scenario writer), IC-09 (panic counter) |
 | `crates/kitty-stub/Cargo.toml`, `crates/kitty-stub/src/{lib,main}.rs` | IC-03 | IC-09 (dev-dep `kitty-core`, `tests/supervised.rs`) |
 | `scripts/contract/generate.mjs`, `contracts/fixtures/mission-status.openapi.json`, `.gitattributes`, `gates/plants/contract/plant.json` | IC-02 | — |
@@ -622,7 +625,7 @@ No gate, job or matrix entry is added or removed.
 | Gate | Change | New plants |
 |---|---|---|
 | `rust` | New tests only: kitty-core's tests and the stub's `openapi.rs`, `select.rs`, `upstream_flags.rs` and `supervised.rs`. Exempt from plants (C-007). | 0 |
-| `contract` | `checkJsonFresh` now covers a fourth generated JSON file, and `bundle.test.mjs` is added. | 1 |
+| `contract` | the new `checkBundleFresh` (calling `generateBundleSource` in its own try/catch) checks the bundle; `bundle.test.mjs` is added, and two `check.test.mjs` expectations change (FS-02). | 1 |
 | `hygiene` | No change. `gitattributes.test.mjs` is deliberately untouched (IC-02). | 0 |
 | others | No change. | 0 |
 
@@ -693,7 +696,7 @@ The 14 new lock entries are unchanged by this round. There are no others. Detail
   - It is never merged into `feat/kitty-core-19`.
   - WP lanes are based on `feat/kitty-core-19`.
 - **The decision ledger.** `decisions/index.json` and the `DM-*.md` files are written by the CLI to the **primary** checkout (`feat/kitty-core-19`), by design (spec-kitty `decisions/service.py`, `_ledger_dir` → `PRIMARY_METADATA`). The coordination branch still holds a stale copy of the five specify decisions from mission creation, which no tool reads.
-- **Divergence check.** `spec-kitty doctor decisions --mission kitty-core-01M50D10` reports `clean`: 13 decision ids appear in both the event log and the primary index. Nobody hand-edits either side.
+- **Divergence check.** `spec-kitty doctor decisions --mission kitty-core-01M50D10` reports `clean`: 16 decision ids appear in both the event log and the primary index. Nobody hand-edits either side.
 - **Uncommitted events.** The coordination worktree's `status.events.jsonl` has uncommitted event lines appended by the CLI. Committing them is left to the spec-kitty tooling and the orchestrator, not to plan edits (R6-08).
 - **Merge order with #18 (R6-07).** Whichever of #18 and #19 is green first merges first. The other then:
   - merges `main`;

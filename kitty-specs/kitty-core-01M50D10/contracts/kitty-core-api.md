@@ -53,7 +53,17 @@ pub fn read_operations() -> impl Iterator<Item = &'static RouteEntry>;
 impl ChangeStream { pub async fn next(&mut self) -> Option<StreamEvent>; }  // cancel-safe; fused after the terminal item
 
 pub fn connection_state_hint(status: &CoreStatus) -> Option<&'static str>;  // table in data-model.md
+
+// ---- Supervisor seam (public for the facade and for tests; #[doc(hidden)]; A2) ----
+#[doc(hidden)]
+pub trait StatusSink: Send + Sync + 'static { fn publish(&self, status: CoreStatus); }
+#[doc(hidden)]
+pub fn spawn_supervisor(config: SupervisorConfig, sink: Arc<dyn StatusSink>, runtime: &tokio::runtime::Handle)
+    -> SupervisorHandle;   // stop(), retry(), join(); the facade wraps it, and hosts use Core instead
+pub type BoxSleep = std::pin::Pin<Box<dyn std::future::Future<Output = ()> + Send + 'static>>;  // Sleeper::sleep returns it (A12)
 ```
+
+The facade module is `kitty_core::facade`, not `core`: a crate-level module named `core` would collide with the `core` crate in paths (A13). Everything above is also re-exported at the crate root.
 
 ## Guarantees
 
@@ -81,7 +91,11 @@ pub fn connection_state_hint(status: &CoreStatus) -> Option<&'static str>;  // t
 - **Generations** (FS-12). Supervisor generations start at 1; generation 0 is reserved for `ServiceEndpoint::loopback()`.
 - **No liveness probe** (R4-09). A hung service whose process stays alive stays `Ready` in #19. A liveness probe goes on #22's notes.
 
-**Leaking types** (R4-11). The surface exposes `http` types (`HeaderValue`, `HeaderMap`, `Response`), `hyper::body::Incoming` and `tokio` types (`broadcast::Receiver`, `runtime::Handle`). A host shares the workspace pins of `http`, `hyper` and `tokio`, and a change to those pins is a change to this surface.
+**Leaking types** (R4-11, A16).
+- The surface exposes `http` types (`HeaderValue`, `HeaderMap`, `Response`), `hyper::body::Incoming` and `tokio` types (`broadcast::Receiver`, `runtime::Handle`).
+- The `http` types are reached through hyper's re-exports (`hyper::http::…`), so kitty-core adds no direct `http` dependency.
+- If #20 or #21 names `http` directly, it adds an exact `http` pin equal to the version in `Cargo.lock` (currently 1.5.0), in `[workspace.dependencies]`.
+- A host shares the workspace pins of `hyper` and `tokio`, and a change to those pins is a change to this surface.
 
 ## How #20 and #21 get a supervised stand-in
 
@@ -110,7 +124,7 @@ Decision `01M50M47K1PNKP9KHCGGDBQZ0A` and amendment A-07 apply here.
 **Scenario file** (`<project-root>/kitty-fake-service.json`):
 
 ```json
-{ "launches": ["ready" | "crash-after" | "exit-at-start" | "never-ready" | "ignore-term" | "serve-modified" | "serve-503" | "alive-no-bind" | "fork-child" | "host", ...],
+{ "launches": ["ready" | "crash-after" | "exit-at-start" | "never-ready" | "ignore-term" | "serve-modified" | "serve-503" | "alive-no-bind" | "fork-child" | "host", ...],   // "host" is added by WP09 (A1)
   "crashAfterMs": 50 }
 ```
 
@@ -118,6 +132,6 @@ Decision `01M50M47K1PNKP9KHCGGDBQZ0A` and amendment A-07 apply here.
 - **`crashAfterMs`** counts from the first `openapi.yaml` GET served.
 - **`serve-503`** binds and answers every request with 503 (FS2-01).
 - **`alive-no-bind`** stays alive and never binds. The test runs a squatter on the chosen port (`cfg(target_os = "linux")`) (FS2-01).
-- **`fork-child`** starts a grandchild that writes its pid to `<root>/grandchild.pid`.
-- **`host`** runs `kitty_core::Core` on its own runtime, with its own project root, supervising a fake in `ready` mode. That supervised service (the host's direct child) writes its own pid to `<its root>/service.pid`. The host then calls `std::process::exit` without `stop()` (FS-15).
+- **`fork-child`** starts a grandchild that writes its pid to `<root>/grandchild.pid`, then serves as in `ready`. It honours `crashAfterMs`: the leader exits after that delay while the grandchild lives on, which is the "leader exits, grandchild survives" scenario (A5).
+- **`host`** (added by WP09 as an out-of-map edit to WP08's binary; WP08's binary has no `host` arm, A1) runs `kitty_core::Core` on its own runtime, with its own project root, supervising a fake in `ready` mode. That supervised service (the host's direct child) writes its own pid to `<its root>/service.pid`. The host then calls `std::process::exit` without `stop()` (FS-15).
 - **Platform.** `fork-child`, `host` and `ignore-term` are `cfg(unix)`. The parent-death assertion is `cfg(target_os = "linux")`.
