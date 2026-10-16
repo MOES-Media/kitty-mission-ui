@@ -4,7 +4,7 @@ artifact_type: spec-kitty.analysis-report
 command: /spec-kitty.analyze
 mission_slug: kitty-core-01M50D10
 mission_id: 01M50D10J2DWR9J76F7APJQJDP
-generated_at: '2026-10-16T11:56:06.459176+00:00'
+generated_at: '2026-10-16T12:02:33.321107+00:00'
 analyzer_agent: analyst-annie
 input_artifacts:
   spec.md:
@@ -21,8 +21,8 @@ input_artifacts:
     sha256: a2c150afd05fbc759da023d8ea357842418aed26b8b45c769b40532789e733ad
 verdict: ready
 issue_counts:
-  critical: 0
   low: 1
+  critical: 0
   high: 0
   medium: 0
   info: 0
@@ -116,7 +116,7 @@ All 47 requirements (24 FR, 8 NFR, 9 C, 6 SC) and the 10 amendments (A-01 to A-1
 
 ## Recording note
 
-`record-analysis --report-only` is blocked on this machine by user-level mission templates (ledger SK-336). The operator ruled on 2026-10-16 to leave `~/.kittify` untouched, so this report is recorded in plain mode (committed tree, report from a file).
+`record-analysis --report-only` is blocked on this machine by user-level mission templates. The operator ruled on 2026-10-16 to leave `~/.kittify` untouched, so this report is recorded in plain mode (committed tree, report from a file).
 
 ## Next Actions
 
