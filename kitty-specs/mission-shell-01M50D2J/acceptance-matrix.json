@@ -158,10 +158,10 @@
       "criterion_id": "FR-016",
       "description": "Verify FR-016 is satisfied",
       "proof_type": "automated_test",
-      "evidence": null,
-      "pass_fail": "pending",
-      "verified_by": null,
-      "verified_at": null,
+      "evidence": "packages/mission-shell/test/shell/refresh.test.ts (line 27) Refresh button present in the top-bar-actions slot on Ops and Artifacts only, absent on Missions, Drift, Pipeline, Work Packages and Projects (line 41); line 47 pressing it on Ops re-reads the Ops page once and nothing else; line 60 Artifacts re-reads listing and content once each; line 72 positive control. packages/mission-shell/test/logic/controller.test.ts line 598 refresh() and windowRefocused(): one Ops chain, two reads on Artifact, 0 on Missions and Pipeline; line 843 'Rescan: rescanning is true while the read is unsettled, the old report stays'; packages/mission-shell/test/logic/host.test.ts line 445 refocus; packages/mission-shell/test/shell/routing.test.ts line 116 re-selection reads. Button flagged for design review and confirmed at CP-1 (D3)",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-16T20:09:27.372767+00:00",
       "notes": "TODO: replace with a real acceptance criterion"
     },
     {
