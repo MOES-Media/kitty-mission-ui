@@ -1,21 +1,21 @@
 {
-  "event_count": 29,
-  "last_event_id": "01M52CR1ND6K29851QVA7VATWY",
-  "materialized_at": "2026-10-16T12:59:44.173725+00:00",
+  "event_count": 75,
+  "last_event_id": "01M52RWAAW4WZ49SESDDVXPZCC",
+  "materialized_at": "2026-10-16T16:31:47.036031+00:00",
   "mission_number": "",
   "mission_slug": "kitty-core-01M50D10",
   "mission_type": "software-dev",
   "schema_version": 2,
   "summary": {
-    "approved": 2,
+    "approved": 10,
     "blocked": 0,
     "canceled": 0,
     "claimed": 0,
     "done": 0,
     "for_review": 0,
     "in_progress": 0,
-    "in_review": 1,
-    "planned": 7
+    "in_review": 0,
+    "planned": 0
   },
   "work_packages": {
     "WP01": {
@@ -87,25 +87,26 @@
     "WP03": {
       "actor": "claude",
       "agent": "claude",
-      "agent_profile": "reviewer-renata",
-      "agent_profile_version": "1.0",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
       "force_count": 1,
       "implementer_of_record": "claude",
-      "lane": "in_review",
-      "last_event_id": "01M52CR1ND6K29851QVA7VATWY",
-      "last_transition_at": "2026-10-16T12:59:44.173725+00:00",
+      "lane": "approved",
+      "last_event_id": "01M52CT1XFZPYXREFWGHQ8QNHS",
+      "last_transition_at": "2026-10-16T13:00:49.967716+00:00",
       "model": "__resolved_model_absent__",
       "notes": [
         "Ready for review: stub extensions in dce6341; Rust, contract, hygiene gates green; #17 stub tests byte-identical",
-        "Review round 1 fixed: deadlines, kill-on-drop, scratch guards, unreadable-bundle test; gates green"
+        "Review round 1 fixed: deadlines, kill-on-drop, scratch guards, unreadable-bundle test; gates green",
+        "Cycle 2 review passed (dcb5944): feedback-1 issues resolved. Both-ports revert now fails by name in 5.01s (rc=101, no hang); project-copy revert fails with no orphan stub; scratch dirs removed on failure; unreadable-default-bundle test passes and fails on revert. src/ diff since dce6341 is the main.rs doc line only; #17 stub tests byte-identical. Rust gate under heavy exit 0; pnpm hygiene 0 findings; no kitty-stub left. Files touched: WP03-owned only."
       ],
       "provider": "__resolved_provider_absent__",
       "review": null,
       "review_result": {
-        "feedback_path": "/home/jeroennouws/dev/SK-missions/ui19/kitty-specs/kitty-core-01M50D10/tasks/WP03-stub-extensions/review-cycle-1.md",
-        "reference": "review-cycle://kitty-core-01M50D10/WP03-stub-extensions/review-cycle-1.md",
+        "feedback_path": "/home/jeroennouws/dev/SK-missions/ui19/kitty-specs/kitty-core-01M50D10/tasks/WP03-stub-extensions/review-cycle-2.md",
+        "reference": "review-cycle://kitty-core-01M50D10/WP03-stub-extensions/review-cycle-2.md",
         "reviewer": "claude",
-        "verdict": "changes_requested"
+        "verdict": "approved"
       },
       "role": "reviewer",
       "shell_pid": 3958673,
@@ -120,53 +121,243 @@
       }
     },
     "WP04": {
-      "actor": "finalize-tasks",
+      "actor": "claude",
+      "agent": "claude",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
       "force_count": 0,
-      "lane": "planned",
-      "last_event_id": "01M527VSG5C4VAQW3Y3NJC3VF3",
-      "last_transition_at": "2026-10-16T11:34:24.005248+00:00"
+      "implementer_of_record": "claude",
+      "lane": "approved",
+      "last_event_id": "01M52DVS3DEHR2WZDN8YT5CY75",
+      "last_transition_at": "2026-10-16T13:19:15.053618+00:00",
+      "model": "__resolved_model_absent__",
+      "notes": [
+        "Contract client, read relay, forward(), harness and reads.rs in c4aa556. Rust gate, contract gate, hygiene/scripts/terminology and gate-proof --only rust all green.",
+        "Independent review passed. Rust gate green (fmt, clippy -D warnings, workspace tests; reads 13/13, unit 10/10), hygiene 0 findings, gate-proof rust ok (plants red, 18.9 s leg). Anchors intact (1/1). Adversarial probes held: 302 relayed as Answer with no follow; slow-drip head times out at 1.0 s for read and forward; chunked and endless bodies over 16 MiB give BodyTooLarge; dropping a forward() response or body mid-stream closes the upstream connection (no task leak); panic counter counts a real panic. Reverts: added Origin header -> a_read_sends_exactly_host_and_accept FAILED; dropped '/' path refusal -> query_values_are_encoded_and_unsafe_path_values_send_nothing FAILED. Non-blocking: forward() relays dot segments (/api/v1/../x) verbatim; panic counter cascades one failure into later tests; connect() spawns the driver before ready()."
+      ],
+      "provider": "__resolved_provider_absent__",
+      "review_result": {
+        "feedback_path": "/home/jeroennouws/dev/SK-missions/ui19/kitty-specs/kitty-core-01M50D10/tasks/WP04-contract-client-and-read-relay/review-cycle-1.md",
+        "reference": "review-cycle://kitty-core-01M50D10/WP04-contract-client-and-read-relay/review-cycle-1.md",
+        "reviewer": "claude",
+        "verdict": "approved"
+      },
+      "role": "reviewer",
+      "shell_pid": 4034690,
+      "shell_pid_created_at": "1792156552.35",
+      "subtasks": {
+        "T017": "done",
+        "T018": "done",
+        "T019": "done",
+        "T020": "done",
+        "T021": "done",
+        "T022": "done",
+        "T023": "done"
+      }
     },
     "WP05": {
-      "actor": "finalize-tasks",
+      "actor": "claude",
+      "agent": "claude",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
       "force_count": 0,
-      "lane": "planned",
-      "last_event_id": "01M527VSJF3C3Z1MGYD6K23779",
-      "last_transition_at": "2026-10-16T11:34:24.079605+00:00"
+      "implementer_of_record": "claude",
+      "lane": "approved",
+      "last_event_id": "01M52F0E1Y1XW8PX72EK7P70JZ",
+      "last_transition_at": "2026-10-16T13:39:16.158745+00:00",
+      "model": "__resolved_model_absent__",
+      "notes": [
+        "Ready for review: sse.rs FrameReader + ChangeStream + open_stream, tests/stream.rs (23), tests/latency.rs; Rust, contract, hygiene gates green; commit b373aa3",
+        "Review passed (reviewer-renata): FrameReader edge cases verified whole/bytewise plus all 2-cut splits and 3000-case fuzz; cap counts from event boundary (CRLF heartbeats x100k ok); one terminal then fused; Refused only for routes.json 400/404/409; 16 MiB/read_timeout terminal bodies; exact Host+Accept, streamCursor via raw log; ENCODE identical to routes.rs; reverts (idle reset, dispatch-only cap reset) fail by name; Rust gate exit 0 (stream 23/23, 0.82s), hygiene 0 findings; latency debug p50 60us p95 114us. Low notes: CRLF blank-line LF counted toward next frame's cap (1-byte off), duplicated ENCODE/header builder vs routes.rs/forward.rs, latency runs on current_thread runtime."
+      ],
+      "provider": "__resolved_provider_absent__",
+      "review_result": {
+        "feedback_path": "/home/jeroennouws/dev/SK-missions/ui19/kitty-specs/kitty-core-01M50D10/tasks/WP05-change-stream-relay/review-cycle-1.md",
+        "reference": "review-cycle://kitty-core-01M50D10/WP05-change-stream-relay/review-cycle-1.md",
+        "reviewer": "claude",
+        "verdict": "approved"
+      },
+      "role": "reviewer",
+      "shell_pid": 4181429,
+      "shell_pid_created_at": "1792157721.52",
+      "subtasks": {
+        "T024": "done",
+        "T025": "done",
+        "T026": "done",
+        "T027": "done",
+        "T028": "done",
+        "T029": "done"
+      }
     },
     "WP06": {
-      "actor": "finalize-tasks",
+      "actor": "claude",
+      "agent": "claude",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
       "force_count": 0,
-      "lane": "planned",
-      "last_event_id": "01M527VSMW7KF48EVRN42Y4GRW",
-      "last_transition_at": "2026-10-16T11:34:24.156219+00:00"
+      "implementer_of_record": "claude",
+      "lane": "approved",
+      "last_event_id": "01M52EXEXRK4F8BTR229B6B6H4",
+      "last_transition_at": "2026-10-16T13:37:38.744108+00:00",
+      "model": "__resolved_model_absent__",
+      "notes": [
+        "Ready for review: contract.rs + contract_check.rs (82ab03c); gates green; dev digest median 17.2 ms",
+        "Approved (82ab03c). Rust gate, contract gate (237/237), hygiene, terminology all exit 0; only contract.rs + contract_check.rs changed, no new crates, no 64-hex constant. Canonical form probed (2^53+1, -0, 1.0/1, 1440.5, UTF-8 key order, BOM/bidi round-trip, 1e400) and matches bundled-document.md. Reviewer reverts fail by name: cap > to >= -> four_mib_is_parsed_and_one_byte_more_is_refused; integer rule off -> number_rules. Carry-forward for orchestrator/WP09: (1) CheckOutcome::PinUnparseable is not in data-model.md; record it, WP09 must map it to contract-mismatch (fail closed); (2) bundled-document.md says include_str!, code uses include_bytes! per WP prompt; fix the contract text; (3) fetch_document duplicates client.rs relay (cap/Host/Accept); follow-up to parameterise relay in client.rs (WP04-owned); (4) module doc claims .inf surfaces as mismatch but yaml .inf becomes null and collides with null; (5) json_is_parsed_before_yaml does not kill a YAML-first mutant (near-equivalent). No production callers yet by design: consumers are WP08/WP09. Dev digest median 17.2 ms."
+      ],
+      "provider": "__resolved_provider_absent__",
+      "review_result": {
+        "feedback_path": "/home/jeroennouws/dev/SK-missions/ui19/kitty-specs/kitty-core-01M50D10/tasks/WP06-contract-digest-check/review-cycle-1.md",
+        "reference": "review-cycle://kitty-core-01M50D10/WP06-contract-digest-check/review-cycle-1.md",
+        "reviewer": "claude",
+        "verdict": "approved"
+      },
+      "role": "reviewer",
+      "shell_pid": 4143907,
+      "shell_pid_created_at": "1792157493.84",
+      "subtasks": {
+        "T030": "done",
+        "T031": "done",
+        "T032": "done",
+        "T033": "done",
+        "T034": "done",
+        "T035": "done"
+      }
     },
     "WP07": {
-      "actor": "finalize-tasks",
+      "actor": "claude",
+      "agent": "claude",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
       "force_count": 0,
-      "lane": "planned",
-      "last_event_id": "01M527VSPX9PA90W93K6PX81T1",
-      "last_transition_at": "2026-10-16T11:34:24.221223+00:00"
+      "implementer_of_record": "claude",
+      "lane": "approved",
+      "last_event_id": "01M52EWGTX4A9YAPNS4D9VBM8H",
+      "last_transition_at": "2026-10-16T13:37:07.933589+00:00",
+      "model": "__resolved_model_absent__",
+      "notes": [
+        "Discovery trait, DefaultDiscovery, EnvSnapshot; 16 tests; Rust, contract, hygiene gates green; 6 reverts each fail named tests",
+        "Review passed (reviewer-renata): 4 lookup rules exact, no fallback after an explicit choice; 17 hijack probes refused (relative/./empty PATH entries, relative env+cfg, link->plain, dangling, dir); link->exec accepted, link returned. env read only in EnvSnapshot::from_process, no env mutation. Reviewer reverts fail by name (empty-filter -> empty_env_value_counts_as_unset; usable is_absolute -> configured_relative/env_relative). Rust gate, hygiene, terminology green; only the 2 owned files changed, no deps. Non-blocking: binary_name not validated (absolute or ../ name escapes PATH entries); PATH-entry skip redundant with usable() so covered only jointly; empty-entry test name overclaims; panic counter asserted in one test only."
+      ],
+      "provider": "__resolved_provider_absent__",
+      "review_result": {
+        "feedback_path": "/home/jeroennouws/dev/SK-missions/ui19/kitty-specs/kitty-core-01M50D10/tasks/WP07-discovery/review-cycle-1.md",
+        "reference": "review-cycle://kitty-core-01M50D10/WP07-discovery/review-cycle-1.md",
+        "reviewer": "claude",
+        "verdict": "approved"
+      },
+      "role": "reviewer",
+      "shell_pid": 4162319,
+      "shell_pid_created_at": "1792157586.78",
+      "subtasks": {
+        "T036": "done",
+        "T037": "done",
+        "T038": "done"
+      }
     },
     "WP08": {
-      "actor": "finalize-tasks",
-      "force_count": 0,
-      "lane": "planned",
-      "last_event_id": "01M527VSS0SAT4PC1464DSMGGY",
-      "last_transition_at": "2026-10-16T11:34:24.288624+00:00"
+      "actor": "claude",
+      "agent": "claude",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
+      "force_count": 1,
+      "implementer_of_record": "claude",
+      "lane": "approved",
+      "last_event_id": "01M52MZSQ7Z4E940APSFCBD887",
+      "last_transition_at": "2026-10-16T15:23:46.791334+00:00",
+      "model": "__resolved_model_absent__",
+      "notes": [
+        "Supervisor, policy, process group, spawner thread, fake service and 25 scenario tests; rust gate green (170 tests), gate-proof rust leg green twice, 10 identical determinism runs",
+        "Review cycle 1 fixed: B1 deterministic post-reap scenario, N1, N3, N4",
+        "Review passed (cycle 2): B1 fixed - scenario 12 deterministic (crash_now after Ready, exact sequence, failure log, sleeper log, live-grandchild control); post-reap SIGKILL revert caught 10/10 full parallel runs under 24-loop CPU load; 17 SEQUENCE digests identical across 50+ loaded runs; N1 owner re-check correct; N3 rig kills only exact-root fakes; N4 claims released, loop bounded, foreign dir fails by name. Carry to pre-merge: one unreproduced loaded failure (11/25, cascading via the shared panic counter) in 1 of 56 runs; N2 readiness-race test gap; N5 pin-unparseable mapping for WP09; N6 discovery on every restart; N7 unused per-launch request logs."
+      ],
+      "provider": "__resolved_provider_absent__",
+      "review": null,
+      "review_result": {
+        "feedback_path": "/home/jeroennouws/dev/SK-missions/ui19/kitty-specs/kitty-core-01M50D10/tasks/WP08-supervision/review-cycle-2.md",
+        "reference": "review-cycle://kitty-core-01M50D10/WP08-supervision/review-cycle-2.md",
+        "reviewer": "claude",
+        "verdict": "approved"
+      },
+      "role": "reviewer",
+      "shell_pid": 635676,
+      "shell_pid_created_at": "1792162421.89",
+      "subtasks": {
+        "T039": "done",
+        "T040": "done",
+        "T041": "done",
+        "T042": "done",
+        "T043": "done",
+        "T044": "done",
+        "T045": "done",
+        "T046": "done"
+      }
     },
     "WP09": {
-      "actor": "finalize-tasks",
+      "actor": "claude",
+      "agent": "claude",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
       "force_count": 0,
-      "lane": "planned",
-      "last_event_id": "01M527VSV9WP3KX8F0DFQNAYJG",
-      "last_transition_at": "2026-10-16T11:34:24.361952+00:00"
+      "implementer_of_record": "claude",
+      "lane": "approved",
+      "last_event_id": "01M52Q2P224CGFD0WKWMSNMZJJ",
+      "last_transition_at": "2026-10-16T16:00:18.498867+00:00",
+      "model": "__resolved_model_absent__",
+      "notes": [
+        "WP09 implemented: facade, hint, host_exit, supervised stand-in; gates green",
+        "Review passed: facade surface matches kitty-core-api.md (Core start/status/subscribe/retry/stop/ready_endpoint/read/open_stream/captured_output, Send+Sync+Clone); hint total (30 combos) and equal to port.ts strings read from disk; NotReady/ContractMismatch send nothing (request-log oracle + positive control); drop/stop/host-exit leave no process; pin checked before spawn. Rust gate, contract gate (237), hygiene green; reverts re-run (PDEATHSIG, pin-after-launch, first-status absorb) all red; 10 runs under 48 busy loops clean. Carry to pre-merge: all-zero Digest::unavailable on public Mismatch (document or add is_unavailable); unplanned out-of-map edits (contract.rs pub(crate) ctor, tests/common/claims.rs, lib.rs doc text) need owner acknowledgement; fake bin #[path]-includes a tests file; status freezes if the supervisor panics; supervised.rs asserts generation 1 with the ephemeral picker (rare self-connect retry); queued double retry() can restart twice."
+      ],
+      "provider": "__resolved_provider_absent__",
+      "review_result": {
+        "feedback_path": "/home/jeroennouws/dev/SK-missions/ui19/kitty-specs/kitty-core-01M50D10/tasks/WP09-core-facade-and-supervised-stand-in/review-cycle-1.md",
+        "reference": "review-cycle://kitty-core-01M50D10/WP09-core-facade-and-supervised-stand-in/review-cycle-1.md",
+        "reviewer": "claude",
+        "verdict": "approved"
+      },
+      "role": "reviewer",
+      "shell_pid": 814948,
+      "shell_pid_created_at": "1792165965.54",
+      "subtasks": {
+        "T047": "done",
+        "T048": "done",
+        "T049": "done",
+        "T050": "done",
+        "T051": "done",
+        "T052": "done",
+        "T053": "done"
+      }
     },
     "WP10": {
-      "actor": "finalize-tasks",
-      "force_count": 0,
-      "lane": "planned",
-      "last_event_id": "01M527VSXR0Q79Y02MZAVF63KK",
-      "last_transition_at": "2026-10-16T11:34:24.440373+00:00"
+      "actor": "claude",
+      "agent": "claude",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
+      "force_count": 1,
+      "implementer_of_record": "claude",
+      "lane": "approved",
+      "last_event_id": "01M52RWAAW4WZ49SESDDVXPZCC",
+      "last_transition_at": "2026-10-16T16:31:47.036031+00:00",
+      "model": "__resolved_model_absent__",
+      "notes": [
+        "Review passed (cycle 2): B1 macOS exit wording now true (stop().await or last-clone drop with a live runtime; process::exit, kill or crash leaves the service); B2 arithmetic correct (MAX_ATTEMPTS 3 x give_up_at 5 = up to 15 launches; backoffs 0.5+1+2+4 = 7.5 s); N1, N2 fixed. Only README and CHANGELOG changed; ci.yml still timeout-only (contract 19->21); hygiene and terminology green. Pre-merge note: 'only' omits runtime shutdown at main return, which also kills the group (errs safe); the new CHANGELOG relay line is longer than its neighbours' wrap."
+      ],
+      "provider": "__resolved_provider_absent__",
+      "review": null,
+      "review_result": {
+        "feedback_path": "/home/jeroennouws/dev/SK-missions/ui19/kitty-specs/kitty-core-01M50D10/tasks/WP10-docs-budgets-and-wrap-up/review-cycle-2.md",
+        "reference": "review-cycle://kitty-core-01M50D10/WP10-docs-budgets-and-wrap-up/review-cycle-2.md",
+        "reviewer": "claude",
+        "verdict": "approved"
+      },
+      "role": "reviewer",
+      "shell_pid": 990377,
+      "shell_pid_created_at": "1792168269.58",
+      "subtasks": {
+        "T054": "done",
+        "T055": "done",
+        "T056": "done",
+        "T057": "done"
+      }
     }
   }
 }
