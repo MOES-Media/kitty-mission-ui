@@ -140,10 +140,10 @@ test('C1: an extra vendored file gives file set', async () => {
   assert.deepEqual(tokens(await check(root)), [TOKENS.fileSet]);
 });
 
-test('C1: a deleted vendored file gives file set (a deleted example also leaves examples.json stale and off its oracle)', async () => {
+test('C1: a deleted vendored file gives file set (a deleted example also leaves examples.json and the bundle stale and off its oracle)', async () => {
   const root = tempRepo();
   rmSync(join(root, LAYOUT.vendor, 'mission-status/examples/StreamRefusal.negative.yaml'));
-  assert.deepEqual(tokens(await check(root)), [TOKENS.fileSet, TOKENS.jsonStale, TOKENS.jsonOracle]);
+  assert.deepEqual(tokens(await check(root)), [TOKENS.fileSet, TOKENS.jsonStale, TOKENS.jsonStale, TOKENS.jsonOracle]);
   const other = tempRepo();
   rmSync(join(other, LAYOUT.vendor, 'mission-status/schemas/_index.yaml'));
   assert.deepEqual(tokens(await check(other)), [TOKENS.fileSet]);
@@ -912,9 +912,10 @@ test('JSON staleness: a changed vendored example leaves examples.json stale (the
     pin.files[rel] = createHash('sha256').update(readFileSync(join(root, LAYOUT.vendor, rel))).digest('hex');
   });
   const r = await check(root);
-  assert.deepEqual(tokens(r), [TOKENS.jsonStale, TOKENS.jsonOracle]);
+  assert.deepEqual(tokens(r), [TOKENS.jsonStale, TOKENS.jsonStale, TOKENS.jsonOracle]);
   assert.ok(messagesOf(r)[0].startsWith(FIXTURE_JSON.examples));
-  assert.ok(messagesOf(r)[1].includes('StreamRefusal.negative'));
+  assert.ok(messagesOf(r)[1].startsWith('contracts/fixtures/mission-status.openapi.json differs'));
+  assert.ok(messagesOf(r)[2].includes('StreamRefusal.negative'));
 });
 
 test('JSON oracle: an examples.json value that differs from its YAML is named; the committed file passes (positive control)', async () => {
@@ -959,4 +960,19 @@ test('change sequence: an unreadable changes.json fails the gate rather than pas
   const r = await check(root);
   assert.deepEqual(tokens(r), [TOKENS.changeSequence]);
   assert.equal(r.summary.changeItems, 0);
+});
+
+test('bundled document: a missing or altered bundle is named; the clean copy passes (positive control)', async () => {
+  const bundle = 'contracts/fixtures/mission-status.openapi.json';
+  assert.deepEqual(tokens(await check(tempRepo())), []);
+  const altered = tempRepo();
+  edit(altered, bundle, '"version": "1.0.0-SNAPSHOT"', '"version": "1.0.0-PLANTED"');
+  const a = await check(altered);
+  assert.deepEqual(tokens(a), [TOKENS.jsonStale]);
+  assert.deepEqual(messagesOf(a), [`${bundle} differs from a fresh generation; run pnpm contract:generate`]);
+  const missing = tempRepo();
+  rmSync(join(missing, bundle));
+  const m = await check(missing);
+  assert.deepEqual(tokens(m), [TOKENS.jsonStale]);
+  assert.deepEqual(messagesOf(m), [`${bundle} is missing; run pnpm contract:generate`]);
 });
