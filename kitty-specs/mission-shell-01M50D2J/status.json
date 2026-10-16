@@ -1,20 +1,20 @@
 {
-  "event_count": 14,
-  "last_event_id": "01M529R0NVT9Y26MXMMVR03SYD",
-  "materialized_at": "2026-10-16T12:07:17.435695+00:00",
+  "event_count": 15,
+  "last_event_id": "01M52A63AVNMN6M11MFMQGCNRH",
+  "materialized_at": "2026-10-16T12:14:58.907481+00:00",
   "mission_number": "",
   "mission_slug": "mission-shell-01M50D2J",
   "mission_type": "software-dev",
   "schema_version": 2,
   "summary": {
-    "approved": 0,
+    "approved": 1,
     "blocked": 0,
     "canceled": 0,
     "claimed": 0,
     "done": 0,
     "for_review": 0,
     "in_progress": 0,
-    "in_review": 1,
+    "in_review": 0,
     "planned": 9
   },
   "work_packages": {
@@ -63,18 +63,24 @@
     "WP07": {
       "actor": "claude",
       "agent": "claude",
-      "agent_profile": "reviewer-renata",
-      "agent_profile_version": "1.0",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
       "force_count": 0,
       "implementer_of_record": "claude",
-      "lane": "in_review",
-      "last_event_id": "01M529R0NVT9Y26MXMMVR03SYD",
-      "last_transition_at": "2026-10-16T12:07:17.435695+00:00",
+      "lane": "approved",
+      "last_event_id": "01M52A63AVNMN6M11MFMQGCNRH",
+      "last_transition_at": "2026-10-16T12:14:58.907481+00:00",
       "model": "__resolved_model_absent__",
       "notes": [
         "Shell I/O, markup and layering lint blocks plus plants P-3, P-4, P-8 (commit ff6ab6f). Out-of-map edit: one line in gates/markdown-lint.selftest.ts (navigator.language -> String(performance.now())). WP06 note: 'import type { Snippet } from svelte' is reported in core/controller/intents, so Snippet-typed code must live outside them. Eslint leg 127 s, step about 0.16 min, formula 4.1 <= 8."
       ],
       "provider": "__resolved_provider_absent__",
+      "review_result": {
+        "feedback_path": "/home/jeroennouws/dev/SK-missions/ui18/kitty-specs/mission-shell-01M50D2J/tasks/WP07-shell-lint-io-markup-layering/review-cycle-1.md",
+        "reference": "review-cycle://mission-shell-01M50D2J/WP07-shell-lint-io-markup-layering/review-cycle-1.md",
+        "reviewer": "claude",
+        "verdict": "approved"
+      },
       "role": "reviewer",
       "shell_pid": 3773498,
       "shell_pid_created_at": "1792152430.28",
