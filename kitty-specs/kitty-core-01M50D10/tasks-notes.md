@@ -49,6 +49,8 @@ Ownership follows `plan.md`, "Shared-file ownership". Every out-of-map edit is s
 | `crates/kitty-core/src/{sse,contract,discovery,status,facade}.rs`, `src/supervisor/mod.rs` | WP05 to WP09 | WP04 creates them as empty stubs with an owner doc line (R6-04) | owners after WP04 |
 | `crates/kitty-core/src/status.rs` | WP09 | WP08 (the status types `SupervisionState`, `DegradedReason`, `CoreStatus`, needed by the public `StatusSink`; A2) | WP08 after WP04; WP09 after WP08 |
 | `crates/kitty-core/src/bin/kitty-fake-service.rs` | WP08 | WP09 (the `host` mode arm; A1) | WP09 after WP08 |
+| `crates/kitty-core/src/client.rs` | WP04 | WP09 (`ReadOutcome` gains `NotReady(CoreStatus)` and `ContractMismatch(Mismatch)`; B1) | WP09 after WP04 |
+| `crates/kitty-core/src/sse.rs` | WP05 | WP09 (`StreamOpenError` gains the same two variants; B1) | WP09 after WP05 |
 | `crates/kitty-core/tests/common/mod.rs` | WP04 | WP09 (only if a `Core` helper is needed) | WP09 after WP04 |
 | `.github/workflows/ci.yml` | WP10 | — (timeout values only, decision `01M50HVPJ9CDBB7405T9K0645R`) | WP10 last |
 
@@ -81,7 +83,7 @@ There is no other new plant. Rust tests are exempt (C-007). The three existing r
 
 - **CI timeouts.** Re-derive both timeouts from the PR's first CI run: contract never below 21; rust `4 × T + 2` (A-04).
 - **The probe base.** The local `main` ref in this checkout is stale. Every probe uses `origin/main` after a fetch (R6-01).
-- **Merge order with #18 (R6-07).** Whichever is green first merges first. The other merges `main`, then re-runs WP10's T054 and T056.
+- **Merge order with #18 (R6-07).** Whichever is green first merges first. The other merges `main`, then re-runs WP10's T055 and T057.
 - **The coordination worktree** (`.worktrees/kitty-core-01M50D10-coord`) has CLI-appended event lines that are not committed. Reconciling them is the orchestrator's job.
 
 ## Analyze remediation (analyze at `307ba66` BLOCKED: 1 high, 8 medium, 9 low)
@@ -106,4 +108,14 @@ There is no other new plant. Rust tests are exempt (C-007). The three existing r
 | A16 | `kitty-core-api.md`: `http` types come through hyper's re-exports (`pub use http`); #20 and #21 add an exact `http` pin (1.5.0 in the lock) if they name it directly |
 | A17 | WP10 writes `## Evidence (#19): budgets, latency, determinism` (NFR-001, NFR-003, NFR-006) for the PR body; the orchestrator posts it |
 | A18 | WP10 T055: `git diff -U0 "$base" -- .github/workflows/ci.yml \| grep '^[-+] ' \| grep -v 'timeout:'` must print nothing |
+
+## Analyze pass 2 remediation (analyze at `b83817e` BLOCKED: 1 high, 1 medium, 3 low)
+
+| Id | Fold |
+|---|---|
+| B1 (high) | WP09 records out-of-map edits to `client.rs` (`ReadOutcome`) and `sse.rs` (`StreamOpenError`), adding the `Core`-only variants `NotReady(CoreStatus)` and `ContractMismatch(Mismatch)`. The chosen mechanism is **`#[non_exhaustive]` on both enums**, defined so by WP04 and WP05. The compiler then requires a wildcard arm in every match outside the crate (the `tests/` integration tests and the hosts), so the later variants break no earlier test. The edits are serialised: WP09 comes after WP04 and WP05 |
+| B2 | `alive-no-bind` returns to the 2 s start budget. Only never-ready and serve-503 use 300 ms. The wording is "no `Ready` during the first start", and the 3-port, cause, `[0.5 s]` and generation-4 assertions stay. The IC-08 `Timings` table is updated |
+| B3 | WP08's supervisor sets `left_initial_start` at the first `Ready` or `Stopped`, and its scenarios assert it. WP09 T047 only verifies it, through the hint tests |
+| B4 | The WP10 exit check cites "T055 output". The WP10 Risks line and the "Carried to the orchestrator" line say "re-run T055 and T057" |
+| B5 | `host_exit.rs` writes `write_scenario(<root>, &["host"], None)` and `write_scenario(<root>/inner, &["ready"], None)` before it starts the host |
 

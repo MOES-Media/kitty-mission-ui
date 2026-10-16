@@ -540,12 +540,12 @@ README.md, CHANGELOG.md             # IC-10
     | Field | Production | Tests |
     |---|---|---|
     | `poll_interval` | 50 ms | 10 ms |
-    | `start_timeout` | 10 s | 2 s; 300 ms in every budget-exhaustion scenario: never-ready, serve-503 and alive-no-bind (A3) |
+    | `start_timeout` | 10 s | 2 s; 300 ms in the two budget-exhaustion scenarios, never-ready and serve-503 (A3, B2). alive-no-bind keeps 2 s |
     | `stop_grace` | 5 s | 300 ms |
     | `read_timeout` | 30 s | 1 s |
     | `idle_limit` | 90 s | 300 ms |
 
-    A test may wait in real time for at most 1 s, so a 2 s start timeout is never actually reached; the three budget-exhaustion scenarios (never-ready, serve-503, alive-no-bind) use 300 ms (A3). Reviewers check every test against this table (R5-07).
+    A test may wait in real time for at most 1 s, so a 2 s start timeout is never actually reached; the two budget-exhaustion scenarios (never-ready, serve-503) use 300 ms (A3, B2). Reviewers check every test against this table (R5-07).
 
 ### IC-09 — Core facade, the degraded signal and the supervised stand-in
 
@@ -606,6 +606,9 @@ README.md, CHANGELOG.md             # IC-10
 | `crates/kitty-core/Cargo.toml` | IC-01 | IC-04 (dev-dep `kitty-stub`), IC-08 (`[[bin]]` with its file) |
 | `crates/kitty-core/src/lib.rs` | IC-04 (pre-declares every module) | IC-09 (re-exports only) |
 | `crates/kitty-core/src/bin/kitty-fake-service.rs` | IC-08 | IC-09 (the `host` mode arm; A1) |
+| `crates/kitty-core/src/client.rs` | IC-04 | IC-09 (the `Core`-only `ReadOutcome` variants `NotReady` and `ContractMismatch`; the enum is `#[non_exhaustive]`; B1) |
+| `crates/kitty-core/src/sse.rs` | IC-05 | IC-09 (the same two variants on the `#[non_exhaustive]` `StreamOpenError`; B1) |
+| `crates/kitty-core/src/status.rs` | IC-09 | IC-08 (the status types, needed by the public `StatusSink`; A2). The supervisor sets `left_initial_start` (B3) |
 | `crates/kitty-core/tests/common/mod.rs` | IC-04 | IC-05 (fault modes), IC-06, IC-08 (scenario writer), IC-09 (panic counter) |
 | `crates/kitty-stub/Cargo.toml`, `crates/kitty-stub/src/{lib,main}.rs` | IC-03 | IC-09 (dev-dep `kitty-core`, `tests/supervised.rs`) |
 | `scripts/contract/generate.mjs`, `contracts/fixtures/mission-status.openapi.json`, `.gitattributes`, `gates/plants/contract/plant.json` | IC-02 | — |

@@ -67,6 +67,7 @@ The facade module is `kitty_core::facade`, not `core`: a crate-level module name
 
 ## Guarantees
 
+- **`#[non_exhaustive]` outcome enums** (B1). `ReadOutcome` and `StreamOpenError` are `#[non_exhaustive]`, so a host's `match` needs a wildcard arm. Their `Core`-only variants `NotReady` and `ContractMismatch` are added by the facade WP after the client and stream WPs.
 - **No panics** (NFR-005). This holds outside a runtime as well: `start` returns `Err(NoRuntime)`.
 - **Never interprets** (C-003). No refetch, no reconnect, no cursor store, no `resync`.
 - **Loopback only** (FR-005).
