@@ -119,6 +119,17 @@ fn usable(path: &Path) -> bool {
     }
 }
 
+/// A bare file name: not empty, not `.` or `..`, not absolute and with no path separator (SEC-004).
+fn is_bare_file_name(name: &OsStr) -> bool {
+    let path = Path::new(name);
+    !name.is_empty()
+        && name != OsStr::new(".")
+        && name != OsStr::new("..")
+        && !path.is_absolute()
+        && path.components().count() == 1
+        && path.file_name() == Some(name)
+}
+
 fn not_found(detail: String) -> ServiceMissing {
     ServiceMissing {
         reason: MissingReason::NotFound,
@@ -148,6 +159,11 @@ impl Discovery for DefaultDiscovery {
         }
         if let Some(path_var) = &self.env.path_var {
             let name: &OsStr = &self.binary_name;
+            if !is_bare_file_name(name) {
+                return Err(not_found(
+                    "the binary name must be a bare file name".to_owned(),
+                ));
+            }
             for entry in std::env::split_paths(path_var) {
                 if !entry.is_absolute() {
                     continue; // relative and empty entries
