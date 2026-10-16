@@ -9,6 +9,10 @@
 // action (binding helper) is generated. The generated directory therefore holds exactly one file, and `--check` also
 // reports any other file found there.
 //
+// IC-05 (FR-004): the same file ends with `MissionUiIntents`, `{ [tag]: { [event]: Detail } }`, and `MissionUiTag`, the type-level
+// source of which (tag, event) pairs exist; src/intents/ checks its INTENT_TABLE against them. Each Detail is the text of the
+// `on<event>` handler above, so the two cannot disagree.
+//
 // Usage: node scripts/typings.mjs [--check] [--root <dir>]
 //   (no flag)  write every generated file
 //   --check    regenerate in memory; exit 1 with `<file> is stale` for each file that differs from disk
@@ -121,6 +125,9 @@ function importsOf(elements, exported) {
   return [...used].sort();
 }
 
+// An element without events maps to this; `{}` would trip @typescript-eslint/no-empty-object-type.
+const EMPTY = 'Record<never, never>';
+
 const key = (name) => (/^[A-Za-z_$][\w$]*$/.test(name) ? name : `'${name}'`);
 
 function renderElement(el) {
@@ -149,7 +156,15 @@ export function generate(manifest, indexText) {
   if (imports.length) lines.push('import type {', ...imports.map((n) => `  ${n},`), `} from '${PACKAGE}';`);
   lines.push('', "declare module 'svelte/elements' {", '  export interface SvelteHTMLElements {');
   for (const el of elements) lines.push(...renderElement(el));
-  lines.push('  }', '}', '', 'export {};', '');
+  lines.push('  }', '}', '', 'export interface MissionUiIntents {');
+  for (const el of elements) {
+    if (!el.events.length) {
+      lines.push(`  '${el.tag}': ${EMPTY};`);
+      continue;
+    }
+    lines.push(`  '${el.tag}': {`, ...el.events.map((e) => `    '${e.name}': ${e.detail};`), '  };');
+  }
+  lines.push('}', 'export type MissionUiTag = keyof MissionUiIntents;', '');
   return new Map([[ELEMENTS_FILE, lines.join('\n')]]);
 }
 

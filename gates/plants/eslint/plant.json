@@ -107,5 +107,38 @@
         "source": "plant-shell-boundary.ts.plant"
       }
     ]
+  },
+  {
+    "gate": "eslint",
+    "ciCommand": "pnpm lint",
+    "expectFailPattern": "shell-markup: raw controls",
+    "overlays": [
+      {
+        "target": "packages/mission-shell/src/PlantRawControl.svelte",
+        "source": "PlantRawControl.svelte.plant"
+      }
+    ]
+  },
+  {
+    "gate": "eslint",
+    "ciCommand": "pnpm lint",
+    "expectFailPattern": "shell-io: navigator is forbidden",
+    "overlays": [
+      {
+        "target": "packages/mission-shell/src/plant-shell-navigator.ts",
+        "source": "plant-shell-navigator.ts.plant"
+      }
+    ]
+  },
+  {
+    "gate": "eslint",
+    "ciCommand": "pnpm lint",
+    "expectFailPattern": "shell-layering:",
+    "overlays": [
+      {
+        "target": "packages/mission-shell/src/core/plant-core-svelte.ts",
+        "source": "plant-core-svelte.ts.plant"
+      }
+    ]
   }
 ]
