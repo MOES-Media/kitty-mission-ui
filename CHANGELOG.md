@@ -48,7 +48,7 @@ All user-visible changes to this repository. Per-package notes live in `packages
   - **Limits that hold for every host.** `PR_SET_PDEATHSIG` reaches only the direct child, so grandchildren of the
     service can survive a hard host death. The socket-ownership check is Linux-only and fails open when `/proc/net/tcp`
     cannot be read. The contract digest is not authentication. `TransportFailure::Timeout` also covers connect and
-    head timeouts, with status `None`. On `Lagged` from `Subscription.receiver`, re-read `core.status()`.
+    head timeouts; `TransportFailure` carries no status. On `Lagged` from `Subscription.receiver`, re-read `core.status()`.
   - **#22.** The service needs a liveness endpoint, because a hung service whose process stays alive stays `Ready`. It
     should exit when its parent dies, identify its project and pid, run in its own session (`setsid`), accept
     `JAVA_HOME` through `env_passthrough`, and say whether its contract document is bundled or unbundled.
