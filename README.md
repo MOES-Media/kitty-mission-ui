@@ -293,7 +293,7 @@ curl -s http://127.0.0.1:<port>/__stub/last-request
   `X-Kitty-Stub-*` header; `--mission-status.port=<n>` and `--mission-status.project-root=<dir>` are the two launch
   options of the real service, so Kitty core can start the stub as it would start the service (`--port` and
   `--mission-status.port` cannot be combined). Without `--fixtures`, the stub reads `<project-root>/.kitty-stub/fixtures`
-  when that directory exists, and otherwise the `contracts/fixtures` compiled into the binary. A selection that does not
+  when that directory exists, and otherwise the workspace's `contracts/fixtures`, whose path is fixed when the stub is built (the files are not embedded, so a copied binary does not find them). A selection that does not
   fit exits 2; an unreadable `--openapi` file exits 1.
 - It binds `127.0.0.1` only; no option changes the address.
 - **Host rule.** Like the real service, every route answers 403 with `{"code": ...}` when the `Host` header is not exactly
@@ -393,8 +393,10 @@ It serves the pinned contract document, so the digest check passes. The supervis
 
 **Platform limits.**
 
-- On Linux the service dies with its parent (`PR_SET_PDEATHSIG`), even when the host is killed. macOS has no equivalent:
-  if the host is killed with `SIGKILL` or crashes, the service keeps running. A normal exit or `stop()` still ends it.
+- On Linux the service dies with its parent (`PR_SET_PDEATHSIG`), even when the host is killed. macOS has no equivalent.
+  There, the service ends only when the host calls `stop().await`, or when the last `Core` clone is dropped while the
+  runtime is still running. A host that ends with `std::process::exit`, is killed, or crashes leaves the service
+  running. Tauri's app exit ends the process that way, so call `stop().await` before exiting (`#20`).
 - On macOS, an app started by launchd gets a minimal `PATH`, so give the host a configured path. Windows `PATHEXT`
   and Job Objects are not handled yet (`#20`).
 

@@ -18,7 +18,7 @@ All user-visible changes to this repository. Per-package notes live in `packages
     gracefully.
   - **The digest check.** Before a service counts as `Ready`, its contract document must hash to the pinned digest.
     A mismatch stops the service and answers every read and stream with `ContractMismatch`, without sending a request.
-  - **Relay.** `Core::read` and `Core::open_stream` return the service's answer unchanged (reads never reject), and
+  - **Relay.** `Core::read` and `Core::open_stream` return the service's answer unchanged (a non-2xx answer is relayed as it is, not turned into an error; before `Ready`, or on a mismatch, a read returns `NotReady` or `ContractMismatch` instead), and
     `forward()` passes a request through for the dashboard. Relay latency measured here: p50 138 us, p95 157 us in a
     debug build, and p50 34 us, p95 48 us in a release build.
   - **Host API.** `CoreConfig` has no `Default` and no builder: a host fills all ten fields. `ReadOutcome` and
@@ -37,8 +37,10 @@ All user-visible changes to this repository. Per-package notes live in `packages
   Notes for #20, #21 and #22:
   - **#20.** Windows needs Job Objects and `PATHEXT` handling, which Kitty core does not have. A GUI app started by
     launchd on macOS gets a minimal `PATH`, so configure a service path. macOS has no parent-death signal, so a
-    killed host leaves the service running. A macOS-quarantined binary that the system kills shows as a signal exit, so
-    five such exits give `service-missing` with the reason `crashing`.
+    host that exits with `std::process::exit` (as Tauri's app exit does) leaves the service running, so call
+    `stop().await` before exiting. A macOS-quarantined binary that the system kills at every launch is retried on a
+    new port, up to three launches per start, without using a crash slot. After five failed starts (up to fifteen
+    launches, 7.5 s of backoff in total) the status is `service-missing` with the reason `crashing`.
   - **#21.** `forward()` sends exactly a `Host` and the caller's `Accept` header, and puts no cap and no deadline on the
     response body: apply your own limits. A refused stream whose body is over 16 MiB or never ends arrives as
     `Unavailable`, not `Refused`.
