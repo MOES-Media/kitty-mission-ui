@@ -128,10 +128,10 @@
       "criterion_id": "FR-013",
       "description": "Verify FR-013 is satisfied",
       "proof_type": "automated_test",
-      "evidence": null,
-      "pass_fail": "pending",
-      "verified_by": null,
-      "verified_at": null,
+      "evidence": "crates/kitty-core/tests/status_mapping.rs (line 380) a_modified_contract_gives_contract_mismatch_and_sends_nothing_more: after the failed check, Core::read answers ContractMismatch and Core::open_stream answers ContractMismatch, the service request log holds only the contract fetch, and the service group is gone; crates/kitty-core/tests/supervision.rs (line 1147) a_modified_contract_stops_the_service_with_both_digests (group reaped, no restart); contract_check.rs (line 188) the_fetch_is_visible_after_a_mismatch",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-16T16:43:38.384016+00:00",
       "notes": "TODO: replace with a real acceptance criterion"
     },
     {
