@@ -273,7 +273,8 @@
       "last_transition_at": "2026-10-16T17:51:51.187733+00:00",
       "model": "__resolved_model_absent__",
       "notes": [
-        "WP08 ready: stories, Storybook integration, P-5/P-6, eleven candidate baselines"
+        "WP08 ready: stories, Storybook integration, P-5/P-6, eleven candidate baselines",
+        "Review passed: 11 shell stories at vw-1280 match the catalogue; mount option (a) with the container returned; storyClient wraps all nine reads, no exemption, no fixture state hook; lockfile touches only the apps/storybook importer and resolves to already-locked entries, frozen offline install clean; P-5 leg re-proven by the reviewer, P-6 anchor unique and leg proven; R5-01 clean; mission-ui and harness unchanged; scope = owned files plus the 11 shell PNGs. Pipeline capture variant reproduced 1 in 87 forced captures but 0 failures in 190 comparisons (sub-threshold); carried to WP09 and CI. CP-1 items and controller findings (picker now null, dashboard brand) carried in the review report."
       ],
       "provider": "__resolved_provider_absent__",
       "review_result": {
