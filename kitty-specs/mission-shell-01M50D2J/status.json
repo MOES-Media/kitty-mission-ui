@@ -338,6 +338,9 @@
       "last_event_id": "01M5350VTM5W9RC9FQ7S8SCZNX",
       "last_transition_at": "2026-10-16T20:03:58.932468+00:00",
       "model": "__resolved_model_absent__",
+      "notes": [
+        "Review passed: ci.yml diff is the one matrix timeout line (30 to 32, matches the plan projection and DoD; visual held at 60; job timeout-minutes frozen per C-003); reviewer re-ran T049 green, the swapped-ref negative control (exit 1, lowered timeout and all seven new plants dropped) and the job timeout-minutes mutation (named preflight.timeout-minutes); docs match src/shell.ts, the contracts and the CP-1 amendments; 341 stories confirmed on a fresh build; #17 README sections unchanged; no shell PNG touched after WP09; hygiene, terminology, test:scripts and lint green. Carry to the landing fold: the 32 is described as from local measurements but comes from the plan's CI projection (local proxy gives 30)."
+      ],
       "provider": "__resolved_provider_absent__",
       "review_result": {
         "feedback_path": "/home/jeroennouws/dev/SK-missions/ui18/kitty-specs/mission-shell-01M50D2J/tasks/WP10-timings-docs-and-frozen-surface-wrap-up/review-cycle-1.md",
