@@ -281,12 +281,14 @@ pub struct RawChange {
 
 /// A note about the stream itself, not a change.
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
 pub enum StreamDiagnostic {
     UnknownEvent { event: String },
 }
 
 /// Why the stream is over, when it did not end with a declared refusal.
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
 pub enum UnavailableReason {
     /// An answer that is not a stream and not a declared refusal, or a 200 that is not `text/event-stream`.
     Status,
@@ -312,6 +314,7 @@ pub enum UnavailableReason {
 
 /// One item of a [`ChangeStream`].
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
 pub enum StreamEvent {
     Change(RawChange),
     Diagnostic(StreamDiagnostic),

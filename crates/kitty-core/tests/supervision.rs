@@ -99,6 +99,7 @@ fn kind(s: &CoreStatus) -> &'static str {
         SupervisionState::Crashed => "Crashed",
         SupervisionState::Backoff { .. } => "Backoff",
         SupervisionState::Stopped => "Stopped",
+        _ => "Unknown",
     }
 }
 
@@ -112,6 +113,7 @@ fn project(s: &CoreStatus) -> String {
         DegradedReason::None => String::new(),
         DegradedReason::ServiceMissing(m) => format!(" [missing:{:?}]", m.reason),
         DegradedReason::ContractMismatch(_) => " [mismatch]".to_owned(),
+        _ => " [unknown]".to_owned(),
     };
     format!("{state} g{} a{}{degraded}", s.generation, s.attempt)
 }

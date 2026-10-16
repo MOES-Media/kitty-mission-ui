@@ -213,6 +213,7 @@ impl ContractPin {
 
 /// What the served document was compared against, and what it was.
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
 pub enum Actual {
     Digest(Digest),
     Status { status: u16 },

@@ -28,6 +28,7 @@ const READ_ACCEPT: &str = "application/json, application/problem+json";
 
 /// Why no HTTP answer came back.
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
 pub enum TransportFailure {
     ConnectRefused,
     Timeout,

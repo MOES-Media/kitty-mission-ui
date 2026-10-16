@@ -759,11 +759,13 @@ pub fn project(s: &CoreStatus) -> String {
         SupervisionState::Crashed => "Crashed".to_owned(),
         SupervisionState::Backoff { delay } => format!("Backoff({}ms)", delay.as_millis()),
         SupervisionState::Stopped => "Stopped".to_owned(),
+        _ => "Unknown".to_owned(),
     };
     let degraded = match &s.degraded {
         DegradedReason::None => String::new(),
         DegradedReason::ServiceMissing(m) => format!(" [missing:{:?}]", m.reason),
         DegradedReason::ContractMismatch(_) => " [mismatch]".to_owned(),
+        _ => " [unknown]".to_owned(),
     };
     format!("{state} g{} a{}{degraded}", s.generation, s.attempt)
 }

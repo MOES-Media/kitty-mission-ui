@@ -357,8 +357,10 @@ is not `#[non_exhaustive]`. The ten fields and their defaults:
 
 `Core::start` returns `Err(StartError::NoRuntime)` outside a runtime. It never panics.
 
-**Match on the outcomes with a wildcard arm.** `ReadOutcome` and `StreamOpenError` are `#[non_exhaustive]`, so a host's
-`match` needs a `_ =>` arm. `StreamOpenError` is no longer `Copy`: it carries a `CoreStatus` or a `Mismatch`, so clone it
+**Match on the outcomes with a wildcard arm.** These enums are `#[non_exhaustive]`, so a host's `match` needs a `_ =>`
+arm: `ReadOutcome`, `StreamOpenError`, `SupervisionState`, `DegradedReason`, `Actual`, `MissingReason`,
+`TransportFailure`, `UnavailableReason`, `StreamEvent` and `StreamDiagnostic`. A later release can add a variant without
+breaking a host that has the arm. The plain structs (`CoreStatus`, `Mismatch`, `ServiceMissing`) stay exhaustive. `StreamOpenError` is no longer `Copy`: it carries a `CoreStatus` or a `Mismatch`, so clone it
 or take it by reference.
 
 **Map the status to the shell.** `connection_state_hint(&status)` returns one of the five strings of

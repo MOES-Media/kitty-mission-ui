@@ -21,8 +21,9 @@ All user-visible changes to this repository. Per-package notes live in `packages
   - **Relay.** `Core::read` and `Core::open_stream` return the service's answer unchanged (a non-2xx answer is relayed as it is, not turned into an error; before `Ready`, or on a mismatch, a read returns `NotReady` or `ContractMismatch` instead), and
     `forward()` passes a request through for the dashboard. Relay latency measured here: p50 138 us, p95 157 us in a
     debug build, and p50 34 us, p95 48 us in a release build.
-  - **Host API.** `CoreConfig::new(project_root)` fills all ten fields with the documented defaults, and a host overrides one with `CoreConfig { x, ..CoreConfig::new(root) }`. `CoreConfig` has no `Default` and is not `#[non_exhaustive]`. `ReadOutcome` and
-    `StreamOpenError` are `#[non_exhaustive]`, so a host's `match` needs a `_ =>` arm. `StreamOpenError` is not `Copy`.
+  - **Host API.** `CoreConfig::new(project_root)` fills all ten fields with the documented defaults, and a host overrides one with `CoreConfig { x, ..CoreConfig::new(root) }`. `CoreConfig` has no `Default` and is not `#[non_exhaustive]`. `ReadOutcome`,
+    `StreamOpenError`, `SupervisionState`, `DegradedReason`, `Actual`, `MissingReason`, `TransportFailure`,
+    `UnavailableReason`, `StreamEvent` and `StreamDiagnostic` are `#[non_exhaustive]`, so a host's `match` needs a `_ =>` arm. `StreamOpenError` is not `Copy`.
     `connection_state_hint` maps a status to the five `ConnectionState` strings of the shell's port. A pin that cannot
     be parsed gives `Stopped` with `ContractMismatch`, an all-zero `expected` digest that a host must not show or
     compare, and an `Unparseable` `actual`.

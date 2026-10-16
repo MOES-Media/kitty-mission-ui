@@ -9,6 +9,7 @@ use crate::endpoint::ServiceEndpoint;
 
 /// Where the supervised service is in its life.
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
 pub enum SupervisionState {
     Starting,
     Ready { endpoint: ServiceEndpoint },
@@ -19,6 +20,7 @@ pub enum SupervisionState {
 
 /// Why the service is unusable, when it is.
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
 pub enum DegradedReason {
     None,
     ServiceMissing(ServiceMissing),

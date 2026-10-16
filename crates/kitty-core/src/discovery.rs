@@ -31,6 +31,7 @@ pub const DEFAULT_BINARY_NAME: &str = "mission-status-api";
 
 /// Why the service could not be located or run.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[non_exhaustive]
 pub enum MissingReason {
     NotFound,
     CannotExecute,
