@@ -158,10 +158,10 @@
       "criterion_id": "FR-016",
       "description": "Verify FR-016 is satisfied",
       "proof_type": "automated_test",
-      "evidence": null,
-      "pass_fail": "pending",
-      "verified_by": null,
-      "verified_at": null,
+      "evidence": "crates/kitty-core/tests/supervision.rs: every scenario asserts the exact state sequence with generation and attempt, for example a_crash_after_ready_backs_off_and_restarts (line 709, Starting, Ready, Crashed, Backoff(500ms), Starting, Ready) and five_crashes_give_up_with_the_last_exit_status (line 740); crates/kitty-core/tests/status_mapping.rs (line 241) the_initial_status_and_every_transition_arrive_in_order_once and (line 289) subscribe_gives_the_current_status_and_then_every_later_one. WP08 review: 17 sequence digests identical across 50+ loaded runs",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-16T16:43:43.803531+00:00",
       "notes": "TODO: replace with a real acceptance criterion"
     },
     {
