@@ -338,12 +338,14 @@ A configured path or variable that is invalid gives `Stopped` with `service-miss
 Discovery runs at the first start, on `retry()` and at every restart after a crash, so a binary removed while the
 service was crashing gives `service-missing` at the next restart.
 
-**Start Kitty core.** `CoreConfig` has no `Default` and no builder. A host fills all ten fields:
+**Start Kitty core.** `CoreConfig::new(project_root)` fills every field with the value in the second column below, so a
+host writes `CoreConfig { timings, ..CoreConfig::new(root) }` to change one. `CoreConfig` has no `Default`, no builder and
+is not `#[non_exhaustive]`. The ten fields and their defaults:
 
-| Field | Usual value |
+| Field | Default from `CoreConfig::new` |
 |---|---|
 | `project_root` | the project directory (canonicalised at start) |
-| `discovery` | `Arc::new(DefaultDiscovery::from_process(configured_path, binary_name))` |
+| `discovery` | `Arc::new(DefaultDiscovery::from_process(None, DEFAULT_BINARY_NAME))`; pass your own `configured_path` or binary name by building a `DefaultDiscovery` |
 | `contract` | `ContractPin::embedded()` |
 | `timings` | `Timings::default()` |
 | `policy` | `RestartPolicy::default()` (restart after 0.5, 1, 2 and 4 s; give up at the 5th crash in 300 s; the count resets after 60 s of `Ready`) |
@@ -351,7 +353,7 @@ service was crashing gives `service-missing` at the next restart.
 | `clock` | `Arc::new(MonotonicClock)` |
 | `sleeper` | `Arc::new(TokioSleeper)` |
 | `runtime` | `None` to use the runtime the caller is in |
-| `env_passthrough` | `Vec::new()`, or the extra variable names the service needs |
+| `env_passthrough` | `Vec::new()`; add the extra variable names the service needs |
 
 `Core::start` returns `Err(StartError::NoRuntime)` outside a runtime. It never panics.
 
