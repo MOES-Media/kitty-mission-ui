@@ -86,7 +86,7 @@
     },
     "WP03": {
       "actor": "claude",
-      "agent": "claude",
+      "agent": null,
       "agent_profile": "reviewer-renata",
       "agent_profile_version": "1.0",
       "force_count": 1,
@@ -99,6 +99,7 @@
         "Ready for review: stub extensions in dce6341; Rust, contract, hygiene gates green; #17 stub tests byte-identical"
       ],
       "provider": "__resolved_provider_absent__",
+      "review": null,
       "review_result": {
         "feedback_path": "/home/jeroennouws/dev/SK-missions/ui19/kitty-specs/kitty-core-01M50D10/tasks/WP03-stub-extensions/review-cycle-1.md",
         "reference": "review-cycle://kitty-core-01M50D10/WP03-stub-extensions/review-cycle-1.md",
@@ -106,15 +107,15 @@
         "verdict": "changes_requested"
       },
       "role": "reviewer",
-      "shell_pid": 3886603,
-      "shell_pid_created_at": "1792154959.72",
+      "shell_pid": null,
+      "shell_pid_created_at": null,
       "subtasks": {
-        "T011": "done",
-        "T012": "done",
-        "T013": "done",
-        "T014": "done",
-        "T015": "done",
-        "T016": "done"
+        "T011": "planned",
+        "T012": "planned",
+        "T013": "planned",
+        "T014": "planned",
+        "T015": "planned",
+        "T016": "planned"
       }
     },
     "WP04": {
