@@ -48,10 +48,10 @@
       "criterion_id": "FR-005",
       "description": "Verify FR-005 is satisfied",
       "proof_type": "automated_test",
-      "evidence": null,
-      "pass_fail": "pending",
-      "verified_by": null,
-      "verified_at": null,
+      "evidence": "crates/kitty-core/tests/reads.rs (line 298) only_loopback_endpoints_exist_and_nothing_connects_for_a_refused_one: 0.0.0.0, 127.0.0.2, [::1], 192.0.2.1 are NotLoopback and port 0 is ZeroPort when the ServiceEndpoint is built, the fake sees no connection, and the accepted 127.0.0.1 form does reach it; crates/kitty-core/src/endpoint.rs unit tests only_127_0_0_1_with_a_port_is_accepted and every_other_address_is_refused",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-16T16:43:22.720658+00:00",
       "notes": "TODO: replace with a real acceptance criterion"
     },
     {
