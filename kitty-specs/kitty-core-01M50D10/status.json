@@ -182,6 +182,9 @@
       "last_event_id": "01M52EHJ7P0Q27Y8EGC63FYK2A",
       "last_transition_at": "2026-10-16T13:31:08.918150+00:00",
       "model": "__resolved_model_absent__",
+      "notes": [
+        "Ready for review: contract.rs + contract_check.rs (82ab03c); gates green; dev digest median 17.2 ms"
+      ],
       "provider": "__resolved_provider_absent__",
       "role": "implementer",
       "shell_pid": 4071682,
