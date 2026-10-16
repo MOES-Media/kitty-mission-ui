@@ -1,0 +1,363 @@
+{
+  "event_count": 110,
+  "last_event_id": "01M535E3N0BSXABWHVRE5B3DH1",
+  "materialized_at": "2026-10-16T20:11:12.928399+00:00",
+  "mission_number": "5",
+  "mission_slug": "mission-shell-01M50D2J",
+  "mission_type": "software-dev",
+  "schema_version": 2,
+  "summary": {
+    "approved": 0,
+    "blocked": 0,
+    "canceled": 0,
+    "claimed": 0,
+    "done": 10,
+    "for_review": 0,
+    "in_progress": 0,
+    "in_review": 0,
+    "planned": 0
+  },
+  "work_packages": {
+    "WP01": {
+      "actor": "merge",
+      "agent": "claude",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
+      "force_count": 2,
+      "implementer_of_record": "claude",
+      "lane": "done",
+      "last_event_id": "01M535DYNZY49F5A9HWYTB4DJH",
+      "last_transition_at": "2026-10-16T20:11:07.839174+00:00",
+      "model": "__resolved_model_absent__",
+      "notes": [
+        "Ready for review: logic (Node) + unit (Chromium) projects, setup files, sentinel, routes, displayed sets. logic 27 tests, unit 69, total 96. No fallback.",
+        "Review cycle 1 fixed: setup files drain in afterEach+afterAll, record on globalThis; 3 probes x 2 projects fail the run; WP_ID_MAX_LENGTH copy check added",
+        "Review cycle 2 fixed: setup files intercept nothing; 4 probes x 2 projects exit 1 with setup and control",
+        "Cycle 3 approved (64ec162). Setup files are inert (comment + export {}), so failure handling is Vitest's default. 16 probes (in-test, afterAll async, afterAll sync, --isolate=false cross-file; logic and unit; each with a no-setupFiles control) all exit 1. Listener throw during dispatchEvent in Chromium also exits 1. Passing run 96 = logic 27 + unit 69. Routes, displayed sets (literal oracle), WP_ID_MAX_LENGTH YAML pin, lint, no-io, typecheck, hygiene, terminology and frozen surface verified in cycles 1-2; only owned files touched. Note for WP03/WP06: NFR-007 relies on Vitest's run-level Unhandled Errors exit 1, so do not add catch-and-log in shell code, do not set dangerouslyIgnoreUnhandledErrors, and do not register consuming process/window listeners in tests. No passive observer is needed."
+      ],
+      "provider": "__resolved_provider_absent__",
+      "review": null,
+      "review_result": {
+        "feedback_path": "/home/jeroennouws/dev/SK-missions/ui18/kitty-specs/mission-shell-01M50D2J/tasks/WP01-destinations-routes-and-displayed-sets/review-cycle-3.md",
+        "reference": "review-cycle://mission-shell-01M50D2J/WP01-destinations-routes-and-displayed-sets/review-cycle-3.md",
+        "reviewer": "claude",
+        "verdict": "approved"
+      },
+      "role": "reviewer",
+      "shell_pid": 3918512,
+      "shell_pid_created_at": "1792155193.33",
+      "subtasks": {
+        "T001": "done",
+        "T002": "done",
+        "T003": "done",
+        "T004": "done",
+        "T005": "done"
+      }
+    },
+    "WP02": {
+      "actor": "merge",
+      "agent": "claude",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
+      "force_count": 2,
+      "implementer_of_record": "claude",
+      "lane": "done",
+      "last_event_id": "01M535DZ9MG6T69SV4MP49NJX2",
+      "last_transition_at": "2026-10-16T20:11:08.468538+00:00",
+      "model": "__resolved_model_absent__",
+      "notes": [
+        "Refresh policy, read scheduler, gate, page chains, test support, literal recording and plant P-1 done; logic project green, unit-tests gate-proof leg proven.",
+        "Review cycle 1 fixes: initial connected sets the mark (F1), trailing reads gated (F2), nits.",
+        "Cycle 2: closeWindow gate guard test added.",
+        "Cycle 3 approved (reviewer-renata). F1 gate first-connected mark fixed and covered (unit tests + literal recording catch a reverted bug); F2 gate guards in closeWindow and afterSettle each killed by a committed test (48def97 test fails when the closeWindow guard is removed). 178/178 mission-shell tests, token absent from clean output; lint, lint:no-io, typecheck, hygiene clean; P-1 proven in cycle 1; only owned files touched. WP03 note: issue the displayed set when gate.initial()/reset() returns first-connected; never observe the current state."
+      ],
+      "provider": "__resolved_provider_absent__",
+      "review": null,
+      "review_result": {
+        "feedback_path": "/home/jeroennouws/dev/SK-missions/ui18/kitty-specs/mission-shell-01M50D2J/tasks/WP02-refresh-engine/review-cycle-3.md",
+        "reference": "review-cycle://mission-shell-01M50D2J/WP02-refresh-engine/review-cycle-3.md",
+        "reviewer": "claude",
+        "verdict": "approved"
+      },
+      "role": "reviewer",
+      "shell_pid": 4160860,
+      "shell_pid_created_at": "1792157557.61",
+      "subtasks": {
+        "T006": "done",
+        "T007": "done",
+        "T008": "done",
+        "T009": "done",
+        "T010": "done",
+        "T011": "done"
+      }
+    },
+    "WP03": {
+      "actor": "merge",
+      "agent": "claude",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
+      "force_count": 0,
+      "implementer_of_record": "claude",
+      "lane": "done",
+      "last_event_id": "01M535DZXP59JVQ0GB1KGR2S30",
+      "last_transition_at": "2026-10-16T20:11:09.110989+00:00",
+      "model": "__resolved_model_absent__",
+      "notes": [
+        "Ready for review: results.ts, connection.ts, createShellController (+ snapshot, read-key, host-seam), logic tests incl. literal-recording replay; typecheck, lint, lint:no-io, hygiene, heavy shell tests green",
+        "Independent review: approve. Gates green (lint, lint:no-io, typecheck, hygiene; mission-shell test 282/282; clean output has 0 P-1 tokens; P-1 plant applied locally fails controller-recording 'replays row: missions' with the token). Gate: single issue of the displayed set at first connected via setDisplayed (fresh slots) or requestAll('navigation'), never both; setClient resets gate/presenter/refused and drops slots; targeted revert of the setClient gate reset fails the FS2-01 test; revert of the grace-timer clear fails 3 named R2-08 tests. Refused stream: shell-side resync on each non-first connected, 0 new subscribes, non-refused control via adapter resync. Result table matches data-model incl. FR-005 amendment and 17 routes.json pairs; deviation 1 matches mission-ui vocabularies (ArtifactContentStatus has refused and no not-found; Pipeline is ViewState). Copy protocol order asserted over 8 entries. Only owned files changed. Non-blocking: L1 duplicate reconnecting re-arms the grace timer (the port does not promise dedupe); L2 unavailable on a no-value slot keeps a stale earlier refusal; L3 refused-with-value slot shows no loading on retry; deviation 4 matches shell-api 'drops all state'; deviation 7 'All Missions' copy belongs on the CP-1 review list."
+      ],
+      "provider": "__resolved_provider_absent__",
+      "review_result": {
+        "feedback_path": "/home/jeroennouws/dev/SK-missions/ui18/kitty-specs/mission-shell-01M50D2J/tasks/WP03-shell-controller/review-cycle-1.md",
+        "reference": "review-cycle://mission-shell-01M50D2J/WP03-shell-controller/review-cycle-1.md",
+        "reviewer": "claude",
+        "verdict": "approved"
+      },
+      "role": "reviewer",
+      "shell_pid": 37995,
+      "shell_pid_created_at": "1792158505.04",
+      "subtasks": {
+        "T012": "done",
+        "T013": "done",
+        "T014": "done",
+        "T015": "done",
+        "T016": "done",
+        "T017": "done",
+        "T018": "done"
+      }
+    },
+    "WP04": {
+      "actor": "merge",
+      "agent": "claude",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
+      "force_count": 1,
+      "implementer_of_record": "claude",
+      "lane": "done",
+      "last_event_id": "01M535E0HS1W6GMA2RP5CGBGYY",
+      "last_transition_at": "2026-10-16T20:11:09.753620+00:00",
+      "model": "__resolved_model_absent__",
+      "notes": [
+        "Ready for review: ShellHost wrappers, link check, picker/dashboard/refocus/routeChanged in controller, 69 new logic tests",
+        "Review cycle 1 addressed: F1 command-level dashboard guard, F2 destroyed check, F3-F5",
+        "Cycle 2 approved (05befa6). F1: pickerAllowed guards all 6 commands; direct dashboard calls give 0 host calls, no emit, no state change; dashboard navigate(projects) gives Missions with no listing. F2: no host call after destroy, covering setRoute, setClient, navigate, refresh, links, copy and picker. F3/F4 are real tests, each failing under mutation. 326 tests passing; lint, no-io, typecheck and hygiene clean. Scope: snapshot.ts and host-seam.ts are unrecorded out-of-map edits under WP03's controller/** glob, required by T021; record them in the PR."
+      ],
+      "provider": "__resolved_provider_absent__",
+      "review": null,
+      "review_result": {
+        "feedback_path": "/home/jeroennouws/dev/SK-missions/ui18/kitty-specs/mission-shell-01M50D2J/tasks/WP04-host-interface-modes-and-links/review-cycle-2.md",
+        "reference": "review-cycle://mission-shell-01M50D2J/WP04-host-interface-modes-and-links/review-cycle-2.md",
+        "reviewer": "claude",
+        "verdict": "approved"
+      },
+      "role": "reviewer",
+      "shell_pid": 189821,
+      "shell_pid_created_at": "1792159822.74",
+      "subtasks": {
+        "T019": "done",
+        "T020": "done",
+        "T021": "done",
+        "T022": "done"
+      }
+    },
+    "WP05": {
+      "actor": "merge",
+      "agent": "claude",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
+      "force_count": 1,
+      "implementer_of_record": "claude",
+      "lane": "done",
+      "last_event_id": "01M535E15H81P7NDB82EN43WNW",
+      "last_transition_at": "2026-10-16T20:11:10.385556+00:00",
+      "model": "__resolved_model_absent__",
+      "notes": [
+        "INTENT_TABLE (40 pairs/23 intents), coverage check types, P-2 proven; controller dispatches via table (out-of-map edit)",
+        "F1 fixed: own-property intent lookup + regression test",
+        "Review passed (cycle 2): F1 fixed; resolveHandler uses Object.hasOwn at tag, event and via target, calls only functions, follows only string vias. Original probes resolve; intent-dispatch.test.ts red-first verified (19/32 fail against the cycle-1 lookup). 40 pairs/23 events/5 via/6 desktopOnly per intent-map; R-09 coverage and via constraints probed; P-2 proven (typecheck leg 35.7 s); typecheck 0/0, lint, no-io, hygiene 0, manifest current, test:scripts 646, mission-shell 358/358; diff limited to owned files plus shell-controller.ts and intent-dispatch.test.ts. Non-blocking: N1 detail typing ends at IntentCommands(unknown); N2 via admits any same-event same-detail host."
+      ],
+      "provider": "__resolved_provider_absent__",
+      "review": null,
+      "review_result": {
+        "feedback_path": "/home/jeroennouws/dev/SK-missions/ui18/kitty-specs/mission-shell-01M50D2J/tasks/WP05-intent-table-and-coverage-check/review-cycle-2.md",
+        "reference": "review-cycle://mission-shell-01M50D2J/WP05-intent-table-and-coverage-check/review-cycle-2.md",
+        "reviewer": "claude",
+        "verdict": "approved"
+      },
+      "role": "reviewer",
+      "shell_pid": 485411,
+      "shell_pid_created_at": "1792161129.1",
+      "subtasks": {
+        "T023": "done",
+        "T024": "done",
+        "T025": "done",
+        "T026": "done"
+      }
+    },
+    "WP06": {
+      "actor": "merge",
+      "agent": "claude",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
+      "force_count": 2,
+      "implementer_of_record": "claude",
+      "lane": "done",
+      "last_event_id": "01M535E1SQC0CC96RR60TKBBH7",
+      "last_transition_at": "2026-10-16T20:11:11.031138+00:00",
+      "model": "__resolved_model_absent__",
+      "notes": [
+        "Review passed: cycle 3 fixes verified (raw-route echo skip announces non-canonical routes; client effect before route effect, no read on the replaced client); 470 tests, gates clean; P-7 anchor and token unchanged; ./shell matches the contract. Non-blocking carried to pre-merge: N1 navigation model ownership (snapshot should own it), N3 casts in ProjectsScreen, N5 unnamed mission-ui flake, effect order relies on Svelte tree order (pinned by test), one extra listMissions read on the new client in a same-tick client+route change."
+      ],
+      "provider": "__resolved_provider_absent__",
+      "review": null,
+      "review_result": {
+        "feedback_path": "/home/jeroennouws/dev/SK-missions/ui18/kitty-specs/mission-shell-01M50D2J/tasks/WP06-svelte-view-bindings-and-shell-entry/review-cycle-3.md",
+        "reference": "review-cycle://mission-shell-01M50D2J/WP06-svelte-view-bindings-and-shell-entry/review-cycle-3.md",
+        "reviewer": "claude",
+        "verdict": "approved"
+      },
+      "role": "reviewer",
+      "shell_pid": 817468,
+      "shell_pid_created_at": "1792166042.18",
+      "subtasks": {
+        "T027": "done",
+        "T028": "done",
+        "T029": "done",
+        "T030": "done",
+        "T031": "done",
+        "T032": "done",
+        "T033": "done"
+      }
+    },
+    "WP07": {
+      "actor": "merge",
+      "agent": "claude",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
+      "force_count": 0,
+      "implementer_of_record": "claude",
+      "lane": "done",
+      "last_event_id": "01M535DY27ZFYS8TBJ6HD0QMN6",
+      "last_transition_at": "2026-10-16T20:11:07.207157+00:00",
+      "model": "__resolved_model_absent__",
+      "notes": [
+        "Shell I/O, markup and layering lint blocks plus plants P-3, P-4, P-8 (commit ff6ab6f). Out-of-map edit: one line in gates/markdown-lint.selftest.ts (navigator.language -> String(performance.now())). WP06 note: 'import type { Snippet } from svelte' is reported in core/controller/intents, so Snippet-typed code must live outside them. Eslint leg 127 s, step about 0.16 min, formula 4.1 <= 8.",
+        "Review passed: I/O (8 globals + 2 document props), markup (14 elements) and layering blocks match R-13 verbatim; layering after boundary and re-spreads SHELL_BOUNDARY_PATTERNS (fixture/harness/JSON bans still fire in core/controller/intents); allowTypeImports works for mission-ui; type-only svelte import IS reported in core (note for WP06); mission-ui unaffected; noInlineConfig holds. Plants P-3/P-4/P-8 single-cause, base 9 entries unchanged, gate-proof eslint leg green (117.7s, 13 runs, step ~0.15 min, (1+12)x0.15+2=3.96<=8). selftest numstat 1 1, no-io byte-unchanged. lint, lint:no-io, test:no-io (220), test:scripts (643), hygiene (0) green."
+      ],
+      "provider": "__resolved_provider_absent__",
+      "review_result": {
+        "feedback_path": "/home/jeroennouws/dev/SK-missions/ui18/kitty-specs/mission-shell-01M50D2J/tasks/WP07-shell-lint-io-markup-layering/review-cycle-1.md",
+        "reference": "review-cycle://mission-shell-01M50D2J/WP07-shell-lint-io-markup-layering/review-cycle-1.md",
+        "reviewer": "claude",
+        "verdict": "approved"
+      },
+      "role": "reviewer",
+      "shell_pid": 3773498,
+      "shell_pid_created_at": "1792152430.28",
+      "subtasks": {
+        "T034": "done",
+        "T035": "done",
+        "T036": "done",
+        "T037": "done"
+      }
+    },
+    "WP08": {
+      "actor": "merge",
+      "agent": "claude",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
+      "force_count": 0,
+      "implementer_of_record": "claude",
+      "lane": "done",
+      "last_event_id": "01M535E2DNWPV8WSQ988ST880W",
+      "last_transition_at": "2026-10-16T20:11:11.669343+00:00",
+      "model": "__resolved_model_absent__",
+      "notes": [
+        "WP08 ready: stories, Storybook integration, P-5/P-6, eleven candidate baselines",
+        "Review passed: 11 shell stories at vw-1280 match the catalogue; mount option (a) with the container returned; storyClient wraps all nine reads, no exemption, no fixture state hook; lockfile touches only the apps/storybook importer and resolves to already-locked entries, frozen offline install clean; P-5 leg re-proven by the reviewer, P-6 anchor unique and leg proven; R5-01 clean; mission-ui and harness unchanged; scope = owned files plus the 11 shell PNGs. Pipeline capture variant reproduced 1 in 87 forced captures but 0 failures in 190 comparisons (sub-threshold); carried to WP09 and CI. CP-1 items and controller findings (picker now null, dashboard brand) carried in the review report."
+      ],
+      "provider": "__resolved_provider_absent__",
+      "review_result": {
+        "feedback_path": "/home/jeroennouws/dev/SK-missions/ui18/kitty-specs/mission-shell-01M50D2J/tasks/WP08-stories-storybook-and-candidate-baselines/review-cycle-1.md",
+        "reference": "review-cycle://mission-shell-01M50D2J/WP08-stories-storybook-and-candidate-baselines/review-cycle-1.md",
+        "reviewer": "claude",
+        "verdict": "approved"
+      },
+      "role": "reviewer",
+      "shell_pid": 1266325,
+      "shell_pid_created_at": "1792171389.86",
+      "subtasks": {
+        "T038": "done",
+        "T039": "done",
+        "T040": "done",
+        "T041": "done",
+        "T042": "done",
+        "T043": "done"
+      }
+    },
+    "WP09": {
+      "actor": "merge",
+      "agent": "claude",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
+      "force_count": 0,
+      "implementer_of_record": "claude",
+      "lane": "done",
+      "last_event_id": "01M535E318KVG23GDDV2Q5FQY8",
+      "last_transition_at": "2026-10-16T20:11:12.296406+00:00",
+      "model": "__resolved_model_absent__",
+      "notes": [
+        "IC-08b: CP-1 amendments A1-A5 applied, baselines regenerated, P-6 and P-7 re-proven",
+        "Review passed: A1-A5 applied per design-review.md; A1 and A5 mutations turn their tests red (reviewer-verified); 479 shell tests, gates clean; 3 regenerated PNGs match A1/A2, A3, A4; design-review.sha256 11/11 OK; R5-01 clean; P-6 and P-7 anchors unchanged; scope = granted files plus existing logic test files under the A4/A5 grant. Carry: contract copy table lacks the A2 short bodies and A3 brand (orchestrator); now test has a no-op time line; picker story clock precedes fixture data so every label is just now (WP08 story change request); possible A2 body flip when an in-flight read lands while degraded."
+      ],
+      "provider": "__resolved_provider_absent__",
+      "review_result": {
+        "feedback_path": "/home/jeroennouws/dev/SK-missions/ui18/kitty-specs/mission-shell-01M50D2J/tasks/WP09-baseline-finalisation-after-cp1/review-cycle-1.md",
+        "reference": "review-cycle://mission-shell-01M50D2J/WP09-baseline-finalisation-after-cp1/review-cycle-1.md",
+        "reviewer": "claude",
+        "verdict": "approved"
+      },
+      "role": "reviewer",
+      "shell_pid": 2262149,
+      "shell_pid_created_at": "1792180173.57",
+      "subtasks": {
+        "T044": "done",
+        "T045": "done",
+        "T046": "done",
+        "T047": "done"
+      }
+    },
+    "WP10": {
+      "actor": "merge",
+      "agent": "claude",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
+      "force_count": 0,
+      "implementer_of_record": "claude",
+      "lane": "done",
+      "last_event_id": "01M535E3N0BSXABWHVRE5B3DH1",
+      "last_transition_at": "2026-10-16T20:11:12.928399+00:00",
+      "model": "__resolved_model_absent__",
+      "notes": [
+        "Review passed: ci.yml diff is the one matrix timeout line (30 to 32, matches the plan projection and DoD; visual held at 60; job timeout-minutes frozen per C-003); reviewer re-ran T049 green, the swapped-ref negative control (exit 1, lowered timeout and all seven new plants dropped) and the job timeout-minutes mutation (named preflight.timeout-minutes); docs match src/shell.ts, the contracts and the CP-1 amendments; 341 stories confirmed on a fresh build; #17 README sections unchanged; no shell PNG touched after WP09; hygiene, terminology, test:scripts and lint green. Carry to the landing fold: the 32 is described as from local measurements but comes from the plan's CI projection (local proxy gives 30)."
+      ],
+      "provider": "__resolved_provider_absent__",
+      "review_result": {
+        "feedback_path": "/home/jeroennouws/dev/SK-missions/ui18/kitty-specs/mission-shell-01M50D2J/tasks/WP10-timings-docs-and-frozen-surface-wrap-up/review-cycle-1.md",
+        "reference": "review-cycle://mission-shell-01M50D2J/WP10-timings-docs-and-frozen-surface-wrap-up/review-cycle-1.md",
+        "reviewer": "claude",
+        "verdict": "approved"
+      },
+      "role": "reviewer",
+      "shell_pid": 2279233,
+      "shell_pid_created_at": "1792180895.04",
+      "subtasks": {
+        "T048": "done",
+        "T049": "done",
+        "T050": "done",
+        "T051": "done",
+        "T052": "done"
+      }
+    }
+  }
+}

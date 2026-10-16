@@ -5,11 +5,14 @@
   "license": "AGPL-3.0-or-later",
   "type": "module",
   "dependencies": {
+    "@moes-media/mission-shell": "workspace:*",
     "@moes-media/mission-ui": "workspace:*",
     "@spec-kitty/elements": "1.1.0-rc.10",
     "@spec-kitty/styles": "1.1.0-rc.10",
     "@spec-kitty/tokens": "1.1.0-rc.10",
-    "lit": "3.3.3"
+    "@sveltejs/vite-plugin-svelte": "6.2.4",
+    "lit": "3.3.3",
+    "svelte": "5.57.1"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

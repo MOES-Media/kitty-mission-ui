@@ -243,7 +243,7 @@ cargo build --workspace --locked
 
 | Path | What it is |
 |---|---|
-| `packages/mission-shell` | `@moes-media/mission-shell`, the Svelte 5 shell: the `MissionStatusClient` port, its fixture adapter, the generated element typings and the permanent binding check. No I/O ([its README](packages/mission-shell/README.md)). |
+| `packages/mission-shell` | `@moes-media/mission-shell`, the Svelte 5 shell: the `MissionStatusClient` port, its fixture adapter, the generated element typings, the permanent binding check and, on the `./shell` entry, the mountable shell (`mountShell`, `MissionShell`) that hosts use for routing, layout, refresh and connection banners. No I/O ([its README](packages/mission-shell/README.md)). |
 | `crates/kitty-core` | the shared Rust core, a skeleton for now (`#19`). Its `tests/workspace.rs` asserts the exact set of workspace members. |
 | `crates/kitty-stub` | `kitty-stub`, the loopback HTTP and SSE stand-in for the Mission Status service. `publish = false`. |
 | `apps/desktop/src-tauri` | the Kitty Desktop placeholder: a compile-only binary crate in Tauri's layout, so `#20` adds Tauri without moving files. |
@@ -347,17 +347,17 @@ packages, never only the changed files.
 | Gate (CI job) | Local command | What it checks |
 |---|---|---|
 | `Gate: preflight` | `pnpm preflight` | the registry credential is present and accepted (CI: `node scripts/preflight.mjs --ci`) |
-| `Gate: typecheck` | `pnpm typecheck` | strict TypeScript over every workspace package; `svelte-check` over `packages/mission-shell`, against the generated element typings |
-| `Gate: eslint` | `pnpm lint` | elements-over-CSS template rules, Lit rules, no warnings allowed. The shell's `.svelte` sources get the typed TypeScript rules, the template and markdown-renderer rules and `noInlineConfig`, as `.ts` sources do |
+| `Gate: typecheck` | `pnpm typecheck` | strict TypeScript over every workspace package; `svelte-check` over `packages/mission-shell`, against the generated element typings, including the intent coverage check types (every `sk-*` event maps to an intent or is explicitly ignored) |
+| `Gate: eslint` | `pnpm lint` | elements-over-CSS template rules, Lit rules, no warnings allowed. The shell's `.svelte` sources get the typed TypeScript rules, the template and markdown-renderer rules and `noInlineConfig`, as `.ts` sources do. The shell also gets blocks for I/O globals, markup and layering (the core, controller and intents code may not import Svelte) |
 | `Gate: stylelint` | `pnpm lint:styles` | layout-only CSS, `--sk-*` tokens, no colour, font or size literals; the operator-approved exceptions E-04 and E-08 to E-16 are scoped to named element files in `stylelint.config.mjs`, token values only (each sunsets on a spec-kitty-design issue) |
 | `Gate: no-io` | `pnpm lint:no-io` and `pnpm test:no-io` | no network, desktop-bridge or browser-storage I/O in `packages/*/src`; the self-test asserts one fixture per rule |
 | `Gate: manifest` | `pnpm manifest:check` | `custom-elements.json` equals a fresh regeneration and declares every property and event |
 | `Gate: hygiene` | `pnpm hygiene` and `pnpm test:scripts` | no token, no absolute user path (CLI state files included), no agent scratchpad path, no tooling-ledger id, no username of the running account, no e-mail address in the contract and fixture paths, pinned dependencies and actions, an exact `x.y.z` Rust toolchain channel, safe workflow triggers, baseline PNG checks; then the `node:test` suites of the gate scripts (hygiene, gate-proof, preflight, manifest-screen, settle, the stylelint exception scope proofs, the story-catalogue and visual-tag tests and the terminology scan: the word "feature" never appears in `packages/*/src` or the mission quickstart, the canonical term is "mission") |
 | `Gate: contract` | `pnpm contract:check` and `pnpm test:contract` | the vendored Mission Status contract equals its pin, the generated types and fixtures are fresh, every fixture is a valid and coherent contract document (closed shapes), no event-stream identifier in `packages/*/src` |
 | `Gate: data-driven` | `pnpm lint:data-driven` and `pnpm test:data-driven` | no phase name, status lane or other contract status word (`pending`, `complete`, `draft`, `discarded`) hard-coded in `packages/*/src` outside `src/defaults/`, `src/contract/`, stories, fixtures and `src/story-support/`; the selector list is `SELECTOR_ENTRIES` in `eslint.data-driven.config.mjs` (it reads the phase, lane, review, change-state, staleness, project health, artifact, Drift and Ops vocabularies from the vendored schemas), with a self-test over positive fixtures in `gates/fixtures/data-driven/` and inline `eslint-disable` comments ignored |
-| `Gate: storybook-build` | `pnpm build-storybook` | the static Storybook builds (330 stories), then the output is scanned for tokens |
-| `Gate: unit-tests` | `pnpm test` | every workspace package's `test`, one package at a time and without stopping at the first failing package (`pnpm -r --no-bail --workspace-concurrency=1 test`; any failure still fails the gate). mission-ui: Vitest browser-mode tests in two projects run one after the other, `unit` and then `perf` (the wall-clock ceiling tests, one file at a time; see below): one test per emitted event and payload, plus the host composition test (both screens rendered from contract-shaped data with no I/O). mission-shell: the binding check, the port coverage test and the fixture-client tests |
-| `Gate: visual` | `pnpm visual` | screenshots of every story (330) against the committed baselines (330, one per story), inside the pinned Playwright container |
+| `Gate: storybook-build` | `pnpm build-storybook` | the static Storybook builds (341 stories, 11 of them the shell's), then the output is scanned for tokens |
+| `Gate: unit-tests` | `pnpm test` | every workspace package's `test`, one package at a time and without stopping at the first failing package (`pnpm -r --no-bail --workspace-concurrency=1 test`; any failure still fails the gate). mission-ui: Vitest browser-mode tests in two projects run one after the other, `unit` and then `perf` (the wall-clock ceiling tests, one file at a time; see below): one test per emitted event and payload, plus the host composition test (both screens rendered from contract-shaped data with no I/O). mission-shell: the binding check, the port coverage test and the fixture-client tests, plus the `logic` project (Node: routes, the refresh engine, the controller and the host wrappers) and the Chromium shell tests (mounted routing, banners and bindings) |
+| `Gate: visual` | `pnpm visual` | screenshots of every story (341) against the committed baselines (341, one per story), inside the pinned Playwright container |
 | `Gate: rust` | the canonical Rust command (see [The Rust gate](#the-rust-gate)) | `cargo fmt`, `clippy -D warnings` and `cargo test` over the Rust workspace, offline (`--frozen`) after separate toolchain-install and fetch steps |
 | `Gate: proof (<gate>)` | `pnpm gate-proof` | one leg per gate: passes clean, fails with the plant (see below) |
 | `Gate: proof` | (CI only) | checks coverage, assembles and schema-validates the proof record |
@@ -386,6 +386,13 @@ job times of the #17 pull request's first CI run (run 38750632963): `eslint` 34 
 leg 43 s (3) 5. `typecheck`, `no-io`, `manifest` and `data-driven` compute at or below their earlier 6 minutes and keep
 it. On that run the slowest legs used under half their new limit: `unit-tests` 802 s of 1800 s (45%) and `eslint` 213 s
 of 480 s (44%). Every gate job stayed within 8 minutes (NFR-002); the slowest was `unit-tests` at 185 s.
+
+Issue `#18` adds shell plants to five legs: two to `unit-tests` (10 in all), one to `typecheck` (5), three to `eslint` (12)
+and one to `storybook-build` (2); the `visual` plant moves to a shell banner story (1). The `#18` timeouts are
+**provisional**: they come from local measurements under `heavy`, not from CI. Only the `unit-tests` proof leg rises,
+from 30 to 32 minutes (the formula gives 31.7 from the `#17` run's 2.15 minute gate step projected to about 2.7).
+`typecheck`, `eslint`, `storybook-build` and `visual` keep their values, and `visual` stays at 60 because a timeout
+never drops. A `(landing)` change re-derives all of them from the pull request's first CI run.
 
 ### Installs are frozen
 
