@@ -117,11 +117,11 @@
     {
       "criterion_id": "FR-012",
       "description": "Verify FR-012 is satisfied",
-      "proof_type": "automated_test",
-      "evidence": null,
-      "pass_fail": "pending",
-      "verified_by": null,
-      "verified_at": null,
+      "proof_type": "gate_proof",
+      "evidence": "gates/plants/contract/plant.json: new plant 'stale generated file: contracts/fixtures/mission-status.openapi.json differs' (9 contract plants in all), red in the contract gate-proof leg at WP02 review (leg ok, 120 s); scripts/contract/bundle.test.mjs 'follows the pin: a changed vendored scalar changes the bundle; an untouched copy gives the committed text' (edits StatusLane.yaml in a temp copy) and 'inlined: the bundle has no $ref key anywhere'; crates/kitty-core/src/contract.rs unit test the_pin_follows_the_embedded_file (pin digest equals the on-disk bundle digest; an edited copy differs); no hand-typed digest constant (WP06 review). WP02 review: 5 reverts red",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-16T16:43:36.587197+00:00",
       "notes": "TODO: replace with a real acceptance criterion"
     },
     {
