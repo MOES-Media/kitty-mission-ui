@@ -6,7 +6,7 @@
   import { onDestroy, tick, untrack } from 'svelte';
   import type { MissionStatusClient } from '../client/port';
   import { createShellController } from '../controller/shell-controller';
-  import { formatRoute, normaliseRoute } from '../core/routes';
+  import { formatRoute } from '../core/routes';
   import { bindIntents } from './bind-intents';
   import ConnectionBanner from './ConnectionBanner.svelte';
   import { navigationOf } from './navigation';
@@ -53,19 +53,21 @@
   }
 
   // A Svelte host that changes its props keeps working: only a changed value reaches the controller.
+  // The client effect is declared first: a client and a route changed in the same tick must read the new screen on the new client.
+  $effect(() => {
+    const client = options.client;
+    if (client !== lastClient) setClient(client);
+  });
   $effect(() => {
     const route = options.route;
     if (route === undefined || route === lastRoute) return;
-    // A host that echoes routeChanged back into its route prop sends the route the shell already shows: not a navigation.
-    if (normaliseRoute(route, untrack(() => options.mode)).route === formatRoute(untrack(() => controller.snapshot().destination))) {
+    // A host that echoes routeChanged back into its route prop sends the canonical route of the screen already shown: not a
+    // navigation. Compared raw, so a non-canonical route still reaches the controller and is announced canonically.
+    if (route === formatRoute(untrack(() => controller.snapshot().destination))) {
       lastRoute = route;
       return;
     }
     setRoute(route);
-  });
-  $effect(() => {
-    const client = options.client;
-    if (client !== lastClient) setClient(client);
   });
 
   onDestroy(() => {

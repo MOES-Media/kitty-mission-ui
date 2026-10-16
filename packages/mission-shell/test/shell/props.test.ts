@@ -88,4 +88,45 @@ describe('MissionShell used as a Svelte component', () => {
     expect(count(artifacts, 'listArtifacts'), 'Artifacts is read once').toBe(1);
     expect(host.calls.filter((call) => call.member === 'routeChanged').map((call) => call.args[0])).toEqual(['/ops', `/missions/${M}/artifacts`]);
   });
+
+  it('a non-canonical host route that normalises to the current screen is announced once, canonically (cycle 2)', async () => {
+    const scheduler = createFakeScheduler();
+    const client = recordingClient(createFixtureClient({ scheduler }));
+    const host = recordingHost();
+    const target = document.createElement('div');
+    document.body.append(target);
+    const app = mount(PropsHost, { target, props: { initial: { client, host, mode: 'desktop', route: '/missions', scheduler } } }) as unknown as {
+      update(patch: { route?: string }): void;
+    };
+    mounted.push({ app: app as never, target });
+    const harness = { target, scheduler, shell: target.querySelector('sk-mission-shell') as HTMLElement } as unknown as Harness;
+    await settle(harness);
+    host.calls.length = 0;
+    app.update({ route: '/nowhere' });
+    flushSync();
+    await settle(harness);
+    expect(screenTag(harness.shell)).toBe('sk-missions-screen');
+    expect(host.calls.filter((call) => call.member === 'routeChanged').map((call) => call.args[0])).toEqual(['/missions']);
+  });
+
+  it('a client and a route changed in the same tick read the new screen on the new client only (N6)', async () => {
+    const scheduler = createFakeScheduler();
+    const a = recordingClient(createFixtureClient({ scheduler }));
+    const b = recordingClient(createFixtureClient({ scheduler }));
+    const target = document.createElement('div');
+    document.body.append(target);
+    const app = mount(PropsHost, { target, props: { initial: { client: a, host: recordingHost(), mode: 'desktop', route: '/missions', scheduler } } }) as unknown as {
+      update(patch: { client?: typeof a; route?: string }): void;
+    };
+    mounted.push({ app: app as never, target });
+    const harness = { target, scheduler, shell: target.querySelector('sk-mission-shell') as HTMLElement } as unknown as Harness;
+    await settle(harness);
+    a.take();
+    app.update({ client: b, route: '/ops' });
+    flushSync();
+    await settle(harness);
+    expect(screenTag(harness.shell)).toBe('sk-ops-screen');
+    expect(a.take(), 'the old client reads nothing').toEqual([]);
+    expect(b.reads.filter((read) => read.startsWith('listOpsInvocations ')).length).toBe(1);
+  });
 });
