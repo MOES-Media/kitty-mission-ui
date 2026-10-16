@@ -587,6 +587,70 @@ async fn forward_bounds_the_head_and_refuses_foreign_paths() {
     assert_no_panics();
 }
 
+/// SEC-001 / ARCH-008: a target that could climb out of `/api/v1/` or smuggle a separator is refused before any
+/// request goes out, whatever the spelling.
+#[tokio::test]
+async fn forward_refuses_traversal_separator_and_non_ascii_targets() {
+    let fake = raw_fake(vec![Step::Write(http_ok("application/json", b"{}"))]).await;
+    let client = client(fake.endpoint);
+    let refused = [
+        "/api/v1/missions/..",
+        "/api/v1/missions/../x",
+        "/api/v1/./project",
+        "/api/v1/.",
+        "/api/v1/missions/%2e%2e",
+        "/api/v1/missions/%2E%2E",
+        "/api/v1/missions/.%2e/x",
+        "/api/v1/missions/%2e./x",
+        "/api/v1/missions/..?x=1",
+        "/api/v1/a\\b",
+        "/api/v1/a%2fb",
+        "/api/v1/a%2Fb",
+        "/api/v1/a%5cb",
+        "/api/v1/a%5Cb",
+        "/api/v1//project",
+        "/api/v1/project//x",
+        "/api/v1/caf\u{e9}",
+        "/api/v1/project#frag",
+        "/api/v1/project?x=\u{e9}",
+    ];
+    for path in refused {
+        let result = within(
+            "forward refusal",
+            client.forward(path, HeaderValue::from_static("*/*")),
+        )
+        .await;
+        assert_eq!(
+            result.err(),
+            Some(TransportFailure::InvalidParameter(
+                "path_and_query".to_owned()
+            )),
+            "{path:?}"
+        );
+    }
+    assert!(fake.requests().is_empty(), "refused paths sent nothing");
+    // Positive controls: real contract paths, dots inside a segment, and a query string, all go through.
+    let allowed = [
+        "/api/v1/project",
+        "/api/v1/missions/mission-01.v2",
+        "/api/v1/missions/m-1/work-packages",
+        "/api/v1/missions?limit=10&cursor=a..b",
+        "/api/v1/project?x=1",
+    ];
+    for path in allowed {
+        let fake = raw_fake(vec![Step::Write(http_ok("application/json", b"{}"))]).await;
+        let response = within(
+            "forward ok",
+            self::client(fake.endpoint).forward(path, HeaderValue::from_static("*/*")),
+        )
+        .await
+        .expect("answered");
+        assert_eq!(response.status(), 200, "{path}");
+        assert_eq!(fake.requests()[0].target, path);
+    }
+    assert_no_panics();
+}
+
 #[test]
 fn upstream_headers_are_exactly_host_and_accept() {
     let headers = upstream_request_headers(

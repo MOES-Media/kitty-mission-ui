@@ -20,6 +20,23 @@ pub fn upstream_request_headers(endpoint: &ServiceEndpoint, accept: HeaderValue)
     headers
 }
 
+/// True when `target` cannot climb out of `/api/v1/` or smuggle a separator (SEC-001): no `.` or `..` segment (also
+/// spelled with `%2e`), no `\`, `%2f`, `%5c` or `//` in the path, and no `#` or non-ASCII byte anywhere. The query
+/// string is relayed as given, apart from those last two rules.
+fn is_safe_target(target: &str) -> bool {
+    if !target.is_ascii() || target.contains('#') || target.contains('\\') {
+        return false;
+    }
+    let path = target.split_once('?').map_or(target, |(path, _)| path);
+    let lower = path.to_ascii_lowercase();
+    if path.contains("//") || lower.contains("%2f") || lower.contains("%5c") {
+        return false;
+    }
+    !lower
+        .split('/')
+        .any(|segment| matches!(segment.replace("%2e", ".").as_str(), "." | ".."))
+}
+
 impl ContractClient {
     /// Relays one `GET` of `path_and_query` (which must start with `/api/v1/`) and returns the response as soon as its
     /// head arrives. `read_timeout` bounds connecting and the response head only: the body is the caller's, with no
@@ -30,7 +47,7 @@ impl ContractClient {
         accept: HeaderValue,
     ) -> Result<Response<Incoming>, TransportFailure> {
         let prefix = format!("{API_PREFIX}/");
-        if !path_and_query.starts_with(&prefix) {
+        if !path_and_query.starts_with(&prefix) || !is_safe_target(path_and_query) {
             return Err(TransportFailure::InvalidParameter(
                 "path_and_query".to_owned(),
             ));
