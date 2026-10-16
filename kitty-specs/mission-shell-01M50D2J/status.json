@@ -172,7 +172,8 @@
       "last_transition_at": "2026-10-16T14:31:55.616807+00:00",
       "model": "__resolved_model_absent__",
       "notes": [
-        "INTENT_TABLE (40 pairs/23 intents), coverage check types, P-2 proven; controller dispatches via table (out-of-map edit)"
+        "INTENT_TABLE (40 pairs/23 intents), coverage check types, P-2 proven; controller dispatches via table (out-of-map edit)",
+        "F1 fixed: own-property intent lookup + regression test"
       ],
       "provider": "__resolved_provider_absent__",
       "review": null,
