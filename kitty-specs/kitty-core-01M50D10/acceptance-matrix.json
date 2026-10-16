@@ -98,10 +98,10 @@
       "criterion_id": "FR-010",
       "description": "Verify FR-010 is satisfied",
       "proof_type": "automated_test",
-      "evidence": null,
-      "pass_fail": "pending",
-      "verified_by": null,
-      "verified_at": null,
+      "evidence": "crates/kitty-core/tests/stream.rs: a_503_at_open_is_unavailable_status_with_the_body (line 423), declared_statuses_are_refused_and_every_other_status_is_unavailable (line 439, 403/500/302 are Unavailable with status and body), a_drop_mid_stream_and_a_clean_eof_are_dropped (line 499), malformed_utf8_is_a_malformed_frame_after_the_changes_before_it (line 571), a_frame_over_1_mib_is_frame_too_large_and_nothing_partial_is_relayed (line 623), a_stream_with_no_byte_at_all_is_idle (line 552) and heartbeats_keep_a_stream_alive_past_the_idle_limit_then_a_stall_is_idle (line 522); 90 s idle default asserted in crates/kitty-core/src/supervisor/policy.rs defaults_equal_the_plan_values. WP05 review reverts (idle reset, dispatch-only cap reset) failed by name",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-16T16:43:32.990534+00:00",
       "notes": "TODO: replace with a real acceptance criterion"
     },
     {
