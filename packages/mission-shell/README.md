@@ -109,6 +109,14 @@ On the dashboard, `/projects` parses to Missions.
 canonical, it runs once with the canonical route. It never runs for a host-set route that is already canonical, so a
 host cannot create an echo loop.
 
+Two rules for a host that binds `routeChanged` to its history:
+
+- A call made synchronously inside `setRoute`, `setClient` or `mountShell` is a canonicalisation of the route the host
+  itself just gave (for example an unknown route becoming `/missions`, or a null-client desktop becoming `/projects`).
+  Handle it with history *replace*, not *push*, so Back does not return to the route that was rewritten.
+- Skip a route equal to the host's current one. Refresh and re-selecting the current destination can fire the same
+  route again.
+
 ### Refresh policy (summary)
 
 The shell reads only through the port, and keeps one unscoped subscription. A change re-reads only the displayed
