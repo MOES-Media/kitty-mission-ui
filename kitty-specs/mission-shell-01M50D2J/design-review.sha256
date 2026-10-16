@@ -1,11 +1,11 @@
 37ed481c6db5812fd0411d627a00d0ba555609db4be8fec68df19a517cb09024  apps/storybook/tests/visual/__snapshots__/shell-connection-banners--connecting-1280.png
-61d56c446c9e82bfd5cdf5fa384fb8f1886cabd3634c10bf5acef08a816f82d6  apps/storybook/tests/visual/__snapshots__/shell-connection-banners--contract-mismatch-1280.png
+a475c31611da10ce14f99e2357397877f608e6ff9337fa8aec989d7234b90ec7  apps/storybook/tests/visual/__snapshots__/shell-connection-banners--contract-mismatch-1280.png
 96229af90c4b62b3c6ff7783b601eaa35279afb9b34a6b47e01258806624279c  apps/storybook/tests/visual/__snapshots__/shell-connection-banners--live-updates-off-1280.png
 ebf887d6513408df8d5c800bd77e56ad2c52f0d31e6ed21779008bb46d4c1820  apps/storybook/tests/visual/__snapshots__/shell-connection-banners--reconnecting-1280.png
 b0c6e12cd913f95a2018cf82f0e9682e9d39282e3e540e24680029748e9953ed  apps/storybook/tests/visual/__snapshots__/shell-connection-banners--service-missing-1280.png
-4b8e90278b65db00eada7de757d7824ca61b70c2b7f36b3956db6522a3f8af05  apps/storybook/tests/visual/__snapshots__/shell-layouts--dashboard-project-1280.png
+69b7956180992d0ec46872ab82d8630ee87ebdd1557d1e3fc2b20d599e421d1f  apps/storybook/tests/visual/__snapshots__/shell-layouts--dashboard-project-1280.png
 570a8c6a0acecb6a57bc25955d3ee786e5c683e3b37287c29c4f433127909b66  apps/storybook/tests/visual/__snapshots__/shell-layouts--mission-artifact-1280.png
 bd6f0089471430a8dc9a122c650930deb140994b288d8dc14f73503427d9639b  apps/storybook/tests/visual/__snapshots__/shell-layouts--mission-pipeline-1280.png
-2c694574c5fb2e02e78d6b2831147a1c03e9511237f59b077e64a6530149e4a9  apps/storybook/tests/visual/__snapshots__/shell-layouts--picker-projects-1280.png
+44cabcfb7b001213b6bfefcc8704292ab47c146f5fd2dc731b86ba5c5a19f987  apps/storybook/tests/visual/__snapshots__/shell-layouts--picker-projects-1280.png
 09a4f0b46f6104391a10472379ec3c98ba7e3025b6e757048a80a93d74d691e8  apps/storybook/tests/visual/__snapshots__/shell-layouts--project-missions-1280.png
 10a876e5ad774a6db9ffc05b25a944819822ece36364b6bad76515118b876578  apps/storybook/tests/visual/__snapshots__/shell-layouts--project-ops-1280.png

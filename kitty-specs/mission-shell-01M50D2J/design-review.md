@@ -47,3 +47,11 @@ WP09 applies the amendments, regenerates the affected baselines in the pinned im
 - mission-ui: a busy state for `sk-button` while a refresh re-reads.
 - mission-ui: a visible treatment for unavailable tree leaves.
 - mission-ui: a visible current state for the rail item.
+
+## 2026-10-16: amendments applied (WP09)
+
+WP09 applied A1 to A5 and regenerated three baselines in the pinned image: `shell-connection-banners--contract-mismatch-1280`, `shell-layouts--dashboard-project-1280` and `shell-layouts--picker-projects-1280`. The other eight are byte-identical to the CP-1 candidates. `design-review.sha256` now lists the eleven approved hashes. P-6 is re-proved with its anchor unchanged, and P-7 is re-proved because `MissionShell.svelte` changed.
+
+Out-of-map edits under the operator-approved grant: `src/controller/shell-controller.ts` (A4, A5) and `src/controller/snapshot.ts` (A2's "nothing loaded" flag, and the snapshot side of A4). The orchestrator accepts the `snapshot.ts` edit under the same grant.
+
+Story-data note: the picker story's fixed clock (2026-09-22) is earlier than the fixture's activity times (2026-10-01), so every recent project reads "active just now". This comes from the story's data, not from how the shell behaves.
