@@ -405,10 +405,29 @@ describe('the desktop picker flows (FR-014)', () => {
     controller.destroy();
   });
 
-  it('drops a listing that arrives after the shell left the picker', async () => {
+  it('drops a stale project listing: a slow retry answer never overwrites a newer one', async () => {
     const pending: ((entries: ProjectEntry[]) => void)[] = [];
     const rec = recordingHost({ listRecentProjects: () => new Promise((resolve) => void pending.push(resolve)) });
     const { controller, fake } = rig({ mode: 'desktop', route: '/projects', host: rec.host }, null);
+    expect(pending, 'the mount lists once').toHaveLength(1);
+    void controller.retryProjects();
+    void controller.retryProjects();
+    expect(pending).toHaveLength(3);
+    pending[2]?.(ENTRIES); // the newest answer arrives first
+    await settle(fake);
+    expect(controller.snapshot().screen).toMatchObject({ status: 'ready', entries: ENTRIES });
+    pending[1]?.([]); // the older answers arrive afterwards, in reverse order of issue
+    pending[0]?.([]);
+    await settle(fake);
+    expect(controller.snapshot().screen).toMatchObject({ status: 'ready', entries: ENTRIES });
+    controller.destroy();
+  });
+
+  it('drops a listing that arrives after the shell left the picker', async () => {
+    const pending: ((entries: ProjectEntry[]) => void)[] = [];
+    const rec = recordingHost({ listRecentProjects: () => new Promise((resolve) => void pending.push(resolve)) });
+    // A project is open, so the shell may leave the picker (a null client on the desktop may not, ARCH-001).
+    const { controller, fake } = rig({ mode: 'desktop', route: '/projects', host: rec.host });
     expect(pending).toHaveLength(1);
     controller.setRoute('/ops');
     pending[0]?.(ENTRIES); // the first, now stale, answer

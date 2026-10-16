@@ -5,7 +5,7 @@ import { createFixtureClient, setConnectionState } from '../../src/client/fixtur
 import type { ConnectionState, MissionStatusClient } from '../../src/client/port';
 import { createFakeScheduler } from '../support/fake-scheduler';
 import { recordingClient, type RecordingClient } from '../support/recording-client';
-import { destroyAll, mountAt, recordingHost, screenTag, settle } from './helpers';
+import { M, destroyAll, mountAt, recordingHost, screenTag, settle } from './helpers';
 
 afterEach(destroyAll);
 
@@ -93,6 +93,38 @@ describe('mountShell registrations and releases (R5-07)', () => {
     expect(b.client.reads.some((read) => read.startsWith('listMissions'))).toBe(false);
     // A canonical route set with the client is not echoed back.
     expect(host.count('routeChanged')).toBe(0);
+  });
+
+  it('setClient without a route shows the default screen; a null client on the desktop shows the picker (ARCH-001)', async () => {
+    const scheduler = createFakeScheduler();
+    const a = counting(scheduler);
+    const b = counting(scheduler);
+    const host = recordingHost();
+    const harness = await mountAt('/projects', { scheduler, client: null, host, mode: 'desktop' });
+    expect(screenTag(harness.shell)).toBe('sk-projects-screen');
+    harness.mounted.setClient(a.client);
+    await settle(harness);
+    expect(screenTag(harness.shell), 'a picked project opens at Missions').toBe('sk-missions-screen');
+
+    harness.mounted.setRoute(`/missions/${M}`);
+    await settle(harness);
+    expect(screenTag(harness.shell)).toBe('sk-pipeline-screen');
+    b.client.take();
+    host.calls.length = 0;
+    harness.mounted.setClient(b.client);
+    await settle(harness);
+    expect(screenTag(harness.shell), 'the new project does not inherit the old Mission').toBe('sk-missions-screen');
+    expect(b.client.reads.some((read) => read.includes(M))).toBe(false);
+    expect(host.calls.filter((call) => call.member === 'routeChanged').map((call) => call.args[0])).toEqual(['/missions']);
+
+    harness.mounted.setRoute(`/missions/${M}`);
+    await settle(harness);
+    harness.mounted.setClient(null);
+    await settle(harness);
+    expect(screenTag(harness.shell)).toBe('sk-projects-screen');
+    harness.mounted.setRoute('/ops');
+    await settle(harness);
+    expect(screenTag(harness.shell), 'a null client stays on the picker').toBe('sk-projects-screen');
   });
 
   it('setRoute shows the destination and announces only a non-canonical route', async () => {

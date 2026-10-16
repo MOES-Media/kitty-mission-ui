@@ -230,3 +230,78 @@ describe('the copy (contracts/connection-presentation.md)', () => {
     expect(text).not.toMatch(/tone|announce/);
   });
 });
+
+describe('a duplicate state does not re-enter (ARCH-002, CON-003, TEST-003)', () => {
+  it('a second reconnecting keeps the shown banner and arms no timer', async () => {
+    const { presenter, fake, changes } = setup('connected');
+    presenter.setState('reconnecting');
+    await fake.advance(GRACE_MS);
+    expect(presenter.condition()).toBe('reconnecting');
+    const notified = changes();
+    presenter.setState('reconnecting');
+    expect(presenter.condition(), 'the shown banner stays').toBe('reconnecting');
+    expect(fake.pending(), 'no grace timer is armed').toBe(0);
+    expect(changes(), 'nothing changed, so nobody is notified').toBe(notified);
+  });
+
+  it('a second reconnecting inside the grace period does not restart it', async () => {
+    const { presenter, fake } = setup('connected');
+    presenter.setState('reconnecting');
+    await fake.advance(600);
+    presenter.setState('reconnecting');
+    expect(fake.pending()).toBe(1);
+    await fake.advance(400);
+    expect(presenter.condition(), 'shown 1 s after the first, not after the second').toBe('reconnecting');
+  });
+
+  it('replays the crash-loop hint sequence: connected, reconnecting x3 across backoffs, then degraded', async () => {
+    const { presenter, fake } = setup('connected');
+    const seen: (ConnectionCondition | null)[] = [];
+    presenter.setState('reconnecting');
+    seen.push(presenter.condition()); // t=0: inside the grace period
+    await fake.advance(700);
+    presenter.setState('reconnecting'); // backoff 1
+    seen.push(presenter.condition()); // t=700
+    await fake.advance(500);
+    seen.push(presenter.condition()); // t=1200: one second since the first
+    presenter.setState('reconnecting'); // backoff 2
+    seen.push(presenter.condition());
+    await fake.advance(2000);
+    presenter.setState('reconnecting'); // backoff 3
+    seen.push(presenter.condition());
+    expect(fake.pending()).toBe(0);
+    presenter.setState('degraded: service-missing');
+    seen.push(presenter.condition());
+    expect(seen).toEqual([null, null, 'reconnecting', 'reconnecting', 'reconnecting', 'service-missing']);
+    expect(fake.pending()).toBe(0);
+  });
+});
+
+describe('setCopy on the controller (ARCH-003)', () => {
+  it('the banner text follows the overrides given last, as a whole, and {} restores the defaults', async () => {
+    const { createShellController } = await import('../../src/controller/shell-controller');
+    const { createFixtureClient } = await import('../../src/client/fixture');
+    const fake = createFakeScheduler();
+    const controller = createShellController({
+      client: createFixtureClient({ scheduler: fake, initialState: 'degraded: service-missing' }),
+      mode: 'desktop',
+      route: '/missions',
+      scheduler: fake,
+    });
+    const banner = () => controller.snapshot().connection.copy;
+    let notified = 0;
+    controller.subscribe(() => (notified += 1));
+    notified = 0;
+    expect(banner()?.title).toBe('Service not available');
+    expect(banner()?.body, 'nothing loaded: the loaded-data sentence is dropped').toBe(SHELL_COPY.degradedWithoutData['service-missing'].body);
+    controller.setCopy({ serviceMissing: { title: 'T1', body: 'B1' } });
+    expect(banner()).toEqual({ title: 'T1', body: 'B1' });
+    expect(notified, 'a render is requested').toBe(1);
+    controller.setCopy({ contractMismatch: { title: 'T2', body: 'B2' } });
+    expect(banner()?.title, 'replaced, not merged').toBe('Service not available');
+    controller.setCopy({});
+    expect(banner()?.body).toBe(SHELL_COPY.degradedWithoutData['service-missing'].body);
+    controller.destroy();
+    expect(() => controller.setCopy({})).not.toThrow();
+  });
+});

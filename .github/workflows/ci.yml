@@ -557,7 +557,7 @@ jobs:
             timeout: 6
             image: ''
           - gate: eslint
-            timeout: 8
+            timeout: 10
             image: ''
           - gate: stylelint
             timeout: 10

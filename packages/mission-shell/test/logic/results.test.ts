@@ -193,6 +193,16 @@ describe('applyResult: unavailable (decision 01M50K4DBT2VCW6DD4JQAGEMB4, FR-005 
     expect(Object.keys(RESULT_RULES).length).toBe(10);
   });
 
+  it('drops a stale refusal when a slot without a value becomes unavailable (CON-004)', () => {
+    const stale = { status: 500, body: { code: 'old' } };
+    const slot = { value: undefined, view: 'error', refusal: stale };
+    for (const kind of Object.keys(RESULT_RULES) as Kind[]) {
+      expect(applyResult(slot, unavailable, RESULT_RULES[kind]), kind).toEqual({ value: undefined, view: 'error', refusal: null });
+    }
+    // Positive control: a slot with a value keeps its refusal along with the value.
+    expect(applyResult({ value: 1, view: 'error', refusal: stale }, unavailable, RESULT_RULES.ops).refusal).toBe(stale);
+  });
+
   it('the three unavailable reasons behave alike', () => {
     for (const reason of ['service-missing', 'contract-mismatch', 'transport'] as const) {
       const kept = applyResult({ value: 1, view: 'ready', refusal: null }, { ok: false, unavailable: reason }, RESULT_RULES.ops);

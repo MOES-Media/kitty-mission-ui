@@ -55,9 +55,40 @@ function isWpId(value: string): boolean {
   return value.length <= WP_ID_MAX_LENGTH && WP_ID.test(value);
 }
 
+// A lone UTF-16 surrogate matches the pattern's `[^/\\\x00]` under the `u` flag but makes `encodeURIComponent` throw.
+const LONE_SURROGATE = /\p{Cs}/u;
+
+/** Whether the string holds no lone UTF-16 surrogate, so `encodeURIComponent` cannot throw on it. */
+export function isWellFormed(value: string): boolean {
+  return !LONE_SURROGATE.test(value);
+}
+
 function isArtifactPath(value: string): boolean {
+  if (!isWellFormed(value)) return false;
   const length = [...value].length;
   return length >= ARTIFACT_PATH_MIN_LENGTH && length <= ARTIFACT_PATH_MAX_LENGTH && ARTIFACT_PATH.test(value);
+}
+
+/**
+ * Whether a destination the shell is asked to show is one the route grammar can express: every identifier matches its
+ * contract pattern, so `parseRoute(formatRoute(d))` gives `d` back. The controller drops any other destination built from
+ * an intent's detail (CON-002); nothing is read and nothing is announced for it.
+ */
+export function isValidDestination(destination: Destination): boolean {
+  switch (destination.screen) {
+    case 'missions':
+    case 'ops':
+    case 'projects':
+      return true;
+    case 'drift':
+      return destination.missionId === undefined || isMissionId(destination.missionId);
+    case 'pipeline':
+      return isMissionId(destination.missionId);
+    case 'work-packages':
+      return isMissionId(destination.missionId) && (destination.wpId === undefined || isWpId(destination.wpId));
+    case 'artifacts':
+      return isMissionId(destination.missionId) && (destination.path === undefined || isArtifactPath(destination.path));
+  }
 }
 
 /** The decoded segment, or `null` when it is not valid percent-encoding. Only the decode call is guarded. */

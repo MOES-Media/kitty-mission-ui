@@ -3,7 +3,7 @@
 // navigates its window.
 import type { ShellIcon, ShellNavItem, TreeNode } from '@moes-media/mission-ui';
 import type { ShellSnapshot } from '../controller/shell-controller';
-import { routeHref, type Destination } from '../core/routes';
+import { isWellFormed, routeHref, type Destination } from '../core/routes';
 import { UI_COPY } from './copy';
 
 export interface NavigationModel {
@@ -84,6 +84,8 @@ function artifactNodes(
   const root: TreeNode[] = [];
   const folders = new Map<string, TreeNode>();
   for (const entry of entries) {
+    // A path with a lone surrogate has no route (formatRoute would throw): the row is left out.
+    if (!isWellFormed(entry.path)) continue;
     const segments = entry.path.split('/');
     let siblings = root;
     let prefix = '';

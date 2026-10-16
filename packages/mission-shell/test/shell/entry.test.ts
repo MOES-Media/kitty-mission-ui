@@ -36,10 +36,22 @@ describe('the ./shell entry', () => {
     expectTypeOf<ReturnType<typeof shell.mountShell>>().toEqualTypeOf<{
       setRoute(route: string): void;
       setClient(client: MissionStatusClient | null, route?: string): void;
+      setCopy(copy: shell.ShellCopyOverrides): void;
       destroy(): void;
     }>();
     expectTypeOf(shell.formatRoute).toEqualTypeOf<(destination: shell.Destination) => string>();
     expectTypeOf(shell.parseRoute).toEqualTypeOf<(route: string, mode: shell.ShellMode) => shell.Destination>();
+  });
+
+  it('the mounted handle has setCopy at run time, next to setRoute, setClient and destroy', async () => {
+    const target = document.createElement('div');
+    document.body.append(target);
+    const handle = shell.mountShell(target, { client: null, mode: 'desktop' });
+    expect(Object.keys(handle).sort()).toEqual(['destroy', 'setClient', 'setCopy', 'setRoute']);
+    expect(() => handle.setCopy({ serviceMissing: { title: 'T', body: 'B' } })).not.toThrow();
+    handle.destroy();
+    expect(() => handle.setCopy({})).not.toThrow();
+    target.remove();
   });
 
   it('formatRoute and parseRoute round-trip through the entry', () => {

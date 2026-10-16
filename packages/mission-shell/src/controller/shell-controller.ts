@@ -24,7 +24,7 @@ import {
   type ShellHost,
 } from '../core/host';
 import { isAllowedExternalHref } from '../core/links';
-import { formatRoute, normaliseRoute, parseRoute, type Destination, type ShellMode } from '../core/routes';
+import { formatRoute, isValidDestination, normaliseRoute, parseRoute, type Destination, type ShellMode } from '../core/routes';
 import {
   createConnectionGate,
   createReadScheduler,
@@ -100,6 +100,8 @@ export interface ShellController {
   setRoute(route: string): void;
   /** A new client: releases the old subscription and listener, drops all state and starts the new client's gate. */
   setClient(client: MissionStatusClient | null, route?: string): void;
+  /** Replaces the host's banner copy overrides as a whole (not a merge); `{}` restores the defaults. Shown on the next render. */
+  setCopy(copy: ShellCopyOverrides): void;
   destroy(): void;
   /** Re-reads the destination's own data (Artifact and Ops only). */
   refresh(): void;
@@ -174,17 +176,32 @@ const FRESH_PICKER: PickerState = { status: 'loading', entries: [], dialog: CLOS
 const MISSIONS_KEY: ResourceKey = { kind: 'missions' };
 const OPS_KEY: ResourceKey = { kind: 'ops' };
 
+/** The route a client gets when none is given: `/missions`, or `/projects` for a null client on the desktop. */
+function defaultRouteOf(client: MissionStatusClient | null, mode: ShellMode): string {
+  return client === null && mode === 'desktop' ? '/projects' : '/missions';
+}
+
 export function createShellController(options: ShellControllerOptions): ShellController {
   const { mode } = options;
+  const defaultRoute = (forClient: MissionStatusClient | null): string => defaultRouteOf(forClient, mode);
+  /** A null client on the desktop has one destination, the picker (data-model "Destination"). */
+  const coerce = (requested: Destination, forClient: MissionStatusClient | null): Destination =>
+    forClient === null && mode === 'desktop' && requested.screen !== 'projects' ? { screen: 'projects' } : requested;
+  /** A route normalised and coerced for a client: `canonical` is false when what is shown differs from the input. */
+  function reconcile(route: string, forClient: MissionStatusClient | null): { destination: Destination; route: string; canonical: boolean } {
+    const destination = coerce(normaliseRoute(route, mode).destination, forClient);
+    const canonicalRoute = formatRoute(destination);
+    return { destination, route: canonicalRoute, canonical: canonicalRoute === route };
+  }
   const host: ShellHost = options.host ?? {};
   const timers = options.scheduler ?? defaultScheduler;
   const clock = options.clock ?? ((): Date => new Date());
   const afterRender = options.afterRender ?? ((): Promise<void> => Promise.resolve());
-  const overrides: ShellCopyOverrides = options.copy ?? {};
+  let overrides: ShellCopyOverrides = options.copy ?? {};
 
   // ---- per-controller state ----
   let client: MissionStatusClient | null = null;
-  const initial = normaliseRoute(options.route ?? (options.client === null && mode === 'desktop' ? '/projects' : '/missions'), mode);
+  const initial = reconcile(options.route ?? defaultRoute(options.client), options.client);
   let destination: Destination = initial.destination;
   let destroyed = false;
   // The clock when the controller is created, and again whenever a port read or a host result is applied (CP-1 A4).
@@ -437,7 +454,9 @@ export function createShellController(options: ShellControllerOptions): ShellCon
   function show(requested: Destination): void {
     if (destroyed) return;
     // The picker does not exist on the dashboard: `/projects` is Missions there, as in parseRoute.
-    const next: Destination = requested.screen === 'projects' && !pickerAllowed ? { screen: 'missions' } : requested;
+    const hosted: Destination = requested.screen === 'projects' && !pickerAllowed ? { screen: 'missions' } : requested;
+    // A null client on the desktop shows the picker whatever is asked for (ARCH-001).
+    const next = coerce(hosted, client);
     const same = formatRoute(destination) === formatRoute(next);
     destination = next;
     if (next.screen !== 'projects') leavePicker();
@@ -467,7 +486,9 @@ export function createShellController(options: ShellControllerOptions): ShellCon
     if (destroyed) return;
     const normalised = normaliseRoute(route, mode);
     show(normalised.destination);
-    if (!normalised.canonical) safeRouteChanged(host, normalised.route);
+    // Announce what is shown when it is not the route given: a normalisation, or the null-client coercion.
+    const shown = formatRoute(destination);
+    if (!normalised.canonical || shown !== normalised.route) safeRouteChanged(host, shown);
   }
 
   function explicitRefresh(trigger: 'refresh' | 'refocus'): void {
@@ -535,7 +556,11 @@ export function createShellController(options: ShellControllerOptions): ShellCon
   };
 
   // ---- the intent commands (the table in ../intents/table.ts is the only dispatcher) ----
-  const go = (next: Destination): void => navigate(next);
+  // An intent's detail is untrusted: a destination whose ids miss their contract patterns is dropped silently, with no host
+  // call, no read and no routeChanged (CON-002).
+  const go = (next: Destination): void => {
+    if (isValidDestination(next)) navigate(next);
+  };
   const hrefDestination = (d: unknown): Destination => parseRoute((text(d, 'href') ?? '').replace(/^#/, ''), mode);
 
   function openMission(d: unknown): void {
@@ -556,10 +581,16 @@ export function createShellController(options: ShellControllerOptions): ShellCon
     const wpId = text(d, 'wpId');
     if (missionId !== undefined && wpId !== undefined) go({ screen: 'work-packages', missionId, wpId });
   }
+  function retryDrift(d: unknown): void {
+    const missionId = text(d, 'missionId');
+    const key: ResourceKey = missionId === undefined ? { kind: 'drift' } : { kind: 'drift', missionId };
+    if (isValidDestination({ screen: 'drift', ...(missionId === undefined ? {} : { missionId }) })) retry(key);
+  }
   function retryWorkPackage(d: unknown): void {
     const missionId = text(d, 'missionId');
     const wpId = text(d, 'wpId');
     if (missionId === undefined || wpId === undefined) return;
+    if (!isValidDestination({ screen: 'work-packages', missionId, wpId })) return;
     const target = text(d, 'target');
     if (target === 'work-package') retry({ kind: 'wp', missionId, wpId });
     else if (target === 'detail') retry({ kind: 'wp-detail', missionId, wpId });
@@ -569,6 +600,7 @@ export function createShellController(options: ShellControllerOptions): ShellCon
     if (missionId === undefined) return;
     const target = text(d, 'target');
     const path = text(d, 'path');
+    if (!isValidDestination({ screen: 'artifacts', missionId, ...(path === undefined ? {} : { path }) })) return;
     if (target === 'content' && path !== undefined) retry({ kind: 'artifact', missionId, path });
     else if (target === 'listing') retry({ kind: 'artifacts', missionId });
   }
@@ -597,7 +629,7 @@ export function createShellController(options: ShellControllerOptions): ShellCon
     loadMoreOps: (d) => loadMore(OPS_KEY, text(d, 'cursor') ?? ''),
     retryWorkPackage,
     retryArtifact,
-    retryDrift: (d) => retry(text(d, 'missionId') === undefined ? { kind: 'drift' } : { kind: 'drift', missionId: text(d, 'missionId') ?? '' }),
+    retryDrift,
     retryOps: (d) => retry(OPS_KEY, text(d, 'cursor')),
     selectFinding: (d) => controller.selectFinding(findingOf(d)),
     rescanDrift: (d) => rescan(text(d, 'missionId') ?? null),
@@ -627,11 +659,19 @@ export function createShellController(options: ShellControllerOptions): ShellCon
       detach();
       scheduler.setDisplayed([]);
       resetSession();
-      const normalised = route === undefined ? null : normaliseRoute(route, mode);
-      if (normalised !== null) destination = normalised.destination;
+      // No route: the default of (client, mode), never the old client's destination (ARCH-001a).
+      const previous = formatRoute(destination);
+      const target = reconcile(route ?? defaultRoute(next), next);
+      destination = target.destination;
       attach(next);
       emit();
-      if (normalised !== null && !normalised.canonical) safeRouteChanged(host, normalised.route);
+      // A given route is announced when it was not canonical; a defaulted one when it moves the host's screen.
+      if (route === undefined ? target.route !== previous : !target.canonical) safeRouteChanged(host, target.route);
+    },
+    setCopy(copy) {
+      mutate(() => {
+        overrides = copy;
+      });
     },
     destroy() {
       if (destroyed) return;
