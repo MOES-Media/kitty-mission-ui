@@ -218,10 +218,10 @@
       "criterion_id": "FR-022",
       "description": "Verify FR-022 is satisfied",
       "proof_type": "automated_test",
-      "evidence": null,
-      "pass_fail": "pending",
-      "verified_by": null,
-      "verified_at": null,
+      "evidence": "crates/kitty-core/tests/supervision.rs (line 1452) a_missing_or_unrunnable_binary_is_stopped_without_a_retry_loop: a not-found binary gives Stopped [missing:NotFound] with no launch, a non-executable file gives Stopped [missing:CannotExecute] with the OS 'Permission denied' detail, a vanished path gives CannotExecute with 'No such file or directory', with an empty backoff log each time; a_project_root_that_does_not_exist_is_cannot_execute (line 1413); retry only on host request: retry_from_stopped_starts_again_with_a_clean_history (line 1200)",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-16T16:43:54.462796+00:00",
       "notes": "TODO: replace with a real acceptance criterion"
     },
     {
