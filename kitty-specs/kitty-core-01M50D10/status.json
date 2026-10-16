@@ -1,7 +1,7 @@
 {
-  "event_count": 35,
-  "last_event_id": "01M52DVS3DEHR2WZDN8YT5CY75",
-  "materialized_at": "2026-10-16T13:19:15.053618+00:00",
+  "event_count": 37,
+  "last_event_id": "01M52DX8G3TPNF9S7WVXMGZ5ZJ",
+  "materialized_at": "2026-10-16T13:20:03.583260+00:00",
   "mission_number": "",
   "mission_slug": "kitty-core-01M50D10",
   "mission_type": "software-dev",
@@ -13,9 +13,9 @@
     "claimed": 0,
     "done": 0,
     "for_review": 0,
-    "in_progress": 0,
+    "in_progress": 1,
     "in_review": 0,
-    "planned": 6
+    "planned": 5
   },
   "work_packages": {
     "WP01": {
@@ -156,11 +156,15 @@
       }
     },
     "WP05": {
-      "actor": "finalize-tasks",
+      "actor": "claude",
+      "agent": "claude",
       "force_count": 0,
-      "lane": "planned",
-      "last_event_id": "01M527VSJF3C3Z1MGYD6K23779",
-      "last_transition_at": "2026-10-16T11:34:24.079605+00:00"
+      "implementer_of_record": "claude",
+      "lane": "in_progress",
+      "last_event_id": "01M52DX8G3TPNF9S7WVXMGZ5ZJ",
+      "last_transition_at": "2026-10-16T13:20:03.583260+00:00",
+      "shell_pid": 4070659,
+      "shell_pid_created_at": "1792156791.61"
     },
     "WP06": {
       "actor": "finalize-tasks",
