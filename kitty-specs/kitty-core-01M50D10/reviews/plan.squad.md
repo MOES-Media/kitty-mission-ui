@@ -198,3 +198,19 @@ The coordinator relayed three orchestrator decisions, recorded as decisions reso
 - **Spec.** A-02 and A-07 updated; A-10 added.
 - **Decisions.** `decision verify` is clean.
 
+## Fix round 3
+
+**Input.** The coordinator's spot check of `6955f90` confirmed all 12 targeted folds, and raised five follow-ups (FS2-01 to FS2-05).
+
+| Id | Item | Verdict | Disposition |
+|---|---|---|---|
+| FS2-01 | No fake scenario proves the 503 rule or the socket-ownership check; the policy window under index resets is untested | CONFIRMED | accepted: `serve-503` mode (`Starting` until the budget is spent, then `Crashed`, then the policy); `alive-no-bind` mode with an immediate squatter (a start failure, never `Ready`; `cfg(target_os = "linux")`); a policy test of 5 crashes, each after 61 s of `Ready`, all within 300 s, that still gives up (IC-08; API) |
+| FS2-02 | An inode mismatch was a crash, which spends a window slot and a backoff on a port problem | CONFIRMED | changed: it is treated as a busy-port attempt (group stopped, attempt + 1, untried port, no window slot, no backoff); #22 note on services that call `setsid` or `setpgid` (IC-08; data-model) |
+| FS2-03 | The `Crashing` detail does not say why the starts failed | CONFIRMED | accepted: the detail carries "start budget spent on 503s", "listening socket not owned by the service", or the exit status or signal (IC-08; data-model) |
+| FS2-04 | Over-cap and late terminal bodies were mapped to the frame and idle reasons | CONFIRMED | changed: new `UnavailableReason::BodyTooLarge { limit }` and `UnavailableReason::Timeout`; a #20 and #21 note that such a body turns a declared refusal into `Unavailable` (IC-05; data-model) |
+| FS2-05 | The `kill(-pgid, 0)` probe after the reap is not listed as an invariant exception | CONFIRMED | accepted: listed as the second exception; signal 0 delivers nothing, so it is harmless even with pid reuse (IC-08; data-model) |
+
+### Round 3 tally
+
+5 items: 5 CONFIRMED, 0 NOTED, 0 REFUTED. Plants, crates and decisions are unchanged.
+

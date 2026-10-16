@@ -110,12 +110,14 @@ Decision `01M50M47K1PNKP9KHCGGDBQZ0A` and amendment A-07 apply here.
 **Scenario file** (`<project-root>/kitty-fake-service.json`):
 
 ```json
-{ "launches": ["ready" | "crash-after" | "exit-at-start" | "never-ready" | "ignore-term" | "serve-modified" | "fork-child" | "host", ...],
+{ "launches": ["ready" | "crash-after" | "exit-at-start" | "never-ready" | "ignore-term" | "serve-modified" | "serve-503" | "alive-no-bind" | "fork-child" | "host", ...],
   "crashAfterMs": 50 }
 ```
 
 - **Launch index.** The fake picks `launches[min(n, len - 1)]`, where `n` is read from and incremented in `<root>/kitty-fake-service.count`. This is safe because the supervisor never runs two children at once.
 - **`crashAfterMs`** counts from the first `openapi.yaml` GET served.
+- **`serve-503`** binds and answers every request with 503 (FS2-01).
+- **`alive-no-bind`** stays alive and never binds. The test runs a squatter on the chosen port (`cfg(target_os = "linux")`) (FS2-01).
 - **`fork-child`** starts a grandchild that writes its pid to `<root>/grandchild.pid`.
 - **`host`** runs `kitty_core::Core` on its own runtime, with its own project root, supervising a fake in `ready` mode. That supervised service (the host's direct child) writes its own pid to `<its root>/service.pid`. The host then calls `std::process::exit` without `stop()` (FS-15).
 - **Platform.** `fork-child`, `host` and `ignore-term` are `cfg(unix)`. The parent-death assertion is `cfg(target_os = "linux")`.
