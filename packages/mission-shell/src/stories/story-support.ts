@@ -42,8 +42,12 @@ export function storyOptions(options: Pick<ShellOptions, 'client' | 'mode'> & Pa
 }
 
 export interface MountedStory {
-  /** The root `sk-mission-shell` element, first element child of the detached container (research R-07, option a). */
-  readonly element: Element;
+  /**
+   * The container the shell was mounted into; its first element child is the root `sk-mission-shell`. The renderer appends
+   * a returned node as it is, and the visual harness reads the story element one level below it, so the container is what a
+   * story returns (research R-07, option a with the container as the wrapper).
+   */
+  readonly element: HTMLElement;
   /** The Svelte instance; the story's `beforeEach` cleanup passes it to `unmount`. */
   readonly instance: ReturnType<typeof mount>;
 }
@@ -52,7 +56,6 @@ export interface MountedStory {
 export function mountStory(options: ShellOptions): MountedStory {
   const container = document.createElement('div');
   const instance = mount(MissionShell, { target: container, props: options });
-  const element = container.firstElementChild;
-  if (element === null) throw new Error('shell story: MissionShell rendered no element');
-  return { element, instance };
+  if (container.firstElementChild?.localName !== 'sk-mission-shell') throw new Error('shell story: MissionShell rendered no sk-mission-shell');
+  return { element: container, instance };
 }

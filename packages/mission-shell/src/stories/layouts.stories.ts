@@ -10,7 +10,7 @@ import { storyClient } from './story-client';
 // The one shell mounted by the running story; the meta `beforeEach` unmounts it so no shell outlives its story (R4-07).
 let mounted: ReturnType<typeof mountStory>['instance'] | undefined;
 
-function renderShell(options: ShellOptions): Element {
+function renderShell(options: ShellOptions): HTMLElement {
   const story = mountStory(options);
   mounted = story.instance;
   return story.element;
