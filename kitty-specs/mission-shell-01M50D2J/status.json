@@ -1,17 +1,17 @@
 {
-  "event_count": 106,
-  "last_event_id": "01M535E15H81P7NDB82EN43WNW",
-  "materialized_at": "2026-10-16T20:11:10.385556+00:00",
+  "event_count": 107,
+  "last_event_id": "01M535E1SQC0CC96RR60TKBBH7",
+  "materialized_at": "2026-10-16T20:11:11.031138+00:00",
   "mission_number": "5",
   "mission_slug": "mission-shell-01M50D2J",
   "mission_type": "software-dev",
   "schema_version": 2,
   "summary": {
-    "approved": 4,
+    "approved": 3,
     "blocked": 0,
     "canceled": 0,
     "claimed": 0,
-    "done": 6,
+    "done": 7,
     "for_review": 0,
     "in_progress": 0,
     "in_review": 0,
@@ -195,15 +195,15 @@
       }
     },
     "WP06": {
-      "actor": "claude",
+      "actor": "merge",
       "agent": "claude",
       "agent_profile": "__resolved_profile_absent__",
       "agent_profile_version": "__resolved_profile_version_absent__",
       "force_count": 2,
       "implementer_of_record": "claude",
-      "lane": "approved",
-      "last_event_id": "01M52PVBFSMWERJ313T29EASJK",
-      "last_transition_at": "2026-10-16T15:56:18.297186+00:00",
+      "lane": "done",
+      "last_event_id": "01M535E1SQC0CC96RR60TKBBH7",
+      "last_transition_at": "2026-10-16T20:11:11.031138+00:00",
       "model": "__resolved_model_absent__",
       "notes": [
         "Review passed: cycle 3 fixes verified (raw-route echo skip announces non-canonical routes; client effect before route effect, no read on the replaced client); 470 tests, gates clean; P-7 anchor and token unchanged; ./shell matches the contract. Non-blocking carried to pre-merge: N1 navigation model ownership (snapshot should own it), N3 casts in ProjectsScreen, N5 unnamed mission-ui flake, effect order relies on Svelte tree order (pinned by test), one extra listMissions read on the new client in a same-tick client+route change."
