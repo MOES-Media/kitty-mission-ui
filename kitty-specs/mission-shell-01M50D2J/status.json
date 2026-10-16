@@ -1,7 +1,7 @@
 {
-  "event_count": 97,
-  "last_event_id": "01M534CJNW0W871KPV19K4R7WZ",
-  "materialized_at": "2026-10-16T19:52:54.201198+00:00",
+  "event_count": 98,
+  "last_event_id": "01M534TZ1W6ZZBK4W4H2EXT4JK",
+  "materialized_at": "2026-10-16T20:00:45.628102+00:00",
   "mission_number": "",
   "mission_slug": "mission-shell-01M50D2J",
   "mission_type": "software-dev",
@@ -12,8 +12,8 @@
     "canceled": 0,
     "claimed": 0,
     "done": 0,
-    "for_review": 0,
-    "in_progress": 1,
+    "for_review": 1,
+    "in_progress": 0,
     "in_review": 0,
     "planned": 0
   },
@@ -334,14 +334,21 @@
       "agent_profile_version": "1.0",
       "force_count": 0,
       "implementer_of_record": "claude",
-      "lane": "in_progress",
-      "last_event_id": "01M534CJNW0W871KPV19K4R7WZ",
-      "last_transition_at": "2026-10-16T19:52:54.201198+00:00",
+      "lane": "for_review",
+      "last_event_id": "01M534TZ1W6ZZBK4W4H2EXT4JK",
+      "last_transition_at": "2026-10-16T20:00:45.628102+00:00",
       "model": "__resolved_model_absent__",
       "provider": "__resolved_provider_absent__",
       "role": "implementer",
       "shell_pid": 2266783,
-      "shell_pid_created_at": "1792180371.84"
+      "shell_pid_created_at": "1792180371.84",
+      "subtasks": {
+        "T048": "done",
+        "T049": "done",
+        "T050": "done",
+        "T051": "done",
+        "T052": "done"
+      }
     }
   }
 }
