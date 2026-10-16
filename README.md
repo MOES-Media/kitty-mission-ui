@@ -392,8 +392,9 @@ and one to `storybook-build` (2); the `visual` plant moves to a shell banner sto
 **provisional**: no CI run of the `#18` pull request exists yet, so they are projections, not measurements. Only the
 `unit-tests` proof leg rises, from 30 to 32 minutes (the formula gives 31.7 from the plan's CI projection: the `#17` run's
 2.15 minute gate step, projected to about 2.7 for the new plants).
-`typecheck`, `eslint`, `storybook-build` and `visual` keep their values, and `visual` stays at 60 because a timeout
-never drops. A `(landing)` change re-derives all of them from the pull request's first CI run.
+The `eslint` proof leg rises from 8 to 10 minutes: 13 legs (12 plants and the clean run) x the `#17` run's 34 s
+`eslint` gate time + 2 minutes is 9.4, rounded up to 10. `typecheck`, `storybook-build` and `visual` keep their values,
+and `visual` stays at 60 because a timeout never drops. A `(landing)` change re-derives all of them from the pull request's first CI run.
 
 ### Installs are frozen
 
