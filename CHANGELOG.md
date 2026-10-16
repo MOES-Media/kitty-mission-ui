@@ -43,7 +43,7 @@ All user-visible changes to this repository. Per-package notes live in `packages
     new port, up to three launches per start, without using a crash slot. After five failed starts (up to fifteen
     launches, 7.5 s of backoff in total) the status is `service-missing` with the reason `crashing`.
   - **#21.** `forward()` sends exactly a `Host` and the caller's `Accept` header, and puts no cap and no deadline on the
-    response body: apply your own limits. `forward()` does not send `Last-Event-ID`, so to resume a stream, pass the `streamCursor` you last saw. A refused stream whose body is over 16 MiB or never ends arrives as
+    response body: apply your own limits. `forward()` does not send `Last-Event-ID`, so to resume a stream, put the `streamCursor` you last saw in the request target. It resumes only a stream scoped by `missionId`. A refused stream whose body is over 16 MiB or never ends arrives as
     `Unavailable`, not `Refused`.
   - **Limits that hold for every host.** `PR_SET_PDEATHSIG` reaches only the direct child, so grandchildren of the
     service can survive a hard host death. The socket-ownership check is Linux-only and fails open when `/proc/net/tcp`
