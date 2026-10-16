@@ -507,7 +507,7 @@ describe('the shell .svelte sources get the rule set of the .ts sources (CODE-TE
   });
 
   it('knows the browser globals', async () => {
-    expect(await rules(svelte('  export const w = document.title + navigator.language + String(customElements.get("sk-x") === undefined);\n'))).toEqual([]);
+    expect(await rules(svelte('  export const w = document.title + String(performance.now()) + String(customElements.get("sk-x") === undefined);\n'))).toEqual([]);
   });
 
   it('applies the markdown renderer rules R1 and R3', async () => {
