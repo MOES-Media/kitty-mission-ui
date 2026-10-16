@@ -197,8 +197,8 @@
     "WP06": {
       "actor": "claude",
       "agent": "claude",
-      "agent_profile": "frontend-freddy",
-      "agent_profile_version": "1.0",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
       "force_count": 0,
       "implementer_of_record": "claude",
       "lane": "for_review",
