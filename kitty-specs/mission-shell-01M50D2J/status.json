@@ -1,7 +1,7 @@
 {
-  "event_count": 24,
-  "last_event_id": "01M52C61SQA8GAVPXN5GP5P0R5",
-  "materialized_at": "2026-10-16T12:49:54.487248+00:00",
+  "event_count": 25,
+  "last_event_id": "01M52C8VAYC5VTV6RRVDRY0F2G",
+  "materialized_at": "2026-10-16T12:51:26.174116+00:00",
   "mission_number": "",
   "mission_slug": "mission-shell-01M50D2J",
   "mission_type": "software-dev",
@@ -14,8 +14,8 @@
     "done": 0,
     "for_review": 0,
     "in_progress": 0,
-    "in_review": 1,
-    "planned": 8
+    "in_review": 0,
+    "planned": 9
   },
   "work_packages": {
     "WP01": {
@@ -23,11 +23,11 @@
       "agent": "claude",
       "agent_profile": "reviewer-renata",
       "agent_profile_version": "1.0",
-      "force_count": 1,
+      "force_count": 2,
       "implementer_of_record": "claude",
-      "lane": "in_review",
-      "last_event_id": "01M52C61SQA8GAVPXN5GP5P0R5",
-      "last_transition_at": "2026-10-16T12:49:54.487248+00:00",
+      "lane": "planned",
+      "last_event_id": "01M52C8VAYC5VTV6RRVDRY0F2G",
+      "last_transition_at": "2026-10-16T12:51:26.174116+00:00",
       "model": "__resolved_model_absent__",
       "notes": [
         "Ready for review: logic (Node) + unit (Chromium) projects, setup files, sentinel, routes, displayed sets. logic 27 tests, unit 69, total 96. No fallback.",
@@ -36,8 +36,8 @@
       "provider": "__resolved_provider_absent__",
       "review": null,
       "review_result": {
-        "feedback_path": "/home/jeroennouws/dev/SK-missions/ui18/kitty-specs/mission-shell-01M50D2J/tasks/WP01-destinations-routes-and-displayed-sets/review-cycle-1.md",
-        "reference": "review-cycle://mission-shell-01M50D2J/WP01-destinations-routes-and-displayed-sets/review-cycle-1.md",
+        "feedback_path": "/home/jeroennouws/dev/SK-missions/ui18/kitty-specs/mission-shell-01M50D2J/tasks/WP01-destinations-routes-and-displayed-sets/review-cycle-2.md",
+        "reference": "review-cycle://mission-shell-01M50D2J/WP01-destinations-routes-and-displayed-sets/review-cycle-2.md",
         "reviewer": "claude",
         "verdict": "changes_requested"
       },
