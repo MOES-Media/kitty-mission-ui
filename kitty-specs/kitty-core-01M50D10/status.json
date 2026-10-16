@@ -1,7 +1,7 @@
 {
-  "event_count": 8,
-  "last_event_id": "01M527VSS0SAT4PC1464DSMGGY",
-  "materialized_at": "2026-10-16T11:34:24.288624+00:00",
+  "event_count": 9,
+  "last_event_id": "01M527VSV9WP3KX8F0DFQNAYJG",
+  "materialized_at": "2026-10-16T11:34:24.361952+00:00",
   "mission_number": "",
   "mission_slug": "kitty-core-01M50D10",
   "mission_type": "software-dev",
@@ -15,7 +15,7 @@
     "for_review": 0,
     "in_progress": 0,
     "in_review": 0,
-    "planned": 8
+    "planned": 9
   },
   "work_packages": {
     "WP01": {
@@ -73,6 +73,13 @@
       "lane": "planned",
       "last_event_id": "01M527VSS0SAT4PC1464DSMGGY",
       "last_transition_at": "2026-10-16T11:34:24.288624+00:00"
+    },
+    "WP09": {
+      "actor": "finalize-tasks",
+      "force_count": 0,
+      "lane": "planned",
+      "last_event_id": "01M527VSV9WP3KX8F0DFQNAYJG",
+      "last_transition_at": "2026-10-16T11:34:24.361952+00:00"
     }
   }
 }
