@@ -8,10 +8,10 @@
       "criterion_id": "FR-001",
       "description": "Verify FR-001 is satisfied",
       "proof_type": "automated_test",
-      "evidence": null,
-      "pass_fail": "pending",
-      "verified_by": null,
-      "verified_at": null,
+      "evidence": "packages/mission-shell/test/shell/routing.test.ts (line 43) 'routing: <screen>' for all 7 destinations (missions, drift, ops, pipeline, work-packages, artifacts, projects) on real mission-ui screens: one sk-mission-shell root, the mounted screen tag (assertion 'mounted screen mismatch on <screen>'), the layout attribute (project, mission, picker) and the current and rail-current navigation items; line 92 drives a real sk-navigate click; packages/mission-shell/test/logic/routes.test.ts 'assigns the layout of each screen'. unit-tests plant P-7 (MissionShell.svelte SCREENS drift: DriftScreen -> OpsScreen) red on 'mounted screen mismatch on drift', proven in WP06, re-proven in WP09 after the CP-1 amendments, and re-checked by hand at acceptance (2 failed, token present; file restored)",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-16T20:08:16.904805+00:00",
       "notes": "TODO: replace with a real acceptance criterion"
     },
     {
