@@ -128,10 +128,10 @@
       "criterion_id": "FR-013",
       "description": "Verify FR-013 is satisfied",
       "proof_type": "automated_test",
-      "evidence": null,
-      "pass_fail": "pending",
-      "verified_by": null,
-      "verified_at": null,
+      "evidence": "packages/mission-shell/test/logic/links.test.ts (line 34) 'reaches the host only for an allowed scheme on the desktop/dashboard, with the positive control in the same test': https:// gives exactly one openExternalLink call, then javascript:, JaVaScRiPt:, httpx:, data:, file:, vbscript:, leading whitespace and relative hrefs give none and no state change; line 25 'names exactly http, https and mailto'. Copy: packages/mission-shell/test/shell/intents.test.ts sk-drift-screen sk-copy-command case asserts copyText('sample command') and copyResult copied; packages/mission-shell/test/shell/copy.test.ts line 37 (copied twice) and line 52 (manual); packages/mission-shell/test/logic/controller.test.ts line 907 (manual for absent, throwing and rejecting hosts)",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-16T20:09:22.137407+00:00",
       "notes": "TODO: replace with a real acceptance criterion"
     },
     {
