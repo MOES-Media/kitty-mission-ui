@@ -565,7 +565,15 @@ impl Machine {
                     }
                     #[cfg(target_os = "linux")]
                     if process::procfs::group_owns_listener(guard.pgid(), port) == Some(false) {
-                        return Attempt::NotOwned;
+                        // The scan reads every process and takes a while; a leader that died meanwhile has no fds
+                        // left, so "not owned" would name the wrong cause.
+                        return match guard.try_wait() {
+                            Ok(Some(status)) => Attempt::Exited(describe_exit(&status)),
+                            Ok(None) => Attempt::NotOwned,
+                            Err(e) => {
+                                Attempt::Exited(format!("waiting for the service failed: {e}"))
+                            }
+                        };
                     }
                     self.publish(
                         SupervisionState::Ready { endpoint },

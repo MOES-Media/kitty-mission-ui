@@ -223,11 +223,11 @@ fn unique_port(exclude: &[u16]) -> u16 {
     use std::io::Write as _;
     use std::sync::atomic::{AtomicU32, Ordering};
     static NEXT: AtomicU32 = AtomicU32::new(0);
-    let claims = std::env::temp_dir().join("kitty-core-test-ports");
-    std::fs::create_dir_all(&claims).expect("create the port claim directory");
+    let claims = claim_dir();
     let me = std::process::id();
     let start = me.wrapping_mul(2_654_435_761) % 10_000;
-    loop {
+    // One full sweep of the range is the most that is ever worth trying.
+    for _ in 0..10_000 {
         let n = NEXT.fetch_add(1, Ordering::SeqCst);
         let port = (20_000 + (start + n) % 10_000) as u16;
         if exclude.contains(&port) {
@@ -240,20 +240,20 @@ fn unique_port(exclude: &[u16]) -> u16 {
             .open(&claim)
         {
             Ok(mut file) => file.write_all(me.to_string().as_bytes()).is_ok(),
-            Err(_) => {
+            Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => {
                 let owner: Option<i32> = std::fs::read_to_string(&claim)
                     .ok()
                     .and_then(|t| t.trim().parse().ok());
                 // An unreadable or empty claim may still be being written; only a dead owner is taken over.
-                match owner {
+                if let Some(pid) = owner {
                     // SAFETY: signal 0 delivers nothing.
-                    Some(pid) if unsafe { libc::kill(pid, 0) } == -1 && errno() == libc::ESRCH => {
+                    if unsafe { libc::kill(pid, 0) } == -1 && errno() == libc::ESRCH {
                         let _ = std::fs::remove_file(&claim);
-                        false
                     }
-                    _ => false,
                 }
+                false
             }
+            Err(e) => panic!("cannot claim test port {port} in {}: {e}", claims.display()),
         };
         if !claimed {
             continue;
@@ -261,7 +261,31 @@ fn unique_port(exclude: &[u16]) -> u16 {
         if std::net::TcpListener::bind(("127.0.0.1", port)).is_ok() {
             return port;
         }
+        release_port(port);
     }
+    panic!("no free test port in 20000..30000 after a full sweep");
+}
+
+/// The claim directory, checked to be ours and writable so that a foreign one fails by name instead of looping.
+fn claim_dir() -> PathBuf {
+    use std::os::unix::fs::MetadataExt as _;
+    let dir = std::env::temp_dir().join("kitty-core-test-ports");
+    std::fs::create_dir_all(&dir).unwrap_or_else(|e| panic!("create {}: {e}", dir.display()));
+    let meta = std::fs::metadata(&dir).unwrap_or_else(|e| panic!("stat {}: {e}", dir.display()));
+    // SAFETY: geteuid has no arguments.
+    let me = unsafe { libc::geteuid() };
+    assert_eq!(
+        meta.uid(),
+        me,
+        "{} belongs to another user; remove it or set TMPDIR",
+        dir.display()
+    );
+    dir
+}
+
+/// Gives a claimed port back (its owner process wrote its pid into the claim, so only the owner removes it).
+fn release_port(port: u16) {
+    let _ = std::fs::remove_file(claim_dir().join(port.to_string()));
 }
 
 /// `n` distinct free loopback ports.
@@ -357,7 +381,7 @@ async fn wait_gone(what: &str, pid: i32, limit: Duration) {
     }
 }
 
-/// Kills, by pid, a process of ours that a failing test left behind. Only a `kitty-fake-service` is touched.
+/// Kills one pid that `live_fakes_of` just matched by its exact scratch root.
 fn kill_if_fake(pid: i32) {
     if pid <= 1 {
         return;
@@ -583,26 +607,11 @@ impl Drop for Rig {
     fn drop(&mut self) {
         // The handle first: it aborts the task, whose guard sends SIGKILL to the group.
         drop(self.handle.take());
-        let mut pids: Vec<i32> = ["service.pid", "grandchild.pid"]
-            .iter()
-            .filter_map(|n| self.pid_file(n))
-            .collect();
-        if let Ok(entries) = std::fs::read_dir(&self.root) {
-            for entry in entries.flatten() {
-                let name = entry.file_name().to_string_lossy().into_owned();
-                if name.starts_with("launch-") {
-                    if let Ok(text) = std::fs::read_to_string(entry.path()) {
-                        if let Ok(v) = serde_json::from_str::<Value>(&text) {
-                            pids.extend(v["pid"].as_i64().map(|p| p as i32));
-                        }
-                    }
-                }
-            }
-        }
-        for pid in pids {
-            kill_if_fake(pid);
-        }
+        // Every fake of this scratch root, the grandchild included, found by its exact root argument.
         kill_fakes_of(&self.root);
+        for port in self.ports.picked() {
+            release_port(port);
+        }
     }
 }
 
@@ -886,6 +895,7 @@ async fn a_socket_that_is_not_the_services_is_not_ready() {
     for p in ports {
         port_is_free_again(p).await;
     }
+    report("not-owned", &rig.sink.all(), &rig.sleeper.log());
     assert_no_panics();
 }
 
@@ -1210,6 +1220,7 @@ async fn retry_from_stopped_starts_again_with_a_clean_history() {
     assert_invariants(&seen);
     assert!(rig.sleeper.log().is_empty());
     rig.stop().await;
+    report("retry", &rig.sink.all(), &rig.sleeper.log());
     assert_no_panics();
 }
 
@@ -1271,6 +1282,7 @@ async fn stop_during_the_start_ends_the_service() {
         strings(&["Starting g1 a0", "Stopped g1 a0"])
     );
     assert_invariants(&seen);
+    report("stop-during-start", &rig.sink.all(), &rig.sleeper.log());
     assert_no_panics();
 }
 
@@ -1331,24 +1343,54 @@ async fn stop_takes_the_whole_process_group() {
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn a_grandchild_that_outlives_its_leader_is_killed_after_the_reap() {
-    let mut rig = Rig::new(&["fork-child", "ready"], Some(50));
+    // The leader is crashed by the trigger file only after `Ready`, so the order of events does not depend on how
+    // fast the machine is: the leader exits and is reaped while the grandchild sleeps on in the same group.
+    let mut rig = Rig::new(&["fork-child", "ready"], None);
     rig.go();
+    rig.sink
+        .wait_for_state("the first launch is ready", "Ready", 1)
+        .await;
+    let leader = rig.launch_pid(0);
     let grandchild = rig.pid_file_appears("grandchild.pid").await;
-    // The leader exits 50 ms after the first contract fetch and is reaped; only the post-reap SIGKILL can reach
-    // the grandchild, which sleeps forever.
+    assert_ne!(leader, grandchild);
+    // Positive control: at `Ready` the grandchild is a live member of the leader's group.
+    assert!(
+        alive(grandchild) && !gone(grandchild),
+        "the grandchild runs"
+    );
+    assert_eq!(stat_of(grandchild).map(|(_, group)| group), Some(leader));
+    rig.crash_now();
+    // Only the post-reap SIGKILL can reach the grandchild now: nothing else signals a group whose leader is gone.
     wait_gone(
         "the grandchild of an exited leader",
         grandchild,
         Duration::from_secs(1),
     )
     .await;
-    let leader = rig.launch_pid(0);
-    assert_ne!(leader, grandchild);
-    rig.sink
-        .wait_for_state("the second launch is ready", "Ready", 1)
+    let seen = rig
+        .sink
+        .wait_for_state("the second launch is ready", "Ready", 2)
         .await;
+    assert_eq!(
+        sequence(&seen),
+        strings(&[
+            "Starting g1 a0",
+            "Ready g1 a0",
+            "Crashed g1 a0",
+            "Backoff(500ms) g1 a0",
+            "Starting g2 a0",
+            "Ready g2 a0",
+        ])
+    );
+    assert_invariants(&seen);
+    assert_eq!(
+        rig.sink.failure_causes(),
+        vec!["service exited: exit status: 3".to_owned()]
+    );
     assert!(reaped(leader), "the leader was reaped");
     assert!(group_members(leader).is_empty());
+    assert_eq!(rig.sleeper.log(), vec![Duration::from_millis(500)]);
+    report("grandchild-outlives-leader", &seen, &rig.sleeper.log());
     rig.stop().await;
     assert_no_panics();
 }
@@ -1402,6 +1444,7 @@ async fn a_project_root_that_does_not_exist_is_cannot_execute() {
     assert_eq!(rig.launch_count(), 1);
     rig.stop().await;
     drop(handle);
+    report("missing-root", &rig.sink.all(), &rig.sleeper.log());
     assert_no_panics();
 }
 
@@ -1423,6 +1466,7 @@ async fn a_missing_or_unrunnable_binary_is_stopped_without_a_retry_loop() {
     );
     assert_invariants(&seen);
     assert!(rig.sleeper.log().is_empty());
+    report("not-found", &rig.sink.all(), &rig.sleeper.log());
     assert_eq!(rig.launch_count(), 0);
 
     // A file that is not executable: the OS refuses, with its own error text.
@@ -1448,6 +1492,7 @@ async fn a_missing_or_unrunnable_binary_is_stopped_without_a_retry_loop() {
         other => panic!("expected ServiceMissing, got {other:?}"),
     }
     assert!(rig.sleeper.log().is_empty());
+    report("not-executable", &rig.sink.all(), &rig.sleeper.log());
 
     // A path that vanished between discovery and the launch (ENOENT).
     let mut rig = Rig::new(&["ready"], None);
@@ -1473,6 +1518,7 @@ async fn a_missing_or_unrunnable_binary_is_stopped_without_a_retry_loop() {
         other => panic!("expected ServiceMissing, got {other:?}"),
     }
     assert!(rig.sleeper.log().is_empty());
+    report("vanished", &rig.sink.all(), &rig.sleeper.log());
     assert_eq!(rig.launch_count(), 0);
     assert_no_panics();
 }
@@ -1546,14 +1592,13 @@ async fn a_dying_host_takes_its_service_with_it() {
         .trim()
         .parse()
         .expect("pid");
-    struct Cleanup(i32, PathBuf);
+    struct Cleanup(PathBuf);
     impl Drop for Cleanup {
         fn drop(&mut self) {
-            kill_if_fake(self.0);
-            kill_fakes_of(&self.1);
+            kill_fakes_of(&self.0);
         }
     }
-    let _cleanup = Cleanup(pid, root.clone());
+    let _cleanup = Cleanup(root.clone());
     assert!(outcome.success(), "the host exited by itself: {outcome:?}");
     wait_gone(
         "the service of a host that died",
@@ -1598,6 +1643,13 @@ fn the_fakes_crash_after_mode_counts_its_delay_from_the_first_contract_fetch() {
     let root = std::fs::canonicalize(dir.path()).expect("canonical");
     write_scenario(&root, &["crash-after"], Some(150));
     let port = unique_port(&[]);
+    struct Release(u16);
+    impl Drop for Release {
+        fn drop(&mut self) {
+            release_port(self.0);
+        }
+    }
+    let _release = Release(port);
     let child = std::process::Command::new(FAKE)
         .arg(format!("--mission-status.project-root={}", root.display()))
         .arg(format!("--mission-status.port={port}"))
