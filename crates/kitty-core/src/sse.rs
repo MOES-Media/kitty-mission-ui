@@ -46,6 +46,7 @@ const BOM: [u8; 3] = [0xEF, 0xBB, 0xBF];
 
 /// What the `id:` lines of one frame said.
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[doc(hidden)]
 pub enum IdField {
     /// No usable `id:` line.
     Unset,
@@ -56,6 +57,7 @@ pub enum IdField {
 
 /// One dispatched frame: it had at least one `data` line.
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[doc(hidden)]
 pub struct Frame {
     /// `None` when there was no `event:` line or its value was empty.
     pub event: Option<String>,
@@ -66,6 +68,7 @@ pub struct Frame {
 
 /// Why a byte stream is not an SSE stream this reader accepts.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[doc(hidden)]
 pub enum FrameError {
     /// More than [`FRAME_CAP`] bytes since the last event boundary.
     TooLarge,
@@ -76,6 +79,7 @@ pub enum FrameError {
 /// A byte-fed SSE parser with no I/O. Feeding the same bytes whole or one by one gives the same frames and the same
 /// error. After an error the reader stays failed.
 #[derive(Debug)]
+#[doc(hidden)]
 pub struct FrameReader {
     /// A BOM is honoured only at the very start; until the start is settled, matched BOM bytes are held back.
     start_open: bool,

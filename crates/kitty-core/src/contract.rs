@@ -88,6 +88,7 @@ impl std::error::Error for ParseError {}
 /// The canonical byte form of a parsed document (`contracts/bundled-document.md`).
 ///
 /// Non-finite numbers cannot occur: neither JSON nor YAML parsing into a [`Value`] yields them.
+#[doc(hidden)]
 pub fn canonical_json(value: &Value) -> Vec<u8> {
     let mut out = Vec::new();
     write_canonical(value, &mut out);

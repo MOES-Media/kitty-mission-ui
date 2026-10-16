@@ -230,10 +230,6 @@ impl ChildGuard {
         }
     }
 
-    pub fn pid(&self) -> Option<u32> {
-        self.child.id()
-    }
-
     pub fn pgid(&self) -> i32 {
         self.pgid
     }
