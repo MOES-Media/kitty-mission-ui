@@ -2,7 +2,7 @@
   "mission_slug": "mission-shell-01M50D2J",
   "mission_number": "",
   "mission_type": "software-dev",
-  "overall_verdict": "pending",
+  "overall_verdict": "pass",
   "criteria": [
     {
       "criterion_id": "FR-001",
@@ -177,11 +177,11 @@
     {
       "criterion_id": "FR-018",
       "description": "Verify FR-018 is satisfied",
-      "proof_type": "automated_test",
-      "evidence": null,
-      "pass_fail": "pending",
-      "verified_by": null,
-      "verified_at": null,
+      "proof_type": "gate_proof",
+      "evidence": "11 stories in packages/mission-shell/src/stories: connection-banners.stories.ts (connecting, reconnecting, service-missing, contract-mismatch, live-updates-off) and layouts.stories.ts (project Missions and Ops, mission Pipeline and Artifact, picker Projects, dashboard project; with and without the Refresh button), each with a baseline apps/storybook/tests/visual/__snapshots__/shell-*-1280.png. kitty-specs/mission-shell-01M50D2J/design-review.md: CP-1 confirmed 2026-10-16 with amendments A1-A5, applied in WP09 (3 baselines regenerated, 8 byte-identical); sha256sum -c design-review.sha256: 11 of 11 OK at acceptance, and the file set equals the 11 shell-*.png. visual plant P-6 (ConnectionBanner.svelte reconnecting tone attention -> danger) fails on shell-connection-banners--reconnecting-1280-diff.png, proven in WP08 and re-proven in WP09 with the anchor unchanged",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-16T20:09:30.835175+00:00",
       "notes": "TODO: replace with a real acceptance criterion"
     }
   ],
