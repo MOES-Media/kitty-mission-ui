@@ -10,7 +10,12 @@
 //! lets a test crash the service at an exact moment instead of racing a timer.
 //!
 //! Modes: `ready`, `crash-after`, `exit-at-start`, `never-ready`, `ignore-term`, `serve-modified`, `serve-503`,
-//! `alive-no-bind`, `fork-child`, `host`.
+//! `alive-no-bind`, `fork-child`, `reset-first`, `host`.
+//!
+//! A scenario may also map ports to modes (`portModes`), which wins over the launch index.
+//!
+//! `reset-first` serves like `ready`, but accepts the first `resetFirst` connections (scenario file; default 2) and
+//! resets each one with a TCP RST before reading the request, appending a line to `<root>/resets.log` for each.
 //!
 //! `host` (unix; added by WP09) is a host that dies: it runs `kitty_core::Core` on its own runtime with the project
 //! root `<root>/inner`, supervising another copy of this binary (whose scenario the test wrote to `<root>/inner`),
@@ -87,6 +92,7 @@ fn run() -> i32 {
         })
         .unwrap_or_default();
     let crash_after = scenario["crashAfterMs"].as_u64();
+    let resets = scenario["resetFirst"].as_u64().unwrap_or(2) as usize;
     if launches.is_empty() {
         eprintln!("the scenario lists no launches");
         return 2;
@@ -101,7 +107,14 @@ fn run() -> i32 {
         eprintln!("cannot write the launch count");
         return 2;
     }
-    let mode = launches[n.min(launches.len() - 1)].clone();
+    // A mode keyed by port wins over the launch index: a launch that is stopped before it counted itself would
+    // shift every later index.
+    let mode = scenario["portModes"][port.to_string()]
+        .as_str()
+        .map_or_else(
+            || launches[n.min(launches.len() - 1)].clone(),
+            str::to_owned,
+        );
 
     // The supervisor starts the service with stdin closed (null): a read must give end-of-file at once.
     let stdin_eof = matches!(std::io::stdin().read(&mut [0u8; 1]), Ok(0));
@@ -136,14 +149,14 @@ fn run() -> i32 {
     match mode.as_str() {
         "exit-at-start" => 1,
         "never-ready" | "alive-no-bind" => sleep_forever(),
-        "ready" | "crash-after" | "serve-modified" | "serve-503" => {
-            serve(&root, port, &mode, crash_after, n)
+        "ready" | "crash-after" | "serve-modified" | "serve-503" | "reset-first" => {
+            serve(&root, port, &mode, crash_after, resets, n)
         }
         #[cfg(unix)]
         "ignore-term" => {
             // SAFETY: setting a signal disposition to "ignore" is async-signal-safe and has no other effect.
             unsafe { libc::signal(libc::SIGTERM, libc::SIG_IGN) };
-            serve(&root, port, &mode, crash_after, n)
+            serve(&root, port, &mode, crash_after, resets, n)
         }
         #[cfg(unix)]
         "fork-child" => {
@@ -151,12 +164,14 @@ fn run() -> i32 {
                 eprintln!("cannot start the grandchild: {e}");
                 return 2;
             }
-            serve(&root, port, &mode, crash_after, n)
+            serve(&root, port, &mode, crash_after, resets, n)
         }
         #[cfg(unix)]
         "host" => host(&root),
         other => {
-            eprintln!("unknown mode {other}");
+            // One write: `eprintln!` may split a line into several writes, and the supervisor's two pipe drains can
+            // interleave the pieces with the stdout line.
+            let _ = std::io::stderr().write_all(format!("unknown mode {other}\n").as_bytes());
             2
         }
     }
@@ -298,7 +313,14 @@ fn document(mode: &str) -> Vec<u8> {
     serde_json::to_vec(&value).unwrap_or_else(|_| BUNDLE.to_vec())
 }
 
-fn serve(root: &Path, port: u16, mode: &str, crash_after: Option<u64>, launch: usize) -> i32 {
+fn serve(
+    root: &Path,
+    port: u16,
+    mode: &str,
+    crash_after: Option<u64>,
+    resets: usize,
+    launch: usize,
+) -> i32 {
     let listener = match TcpListener::bind(("127.0.0.1", port)) {
         Ok(l) => l,
         Err(e) => {
@@ -314,7 +336,13 @@ fn serve(root: &Path, port: u16, mode: &str, crash_after: Option<u64>, launch: u
     let body = Arc::new(document(mode));
     let first_get = Arc::new(AtomicBool::new(true));
     let crashes = matches!(mode, "crash-after" | "fork-child");
+    let mut reset = 0;
     for stream in listener.incoming().flatten() {
+        if mode == "reset-first" && reset < resets {
+            reset += 1;
+            reset_connection(stream, root);
+            continue;
+        }
         let root = root.to_path_buf();
         let body = body.clone();
         let first_get = first_get.clone();
@@ -325,6 +353,39 @@ fn serve(root: &Path, port: u16, mode: &str, crash_after: Option<u64>, launch: u
         });
     }
     0
+}
+
+/// Closes `stream` with a TCP RST (a zero linger) instead of a FIN, and notes it in `<root>/resets.log`.
+#[cfg(unix)]
+fn reset_connection(stream: TcpStream, root: &Path) {
+    use std::os::fd::AsRawFd as _;
+    let linger = libc::linger {
+        l_onoff: 1,
+        l_linger: 0,
+    };
+    // SAFETY: a valid socket fd and a correctly sized `linger` that outlives the call.
+    unsafe {
+        libc::setsockopt(
+            stream.as_raw_fd(),
+            libc::SOL_SOCKET,
+            libc::SO_LINGER,
+            std::ptr::addr_of!(linger).cast(),
+            std::mem::size_of::<libc::linger>() as libc::socklen_t,
+        );
+    }
+    drop(stream);
+    if let Ok(mut log) = std::fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(root.join("resets.log"))
+    {
+        let _ = writeln!(log, "reset");
+    }
+}
+
+#[cfg(not(unix))]
+fn reset_connection(stream: TcpStream, _root: &Path) {
+    drop(stream);
 }
 
 /// Exits with [`CRASH_EXIT`] once `<root>/crash-now` exists.

@@ -414,6 +414,34 @@ async fn serve_scripted(
 
 // ---- The panic counter ----------------------------------------------------------------------------------------
 
+/// One panic seen by the hook: where it happened and what it said.
+#[derive(Clone, Debug)]
+pub struct PanicRecord {
+    /// The name of the panicking thread (a libtest test thread is named after its test).
+    pub thread: Option<String>,
+    /// The tokio runtime the panicking thread belongs to, if any (every `#[tokio::test]` has its own).
+    pub runtime: Option<tokio::runtime::Id>,
+    pub location: String,
+    pub message: String,
+}
+
+impl std::fmt::Display for PanicRecord {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "thread {:?} at {}: {}",
+            self.thread.as_deref().unwrap_or("<unnamed>"),
+            self.location,
+            self.message
+        )
+    }
+}
+
+fn panic_records() -> &'static Mutex<Vec<PanicRecord>> {
+    static RECORDS: Mutex<Vec<PanicRecord>> = Mutex::new(Vec::new());
+    &RECORDS
+}
+
 /// Panics seen by this process since the hook was installed (NFR-005). The hook chains to the previous one.
 pub fn panic_counter() -> &'static AtomicUsize {
     static COUNT: AtomicUsize = AtomicUsize::new(0);
@@ -421,6 +449,21 @@ pub fn panic_counter() -> &'static AtomicUsize {
     INSTALL.call_once(|| {
         let previous = std::panic::take_hook();
         std::panic::set_hook(Box::new(move |info| {
+            let payload = info.payload();
+            let message = payload
+                .downcast_ref::<&str>()
+                .map(|s| (*s).to_owned())
+                .or_else(|| payload.downcast_ref::<String>().cloned())
+                .unwrap_or_else(|| "<non-string payload>".to_owned());
+            let record = PanicRecord {
+                thread: std::thread::current().name().map(str::to_owned),
+                runtime: tokio::runtime::Handle::try_current().ok().map(|h| h.id()),
+                location: info
+                    .location()
+                    .map_or_else(|| "<unknown>".to_owned(), ToString::to_string),
+                message,
+            };
+            lock(panic_records()).push(record);
             COUNT.fetch_add(1, Ordering::SeqCst);
             previous(info);
         }));
@@ -428,10 +471,46 @@ pub fn panic_counter() -> &'static AtomicUsize {
     &COUNT
 }
 
-/// Asserts that no panic was seen. Any panicking test in the same binary counts too.
+/// Every panic recorded so far, in order.
+pub fn recorded_panics() -> Vec<PanicRecord> {
+    panic_counter();
+    lock(panic_records()).clone()
+}
+
+/// Whether `record` belongs to the test that is asking: a panic on another libtest test thread (a named thread that is
+/// not this one) or in another test's runtime is that test's own failure, and must not fail this one. A panic on an
+/// unnamed thread, or in this test's runtime (a spawned task), is this test's.
+fn is_ours(record: &PanicRecord) -> bool {
+    let me = std::thread::current();
+    if let Some(runtime) = record.runtime {
+        return match tokio::runtime::Handle::try_current() {
+            Ok(handle) => handle.id() == runtime,
+            // A test outside any runtime has no spawned tasks: a runtime's panic is some other test's.
+            Err(_) => false,
+        };
+    }
+    match (&record.thread, me.name()) {
+        (Some(theirs), Some(mine)) => theirs == mine,
+        (Some(_), None) => false,
+        (None, _) => true,
+    }
+}
+
+/// Asserts that this test saw no panic of its own (NFR-005). A test that panics fails by itself; its panic does not
+/// fail the other tests of the binary. The first panic that counts is named in the message.
 pub fn assert_no_panics() {
-    let seen = panic_counter().load(Ordering::SeqCst);
-    assert_eq!(seen, 0, "{seen} panic(s) seen in this test process");
+    panic_counter();
+    let ours: Vec<PanicRecord> = lock(panic_records())
+        .iter()
+        .filter(|r| is_ours(r))
+        .cloned()
+        .collect();
+    assert!(
+        ours.is_empty(),
+        "{} panic(s) seen by this test; first: {}",
+        ours.len(),
+        ours[0]
+    );
 }
 
 // ---- Scratch directories and scenario files ---------------------------------------------------------------------
@@ -489,6 +568,16 @@ impl Drop for SquatterGuard {
 
 pub fn squatter(port: u16, answer: Option<Vec<u8>>, hold: Option<Duration>) -> SquatterGuard {
     let listener = std::net::TcpListener::bind(("127.0.0.1", port)).expect("squatter binds");
+    squatter_on(listener, answer, hold)
+}
+
+/// Like [`squatter`], on a listener that is already bound: a port claimed with `claims::claim_listener` is held
+/// without ever being released in between.
+pub fn squatter_on(
+    listener: std::net::TcpListener,
+    answer: Option<Vec<u8>>,
+    hold: Option<Duration>,
+) -> SquatterGuard {
     listener.set_nonblocking(true).expect("non-blocking");
     let listener = TcpListener::from_std(listener).expect("tokio listener");
     let task = tokio::spawn(async move {

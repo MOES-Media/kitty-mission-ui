@@ -556,24 +556,12 @@ impl Machine {
             match outcome {
                 CheckOutcome::Match { .. } => {
                     // The exit wins over a match: a squatter may have answered for a service that already died.
-                    match guard.try_wait() {
-                        Ok(Some(status)) => return Attempt::Exited(describe_exit(&status)),
-                        Ok(None) => {}
-                        Err(e) => {
-                            return Attempt::Exited(format!("waiting for the service failed: {e}"))
-                        }
+                    if let Some(exited) = exit_beats_match(guard) {
+                        return exited;
                     }
                     #[cfg(target_os = "linux")]
-                    if process::procfs::group_owns_listener(guard.pgid(), port) == Some(false) {
-                        // The scan reads every process and takes a while; a leader that died meanwhile has no fds
-                        // left, so "not owned" would name the wrong cause.
-                        return match guard.try_wait() {
-                            Ok(Some(status)) => Attempt::Exited(describe_exit(&status)),
-                            Ok(None) => Attempt::NotOwned,
-                            Err(e) => {
-                                Attempt::Exited(format!("waiting for the service failed: {e}"))
-                            }
-                        };
+                    if let Some(refused) = foreign_listener(guard, port) {
+                        return refused;
                     }
                     self.publish(
                         SupervisionState::Ready { endpoint },
@@ -591,7 +579,15 @@ impl Machine {
                     ) => {}
                     // Not yet ready (A-10).
                     Actual::Status { status: 503 } => saw_503 = true,
-                    _ => return Attempt::Mismatch(mismatch),
+                    _ => {
+                        // A final answer only blames the service when the service gave it: a foreign listener on the
+                        // picked port is retried on another port instead (an unreadable /proc keeps the mismatch).
+                        #[cfg(target_os = "linux")]
+                        if let Some(refused) = foreign_listener(guard, port) {
+                            return refused;
+                        }
+                        return Attempt::Mismatch(mismatch);
+                    }
                 },
                 CheckOutcome::PinUnparseable { detail } => return Attempt::PinUnparseable(detail),
             }
@@ -601,6 +597,96 @@ impl Machine {
                 Raced::Cmd(cmd) => return Attempt::Cmd(cmd),
                 Raced::Done(()) => {}
             }
+        }
+    }
+}
+
+/// `Some(Attempt::Exited)` when the leader has exited: an answer from the port then came from a squatter (or from a
+/// service that died right after answering), and the exit wins over it.
+fn exit_beats_match(guard: &mut ChildGuard) -> Option<Attempt> {
+    match guard.try_wait() {
+        Ok(Some(status)) => Some(Attempt::Exited(describe_exit(&status))),
+        Ok(None) => None,
+        Err(e) => Some(Attempt::Exited(format!(
+            "waiting for the service failed: {e}"
+        ))),
+    }
+}
+
+/// `Some` when `port` is answered by a socket that is not the launched group's: [`Attempt::NotOwned`], or
+/// [`Attempt::Exited`] when the leader died meanwhile. `None` when the group owns the listener or the check cannot tell.
+#[cfg(target_os = "linux")]
+fn foreign_listener(guard: &mut ChildGuard, port: u16) -> Option<Attempt> {
+    if process::procfs::group_owns_listener(guard.pgid(), port) != Some(false) {
+        return None;
+    }
+    // The scan reads every process and takes a while; a leader that died meanwhile has no fds left, so "not owned"
+    // would name the wrong cause.
+    Some(match guard.try_wait() {
+        Ok(Some(status)) => Attempt::Exited(describe_exit(&status)),
+        Ok(None) => Attempt::NotOwned,
+        Err(e) => Attempt::Exited(format!("waiting for the service failed: {e}")),
+    })
+}
+
+#[cfg(all(test, target_os = "linux"))]
+mod tests {
+    use super::*;
+
+    /// A guard over a child that has already exited with status 3 and has not been reaped yet.
+    async fn exited_guard() -> ChildGuard {
+        let mut command = tokio::process::Command::new("sh");
+        command.args(["-c", "exit 3"]);
+        let child = spawner::spawn_child(&Handle::current(), command)
+            .await
+            .expect("sh starts");
+        let pid = child.id().expect("a pid");
+        // The leader is a zombie once its state is `Z`; nothing has waited for it.
+        let stat = format!("/proc/{pid}/stat");
+        let started = std::time::Instant::now();
+        loop {
+            let zombie = std::fs::read_to_string(&stat)
+                .ok()
+                .and_then(|t| {
+                    t.rfind(')')
+                        .map(|i| t[i + 1..].trim_start().starts_with('Z'))
+                })
+                .unwrap_or(false);
+            if zombie {
+                break;
+            }
+            assert!(
+                started.elapsed() < Duration::from_secs(5),
+                "sh did not exit"
+            );
+            tokio::time::sleep(Duration::from_millis(2)).await;
+        }
+        ChildGuard::new(child, OutputCapture::new().begin_child())
+    }
+
+    /// WP08 N2: when the child has exited and the awaited future is ready as well, the exit must win every time.
+    /// Without `biased;` the two ready branches are picked at random, so twenty rounds expose it.
+    #[tokio::test]
+    async fn a_child_that_has_exited_beats_a_ready_future() {
+        let mut guard = exited_guard().await;
+        let (_commands, mut rx) = mpsc::unbounded_channel();
+        for round in 0..20 {
+            match race(&mut guard, &mut rx, std::future::ready(())).await {
+                Raced::Exited(Ok(status)) => assert_eq!(status.code(), Some(3), "round {round}"),
+                Raced::Exited(Err(e)) => panic!("round {round}: wait failed: {e}"),
+                Raced::Cmd(_) => panic!("round {round}: a command won"),
+                Raced::Done(()) => panic!("round {round}: the ready future beat the exit"),
+            }
+        }
+    }
+
+    /// The exit wins over a contract match (a squatter may have answered for a service that already died).
+    #[tokio::test]
+    async fn an_exited_child_beats_a_match() {
+        let mut guard = exited_guard().await;
+        match exit_beats_match(&mut guard) {
+            Some(Attempt::Exited(cause)) => assert_eq!(cause, "service exited: exit status: 3"),
+            _ => panic!("the exit did not win over the match"),
         }
     }
 }

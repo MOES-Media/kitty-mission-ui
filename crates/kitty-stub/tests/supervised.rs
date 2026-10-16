@@ -157,7 +157,12 @@ async fn core_supervises_the_real_stub_end_to_end() {
     })
     .await;
     let endpoint = core.ready_endpoint().expect("a ready endpoint");
-    assert_eq!(endpoint.generation(), 1);
+    // Ephemeral ports can be busy (a retry takes the next generation), so the generation is only known to be >= 1.
+    assert!(
+        endpoint.generation() >= 1,
+        "generation {}",
+        endpoint.generation()
+    );
     #[cfg(target_os = "linux")]
     assert_eq!(
         live_stubs_of(&scratch.0).len(),
