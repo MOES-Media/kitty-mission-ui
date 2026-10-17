@@ -62,7 +62,12 @@ const EXPECTED_FIXTURE = [
   '  }',
   '}',
   '',
-  'export {};',
+  'export interface MissionUiIntents {',
+  "  'sk-fixture': {",
+  "    'sk-pick': FixturePickDetail;",
+  '  };',
+  '}',
+  'export type MissionUiTag = keyof MissionUiIntents;',
   '',
 ].join('\n');
 
@@ -180,7 +185,8 @@ test('the real run types exactly the 15 elements of custom-elements.json and mat
   const tags = manifest.modules.flatMap((m) => (m.declarations ?? []).filter((d) => d.tagName).map((d) => d.tagName));
   assert.equal(tags.length, 15);
   const text = generate(manifest, readFileSync(join(ROOT, INDEX), 'utf8')).get(ELEMENTS_FILE);
-  const typed = [...text.matchAll(/^ {4}'(sk-[a-z-]+)': /gm)].map((m) => m[1]);
+  const svelteBlock = text.slice(text.indexOf('export interface SvelteHTMLElements {'), text.indexOf('\n  }\n', text.indexOf('export interface SvelteHTMLElements {')));
+  const typed = [...svelteBlock.matchAll(/^ {4}'(sk-[a-z-]+)': /gm)].map((m) => m[1]);
   assert.equal(typed.length, 15);
   assert.deepEqual(typed, [...tags].sort());
   let events = 0;
@@ -196,6 +202,46 @@ test('the real run types exactly the 15 elements of custom-elements.json and mat
   assert.equal(/\bany\b/.test(text), false, 'no any');
   assert.equal(readFileSync(join(ROOT, ELEMENTS_FILE), 'utf8'), text);
   assert.deepEqual(checkGenerated(ROOT), []);
+});
+
+const MULTI_EVENTS = [
+  { name: 'sk-pick', type: { text: 'CustomEvent<FixturePickDetail>' } },
+  { name: 'sk-clear', type: { text: 'CustomEvent<null>' } },
+];
+
+test('MissionUiIntents lists every event of an element with the detail text of its on<event> handler, sorted (R4-05)', () => {
+  const text = generate(fixtureManifest(ONE_PROPERTY, MULTI_EVENTS), FIXTURE_INDEX).get(ELEMENTS_FILE);
+  assert.ok(text.includes("  'sk-fixture': {\n    'sk-clear': null;\n    'sk-pick': FixturePickDetail;\n  };\n"));
+  for (const [event, detail] of [['sk-clear', 'null'], ['sk-pick', 'FixturePickDetail']]) {
+    assert.ok(text.includes(`'on${event}'?: (event: CustomEvent<${detail}>) => void;`));
+    assert.ok(text.includes(`    '${event}': ${detail};`));
+  }
+});
+
+test('an element without events maps to an empty record, and MissionUiTag is emitted exactly once', () => {
+  const text = generate(fixtureManifest([], []), '').get(ELEMENTS_FILE);
+  assert.ok(text.includes("  'sk-fixture': Record<never, never>;\n"));
+  assert.equal(text.split('export type MissionUiTag = keyof MissionUiIntents;').length - 1, 1);
+});
+
+test('the real run: 40 pairs and 23 distinct intents outside sk-mission-sample, 15 tags, from the manifest as oracle (R1-07)', () => {
+  const manifest = JSON.parse(readFileSync(join(ROOT, MANIFEST), 'utf8'));
+  const decls = manifest.modules.flatMap((m) => m.declarations ?? []).filter((d) => d.tagName);
+  const hosted = decls.filter((d) => d.tagName !== 'sk-mission-sample');
+  const pairs = hosted.flatMap((d) => (d.events ?? []).map((e) => `${d.tagName} ${e.name}`));
+  assert.equal(pairs.length, 40);
+  assert.equal(new Set(hosted.flatMap((d) => (d.events ?? []).map((e) => e.name))).size, 23);
+  assert.equal(decls.length, 15);
+  const sample = decls.find((d) => d.tagName === 'sk-mission-sample');
+  assert.ok((sample.events ?? []).some((e) => e.name === 'sk-mission-retry'));
+  const text = generate(manifest, readFileSync(join(ROOT, INDEX), 'utf8')).get(ELEMENTS_FILE);
+  const block = text.slice(text.indexOf('export interface MissionUiIntents {'));
+  for (const d of decls) {
+    assert.ok(block.includes(`  '${d.tagName}': `), d.tagName);
+    for (const e of d.events ?? []) {
+      assert.ok(block.includes(`    '${e.name}': ${/^CustomEvent<(.+)>$/.exec(e.type.text)[1]};`), `${d.tagName} ${e.name}`);
+    }
+  }
 });
 
 test('the generated typings carry no triple-slash reference and lint clean under all three ESLint configs, ignores bypassed', async () => {

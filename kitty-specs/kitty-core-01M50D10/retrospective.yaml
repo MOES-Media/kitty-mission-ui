@@ -1,7 +1,7 @@
 schema_version: 1
 mission_id: 01M50D10J2DWR9J76F7APJQJDP
 mission_slug: kitty-core-01M50D10
-mission_number: 5
+mission_number: 6
 friendly_name: 'kitty-core: shared Rust core (contract client, change stream, supervision)'
 mission_type: software-dev
 target_branch: feat/kitty-core-19

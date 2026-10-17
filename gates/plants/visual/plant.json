@@ -2,14 +2,14 @@
   "gate": "visual",
   "ciCommand": "bash scripts/visual.sh -- --repeat-each=5",
   "prepare": "pnpm storybook:build-only",
-  "expectFailPattern": "mission-sample--ready-diff.png",
+  "expectFailPattern": "shell-connection-banners--reconnecting-1280-diff.png",
   "overlays": [
     {
-      "target": "packages/mission-ui/src/elements/sk-mission-sample/sk-mission-sample.ts",
+      "target": "packages/mission-shell/src/ui/ConnectionBanner.svelte",
       "edits": [
         {
-          "find": "gap: var(--sk-space-4);",
-          "replace": "gap: var(--sk-space-8);"
+          "find": "reconnecting: { tone: 'attention', announce: 'polite' },",
+          "replace": "reconnecting: { tone: 'danger', announce: 'polite' },"
         }
       ]
     }
