@@ -72,6 +72,23 @@ helped:
   summary: WP10 completed without rejection cycles
   evidence_refs:
   - e-015
+- id: h-006
+  category: process
+  summary: 'The pre-merge squad found two severity 4 defects and every fold was verified red on revert'
+  evidence_refs:
+  - e-022
+  - e-023
+  details: 'Three lens groups reviewed the integrated branch (reviews/premerge-r1-findings.md). The two severity 4 findings
+    were a setClient that kept the old destination and never enforced the null-client desktop rule (ARCH-001), and a lone
+    UTF-16 surrogate in an artifact path that threw in route code (CON-001). All 14 fold items and the 4 new findings of
+    the second round were verified, each with a guard that goes red on revert (reviews/premerge-r3-verify.md). The shell
+    suite went from 479 to 533 tests with the folds.'
+- id: h-007
+  category: process
+  summary: 'The proof-leg timeouts were confirmed unchanged by the first CI run'
+  evidence_refs:
+  - e-022
+  details: 'The unit-tests (32) and eslint (10) proof-leg timeouts were set as projections (GATE-001, GATE-002, GATE-003). The first CI run confirmed both, and no timeout changed at landing.'
 not_helpful:
 - id: n-006
   category: doc
@@ -110,7 +127,24 @@ not_helpful:
   evidence_refs:
   - e-020
   details: WP WP06 was sent back to an earlier lane with documented review feedback 2 time(s).
-gaps: []
+- id: n-007
+  category: process
+  summary: 'Accept, consolidate and the retrospective ran before the pre-merge squad folds, so the records described a state main never had'
+  evidence_refs:
+  - e-001
+  - e-022
+  - e-023
+  details: 'The acceptance matrix, meta.json and this retrospective were written before the pre-merge squad folds were merged. The folds added setCopy, the setClient default route, the destination guard and the surrogate guard, and moved shell tests from 479 to 533, so the acceptance evidence cited line numbers and behaviour main did not have. meta.json merged_commit points at the pre-landing consolidation, which main does not contain because PR #34 was squash-merged. The records were refreshed after the landing (landed_commit and landed_via were added to meta.json).'
+gaps:
+- id: g-001
+  category: process
+  summary: 'The pre-merge squad follow-ups were deferred to issues 36 and 37, or left to #20'
+  evidence_refs:
+  - e-022
+  details: 'ARCH-005, ARCH-006, ARCH-007, ARCH-010, A11Y-001 to A11Y-003, SEC-001, SEC-002, TEST-004 and TEST-006 to
+    TEST-009 were not folded. They are tracked in issues 36 (mission-ui) and 37 (mission-shell). R1 left ARCH-004 (a way
+    to retry the service from a degraded state, needing a design pass) as a follow-up on #20, and ARCH-011 (no extension
+    point for host screens) as a note for #20.'
 proposals: []
 evidence_refs:
 - id: e-001
@@ -181,5 +215,11 @@ evidence_refs:
 - id: e-021
   kind: file
   path: kitty-specs/mission-shell-01M50D2J/analysis-report.md
+- id: e-022
+  kind: file
+  path: kitty-specs/mission-shell-01M50D2J/reviews/premerge-r1-findings.md
+- id: e-023
+  kind: file
+  path: kitty-specs/mission-shell-01M50D2J/reviews/premerge-r3-verify.md
 generator_version: '1.0'
 provenance_history: []
