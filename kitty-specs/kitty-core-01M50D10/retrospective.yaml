@@ -82,6 +82,19 @@ helped:
   summary: WP09 completed without rejection cycles
   evidence_refs:
   - e-015
+- id: h-008
+  category: process
+  summary: 'The pre-merge squad closed two forward() traversal gaps and a flaky supervision test, and every fold was verified red on revert'
+  evidence_refs:
+  - e-020
+  - e-021
+  details: 'Three lens groups reviewed the integrated branch (reviews/premerge-r1-findings.md); none of the findings was above severity 3. The folds included forward() refusing dot segments, encoded separators, backslash, a double slash, non-ASCII and ''#'' (ARCH-008, SEC-001), then '';'' and ''%3b'' after the second round (R2-NEW-001); CoreConfig::new (ARCH-001); #[non_exhaustive] on the enums hosts match on (ARCH-002); the socket-ownership check before a non-matching answer counts as a contract mismatch (SEC-002); and the supervision test flake of about 2 in 110 runs (TEST-001). All 15 R1 fold items and the six second-round findings were verified, each with a guard that goes red on revert (reviews/premerge-r3-verify.md). The supervision binary then passed 30 runs without a failure, half of them under load.'
+- id: h-009
+  category: process
+  summary: 'The contract proof-leg timeout was confirmed unchanged by the first CI run'
+  evidence_refs:
+  - e-020
+  details: 'The contract proof-leg timeout was raised from 19 to 21 as a projection (GATE-001). The first CI run confirmed it, and no timeout changed at landing.'
 not_helpful:
 - id: n-004
   category: doc
@@ -108,7 +121,21 @@ not_helpful:
   evidence_refs:
   - e-018
   details: WP WP10 was sent back to an earlier lane with documented review feedback 1 time(s).
-gaps: []
+- id: n-005
+  category: process
+  summary: 'Accept, consolidate and the retrospective ran before the pre-merge squad folds, so the records described a state main never had'
+  evidence_refs:
+  - e-001
+  - e-020
+  - e-021
+  details: 'The acceptance matrix, meta.json and this retrospective were written before the pre-merge squad folds were merged. The folds added the forward() target refusals, CoreConfig::new, the #[non_exhaustive] enums, the socket-ownership retry and the flake fixes, and they moved line numbers in the supervision tests, so the acceptance evidence cited lines and behaviour main did not have. meta.json merged_commit points at the pre-landing consolidation, which main does not contain because PR #35 was squash-merged. The records were refreshed after the landing (landed_commit and landed_via were added to meta.json).'
+gaps:
+- id: g-001
+  category: process
+  summary: 'The pre-merge squad follow-ups were deferred to issue 38, or left to #20, #21 and #22'
+  evidence_refs:
+  - e-020
+  details: 'ARCH-007, ARCH-010, ARCH-011, ARCH-013, SEC-003, SEC-005, CON-002, CON-004 and the remaining test follow-ups were not folded and are tracked in issue 38. R1 left ARCH-003 (a way to pass named environment variables to the service) to #22, ARCH-006 (a cross-target cargo check in CI) as a follow-up, ARCH-009 (stream route access for the proxy) to #21, and Windows Job Objects to #20.'
 proposals: []
 evidence_refs:
 - id: e-001
@@ -171,5 +198,11 @@ evidence_refs:
 - id: e-019
   kind: file
   path: kitty-specs/kitty-core-01M50D10/analysis-report.md
+- id: e-020
+  kind: file
+  path: kitty-specs/kitty-core-01M50D10/reviews/premerge-r1-findings.md
+- id: e-021
+  kind: file
+  path: kitty-specs/kitty-core-01M50D10/reviews/premerge-r3-verify.md
 generator_version: '1.0'
 provenance_history: []
