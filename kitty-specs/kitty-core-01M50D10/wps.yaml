@@ -1,0 +1,297 @@
+work_packages:
+- id: WP01
+  title: Dependencies, exact pins and the proven lock
+  dependencies: []
+  owned_files:
+  - Cargo.toml
+  - Cargo.lock
+  - crates/kitty-core/Cargo.toml
+  requirement_refs:
+  - NFR-002
+  - NFR-007
+  - C-002
+  - SC-004
+  plan_concern_refs:
+  - IC-01
+  subtasks:
+  - T001
+  - T002
+  - T003
+  - T004
+  agent_profile: implementer-ivan
+  role: implementer
+  agent: claude
+  prompt_file: tasks/WP01-dependencies-and-pins.md
+- id: WP02
+  title: 'The bundled contract document and its Gate: contract plant'
+  dependencies: []
+  owned_files:
+  - scripts/contract/generate.mjs
+  - scripts/contract/check.mjs
+  - scripts/contract/check.test.mjs
+  - scripts/contract/bundle.test.mjs
+  - contracts/fixtures/mission-status.openapi.json
+  - .gitattributes
+  - gates/plants/contract/**
+  requirement_refs:
+  - FR-012
+  - FR-014
+  - C-005
+  - C-007
+  plan_concern_refs:
+  - IC-02
+  subtasks:
+  - T005
+  - T006
+  - T007
+  - T008
+  - T009
+  - T010
+  agent_profile: node-norris
+  role: implementer
+  agent: claude
+  prompt_file: tasks/WP02-bundled-contract-document.md
+- id: WP03
+  title: 'kitty-stub extensions: contract route, start-up selection, upstream launch options'
+  dependencies:
+  - WP02
+  owned_files:
+  - crates/kitty-stub/Cargo.toml
+  - crates/kitty-stub/src/**
+  - crates/kitty-stub/tests/openapi.rs
+  - crates/kitty-stub/tests/select.rs
+  - crates/kitty-stub/tests/upstream_flags.rs
+  requirement_refs:
+  - FR-014
+  - FR-015
+  - C-008
+  - NFR-008
+  plan_concern_refs:
+  - IC-03
+  subtasks:
+  - T011
+  - T012
+  - T013
+  - T014
+  - T015
+  - T016
+  agent_profile: implementer-ivan
+  role: implementer
+  agent: claude
+  prompt_file: tasks/WP03-stub-extensions.md
+- id: WP04
+  title: Contract client, read relay and forward()
+  dependencies:
+  - WP01
+  - WP03
+  owned_files:
+  - crates/kitty-core/src/lib.rs
+  - crates/kitty-core/src/routes.rs
+  - crates/kitty-core/src/endpoint.rs
+  - crates/kitty-core/src/client.rs
+  - crates/kitty-core/src/forward.rs
+  - crates/kitty-core/tests/common/**
+  - crates/kitty-core/tests/reads.rs
+  requirement_refs:
+  - FR-001
+  - FR-002
+  - FR-003
+  - FR-004
+  - FR-005
+  - FR-006
+  - NFR-004
+  - NFR-007
+  - C-004
+  - SC-001
+  plan_concern_refs:
+  - IC-04
+  subtasks:
+  - T017
+  - T018
+  - T019
+  - T020
+  - T021
+  - T022
+  - T023
+  agent_profile: implementer-ivan
+  role: implementer
+  agent: claude
+  prompt_file: tasks/WP04-contract-client-and-read-relay.md
+- id: WP05
+  title: 'Change-stream relay: SSE frame reader and ChangeStream'
+  dependencies:
+  - WP04
+  owned_files:
+  - crates/kitty-core/src/sse.rs
+  - crates/kitty-core/tests/stream.rs
+  - crates/kitty-core/tests/latency.rs
+  requirement_refs:
+  - FR-007
+  - FR-008
+  - FR-009
+  - FR-010
+  - NFR-003
+  - NFR-004
+  - C-003
+  plan_concern_refs:
+  - IC-05
+  subtasks:
+  - T024
+  - T025
+  - T026
+  - T027
+  - T028
+  - T029
+  agent_profile: implementer-ivan
+  role: implementer
+  agent: claude
+  prompt_file: tasks/WP05-change-stream-relay.md
+- id: WP06
+  title: 'Contract digest check: canonical form, ContractPin, check()'
+  dependencies:
+  - WP02
+  - WP04
+  owned_files:
+  - crates/kitty-core/src/contract.rs
+  - crates/kitty-core/tests/contract_check.rs
+  requirement_refs:
+  - FR-011
+  - FR-012
+  - FR-013
+  - NFR-004
+  - SC-002
+  plan_concern_refs:
+  - IC-06
+  subtasks:
+  - T030
+  - T031
+  - T032
+  - T033
+  - T034
+  - T035
+  agent_profile: implementer-ivan
+  role: implementer
+  agent: claude
+  prompt_file: tasks/WP06-contract-digest-check.md
+- id: WP07
+  title: Discovery behind a replaceable interface
+  dependencies:
+  - WP04
+  owned_files:
+  - crates/kitty-core/src/discovery.rs
+  - crates/kitty-core/tests/discovery.rs
+  requirement_refs:
+  - FR-022
+  - FR-023
+  plan_concern_refs:
+  - IC-07
+  subtasks:
+  - T036
+  - T037
+  - T038
+  agent_profile: implementer-ivan
+  role: implementer
+  agent: claude
+  prompt_file: tasks/WP07-discovery.md
+- id: WP08
+  title: 'Supervision: policy, process group, state machine and the fake service'
+  dependencies:
+  - WP06
+  - WP07
+  owned_files:
+  - crates/kitty-core/src/supervisor/**
+  - crates/kitty-core/src/bin/**
+  - crates/kitty-core/tests/supervision.rs
+  requirement_refs:
+  - FR-016
+  - FR-017
+  - FR-018
+  - FR-019
+  - FR-020
+  - FR-021
+  - FR-022
+  - NFR-001
+  - NFR-004
+  - NFR-005
+  - NFR-006
+  - C-002
+  - C-006
+  - SC-003
+  plan_concern_refs:
+  - IC-08
+  subtasks:
+  - T039
+  - T040
+  - T041
+  - T042
+  - T043
+  - T044
+  - T045
+  - T046
+  agent_profile: implementer-ivan
+  role: implementer
+  agent: claude
+  prompt_file: tasks/WP08-supervision.md
+- id: WP09
+  title: Core facade, degraded signal and the supervised stand-in
+  dependencies:
+  - WP05
+  - WP08
+  owned_files:
+  - crates/kitty-core/src/facade.rs
+  - crates/kitty-core/src/status.rs
+  - crates/kitty-core/tests/status_mapping.rs
+  - crates/kitty-core/tests/panic_probe.rs
+  - crates/kitty-core/tests/host_exit.rs
+  - crates/kitty-stub/tests/supervised.rs
+  requirement_refs:
+  - FR-013
+  - FR-016
+  - FR-021
+  - FR-024
+  - NFR-005
+  - NFR-006
+  - C-003
+  - SC-005
+  plan_concern_refs:
+  - IC-09
+  subtasks:
+  - T047
+  - T048
+  - T049
+  - T050
+  - T051
+  - T052
+  - T053
+  agent_profile: implementer-ivan
+  role: implementer
+  agent: claude
+  prompt_file: tasks/WP09-core-facade-and-supervised-stand-in.md
+- id: WP10
+  title: Documentation, measured budgets, SC-004 probe and proof-leg timeouts
+  dependencies:
+  - WP09
+  owned_files:
+  - README.md
+  - CHANGELOG.md
+  - .github/workflows/ci.yml
+  requirement_refs:
+  - NFR-001
+  - NFR-003
+  - NFR-006
+  - NFR-008
+  - C-001
+  - C-009
+  - SC-004
+  - SC-006
+  plan_concern_refs:
+  - IC-10
+  subtasks:
+  - T054
+  - T055
+  - T056
+  - T057
+  agent_profile: node-norris
+  role: implementer
+  agent: claude
+  prompt_file: tasks/WP10-docs-budgets-and-wrap-up.md

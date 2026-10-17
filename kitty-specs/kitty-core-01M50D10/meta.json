@@ -1,0 +1,35 @@
+{
+  "accept_commit": "30ffea4b4113cebc677996674b89082ce5fa90a1",
+  "acceptance_history": [
+    {
+      "accept_commit": "30ffea4b4113cebc677996674b89082ce5fa90a1",
+      "acceptance_mode": "local",
+      "accepted_at": "2026-10-16T16:45:31.514958+00:00",
+      "accepted_by": "claude",
+      "accepted_from_commit": "8619ae328fbca52c856d07b716c3b1a8bc210388"
+    }
+  ],
+  "acceptance_mode": "local",
+  "accepted_at": "2026-10-16T16:45:31.514958+00:00",
+  "accepted_by": "claude",
+  "accepted_from_commit": "8619ae328fbca52c856d07b716c3b1a8bc210388",
+  "baseline_merge_commit": "53aaf95296ca848a9e254410c863f40d086426d1",
+  "created_at": "2026-10-15T18:26:09.164818+00:00",
+  "flattened": true,
+  "friendly_name": "kitty-core: shared Rust core (contract client, change stream, supervision)",
+  "merged_at": "2026-10-16T16:46:10.577159+00:00",
+  "merged_commit": "f502fd5193eb6aea337b20a1dea2ec0e519dace5",
+  "mid8": "01M50D10",
+  "mission_id": "01M50D10J2DWR9J76F7APJQJDP",
+  "mission_number": 6,
+  "mission_slug": "kitty-core-01M50D10",
+  "mission_type": "software-dev",
+  "pr_bound": true,
+  "purpose_context": "Both hosts read spec-kitty's Mission Status service, which ships as an unsigned native binary with no install location and never announces its port. Without a shared core each host would solve discovery, start-up, crash recovery and contract checking on its own, and the two would drift. This mission builds that core against the local stub so the desktop (#20) and dashboard (#21) can start on it, and reports a clear degraded state instead of crashing when the service is missing or speaks another contract. Tracked as mission-ui issue 19 under epic 16.",
+  "purpose_tldr": "Give Kitty Desktop and Kitty Dashboard one shared Rust core that finds, starts and watches the Mission Status service, checks it speaks the pinned contract, and relays its reads and live changes unchanged.",
+  "slug": "kitty-core-01M50D10",
+  "status_phase": "1",
+  "target_branch": "feat/kitty-core-19",
+  "vcs": "git",
+  "vcs_locked_at": "2026-10-16T11:57:15.585004+00:00"
+}

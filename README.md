@@ -244,7 +244,7 @@ cargo build --workspace --locked
 | Path | What it is |
 |---|---|
 | `packages/mission-shell` | `@moes-media/mission-shell`, the Svelte 5 shell: the `MissionStatusClient` port, its fixture adapter, the generated element typings, the permanent binding check and, on the `./shell` entry, the mountable shell (`mountShell`, `MissionShell`) that hosts use for routing, layout, refresh and connection banners. No I/O ([its README](packages/mission-shell/README.md)). |
-| `crates/kitty-core` | the shared Rust core, a skeleton for now (`#19`). Its `tests/workspace.rs` asserts the exact set of workspace members. |
+| `crates/kitty-core` | the shared Rust core (`#19`): it finds, starts, supervises and talks to the Mission Status service for both hosts ([Kitty core](#kitty-core)). Its `tests/workspace.rs` asserts the exact set of workspace members. |
 | `crates/kitty-stub` | `kitty-stub`, the loopback HTTP and SSE stand-in for the Mission Status service. `publish = false`. |
 | `apps/desktop/src-tauri` | the Kitty Desktop placeholder: a compile-only binary crate in Tauri's layout, so `#20` adds Tauri without moving files. |
 | `apps/dashboard/server` | the Kitty Dashboard placeholder: a compile-only binary crate (`#21`), below the app root so the dashboard's web frontend can live at `apps/dashboard/`. |
@@ -287,6 +287,14 @@ curl -s http://127.0.0.1:<port>/__stub/last-request
 - **Header-read timeout.** A connection that has not sent a complete request header within `--header-timeout-ms` is
   closed, so a half-sent header cannot hold a connection forever. It covers the header only; an open event stream is
   not cut. There is no connection cap.
+- **Options added by `#19`.** `--openapi <file>` serves a different contract document at `GET /api/v1/openapi.yaml`
+  (the default is `<fixtures>/mission-status.openapi.json`); `--select <operationId>=<Schema.name>` and
+  `--select-fixture <operationId>=<fixture>` (both repeatable) pick the example or fixture a route serves without any
+  `X-Kitty-Stub-*` header; `--mission-status.port=<n>` and `--mission-status.project-root=<dir>` are the two launch
+  options of the real service, so Kitty core can start the stub as it would start the service (`--port` and
+  `--mission-status.port` cannot be combined). Without `--fixtures`, the stub reads `<project-root>/.kitty-stub/fixtures`
+  when that directory exists, and otherwise the workspace's `contracts/fixtures`, whose path is fixed when the stub is built (the files are not embedded, so a copied binary does not find them). A selection that does not
+  fit exits 2; an unreadable `--openapi` file exits 1.
 - It binds `127.0.0.1` only; no option changes the address.
 - **Host rule.** Like the real service, every route answers 403 with `{"code": ...}` when the `Host` header is not exactly
   one `127.0.0.1:<port>` or `localhost:<port>` (`host`), when an `Origin` is repeated or present and not the stub's own
@@ -305,6 +313,118 @@ curl -s http://127.0.0.1:<port>/__stub/last-request
   `log-truncated` item. An unscoped request ignores the cursor. The stub never refuses a cursor (no 409).
 - `GET /__stub/last-request` returns the method, path and headers of the most recent `/api/v1` request. The values of
   `authorization`, `proxy-authorization`, `cookie` and `set-cookie` are reported as `"[redacted]"`; the names are kept.
+
+### Kitty core
+
+`crates/kitty-core` is the one place that talks to the Mission Status service for both hosts. For each project it
+finds the service binary, starts it, restarts it when it crashes, checks that it serves the pinned contract, and
+relays reads and the change stream. A host gets a status to show and a way to read; it never learns how the process is
+run. Kitty core does not interpret what the service says: it adds no refetch, no reconnect and no cursor store.
+
+Impact for host authors:
+
+- A service that serves a different contract than the pin is never read from. Reads and streams answer
+  `ContractMismatch` without sending a request, and the status stays `Stopped`.
+- Kitty core talks to `127.0.0.1` only, and sends only a `Host` and an `Accept` header.
+- Dropping the last `Core` clone kills the service's process group at once. Call `stop().await` for a graceful stop.
+
+**Find the service.** The lookup order is fixed, and an explicit choice never falls back:
+
+1. the host's configured path, which must be absolute;
+2. otherwise the `KITTY_MISSION_STATUS_SERVICE` environment variable, which must be absolute;
+3. otherwise a `PATH` search for the binary name (default `mission-status-api`), over absolute `PATH` entries only.
+
+A configured path or variable that is invalid gives `Stopped` with `service-missing`, and no later step is tried.
+Discovery runs at the first start, on `retry()` and at every restart after a crash, so a binary removed while the
+service was crashing gives `service-missing` at the next restart.
+
+**Start Kitty core.** `CoreConfig::new(project_root)` fills every field with the value in the second column below, so a
+host writes `CoreConfig { timings, ..CoreConfig::new(root) }` to change one. `CoreConfig` has no `Default`, no builder and
+is not `#[non_exhaustive]`. The ten fields and their defaults:
+
+| Field | Default from `CoreConfig::new` |
+|---|---|
+| `project_root` | the project directory (canonicalised at start) |
+| `discovery` | `Arc::new(DefaultDiscovery::from_process(None, DEFAULT_BINARY_NAME))`; pass your own `configured_path` or binary name by building a `DefaultDiscovery` |
+| `contract` | `ContractPin::embedded()` |
+| `timings` | `Timings::default()` |
+| `policy` | `RestartPolicy::default()` (restart after 0.5, 1, 2 and 4 s; give up at the 5th crash in 300 s; the count resets after 60 s of `Ready`) |
+| `ports` | `Arc::new(LoopbackPortPicker)` |
+| `clock` | `Arc::new(MonotonicClock)` |
+| `sleeper` | `Arc::new(TokioSleeper)` |
+| `runtime` | `None` to use the runtime the caller is in |
+| `env_passthrough` | `Vec::new()`; add the extra variable names the service needs |
+
+`Core::start` returns `Err(StartError::NoRuntime)` outside a runtime. It never panics.
+
+**Match on the outcomes with a wildcard arm.** These enums are `#[non_exhaustive]`, so a host's `match` needs a `_ =>`
+arm: `ReadOutcome`, `StreamOpenError`, `SupervisionState`, `DegradedReason`, `Actual`, `MissingReason`,
+`TransportFailure`, `UnavailableReason`, `StreamEvent` and `StreamDiagnostic`. A later release can add a variant without
+breaking a host that has the arm. The plain structs (`CoreStatus`, `Mismatch`, `ServiceMissing`) stay exhaustive. `StreamOpenError` is no longer `Copy`: it carries a `CoreStatus` or a `Mismatch`, so clone it
+or take it by reference.
+
+**Recover from a lagging subscriber.** `Subscription.receiver` is a `tokio::sync::broadcast` receiver. When it returns
+`Lagged`, it has dropped transitions, so call `core.status()` to read the current status again and carry on from there.
+
+**Resume a forwarded stream with `streamCursor`.** `forward()` sends only `Host` and `Accept`, never `Last-Event-ID`. A
+proxy, as in `#21`, resumes by putting the last `streamCursor` it saw in the request target. `streamCursor` resumes only
+a stream scoped by `missionId`; an unscoped stream ignores it.
+
+**Know what a timeout covers.** `TransportFailure::Timeout` also covers a connect or response-head timeout, not only a
+slow read. `TransportFailure` carries no HTTP status, because no answer arrived. (On the change stream, the same failure
+reaches a host as `StreamEvent::Unavailable` with status `None`.)
+
+**Map the status to the shell.** `connection_state_hint(&status)` returns one of the five strings of
+`ConnectionState` in `packages/mission-shell/src/client/port.ts`, or `None` when there is nothing to show (a stop the
+host asked for):
+
+| Status | Hint |
+|---|---|
+| starting, crashed or backing off, before the first `Ready` or `Stopped` | `connecting` |
+| starting, crashed or backing off, after that (this includes a `retry()`) | `reconnecting` |
+| `Ready` | `connected` |
+| `Stopped` with a missing service | `degraded: service-missing` |
+| `Stopped` with a contract mismatch | `degraded: contract-mismatch` |
+
+The hint never goes back to `connecting`, not even after `retry()`.
+
+**A broken pin.** If the pinned contract itself cannot be parsed, Kitty core launches nothing and the status is
+`Stopped` with `ContractMismatch`. This is the only status that case produces. Its `Mismatch.expected` is an all-zero
+placeholder digest (`Digest::unavailable()`, not public), and `Mismatch.actual` is `Actual::Unparseable { detail }`. Do
+not display that digest or compare it with a real one: no document hashes to it. Show the `detail` instead.
+`ContractPin::embedded()` is the pin hosts use.
+
+**Run the stub as the service.** The stub accepts the service's two launch options, so it can stand in for the service
+under supervision:
+
+```bash
+cargo build -p kitty-stub
+target/debug/kitty-stub --mission-status.project-root=<project-dir> --mission-status.port=0
+KITTY_MISSION_STATUS_SERVICE=<repo>/target/debug/kitty-stub <host command>
+```
+
+It serves the pinned contract document, so the digest check passes. The supervised test in
+`crates/kitty-stub/tests/supervised.rs` is the pattern for a host's own tests.
+
+**Platform limits.**
+
+- On Linux the service dies with its parent (`PR_SET_PDEATHSIG`), even when the host is killed. macOS has no equivalent.
+  There, the service ends only when the host calls `stop().await`, or when the last `Core` clone is dropped while the
+  runtime is still running. A host that ends with `std::process::exit`, is killed, or crashes leaves the service
+  running. Tauri's app exit ends the process that way, so call `stop().await` before exiting (`#20`).
+- `PR_SET_PDEATHSIG` reaches only the direct child. If the host dies hard, grandchildren of the service can survive.
+- The check that the listening socket belongs to the service runs on Linux only. It also fails open: when
+  `/proc/net/tcp` cannot be read, the start goes on without the check.
+- The contract digest shows that the service serves the pinned document. It is not authentication: another local
+  process that serves the same document passes it.
+- On macOS, an app started by launchd gets a minimal `PATH`, so give the host a configured path. Windows `PATHEXT`
+  and Job Objects are not handled yet (`#20`).
+- On Windows, `stop()` ends the service process at once: there is no process-group kill and no grace period yet, so
+  child processes of the service can survive. Job Objects follow in `#20`.
+
+**The contract document.** The stub and the digest check use `contracts/fixtures/mission-status.openapi.json`, a
+bundle that `pnpm contract:generate` writes from the vendored contract. Never edit it by hand: `Gate: contract` fails
+when it is stale.
 
 ### Upstream drift alert
 
