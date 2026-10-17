@@ -1,0 +1,185 @@
+schema_version: 1
+mission_id: 01M50D2JBWV6TYMCYCK6ADFWKF
+mission_slug: mission-shell-01M50D2J
+mission_number: 5
+friendly_name: 'mission-shell: shared Svelte 5 shell over the MissionStatusClient port'
+mission_type: software-dev
+target_branch: feat/mission-shell-18
+created_at: '2026-10-16T20:11:26.440953+00:00'
+created_by:
+  kind: runtime
+  id: spec-kitty-generator
+  display: Spec Kitty Generator
+provenance:
+  kind: runtime_post_completion
+  invoked_at: '2026-10-16T20:11:26.440953+00:00'
+  policy_resolved_from:
+    enabled: <default>
+    timing: <default>
+    failure_policy: <default>
+    write_record: <default>
+    generate_proposals: <default>
+    apply_proposals: <default>
+    permissions.write_record: <default>
+    permissions.inspect_mission_artifacts: <default>
+    permissions.propose_glossary_changes: <default>
+    permissions.propose_drg_changes: <default>
+    permissions.propose_doctrine_changes: <default>
+    permissions.apply_low_risk_changes: <default>
+    permissions.apply_structural_changes: <default>
+    precedence: <default>
+    generator: <default>
+policy_source:
+  enabled: <default>
+  timing: <default>
+  failure_policy: <default>
+  write_record: <default>
+  generate_proposals: <default>
+  apply_proposals: <default>
+  permissions.write_record: <default>
+  permissions.inspect_mission_artifacts: <default>
+  permissions.propose_glossary_changes: <default>
+  permissions.propose_drg_changes: <default>
+  permissions.propose_doctrine_changes: <default>
+  permissions.apply_low_risk_changes: <default>
+  permissions.apply_structural_changes: <default>
+  precedence: <default>
+  generator: <default>
+findings_status: has_findings
+helped:
+- id: h-001
+  category: implementation
+  summary: WP03 completed without rejection cycles
+  evidence_refs:
+  - e-015
+- id: h-002
+  category: implementation
+  summary: WP07 completed without rejection cycles
+  evidence_refs:
+  - e-015
+- id: h-003
+  category: implementation
+  summary: WP08 completed without rejection cycles
+  evidence_refs:
+  - e-015
+- id: h-004
+  category: implementation
+  summary: WP09 completed without rejection cycles
+  evidence_refs:
+  - e-015
+- id: h-005
+  category: implementation
+  summary: WP10 completed without rejection cycles
+  evidence_refs:
+  - e-015
+not_helpful:
+- id: n-006
+  category: doc
+  summary: analysis-report.md records 4 finding(s)
+  evidence_refs:
+  - e-021
+  details: The analysis-report.md artifact for this mission records 4 finding(s) in its structured frontmatter. Review
+    them to understand documented issues and decisions.
+- id: n-001
+  category: review_loop
+  summary: WP01 required 2 rejection cycle(s) before approval
+  evidence_refs:
+  - e-016
+  details: WP WP01 was sent back to an earlier lane with documented review feedback 2 time(s).
+- id: n-002
+  category: review_loop
+  summary: WP02 required 2 rejection cycle(s) before approval
+  evidence_refs:
+  - e-017
+  details: WP WP02 was sent back to an earlier lane with documented review feedback 2 time(s).
+- id: n-003
+  category: review_loop
+  summary: WP04 required 1 rejection cycle(s) before approval
+  evidence_refs:
+  - e-018
+  details: WP WP04 was sent back to an earlier lane with documented review feedback 1 time(s).
+- id: n-004
+  category: review_loop
+  summary: WP05 required 1 rejection cycle(s) before approval
+  evidence_refs:
+  - e-019
+  details: WP WP05 was sent back to an earlier lane with documented review feedback 1 time(s).
+- id: n-005
+  category: review_loop
+  summary: WP06 required 2 rejection cycle(s) before approval
+  evidence_refs:
+  - e-020
+  details: WP WP06 was sent back to an earlier lane with documented review feedback 2 time(s).
+gaps: []
+proposals: []
+evidence_refs:
+- id: e-001
+  kind: file
+  path: kitty-specs/mission-shell-01M50D2J/meta.json
+- id: e-002
+  kind: file
+  path: kitty-specs/mission-shell-01M50D2J/spec.md
+- id: e-003
+  kind: file
+  path: kitty-specs/mission-shell-01M50D2J/plan.md
+- id: e-004
+  kind: file
+  path: kitty-specs/mission-shell-01M50D2J/tasks.md
+- id: e-005
+  kind: file
+  path: kitty-specs/mission-shell-01M50D2J/tasks/WP01-destinations-routes-and-displayed-sets.md
+- id: e-006
+  kind: file
+  path: kitty-specs/mission-shell-01M50D2J/tasks/WP02-refresh-engine.md
+- id: e-007
+  kind: file
+  path: kitty-specs/mission-shell-01M50D2J/tasks/WP03-shell-controller.md
+- id: e-008
+  kind: file
+  path: kitty-specs/mission-shell-01M50D2J/tasks/WP04-host-interface-modes-and-links.md
+- id: e-009
+  kind: file
+  path: kitty-specs/mission-shell-01M50D2J/tasks/WP05-intent-table-and-coverage-check.md
+- id: e-010
+  kind: file
+  path: kitty-specs/mission-shell-01M50D2J/tasks/WP06-svelte-view-bindings-and-shell-entry.md
+- id: e-011
+  kind: file
+  path: kitty-specs/mission-shell-01M50D2J/tasks/WP07-shell-lint-io-markup-layering.md
+- id: e-012
+  kind: file
+  path: kitty-specs/mission-shell-01M50D2J/tasks/WP08-stories-storybook-and-candidate-baselines.md
+- id: e-013
+  kind: file
+  path: kitty-specs/mission-shell-01M50D2J/tasks/WP09-baseline-finalisation-after-cp1.md
+- id: e-014
+  kind: file
+  path: kitty-specs/mission-shell-01M50D2J/tasks/WP10-timings-docs-and-frozen-surface-wrap-up.md
+- id: e-015
+  kind: file
+  path: kitty-specs/mission-shell-01M50D2J/status.events.jsonl
+- id: e-016
+  kind: event_range
+  path: kitty-specs/mission-shell-01M50D2J/status.events.jsonl
+  range: 01M52C237NZ5B7QS1D88CDC8M7..01M52C8VAYC5VTV6RRVDRY0F2G
+- id: e-017
+  kind: event_range
+  path: kitty-specs/mission-shell-01M50D2J/status.events.jsonl
+  range: 01M52DQMMBQ3XGSC16FKM5QK0S..01M52EF6TGXGJV94038HVF7ZK1
+- id: e-018
+  kind: event_range
+  path: kitty-specs/mission-shell-01M50D2J/status.events.jsonl
+  range: 01M52GMSE0RMDQ2J815XR492ZZ
+- id: e-019
+  kind: event_range
+  path: kitty-specs/mission-shell-01M50D2J/status.events.jsonl
+  range: 01M52HW8BJDW1VRFNVY2R7VACM
+- id: e-020
+  kind: event_range
+  path: kitty-specs/mission-shell-01M50D2J/status.events.jsonl
+  range: 01M52NM7AQF5NH02KVE6APJW0J..01M52PKCMC3XRE56MB6JYN65NF
+- id: e-021
+  kind: file
+  path: kitty-specs/mission-shell-01M50D2J/analysis-report.md
+generator_version: '1.0'
+provenance_history: []

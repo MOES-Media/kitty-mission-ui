@@ -42,5 +42,16 @@
         "source": "PlantIntent.svelte.plant"
       }
     ]
+  },
+  {
+    "gate": "typecheck",
+    "ciCommand": "pnpm typecheck",
+    "expectFailPattern": "sk-drift-screen sk-copy-command",
+    "overlays": [
+      {
+        "target": "packages/mission-shell/src/intents/table.ts",
+        "edits": [{ "find": "    'sk-copy-command': (c, d) => c.copyCommand(d),\n", "replace": "" }]
+      }
+    ]
   }
 ]

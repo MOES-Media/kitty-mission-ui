@@ -8,12 +8,180 @@ that do I/O live under `apps/*` and `crates/*`. The no-io gate covers `src/**/*.
 Not to be confused with the `sk-mission-shell` element of mission-ui, which is the screens' layout chrome.
 
 Phase 0 (issue `#17`) delivers the port, an in-memory fixture adapter, the generated element typings and the permanent
-binding check. Real routing and layout arrive in `#18`.
+binding check. Issue `#18` delivers the shell itself, on the `./shell` entry: routing, layout, the refresh policy and the
+connection banners.
 
 ```bash
-pnpm --filter @moes-media/mission-shell typecheck   # svelte-check, warnings fail
-pnpm --filter @moes-media/mission-shell test        # Vitest browser mode (Chromium)
+pnpm --filter @moes-media/mission-shell typecheck   # svelte-check, including the intent coverage check types
+pnpm --filter @moes-media/mission-shell test        # both Vitest projects: logic and unit
 ```
+
+The test run has two projects. `logic` runs in Node with the browser disabled (routes, the refresh engine, the
+controller and the host wrappers). `unit` runs in Chromium (the mounted shell: routing, banners and bindings). Run the
+browser project through `heavy` on a shared machine.
+
+## The shell: `@moes-media/mission-shell/shell`
+
+A host mounts the shell with one `MissionStatusClient` and a small host interface. The host needs no other change to
+the shell's surface. The full contract is `kitty-specs/mission-shell-01M50D2J/contracts/shell-api.md`.
+
+### Entries
+
+| Entry | Contents |
+|---|---|
+| `.` | The port only: `MissionStatusClient` and its types, `CLIENT_OPERATIONS`, `CONNECTION_STATES`, `CHANGE_KINDS`, `READ_OPS`, `toStreamCursorString`. Unchanged. |
+| `./testing` | The in-memory fixture adapter. Unchanged. |
+| `./shell` | New. `mountShell`, `MissionShell`, `formatRoute`, `parseRoute` and the types `Destination`, `ShellMode`, `ShellHost`, `ShellScheduler`, `ShellCopyOverrides` and `ShellOptions`. |
+
+`test/package.test.ts` pins exactly these three entries.
+
+### Host prerequisites
+
+- Load the `@spec-kitty/tokens` CSS, and make sure its fonts resolve.
+- Set `data-theme` on `document.documentElement`.
+- Use a bundler that compiles Svelte for the `./shell` entry, for example Vite with `@sveltejs/vite-plugin-svelte`.
+- Do nothing for the `sk-*` elements. The shell imports `@moes-media/mission-ui`, which registers them.
+
+### Mounting
+
+```ts
+import { mountShell } from '@moes-media/mission-shell/shell';
+
+const shell = mountShell(document.querySelector('#app')!, {
+  client: myAdapter,
+  mode: 'dashboard',
+  route: currentHashRoute(),
+  host: {
+    openExternalLink: (href) => { /* re-validate the scheme, never navigate the window, show the destination first */ },
+    copyText: async (text) => 'copied',
+    onWindowRefocus: (listener) => { /* add a visibility or focus listener */ return () => {}; },
+    routeChanged: (route) => { /* push to the host's history */ },
+  },
+});
+```
+
+`mountShell` returns four methods:
+
+- `setRoute(route)` shows a route. Call it on back and forward.
+- `setClient(client, route?)` switches project. It releases the old subscriptions, drops the loaded data and subscribes
+  the new client. It keeps the session's drawer and flyout state, and can set the route in the same step. With no
+  route it resets to the default route: `/missions`, or `/projects` for a null client on the desktop. It never keeps the
+  previous project's screen. A Svelte host gets the same reset when it changes only the `client` prop; changing `route`
+  in the same tick sets that route instead.
+- `setCopy(copy)` replaces the host's banner copy overrides (`ShellOptions.copy`) and the banner updates on the next
+  render. The overrides are replaced as a whole, not merged: `setCopy({ serviceMissing })` drops an earlier
+  `contractMismatch` override, and `setCopy({})` restores the defaults. It does nothing after `destroy`.
+- `destroy()` releases everything.
+
+A Svelte host can render `<MissionShell {client} {mode} {route} {host} />` from the same entry.
+
+`ShellOptions`:
+
+- `client`: the project's client, or `null`. On the desktop, `null` shows the project picker. On the dashboard, `null`
+  shows the project layout with the error "No project is open.", and makes no reads.
+- `host`: the optional host interface (see below).
+- `mode`: `'desktop'` or `'dashboard'`. The brand follows the mode: "kitty desktop" or "kitty dashboard".
+- `route`: the starting route.
+- `scheduler`: a `setTimeout` and `clearTimeout` pair. The shell uses it for the 100 ms coalescing window and the 1 s
+  reconnecting grace. Tests pass a fake one.
+- `clock`: returns the current `Date`. The shell uses it for relative times, for example in the picker.
+- `copy`: overrides for the two degraded banners (`serviceMissing`, `contractMismatch`), each a `{ title, body }`.
+  A Svelte host that changes the `copy` prop gets the same effect as `setCopy`; a prop that becomes `undefined`
+  restores the defaults.
+
+### Routes
+
+`formatRoute(destination)` and `parseRoute(route, mode)` round-trip. A route that does not parse becomes Missions.
+
+| Destination | Route |
+|---|---|
+| Missions | `/missions` |
+| Drift, whole project | `/drift` |
+| Drift, one Mission | `/drift/{missionId}` |
+| Ops | `/ops` |
+| Pipeline of a Mission | `/missions/{missionId}` |
+| Work Packages of a Mission, none selected | `/missions/{missionId}/work-packages` |
+| Work Package | `/missions/{missionId}/work-packages/{wpId}` |
+| Artifacts of a Mission, none selected | `/missions/{missionId}/artifacts` |
+| Artifact | `/missions/{missionId}/artifacts/{encodeURIComponent(path)}` |
+| Projects (desktop only) | `/projects` |
+
+On the dashboard, `/projects` parses to Missions.
+
+`routeChanged(route)` runs after each navigation the shell makes itself. When the host sets a route that is not
+canonical, it runs once with the canonical route. It does not run for a host-set route that the shell shows exactly as
+given, so a host cannot create an echo loop. It does run when the shell shows a different screen than the one asked for:
+a null client on the desktop shows `/projects` whatever route is set, and `setClient` with no route announces the default
+route when that moves the screen.
+
+Two rules for a host that binds `routeChanged` to its history:
+
+- A call made synchronously inside `setRoute`, `setClient` or `mountShell` is a canonicalisation of the route the host
+  itself just gave (for example an unknown route becoming `/missions`, or a null-client desktop becoming `/projects`).
+  The same holds for the default route that `setClient` with no route announces. Handle it with history *replace*, not
+  *push*, so Back does not return to the route that was rewritten.
+- Skip a route equal to the host's current one. Refresh and re-selecting the current destination can fire the same
+  route again.
+
+### Refresh policy (summary)
+
+The shell reads only through the port, and keeps one unscoped subscription. A change re-reads only the displayed
+resources it affects, coalesced in 100 ms windows. A `resync` re-reads everything on display. Data stays on screen while
+a re-read runs. The Refresh button appears only on Artifact and Ops. The full table is
+`kitty-specs/mission-shell-01M50D2J/data-model.md`, with the rules in `contracts/refresh-policy.md` in the same folder.
+
+### Connection presentation
+
+The shell shows at most one banner above the screen, as an `sk-notice`. These are the conditions, as confirmed at the
+design review (CP-1):
+
+| Condition | Tone | Title |
+|---|---|---|
+| connecting | info | Connecting |
+| reconnecting | attention | Reconnecting |
+| degraded: service-missing | danger | Service not available |
+| degraded: contract-mismatch | danger | Incompatible service |
+| the change stream was refused | neutral | Live updates are off |
+
+- Reconnecting shows only after 1 s. A shorter drop shows nothing.
+- While a degraded banner is shown, the shell hides its own chrome error and Retry. The banner explains the cause.
+- A degraded banner says "Data that was already loaded stays visible." only when data is on screen. With nothing
+  loaded, the body is the first sentence alone.
+- A host can replace the two degraded titles and bodies through `copy`, or later through `setCopy`. The shell shows an
+  override as given: the loaded-data rule above applies to the default text only, and an override is the host's own
+  wording, shown in both cases. Removing an override brings the default and its rule back.
+
+### Host interface
+
+Every `ShellHost` member is optional. A member that is absent, throws or rejects falls back as follows, and the shell
+never throws because of it.
+
+| Member | Fallback |
+|---|---|
+| `copyText(text)` | The copy reports `manual` |
+| `openExternalLink(href)` | Nothing opens |
+| `listRecentProjects()` | The picker shows its error state |
+| `openProject(target)` | Nothing happens |
+| `listFolders(location)` | The folder dialog shows its error state |
+| `onWindowRefocus(listener)` | No refresh on refocus |
+| `routeChanged(route)` | Nothing happens |
+
+`openExternalLink(href)` has obligations. The shell has already checked that the scheme is exactly http, https or
+mailto (case-insensitive). The href is still untrusted document content. The host **MUST** re-validate the scheme
+(case-insensitively) before acting, **MUST NOT** navigate its own window or webview to it, and **SHOULD** show the
+destination to the user before opening it.
+
+The dashboard never shows desktop-only actions. A picker or dialog intent does nothing there.
+
+### What a host can rely on
+
+- The shell does no I/O. It calls only the port, the `ShellHost` members and the scheduler.
+- The shell makes exactly one unscoped `client.subscribe`, one `client.connection.onChange` and, when the member exists,
+  one `host.onWindowRefocus`. It releases all three on `destroy` and on `setClient`.
+- After a refused stream, the shell does not subscribe again before a client change. Each later reconnect is a
+  shell-side resync.
+- The shell never throws because of a host member.
+- Adapters (`#20`, `#21`), `kitty-core` (`#19`) and any write path are out of scope.
 
 ## The port: `MissionStatusClient`
 
@@ -66,8 +234,8 @@ needs no `exports` change.
 
 Imported from its own entry, `@moes-media/mission-shell/testing` (`src/testing.ts`), together with its option types
 (`FixtureClientOptions`, `Scheduler`, `RouteEntry`, `ExampleTable`, `ChangesEnvelope`). The `exports` map of
-`package.json` names exactly two entries, `.` and `./testing`, so the production entry never pulls in the fixture JSON and
-no deep import reaches the package's internals.
+`package.json` names exactly three entries, `.`, `./testing` and `./shell`, so the production entry never pulls in the
+fixture JSON and no deep import reaches the package's internals.
 
 An in-memory `MissionStatusClient` over the shared files in `contracts/fixtures/` (imported as JSON, which is not I/O).
 Every read resolves to its route's default example; `subscribe` replays `mission-status.changes.json` in order.

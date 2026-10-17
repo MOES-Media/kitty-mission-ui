@@ -1,0 +1,189 @@
+{
+  "mission_slug": "mission-shell-01M50D2J",
+  "mission_number": "",
+  "mission_type": "software-dev",
+  "overall_verdict": "pass",
+  "criteria": [
+    {
+      "criterion_id": "FR-001",
+      "description": "Destinations and layouts. As a user, I want the shell to show each destination in its layout (project layout: Missions, Drift, Ops; mission layout: Pipeline, Work Packages, Artifacts; picker layout: Projects, desktop only), with the matching navigation item marked current.",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-shell/test/shell/routing.test.ts (line 43) 'routing: <screen>' for all 7 destinations (missions, drift, ops, pipeline, work-packages, artifacts, projects) on real mission-ui screens: one sk-mission-shell root, the mounted screen tag (assertion 'mounted screen mismatch on <screen>'), the layout attribute (project, mission, picker) and the current and rail-current navigation items; line 92 drives a real sk-navigate click; packages/mission-shell/test/logic/routes.test.ts 'assigns the layout of each screen'. unit-tests plant P-7 (MissionShell.svelte SCREENS drift: DriftScreen -> OpsScreen) red on 'mounted screen mismatch on drift', proven in WP06, re-proven in WP09 after the CP-1 amendments, and re-checked by hand at acceptance (2 failed, token present; file restored)",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-16T20:08:16.904805+00:00",
+      "notes": ""
+    },
+    {
+      "criterion_id": "FR-002",
+      "description": "Routes. As a host developer, I want every destination to have a route string that the shell can produce and parse back to the same destination, and that a host can set from outside, with an unknown route falling back to Missions.",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-shell/test/logic/routes.test.ts (line 61) 'parses every formatted destination back to a deep-equal destination' and line 71 'covers every screen'; line 142 'parses each to Missions and reports /missions as the canonical form' over the unknown routes, with positive controls at line 154; decoding negatives at lines 168-198 (%, dot-dot, %2F, NUL, 513 code points); line 108 non-canonical encoding. Host sets the route from outside: packages/mission-shell/test/shell/mount.test.ts line 98 'setRoute shows the destination and announces only a non-canonical route'; packages/mission-shell/test/logic/host.test.ts lines 497-560 (routeChanged). No browser navigation: shell lint plant P-4 'shell-io: navigator is forbidden' and the unchanged no-io gate",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-16T20:08:38.859370+00:00",
+      "notes": ""
+    },
+    {
+      "criterion_id": "FR-003",
+      "description": "Intents to actions. As a user, I want every intent of a hosted screen to have its effect: a navigation, a read, a change of shell state (search, filter, selection, tree expansion, drawer, flyout) or a host action.",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-shell/test/shell/intents.test.ts (line 388) 'intent: <tag> <event>', generated from INTENT_TABLE: each of the 40 (tag, event) pairs is dispatched from its real element in the mounted shell, the handler is called exactly once with the detail, and its effect (navigation, the exact reads, shell state, or the host call) is asserted; line 365 'has 40 pairs and 23 distinct event names, nine hosting tags and one expectation per pair' and line 374 'has exactly five via entries' guard against a vacuous sweep; line 433 'events the hosting elements do not declare reach no handler'. WP05 review: intent-dispatch.test.ts red-first, 19 of 32 failing against the cycle-1 lookup",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-16T20:08:40.597258+00:00",
+      "notes": ""
+    },
+    {
+      "criterion_id": "FR-004",
+      "description": "Intent coverage check. As the operator, I want a check that reads the declared events of every hosted element from the mission-ui custom-elements manifest, and fails, naming the intent, when one has no mapping in the shell.",
+      "proof_type": "gate_proof",
+      "evidence": "packages/mission-shell/src/intents/coverage.ts: the check types unmapped (Exclude<Declared, Mapped>) and unknownIntent, assigned true and checked by svelte-check; Declared comes from MissionUiIntents generated from custom-elements.json by scripts/typings.mjs; packages/mission-shell/src/intents/table.ts HostedTag excludes sk-mission-sample by name. typecheck plant P-2 deletes the one-line sk-copy-command entry and fails naming 'sk-drift-screen sk-copy-command'; WP05 review: 'typecheck proven (clean 0, planted 1)', plus type probes naming a missing via pair and an undeclared pair. pnpm typecheck 0 errors at acceptance",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-16T20:08:42.328742+00:00",
+      "notes": ""
+    },
+    {
+      "criterion_id": "FR-005",
+      "description": "Results to view state (amended 2026-10-15; see Amendments). As a user, I want each read's result turned into the screen's properties and view state: in flight is `loading`; success is `ready` or `empty` with the value passed unchanged; a refusal is `error` with its code; unavailable is `error` (on a resource without data; see Amendments).",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-shell/test/logic/results.test.ts (line 94) 'applies each refusal, with and without a value, to the word its screen declares' over the 17 (operation, refusal) pairs counted from routes.json (line 84); line 123 'passes the value through unchanged (identity) and marks it ready'; line 139 'is empty exactly where a screen defines empty' with a non-empty control each; FR-005 amendment at lines 172 and 189 (unavailable keeps value and view on a slot with data, error without). packages/mission-shell/test/logic/scheduler.test.ts line 287 (loading only without a value); packages/mission-shell/test/logic/controller.test.ts line 210 'passes contract values to the screens unchanged (FR-005)'. Amended 2026-10-15",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-16T20:08:44.066945+00:00",
+      "notes": ""
+    },
+    {
+      "criterion_id": "FR-006",
+      "description": "Retry, paging, search and filter state. As a user, I want retries to re-read exactly the target they name, load-more to append the next page with `loadingMore` set while it runs, and search, filter and selection to survive leaving and re-entering a destination within the session.",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-shell/test/logic/controller.test.ts (line 707) '<name>: one read of that key and none of any other' for seven retry targets (line 716 'covers seven retry cases'), line 728 'sk-shell-retry re-reads only the chrome keys in error'; line 756 'Missions load-more appends one page with loadingMore true during the read and false after'; session state at line 632 (Missions query and filter survive Missions -> Pipeline -> Missions, fresh controller as control), line 643 (Drift selectedFinding), line 657 (tree expansion per Mission, drawer and flyout shell-wide); packages/mission-shell/test/logic/scheduler.test.ts line 621 load-more",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-16T20:08:45.790028+00:00",
+      "notes": ""
+    },
+    {
+      "criterion_id": "FR-007",
+      "description": "Subscription. As a host developer, I want the shell to hold exactly one unscoped change subscription per client from mount to unmount, and to unsubscribe from changes and connection-state notifications on unmount.",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-shell/test/logic/controller.test.ts (line 137) 'subscribes once and listens to the connection once, per client, over mount, setClient and destroy' and line 151 (0 reads after destroy, positive control before); packages/mission-shell/test/shell/mount.test.ts line 25 'mount, setClient, destroy: one subscription, one connection listener and one refocus registration per client' and line 52 'a change delivered on the replaced client, and on the destroyed one, records zero reads'; unscoped: packages/mission-shell/test/logic/controller.test.ts line 954 'passes no SubscriptionScope to any subscribe call' with a positive control at line 976",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-16T20:08:47.557599+00:00",
+      "notes": ""
+    },
+    {
+      "criterion_id": "FR-008",
+      "description": "Refresh policy. As a user, I want each change to trigger exactly the re-reads of the refresh-policy table above, and only for resources on screen.",
+      "proof_type": "gate_proof",
+      "evidence": "packages/mission-shell/test/logic/refresh-policy.test.ts (line 28) 'recording: <row>' against the literal oracle test/support/expected-recording.ts (12 rows, imports nothing from the policy), positive control at line 54; packages/mission-shell/test/logic/controller-recording.test.ts line 15 'replays row: <row>' through the shipped controller. unit-tests plant P-1 (refresh-policy.ts mission-lifecycle row drops missions) red on 'refresh-policy mismatch on missions', proven in the WP02 gate-proof leg and in the WP03 review, re-checked by hand at acceptance (4 failed, token present; file restored). WP02 review cycle 3: a reverted first-connected fix is caught by the recording",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-16T20:08:49.304274+00:00",
+      "notes": ""
+    },
+    {
+      "criterion_id": "FR-009",
+      "description": "Latest read wins. As a user, I want a screen to show only the result of the most recently issued read of its resource, whatever order the reads complete in.",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-shell/test/logic/scheduler.test.ts (line 259) 'R2-04: two reads of one key settling out of order show the later-issued value', line 227 'FR-009, R2-04: A to B to A drops the first A read', line 246 'the first A read, settling last, finds no slot and is dropped', line 270 (resync inside an open window); packages/mission-shell/test/logic/controller.test.ts line 541 'two mission reads resolving out of order: the later-issued value is the snapshots' and line 525 'A -> B -> A: the first A read resolves last and is dropped'",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-16T20:08:51.116560+00:00",
+      "notes": ""
+    },
+    {
+      "criterion_id": "FR-010",
+      "description": "Refused stream. As a user, I want a `refused` change to show a notice that live updates are off, while reads keep working.",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-shell/test/shell/banners.test.ts (line 121) 'B3: a refused change stream shows the live-updates-off notice and a read still applies afterwards' (fixture stream refusal StreamRefusal.content-mismatch), positive control at line 139 'the same mount without a refusal shows no notice'; packages/mission-shell/test/logic/controller.test.ts line 481 'shows live-updates-off, keeps reading, and re-reads the whole set on each later connected with 0 new subscribes', control at line 505; no thrown error: the harness fails on any uncaught error (NFR-007 test at controller.test.ts line 992)",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-16T20:09:16.885292+00:00",
+      "notes": ""
+    },
+    {
+      "criterion_id": "FR-011",
+      "description": "Connection presentation. As a user, I want a defined presentation for each of the five connection states: `connecting` shows loading and an informational notice, and no reads are issued before the first `connected`; `reconnecting` shows a warning banner and keeps the last data; each degraded state shows its own danger banner, keeps any data and puts screens without data in `error`; `connected` shows no banner. The banners are built from design-library elements and announced to assistive technology.",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-shell/test/shell/banners.test.ts (lines 75-112): connecting notice at once and removed by connected in the same render; reconnecting nothing at 999 ms, banner at 1000 ms; service-missing and contract-mismatch without advancing time, loaded data kept; each asserts one sk-notice with its tone, announce level, heading and body, above the hosted screen; CP-1 amendments A1/A2 at lines 161-183. packages/mission-shell/test/logic/connection.test.ts line 29 'gives each state its condition at once, and none for connected' (5 of 5); packages/mission-shell/test/logic/controller.test.ts line 298 (connecting: 0 reads until the first connected), line 316 (degraded: no-value slots error), line 433 (degraded after data keeps the data). WP03 review: reverting the grace-timer clear fails 3 named tests",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-16T20:09:18.661454+00:00",
+      "notes": ""
+    },
+    {
+      "criterion_id": "FR-012",
+      "description": "Host interface. As a host developer, I want the shell to take, besides the client, one host interface whose members are all optional: copy text (answers `copied` or `manual`); open an external link; list recent projects; open a project; list a location's folders; signal that the window became visible or focused again; receive route changes. Each member has a defined fallback when absent (copy yields `manual`, the others do nothing).",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-shell/test/logic/host.test.ts (lines 83-137) 'the host wrappers (FR-012, NFR-007)': absent, throwing and rejecting members give the fallbacks (copy manual, listings { ok: false }, the others nothing) and a shell error is not swallowed; line 196 fallbacks through the controller; line 475 'a host without the member gets no refocus refresh, while one with it does'; lines 497-560 routeChanged; recording hosts in packages/mission-shell/test/shell/modes.test.ts and packages/mission-shell/test/logic/links.test.ts. WP04 review: F3/F4 tests each fail under mutation",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-16T20:09:20.387105+00:00",
+      "notes": ""
+    },
+    {
+      "criterion_id": "FR-013",
+      "description": "Copy and external links. As a user, I want Copy on the Drift screen to copy exactly the shown command through the host and report `copied` or `manual`, and external links to open through the host only when their scheme is exactly `http`, `https` or `mailto` (case-insensitive).",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-shell/test/logic/links.test.ts (line 34) 'reaches the host only for an allowed scheme on the desktop/dashboard, with the positive control in the same test': https:// gives exactly one openExternalLink call, then javascript:, JaVaScRiPt:, httpx:, data:, file:, vbscript:, leading whitespace and relative hrefs give none and no state change; line 25 'names exactly http, https and mailto'. Copy: packages/mission-shell/test/shell/intents.test.ts sk-drift-screen sk-copy-command case asserts copyText('sample command') and copyResult copied; packages/mission-shell/test/shell/copy.test.ts line 37 (copied twice) and line 52 (manual); packages/mission-shell/test/logic/controller.test.ts line 907 (manual for absent, throwing and rejecting hosts)",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-16T20:09:22.137407+00:00",
+      "notes": ""
+    },
+    {
+      "criterion_id": "FR-014",
+      "description": "Desktop projects picker. As a desktop user, I want the picker layout with the Projects screen and the open-project dialog, filled from the host's entries and folder listings, with open and confirm passed to the host.",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-shell/test/shell/modes.test.ts (line 19) 'shows the picker layout filled from the host, and each picker intent reaches the host once', positive control at line 45; packages/mission-shell/test/logic/host.test.ts line 360 'opens a project by key and by location, and browses with the folder as selected', line 379 (empty Projects, re-list on retry), line 392 (a stale folder listing never overwrites a newer one), line 408",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-16T20:09:23.886026+00:00",
+      "notes": ""
+    },
+    {
+      "criterion_id": "FR-015",
+      "description": "Dashboard and desktop-only intents. As a dashboard user, I want the shell to open straight into the project layout with no picker, never mounting the Projects screen or the open-project dialog, and to ignore the desktop-only intents (`sk-request-open-project`, `sk-browse-folder`, `sk-confirm-open-project`) without a host call or a thrown error.",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-shell/test/logic/host.test.ts (line 243) 'the dashboard guard (FR-015)': each of the six picker and dialog intents gives one host call on the desktop (positive control) and none on the dashboard; line 307 the picker commands guard themselves; line 333 'never shows the picker on the dashboard'. packages/mission-shell/test/shell/modes.test.ts line 61 'modes: dashboard <case>': no footer item, no Projects rail item, no sk-projects-screen or sk-open-project-dialog, /projects lands on Missions, 0 listRecentProjects calls; line 78 dashboard with no client. WP04 review cycle 2: direct dashboard calls give 0 host calls, no emit, no state change",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-16T20:09:25.648470+00:00",
+      "notes": ""
+    },
+    {
+      "criterion_id": "FR-016",
+      "description": "Explicit refresh. As a user, I want Artifact, Drift and Ops data read fresh on navigation, and Drift re-read on Rescan with `rescanning` set and the old report kept. I also want Artifact and Ops re-read when the host signals that the window became visible or focused again, and when I press a shell-owned Refresh button in the `top-bar-actions` slot of the `sk-mission-shell` element, shown only on those two destinations and flagged for design review. Together these let me bring views the stream does not cover up to date (operator ruling, 2026-10-15).",
+      "proof_type": "automated_test",
+      "evidence": "packages/mission-shell/test/shell/refresh.test.ts (line 27) Refresh button present in the top-bar-actions slot on Ops and Artifacts only, absent on Missions, Drift, Pipeline, Work Packages and Projects (line 41); line 47 pressing it on Ops re-reads the Ops page once and nothing else; line 60 Artifacts re-reads listing and content once each; line 72 positive control. packages/mission-shell/test/logic/controller.test.ts line 598 refresh() and windowRefocused(): one Ops chain, two reads on Artifact, 0 on Missions and Pipeline; line 843 'Rescan: rescanning is true while the read is unsettled, the old report stays'; packages/mission-shell/test/logic/host.test.ts line 445 refocus; packages/mission-shell/test/shell/routing.test.ts line 116 re-selection reads. Button flagged for design review and confirmed at CP-1 (D3)",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-16T20:09:27.372767+00:00",
+      "notes": ""
+    },
+    {
+      "criterion_id": "FR-017",
+      "description": "Gate extensions carry plants. As the operator, I want every gate this mission extends or adds (at least the intent-coverage check and the refresh-policy test) to carry a planted-defect proof in the existing gate-proof mechanism.",
+      "proof_type": "gate_proof",
+      "evidence": "7 new plants plus 1 moved, in gates/plants/*/plant.json: unit-tests P-1 (refresh-policy mismatch on missions) and P-7 (mounted screen mismatch on drift); typecheck P-2 (sk-drift-screen sk-copy-command, the intent-coverage check); eslint P-3 (shell-markup: raw controls), P-4 (shell-io: navigator is forbidden), P-8 (shell-layering:); storybook-build P-5 (plant-shell-storybook-missing); visual P-6 moved to the reconnecting banner. Proofs: P-1 WP02 leg and WP03 review; P-2 WP05 review (typecheck proven, clean 0, planted 1); P-3, P-4, P-8 WP07 review (eslint leg green, 13 runs); P-5 re-proven by the WP08 reviewer; P-6 proven in WP08 and re-proven in WP09; P-7 proven in WP06 and re-proven in WP09. P-1 and P-7 re-checked by hand at acceptance. WP10 review: the swapped-ref negative control drops all seven new plants (exit 1)",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-16T20:09:29.113361+00:00",
+      "notes": ""
+    },
+    {
+      "criterion_id": "FR-018",
+      "description": "Stories and visual baselines. As a reviewer, I want a Storybook story with an approved visual baseline in the existing visual gate for every connection-banner state (connecting, reconnecting, degraded: service-missing, degraded: contract-mismatch, live updates off) and for each layout composition (project, mission, picker; with and without the Refresh button), all flagged for design review.",
+      "proof_type": "gate_proof",
+      "evidence": "11 stories in packages/mission-shell/src/stories: connection-banners.stories.ts (connecting, reconnecting, service-missing, contract-mismatch, live-updates-off) and layouts.stories.ts (project Missions and Ops, mission Pipeline and Artifact, picker Projects, dashboard project; with and without the Refresh button), each with a baseline apps/storybook/tests/visual/__snapshots__/shell-*-1280.png. kitty-specs/mission-shell-01M50D2J/design-review.md: CP-1 confirmed 2026-10-16 with amendments A1-A5, applied in WP09 (3 baselines regenerated, 8 byte-identical); sha256sum -c design-review.sha256: 11 of 11 OK at acceptance, and the file set equals the 11 shell-*.png. visual plant P-6 (ConnectionBanner.svelte reconnecting tone attention -> danger) fails on shell-connection-banners--reconnecting-1280-diff.png, proven in WP08 and re-proven in WP09 with the anchor unchanged",
+      "pass_fail": "pass",
+      "verified_by": "claude",
+      "verified_at": "2026-10-16T20:09:30.835175+00:00",
+      "notes": ""
+    }
+  ],
+  "negative_invariants": []
+}

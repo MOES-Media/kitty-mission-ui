@@ -6,6 +6,30 @@ All user-visible changes to this repository. Per-package notes live in `packages
 
 ### Added
 
+- **The mission shell: a host can now mount one shell that routes, lays out and refreshes every Mission screen** (`#18`).
+  Before, `@moes-media/mission-shell` held only the port and a fixture adapter, so each host (#20, #21) would have
+  built its own routing, refresh and connection handling. Now a host calls `mountShell` with its adapter and a small
+  host interface, and gets the screens, the navigation and the banners.
+  - A new `./shell` entry with `mountShell` and `MissionShell`. `.` stays port-only and `./testing` is unchanged.
+  - Routes for Missions, Drift, Ops, Pipeline, Work Packages and Artifacts, plus the desktop project picker. An unknown
+    route shows Missions.
+  - A refresh engine that re-reads only the displayed resources a change affects, coalesces changes in 100 ms windows
+    and keeps the old data on screen while it re-reads. The Refresh button appears on Artifact and Ops only.
+  - Five connection banners (connecting, reconnecting after 1 s, service not available, incompatible service, live
+    updates off), approved at the design review. While a degraded banner shows, the shell hides its chrome error. With
+    nothing loaded, the degraded bodies are short. The brand follows the mode ("kitty desktop" or "kitty dashboard").
+    Switching project keeps the drawer and flyout state.
+  - A host interface with fallbacks for every member, and link-safety obligations for `openExternalLink` (re-validate
+    the scheme, never navigate the host window, show the destination). Desktop and dashboard modes; the dashboard never
+    shows desktop-only actions.
+  - An intent table with a type-level coverage check: an unmapped `sk-*` event fails `typecheck`.
+  - Shell lint blocks in `eslint` for I/O globals, markup and layering.
+  - Eleven Storybook stories with visual baselines (341 stories in all), the moved `visual` plant and seven new
+    planted-defect proofs.
+  - No new dependency version.
+  - The `eslint` proof-leg timeout rises from 8 to 10 minutes, and the `unit-tests` one from 30 to 32 minutes. They are
+    provisional: a projection from the `#17` run's CI timings, not a measurement of a `#18` run. A `(landing)` change
+    re-derives them from the pull request's first CI run.
 - **Phase 0 bootstrap: Kitty Desktop and Kitty Dashboard can now be built on one shared shell, one client interface and
   a local stand-in for the Mission Status service** (`#17`). Before, the repository held only the Lit screens, with no
   host to run them in and no way to exercise them against service data. Now the hosts (#20, #21) and the next missions
