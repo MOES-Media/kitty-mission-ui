@@ -1,14 +1,14 @@
 {
   "rows": {
     "#16": {
-      "evidence_ref": "<auto-classified: no action required>",
+      "evidence_ref": "Phase 0 epic; tracks the missions, not changed by this mission.",
       "fr": null,
       "nfr": null,
       "repo": null,
       "sc": null,
       "scope": null,
       "source_file": "spec.md",
-      "title": "<auto-classified: pr_or_commit_ref>",
+      "title": "Phase 0 epic: Kitty Desktop and Kitty Dashboard hosts over the Mission Status service",
       "verdict": "not-applicable",
       "wp": null
     },
@@ -20,20 +20,20 @@
       "sc": null,
       "scope": null,
       "source_file": "spec.md",
-      "title": "<fill at WP-implementation time>",
+      "title": "M1 Bootstrap: Svelte–Lit binding check, workspace and CI, port and stub",
       "verdict": "not-applicable",
       "wp": null
     },
     "#18": {
-      "evidence_ref": "This mission implements issue #18 (M2 mission-shell); closed by the mission PR after WP10.",
+      "evidence_ref": "This mission implements issue #18 (M2 mission-shell); landed as PR #34 (squash, a5560cf), which closed the issue.",
       "fr": null,
       "nfr": null,
       "repo": null,
       "sc": null,
       "scope": null,
       "source_file": "spec.md",
-      "title": "<fill at WP-implementation time>",
-      "verdict": "in-mission",
+      "title": "M2 mission-shell: shared Svelte 5 shell over the MissionStatusClient port",
+      "verdict": "fixed",
       "wp": "WP10"
     },
     "#19": {
@@ -44,7 +44,7 @@
       "sc": null,
       "scope": null,
       "source_file": "spec.md",
-      "title": "<fill at WP-implementation time>",
+      "title": "M3 kitty-core: shared Rust core (contract client, SSE, supervision)",
       "verdict": "not-applicable",
       "wp": null
     },
@@ -56,7 +56,7 @@
       "sc": null,
       "scope": null,
       "source_file": "spec.md",
-      "title": "<fill at WP-implementation time>",
+      "title": "M4 Desktop host: Tauri 2 app over kitty-core",
       "verdict": "not-applicable",
       "wp": null
     },
@@ -68,7 +68,7 @@
       "sc": null,
       "scope": null,
       "source_file": "spec.md",
-      "title": "<fill at WP-implementation time>",
+      "title": "M5 Dashboard host: loopback axum proxy and same-origin bundle",
       "verdict": "not-applicable",
       "wp": null
     },
@@ -80,7 +80,7 @@
       "sc": null,
       "scope": null,
       "source_file": "spec.md",
-      "title": "<fill at WP-implementation time>",
+      "title": "M6 Real-service integration: wire hosts to mission-status-api as upstream lands",
       "verdict": "not-applicable",
       "wp": null
     },
@@ -92,8 +92,32 @@
       "sc": null,
       "scope": null,
       "source_file": "spec.md",
-      "title": "<auto-classified: pr_or_commit_ref>",
+      "title": "feat(phase0): M1 Bootstrap — Svelte–Lit binding check, workspace and CI, port and stub (#17)",
       "verdict": "not-applicable",
+      "wp": null
+    },
+    "#36": {
+      "evidence_ref": "Follow-up: #36 (mission-ui follow-ups from the mission shell: CP-1 design requests, focus after navigation, banner announcements, drift copy quoting, forced-colours flake) was filed from the CP-1 review and the pre-merge squad (A11Y-001, A11Y-002, SEC-002, TEST-009); open and deferred.",
+      "fr": null,
+      "nfr": null,
+      "repo": null,
+      "sc": null,
+      "scope": null,
+      "source_file": null,
+      "title": "mission-ui: follow-ups from the mission shell (design review, focus, drift copy quoting, forced-colours flake)",
+      "verdict": "deferred-with-followup",
+      "wp": null
+    },
+    "#37": {
+      "evidence_ref": "Follow-up: #37 (explicit ShellOptions, A1 in the snapshot, typed intent details, test gaps) collects the pre-merge squad follow-ups ARCH-005, ARCH-006, ARCH-007, ARCH-010, A11Y-003, TEST-004, TEST-006 to TEST-008 and SEC-001; open and deferred.",
+      "fr": null,
+      "nfr": null,
+      "repo": null,
+      "sc": null,
+      "scope": null,
+      "source_file": null,
+      "title": "mission-shell: post-#18 follow-ups (explicit ShellOptions, A1 in snapshot, typed intent details, test gaps)",
+      "verdict": "deferred-with-followup",
       "wp": null
     }
   },

@@ -8,7 +8,7 @@
       "sc": null,
       "scope": null,
       "source_file": "spec.md",
-      "title": "<fill at WP-implementation time>",
+      "title": "Phase 0 epic: Kitty Desktop and Kitty Dashboard hosts over the Mission Status service",
       "verdict": "not-applicable",
       "wp": null
     },
@@ -20,32 +20,32 @@
       "sc": null,
       "scope": null,
       "source_file": "spec.md",
-      "title": "<fill at WP-implementation time>",
+      "title": "M1 Bootstrap: Svelte–Lit binding check, workspace and CI, port and stub",
       "verdict": "not-applicable",
       "wp": null
     },
     "#18": {
-      "evidence_ref": "Sibling Phase 0 mission (#18), cited for design context and hand-off notes only; not changed by this mission.",
+      "evidence_ref": "Sibling Phase 0 mission (#18), cited for design context and hand-off notes only; not changed by this mission. Landed as PR #34.",
       "fr": null,
       "nfr": null,
       "repo": null,
       "sc": null,
       "scope": null,
       "source_file": "spec.md",
-      "title": "<fill at WP-implementation time>",
+      "title": "M2 mission-shell: shared Svelte 5 shell over the MissionStatusClient port",
       "verdict": "not-applicable",
       "wp": null
     },
     "#19": {
-      "evidence_ref": "This mission implements issue #19 (M3 kitty-core); closed by the mission PR after WP10.",
+      "evidence_ref": "This mission implements issue #19 (M3 kitty-core); landed as PR #35 (squash, 2348f7e), which closed the issue.",
       "fr": null,
       "nfr": null,
       "repo": null,
       "sc": null,
       "scope": null,
       "source_file": "spec.md",
-      "title": "<fill at WP-implementation time>",
-      "verdict": "in-mission",
+      "title": "M3 kitty-core: shared Rust core (contract client, SSE, supervision)",
+      "verdict": "fixed",
       "wp": "WP10"
     },
     "#20": {
@@ -56,7 +56,7 @@
       "sc": null,
       "scope": null,
       "source_file": "spec.md",
-      "title": "<fill at WP-implementation time>",
+      "title": "M4 Desktop host: Tauri 2 app over kitty-core",
       "verdict": "not-applicable",
       "wp": null
     },
@@ -68,7 +68,7 @@
       "sc": null,
       "scope": null,
       "source_file": "spec.md",
-      "title": "<fill at WP-implementation time>",
+      "title": "M5 Dashboard host: loopback axum proxy and same-origin bundle",
       "verdict": "not-applicable",
       "wp": null
     },
@@ -80,7 +80,7 @@
       "sc": null,
       "scope": null,
       "source_file": "spec.md",
-      "title": "<fill at WP-implementation time>",
+      "title": "M6 Real-service integration: wire hosts to mission-status-api as upstream lands",
       "verdict": "not-applicable",
       "wp": null
     },
@@ -92,7 +92,31 @@
       "sc": null,
       "scope": null,
       "source_file": "spec.md",
-      "title": "<auto-classified: pr_or_commit_ref>",
+      "title": "feat(phase0): M1 Bootstrap — Svelte–Lit binding check, workspace and CI, port and stub (#17)",
+      "verdict": "not-applicable",
+      "wp": null
+    },
+    "#38": {
+      "evidence_ref": "Follow-up: #38 (post-#19 follow-ups: pin-unavailable digest, stream generation, panic status, parse deadline, test hygiene) collects the pre-merge squad follow-ups ARCH-007, ARCH-010, ARCH-011, ARCH-013, SEC-003, SEC-005, CON-002 and CON-004; open and deferred.",
+      "fr": null,
+      "nfr": null,
+      "repo": null,
+      "sc": null,
+      "scope": null,
+      "source_file": null,
+      "title": "kitty-core: post-#19 follow-ups (pin-unavailable digest, stream generation, panic status, parse deadline, test hygiene)",
+      "verdict": "deferred-with-followup",
+      "wp": null
+    },
+    "#957": {
+      "evidence_ref": "Upstream spec-kitty issue; cited for the read-service background only.",
+      "fr": null,
+      "nfr": null,
+      "repo": null,
+      "sc": null,
+      "scope": null,
+      "source_file": "spec.md",
+      "title": "Mission Status Read API: mission detail (WP content, status, assignment; incl. WorkPackageAssignment schema)",
       "verdict": "not-applicable",
       "wp": null
     },
@@ -104,19 +128,7 @@
       "sc": null,
       "scope": null,
       "source_file": "spec.md",
-      "title": "<fill at WP-implementation time>",
-      "verdict": "not-applicable",
-      "wp": null
-    },
-    "#957": {
-      "evidence_ref": "Upstream spec-kitty issue; cited for the read-service background only.",
-      "fr": null,
-      "nfr": null,
-      "repo": null,
-      "sc": null,
-      "scope": null,
-      "source_file": "spec.md",
-      "title": "<fill at WP-implementation time>",
+      "title": "Rehome the removed dashboard's artifact and governance read routes onto the read path",
       "verdict": "not-applicable",
       "wp": null
     }

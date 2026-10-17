@@ -61,7 +61,7 @@ UnavailableReason = Status | ConnectRefused | Dropped | Idle { limit } | Malform
   - So is a 200 with no `content-type`, or one other than `text/event-stream`.
   - A clean end of stream is `Dropped`.
 - **Idle.** Every byte resets the idle timer, heartbeats included.
-- **FrameTooLarge.** It counts every byte since the last event boundary (a blank line, whether or not it dispatched an event), including a pending line with no newline and comment lines (FS-13). Many heartbeats never trip it.
+- **FrameTooLarge.** It counts every byte since the last event boundary (a blank line, whether or not it dispatched an event), including a pending line with no newline and comment lines (FS-13). Many heartbeats never trip it. Amended 2026-10-17 (pre-merge squad CON-001, R2-NEW-003): the LF that completes a CRLF event boundary is not counted against the next frame; an LF inside a frame still is.
 - **MalformedFrame.** A line that is not valid UTF-8. The checks run in this order: the cap, then UTF-8, then field parsing (R2-06).
 - **MalformedData.** Joined `data` that is not one JSON value.
 - **Field handling, as in the SSE specification.**
@@ -146,6 +146,8 @@ Every arrow is one `broadcast` message, in order. A send with no receivers is ig
 | any but `Stopped` | `stop()` | `Stopped` (SIGTERM to the group, grace, SIGKILL to the group) | unchanged |
 | any | last host handle dropped | (task aborted; SIGKILL to the group; no further message) | — |
 | `Stopped` | `retry()` | `Starting` (discovery again; crash history cleared) | None |
+
+Amended 2026-10-17 (pre-merge squad SEC-002): on Linux a final answer that is not a match is first checked against socket ownership. A listener that the launched group does not own is a busy-port retry on an untried port (cause `NotOwned`), not a `ContractMismatch`.
 
 **Invariants.**
 - A supervisor owns at most one child process group, and only one it started.

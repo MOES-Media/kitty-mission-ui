@@ -116,6 +116,11 @@ Stream changes (the first three rows) coalesce. `resync` and every other trigger
 - **Per client** (FS2-01): the gate, the "first `connected`" mark and the refused flag belong to the current client.
   `setClient` resets all three. A client whose state is already `connected` when it is mounted, or passed to
   `setClient`, counts as that client's first `connected` and issues the displayed set at once.
+- **`setClient` without a route** (amended 2026-10-17, pre-merge squad ARCH-001, ARCH-009): it shows the default route
+  for the new client and mode, `/missions`, or `/projects` for a null client on the desktop, and announces it through
+  `routeChanged` when that differs from the screen shown. With a route, it shows that route. A null client on the
+  desktop coerces every route to `/projects`. On the Svelte component, a client-only change of the `client` prop resets
+  to the default route; the `route` prop is forwarded only when it changed in the same tick (R2-NEW-001).
 - Nothing is issued until the client's first `connected`, so `connecting`, and any `degraded` or `reconnecting`
   state before that, issue nothing.
 - A degraded state before the first `connected` sets the no-value slots of the displayed set to `error`, without
@@ -144,7 +149,7 @@ Stream changes (the first three rows) coalesce. `resync` and every other trigger
 |---|---|---|
 | `{ ok: true, value }` | replaced; `ready` or `empty` | set; `ready` or `empty` |
 | `{ ok: false, refusal }` | `error` (or `not-found` for 404 where the screen defines it), with the refusal | the same |
-| `{ ok: false, unavailable }` | value and view kept (spec FR-005 amendment) | `error` |
+| `{ ok: false, unavailable }` | value and view kept (spec FR-005 amendment) | `error`, with no refusal (a stale refusal is dropped, CON-004, 2026-10-17) |
 
 - **Stale-while-revalidate**: a slot with a value keeps its view while a re-read runs. `loading` appears only without a
   value.
@@ -156,6 +161,10 @@ Stream changes (the first three rows) coalesce. `resync` and every other trigger
 - An Ops load-more failure sets `loadMoreError` and keeps the items.
 
 ## ConnectionPresentation
+
+Amended 2026-10-17 (pre-merge squad ARCH-002, CON-003): a connection state equal to the current one is ignored. A
+second `reconnecting` neither hides a banner already shown nor re-arms the grace timer. The connection gate still
+observes every state.
 
 | State | Banner | Reads | Screens |
 |---|---|---|---|
@@ -212,7 +221,8 @@ Values are in `contracts/connection-presentation.md`. Every banner is an `sk-not
 - `scheduler`: a `ShellScheduler`, declared once in `src/core/scheduler.ts` and structurally identical to the fixture's
   `Scheduler`. A type test asserts that each is assignable to the other (R4-08). Default: global timers.
 - `clock` (default the system clock).
-- `copy` (degraded overrides).
+- `copy` (degraded overrides). Amended 2026-10-17 (pre-merge squad ARCH-003): the host can also change them after
+  mount with `setCopy`, which replaces the whole set and treats `{}` and `null` as the defaults.
 
 ## IntentTable
 

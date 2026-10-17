@@ -164,7 +164,7 @@
       "sc": null,
       "scope": null,
       "source_file": "spec.md",
-      "title": "Mission Status Read API: mission detail (WP content, status, assignment; incl. WorkPackageAssignment schema)",
+      "title": "Rehome the removed dashboard's artifact and governance read routes onto the read path",
       "verdict": "not-applicable",
       "wp": null
     },
@@ -176,7 +176,7 @@
       "sc": null,
       "scope": null,
       "source_file": "spec.md",
-      "title": "Rehome the removed dashboard's artifact and governance read routes onto the read path",
+      "title": "Mission Status Read API: mission detail (WP content, status, assignment; incl. WorkPackageAssignment schema)",
       "verdict": "not-applicable",
       "wp": null
     }
